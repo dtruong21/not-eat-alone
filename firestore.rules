@@ -1,0 +1,45 @@
+rules_version = '2';
+
+// Starter rules: deny-by-default. Replace the matchers below as you add collections.
+// Test every rule in the Firebase Console → Firestore → Rules → Playground before deploying.
+//
+// Canonical pattern: scope everything under users/{uid} and check request.auth.uid == uid.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Per-user docs
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isOwner(uid);
+
+      // Add subcollections here as you build features.
+      // Each subcollection should have its own explicit allow/deny block.
+      //
+      // Example:
+      // match /things/{thingId} {
+      //   allow read, write: if isOwner(uid);
+      // }
+    }
+
+    // Public reference data (handles, usernames, etc.) — adapt per project
+    // Example:
+    // match /handles/{handle} {
+    //   allow read: if isSignedIn();
+    //   allow create: if isSignedIn()
+    //                 && request.resource.data.uid == request.auth.uid;
+    //   allow delete: if isSignedIn()
+    //                 && resource.data.uid == request.auth.uid;
+    // }
+
+    // Default deny — anything not explicitly matched is rejected.
+  }
+}

@@ -1,0 +1,36 @@
+# Claude Code per-machine config
+.claude/settings.local.json
+
+node_modules/
+.expo/
+dist/
+web-build/
+ios/
+android/
+*.log
+.DS_Store
+.env
+.env.local
+.env.*.local
+coverage/
+.idea/
+.vscode/
+
+# Cloud Functions build output
+functions/lib/
+
+# Native build artifacts (when ejected from Expo managed)
+google-services.json
+GoogleService-Info.plist
+*.jks
+*.keystore
+xcuserdata/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Service account JSONs (NEVER commit — see docs/SECURITY.md)
+*service-account*.json
