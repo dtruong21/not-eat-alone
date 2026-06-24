@@ -1,142 +1,53 @@
-# {{PROJECT_NAME}} — Claude Constitution
+# Project templates — root
 
-This file is loaded into every Claude session in this repo. Keep it tight — every line is paid for in tokens, every turn.
+This repo holds **multiple project templates**, one subdirectory per stack. Each subdir is a fully self-contained scaffold for starting a new project in that stack — its own CLAUDE.md, agents, commands, docs, design systems, code scaffolding.
 
-## What this project is
+## Stacks
 
-**One-line pitch:** {{ONE_LINE_PITCH}}
+| Subdir | Stack | When to pick |
+|---|---|---|
+| [`react-native/`](react-native/) | React Native (Expo) + Firebase | JS ecosystem, EAS Build, Zustand + TanStack Query, NativeWind |
+| [`flutter/`](flutter/) | Flutter + Firebase | Dart strict typing, Material 3, Riverpod, go_router, Codemagic |
 
-**Why it exists:** {{WHY}}
+Both share the same workflow shape (`/spec → /design → /build → /test → /release → /launch`), the same 3 swappable design systems (`notion-github`, `linear-minimal`, `warm-playful`), and the same standing rules (MVP-first, UX priority, QA gate, analytics-first, token discipline).
 
-**Differentiator:** {{DIFFERENTIATOR}}
+## How to start a new project
 
-Full spec in `docs/PRD.md`. Design language in `docs/DESIGN.md`. Process in `docs/WORKFLOWS.md`. Analytics contract in `docs/TRACKING-PLAN.md`. Launch playbook in `docs/LAUNCH.md`.
-
-## Stack
-
-- **App**: React Native via Expo (SDK latest), TypeScript strict, expo-router
-- **Backend**: Firebase (Auth, Firestore, Cloud Functions)
-- **State**: Zustand + TanStack Query for server cache
-- **UI**: NativeWind (Tailwind for RN), design tokens from `lib/design/tokens.ts`
-- **Builds**: EAS Build, EAS Submit
-- **Tests**: Jest + React Native Testing Library
-- **Validation**: zod at all Firestore boundaries
-
-## Repo layout
-
-```
-app/              expo-router routes (auto-discovered)
-components/       shared UI primitives
-features/<name>/  feature-scoped logic, hooks, components
-lib/
-  firebase/       typed Firestore + Auth wrappers (one per collection)
-  design/         tokens.ts — colors, spacing, typography
-functions/        Cloud Functions
-docs/             PRD, design, workflows, roadmap, test plan, release
-firestore.rules   security model — deployed
+```bash
+./scripts/new-project.sh react-native ~/Documents/my-new-app
+# or
+./scripts/new-project.sh flutter ~/Documents/my-new-app
 ```
 
-## Conventions (non-negotiable)
+The helper copies the chosen stack into the target dir, detaches the template's git history, and initializes a fresh repo. Then `cd ~/Documents/my-new-app && cat SETUP.md` and follow from Step 2.
 
-- TypeScript strict mode. No `any` — use `unknown` + zod narrowing at boundaries.
-- Firestore reads/writes go through `lib/firebase/<collection>.ts` — never call the SDK from components.
-- Components are functions, not classes. Hooks-only.
-- One screen = one route file in `app/`. Heavy logic lives in `features/`.
-- Design tokens come from `lib/design/tokens.ts`. No magic numbers in components.
-- Tests live next to what they test in `__tests__/` folders.
+## How to work on the templates themselves
 
-## Workflow (strict order)
+You're here because you're improving the templates (not building a new project). Pick a stack:
 
-```
-product-strategist → ux-designer → mobile-engineer → qa-engineer → release-engineer
+```bash
+cd react-native/   # or: cd flutter/
 ```
 
-Each agent's output is the next agent's input. Don't skip a step. If a later step uncovers a problem with an earlier one, kick back to that earlier agent — don't fix it on the fly. Full process in `docs/WORKFLOWS.md`.
+Inside the subdir, the full Claude Code setup is active — that subdir's `CLAUDE.md`, its 6 agents (`.claude/agents/`), its 17 slash commands (`.claude/commands/`). Work there.
 
-## Agents available
+If a change applies to BOTH stacks (e.g. a sharpened agent prompt, a new standing rule, an additional edge-case in TEST-PLAN.md), **mirror it across both stacks**. Otherwise they drift.
 
-| Agent | Use when |
-|---|---|
-| `product-strategist` | Defining scope, writing user stories, deciding what's in/out of MVP |
-| `ux-designer` | Designing screens, picking components, applying the design language |
-| `mobile-engineer` | Writing the React Native + Firebase code |
-| `qa-engineer` | Writing tests, finding bugs, verifying features on iOS + Android |
-| `release-engineer` | EAS builds, version bumps, TestFlight/Play Console submissions |
-| `marketer` | Store listings, landing copy, tweet threads, Product Hunt, ASO, launch playbook |
+## Adding a new stack
 
-Definitions in `.claude/agents/`.
+To add a third stack (e.g. `web/`, `electron/`, `swift/`) later:
 
-## Slash commands (token-saving lever)
+1. Create the subdir with the same shape as the existing two (CLAUDE.md, SETUP.md, .claude/, design-systems/, docs/, lib/ or equivalent).
+2. Add the stack to the table in this CLAUDE.md and in the root `README.md`.
+3. Add the stack name to the `VALID` array in `scripts/new-project.sh`.
 
-| Phase | Command |
-|---|---|
-| Spec a feature | `/spec <name> — <idea>` |
-| Design a screen | `/design <screen>` |
-| Build a feature | `/build <feature>` |
-| QA a feature | `/test <feature>` |
-| Cut a release | `/release <staging\|production>` |
+No central refactor needed — each stack stays isolated.
 
-Micro-tasks: `/bug`, `/scope-check`, `/next`, `/qa-sweep`, `/weekly-review`.
-Scaffolds: `/firestore`, `/hook`, `/track`.
-Marketing: `/aso`, `/launch <channel>`.
-Efficiency: `/why`, `/diff`.
+## What lives at the root (this directory)
 
-Full index in `.claude/commands/README.md`. **Prefer these over re-typing prompts.**
-
-## Token discipline (the rules I want you to follow this conversation)
-
-1. **Delegate to agents via slash commands.** Don't re-explain agent context in the main loop.
-2. **No preambles.** Skip "Sure, I'll do that." Just do it and report.
-3. **No code dumps when a file path will do.** "Wrote `lib/firebase/foo.ts`" beats pasting the file.
-4. **No end-of-turn recaps.** The diff is the artifact.
-5. **Ask before exploring widely.** Cheap-to-verify questions ("which feature?") save a round of guesswork.
-6. **Use `Read` for known paths, `Grep`/`Glob` for symbol lookups. Don't read whole folders.**
-
-## UX is the top priority
-
-User experience wins every trade-off except MVP scope. The hierarchy:
-
-```
-MVP scope  >  UX quality  >  feature breadth  >  code elegance  >  dev convenience
-```
-
-If MVP and UX conflict, **cut the feature**. Don't ship a half-quality version of it. If UX conflicts with anything below it, UX wins.
-
-**States are first-class.** Empty, loading, error, and offline ship with every feature — not "polish later."
-**Latency is UX.** Optimistic updates, no jank, taps respond in <100ms.
-**Accessibility is UX.** Dark mode parity, screen reader paths, dynamic type — v1, not v1.1.
-
-Route design decisions through `/design`. Push back on engineering choices that compromise UX without an explicit MVP-scope reason.
-
-## v1 is an MVP — always
-
-This is rule zero. **v1 ships the minimum viable subset that delivers the pillar outcomes — nothing more.** Polish, niceties, animations, "while we're at it" additions all wait for v1.1+.
-
-When evaluating any feature proposal (yours or mine):
-- Default verdict: **POST-MVP** or **CUT**. Make me argue features INTO v1, not out of it.
-- If a feature *might* be MVP-fit, ask: "Is there a smaller version that still delivers the pillar outcome?" Ship the smaller one.
-- States that ship in v1: empty, loading, error, golden path. Animations, micro-interactions, edge polish: v1.1.
-- This applies even mid-build. If new scope appears, push back: "Is this v1 or v1.1?"
-
-`/scope-check` and the `product-strategist` agent bias hard toward CUT. Trust them.
-
-## Analytics is a first-class concern
-
-The product without analytics is the product flying blind. The tracking plan at `docs/TRACKING-PLAN.md` is the analytics PRD — every event the product fires lives there BEFORE the code is written. Use `/track <event>` to add events (it updates both the doc and `lib/analytics/events.ts`).
-
-Privacy: events carry no PII. The typed registry enforces this.
-
-## Quality bar
-
-The QA process is what keeps the product shippable. Read `.claude/agents/qa-engineer.md` and `docs/TEST-PLAN.md` before every release. **No release ships with open P0/P1 bugs.**
-
-## Security model
-
-Firebase web config is **not secret**. Security comes from Firestore rules + Auth, not from hiding API keys. The actual secrets are: Firebase Admin service account, EAS signing keys, OAuth client secrets. See `docs/SECURITY.md`.
-
-## When you're stuck
-
-- Spec unclear → `/spec` to clarify with product-strategist.
-- Design unclear → `/design` to ask ux-designer.
-- Reused code unclear → use `Grep` for the symbol first.
-- Don't invent. Ask.
+- `CLAUDE.md` — this file, the index
+- `README.md` — landing page on Gitea
+- `LICENSE` — repo-wide
+- `.gitignore` — cross-cutting ignores only; stack-specific ignores live in each subdir's `.gitignore`
+- `scripts/new-project.sh` — the bootstrap helper
+- `SETUP.md` — root setup notes (short — most setup is per-stack)

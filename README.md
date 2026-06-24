@@ -1,115 +1,102 @@
-# Project Template — Firebase Mobile (Expo + RN)
+# Project templates
 
-A starting point for solo-built mobile MVPs. Ships the Claude Code config, docs scaffolding, and a strict development workflow optimized for **token efficiency** and **QA quality**.
+A family of opinionated scaffolds for solo-built mobile MVPs. One Gitea repo, one subdir per stack. Pick the stack — get the full Claude Code workflow, 6 specialized agents, 17 slash commands, 3 swappable design systems, QA gate, tracking plan, launch playbook.
 
-**Stack:** React Native (Expo) + Firebase (Auth, Firestore, Functions) + TanStack Query + Zustand + NativeWind + Jest.
+## Stacks shipped
 
----
+| Stack | Subdir | Quick pitch |
+|---|---|---|
+| **React Native** (Expo + Firebase) | [`react-native/`](react-native/) | JavaScript ecosystem, EAS Build for cloud builds, Zustand + TanStack Query, NativeWind. Fast iteration. Largest community. |
+| **Flutter** (Flutter + Firebase) | [`flutter/`](flutter/) | Dart strict typing, native compiled UI, Material 3, Riverpod with codegen, go_router, Codemagic. Stronger correctness guarantees. |
 
-## What this template gives you
+Both share the same workflow shape, design systems, and standing rules. Pick by language/runtime preference — process is identical.
 
-| Layer | Content |
+## Quick start (new project)
+
+```bash
+# Once: clone this repo somewhere you can find it
+git clone https://gitea.com/daki.tle.26/ai-project-template.git ~/Documents/templates
+
+# Each new project: one command
+~/Documents/templates/scripts/new-project.sh react-native ~/Documents/my-new-app
+# or
+~/Documents/templates/scripts/new-project.sh flutter ~/Documents/my-new-app
+
+# Then follow that project's SETUP.md
+cd ~/Documents/my-new-app
+cat SETUP.md
+```
+
+The helper copies the chosen stack, detaches the template's git history, and starts a fresh repo in the target directory.
+
+## What every stack gives you
+
+| Layer | What's in it |
 |---|---|
 | **Claude config** | 6 specialized agents (product-strategist, ux-designer, mobile-engineer, qa-engineer, release-engineer, marketer) + 17 slash commands |
-| **Workflow** | Strict spec → design → build → test → release pipeline with handoff rules |
-| **Design system family** | 3 cross-platform pre-built systems: `notion-github`, `linear-minimal`, `warm-playful`. Pick one per project during setup. |
-| **Analytics layer** | Tracking plan (`docs/TRACKING-PLAN.md`) + typed event registry + provider-agnostic client. `/track` keeps the doc and types in sync. |
-| **Feedback loop** | In-app feedback hook + Firestore pattern + `feedback_submitted` event baked in. |
-| **Launch playbook** | Marketer agent + `LAUNCH.md` runbook + `/aso` + `/launch <channel>` commands. |
-| **Solo-dev forcing functions** | `/weekly-review` Monday checkpoint, energy check, burnout flagging. |
-| **Docs scaffolding** | PRD, Workflows, Tracking plan, Test plan, Roadmap, Release runbook, Launch playbook, Security, Store metadata, Legal templates |
-| **QA emphasis** | Severity rubric, universal edge-case checklist, bug templates, pre-release gate |
-| **Token discipline** | Slash commands delegate to agents (keeps main-loop context lean) + constrained output formats |
+| **Workflow** | Strict `/spec → /design → /build → /test → /release → /launch` pipeline, agent handoffs documented in `docs/WORKFLOWS.md` |
+| **Design system family** | 3 swappable: `notion-github`, `linear-minimal`, `warm-playful`. Pick one per project via `scripts/pick-design-system.sh`. |
+| **Analytics layer** | Tracking plan + typed event registry (TS for RN / Dart sealed class for Flutter) + provider-agnostic client. |
+| **Feedback loop** | In-app feedback feature scaffold + Firestore pattern + `feedback_submitted` event. |
+| **Launch playbook** | Marketer agent + `docs/LAUNCH.md` runbook + `/aso` + `/launch <channel>`. |
+| **Solo-dev forcing functions** | `/weekly-review` Monday checkpoint, MVP-first defaults, burnout flagging. |
+| **QA gate** | Severity rubric, universal edge-case checklist, bug templates, pre-release gate. |
+| **Docs scaffolding** | PRD, ROADMAP, WORKFLOWS, TRACKING-PLAN, TEST-PLAN, RELEASE, LAUNCH, SECURITY, STORE_METADATA, legal templates. |
 
----
+## Standing rules (baked into every project)
 
-## How to use it
+1. **v1 is an MVP.** Default verdict on new scope is POST-MVP. Make me argue features INTO v1.
+2. **UX is the top priority** — wins every trade-off except MVP scope. States (empty/loading/error/offline) are first-class.
+3. **QA gates releases.** No release ships with open P0/P1 bugs. Every fix ships with a regression test.
+4. **Analytics-first.** Tracking plan precedes code. Events are typed. No PII as properties.
+5. **Token discipline.** Slash commands delegate to agents; pre-filled prompts keep main-loop context lean.
 
-Read [`SETUP.md`](SETUP.md) end-to-end. It walks you through copying the template, generating the Expo project on top, filling placeholders, and getting Firebase wired up.
-
-Once instantiated, the development loop is:
-
-```
-/spec <feature>      → product-strategist writes the PRD entry
-/design <screen>     → ux-designer writes the screen spec
-/build <feature>     → mobile-engineer implements it
-/test <feature>      → qa-engineer writes tests + edge-case sweep
-/release <channel>   → release-engineer cuts the build
-```
-
-Plus micro-tasks (`/bug`, `/scope-check`, `/next`, `/qa-sweep`), scaffolds (`/firestore`, `/hook`), and efficiency commands (`/why`, `/diff`).
-
-Full slash-command index at [`.claude/commands/README.md`](.claude/commands/README.md).
-
----
-
-## Design philosophy
-
-- **Solo developer first.** No CODEOWNERS, no PR templates, no team rituals. Add them when you have a team.
-- **Token efficiency through delegation.** Each agent's specialist context lives in its `.md` file — loaded only when its slash command fires.
-- **QA is the gate.** No release ships without a green run of the test plan.
-- **Strict ordering.** Spec → Design → Build → Test. Skipping a step always costs more later.
-
----
-
-## Why Firebase
-
-The template is intentionally Firebase-only because:
-
-- **Security model is well-understood.** Rules + Auth replace 90% of what a custom backend would do.
-- **Free tier supports MVPs.** Most projects ship to TestFlight before paying anything.
-- **Cloud Functions cover the gaps.** When the client can't (cascade-deletes, server-side validation), Functions do.
-- **One vendor, one mental model.** Auth state, data persistence, and compute share an identity.
-
-If you're considering a different backend (Supabase, custom Node, etc.), this template is not the right starting point — fork and adapt, or use a different template.
-
----
-
-## File layout
+## File layout (this repo)
 
 ```
-.claude/
-  agents/          6 specialized agents (incl. marketer)
-  commands/        17 slash commands (workflow + micro-tasks + scaffolds + marketing + efficiency)
-design-systems/    3 pre-built systems (pick one in SETUP.md Step 3.5)
-  notion-github/   tokens.ts + DESIGN.md + tailwind preset + mood.svg
-  linear-minimal/  ...
-  warm-playful/    ...
-  README.md        which-to-pick guide
-docs/
-  PRD.md           Product requirements (pillars + feature specs)
-  WORKFLOWS.md     Agent handoff map + 4 workflows
-  TRACKING-PLAN.md Analytics PRD (events, properties, metrics, privacy)
-  TEST-PLAN.md     QA checklist (universal + per-feature)
-  ROADMAP.md       Phase status
-  RELEASE.md       10-step release runbook (cutting builds)
-  LAUNCH.md        Launch playbook (T-4w → T+7d, Product Hunt + tweet + email + community)
-  SECURITY.md      Threat model + secrets policy
-  STORE_METADATA.md  App Store + Play Store copy
-  weekly-reviews/  output dir for /weekly-review
-  legal/           Privacy + Terms boilerplate
-  bugs/            Active bug reports (auto-filled by /bug)
-    closed/        Closed bugs archive
-  (DESIGN.md is created from the chosen design-system at setup)
-lib/
-  analytics/       client.ts + events.ts (typed event registry) + README
-features/
-  feedback/        useFeedback hook + pattern README
-scripts/
-  pick-design-system.sh   one-shot picker (Step 3.5)
-CLAUDE.md          Claude constitution — loaded every session
-SETUP.md           Bootstrap guide (read first)
-README.md          This file
+.
+├── CLAUDE.md                 root index (thin)
+├── README.md                 this file
+├── SETUP.md                  short — most setup is per-stack
+├── LICENSE
+├── .gitignore                cross-cutting only
+├── scripts/
+│   └── new-project.sh        bootstrap helper
+├── react-native/             full React Native template
+│   ├── CLAUDE.md             RN constitution
+│   ├── SETUP.md              RN bootstrap (10 steps)
+│   ├── .claude/              6 agents + 17 commands
+│   ├── design-systems/       3 swappable
+│   ├── docs/                 PRD, ROADMAP, etc.
+│   ├── lib/                  analytics + features scaffold
+│   └── ...
+└── flutter/                  full Flutter template
+    ├── CLAUDE.md             Flutter constitution
+    ├── SETUP.md              Flutter bootstrap (10 steps)
+    ├── docs/MASTER-SPEC.md   pinned packages, idioms, gotchas
+    ├── .claude/
+    ├── design-systems/
+    ├── docs/
+    ├── lib/                  Dart scaffolding (analytics + features + firebase + routing)
+    └── ...
 ```
 
----
+## Improving the templates
 
-## When to update the template itself
+You're in this repo because you want to make a template better. Pick a stack:
 
-This template is meant to evolve. After you ship a project and notice a pattern that worked (or one that bit you), come back and:
+```bash
+cd react-native/   # or: cd flutter/
+```
 
-- Add a new slash command if you typed the same prompt 3+ times
-- Add a new edge case to `docs/TEST-PLAN.md` § Universal if a bug bit two different projects
-- Refine an agent's prompt if the agent kept making the same wrong choice
+Inside the subdir, Claude Code picks up that stack's CLAUDE.md and tooling. Make the change there. When you `git push`, the change is available for every future new project.
 
-The template is the accumulated lesson. Update it.
+If a change applies to BOTH stacks (a sharper standing rule, a new shared edge-case, etc.), mirror it across both. The two templates drift otherwise.
+
+## Adding a new stack
+
+Want a third stack (web, electron, swift)? Add a sibling subdir with the same shape — its own CLAUDE.md, SETUP.md, `.claude/`, etc. Then add it to the table in this README, the table in root `CLAUDE.md`, and the `VALID` array in `scripts/new-project.sh`. No central refactor — each stack is isolated.
+
+## License
+
+See [LICENSE](LICENSE).

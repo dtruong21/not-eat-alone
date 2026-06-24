@@ -1,36 +1,22 @@
-# Claude Code per-machine config
-.claude/settings.local.json
+# Root .gitignore — cross-cutting only. Stack-specific ignores live in each
+# subdir's .gitignore (react-native/.gitignore, flutter/.gitignore).
 
-node_modules/
-.expo/
-dist/
-web-build/
-ios/
-android/
-*.log
+# OS
 .DS_Store
-.env
-.env.local
-.env.*.local
-coverage/
+Thumbs.db
+
+# Editor / IDE
 .idea/
 .vscode/
 
-# Cloud Functions build output
-functions/lib/
+# Claude Code per-machine config (applies to any nested .claude/ directory)
+**/.claude/settings.local.json
 
-# Native build artifacts (when ejected from Expo managed)
-google-services.json
-GoogleService-Info.plist
-*.jks
-*.keystore
-xcuserdata/
+# Secrets (never committed at any level)
+**/.env
+**/.env.local
+**/.env.*.local
 
-# Fastlane
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots/**/*.png
-fastlane/test_output
-
-# Service account JSONs (NEVER commit — see docs/SECURITY.md)
-*service-account*.json
+# Coverage / logs (anywhere in the tree)
+**/coverage/
+**/*.log
