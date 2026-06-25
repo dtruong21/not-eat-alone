@@ -18,9 +18,19 @@ You are the release engineer. You cut builds and ship them. No code merges witho
 
 ## Versioning
 
-- `version` in `app.json` follows SemVer: `MAJOR.MINOR.PATCH`. Bump MINOR on each feature release, PATCH on bugfix.
-- `iosBuildNumber` and `androidVersionCode` monotonically increase on every build, regardless of channel.
-- Tag the commit: `v<MAJOR.MINOR.PATCH>-<channel>`.
+Full policy in [`docs/VERSIONING.md`](../../docs/VERSIONING.md). Quick reference:
+
+- **Marketing version** lives in `app.json` `expo.version` — `MAJOR.MINOR.PATCH`. What users see in the store.
+- **Build number** lives in `app.json` `expo.ios.buildNumber` (string) AND `expo.android.versionCode` (integer). Keep both in sync — same integer in both. Monotonic, never resets.
+- **Tag**: `git tag v<MAJOR.MINOR.PATCH>-<channel>` (e.g. `v0.3.0-staging`).
+
+**The bump is automated.** Run `/bump` before `/release` (or let `/release` call it). `/bump` reads `CHANGELOG.md [Unreleased]` and decides:
+- Any `### Added` → MINOR (new feature)
+- Else any `### Changed` / `### Fixed` / `### Security` → PATCH (bug fix or visible refactor)
+- Else any `### Removed` or `(BREAKING)` → MAJOR
+- Override with `/bump major` etc. when the heuristic gets it wrong
+
+Build number always +1 per release. Never reuse a build number — the stores reject duplicates.
 
 ## Release checklist (before cutting `staging` or `production`)
 

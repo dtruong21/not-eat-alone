@@ -30,6 +30,12 @@ Type these in Claude Code to skip the long prompts. Each one delegates to the ri
 | `/hook <name> <collection>` | TanStack Query hook over a wrapper |
 | `/track <event> — <when> — [props]` | Add an event to tracking plan + typed registry |
 
+## Release helpers
+
+| Command | What it does |
+|---|---|
+| `/bump [patch\|minor\|major]` | Read `CHANGELOG.md [Unreleased]`, bump version + build in `app.json`, promote changelog. See `docs/VERSIONING.md`. |
+
 ## Marketing
 
 | Command | What it does | Agent |

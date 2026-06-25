@@ -78,6 +78,7 @@ Definitions in `.claude/agents/`.
 
 Micro-tasks: `/bug`, `/scope-check`, `/next`, `/qa-sweep`, `/weekly-review`.
 Scaffolds: `/firestore`, `/hook`, `/track`.
+Release helpers: `/bump [patch\|minor\|major]` — read CHANGELOG, bump version + build, promote changelog (see `docs/VERSIONING.md`).
 Marketing: `/aso`, `/launch <channel>`.
 Efficiency: `/why`, `/diff`.
 

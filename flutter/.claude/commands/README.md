@@ -30,6 +30,12 @@ Type these in Claude Code to skip the long prompts. Each one delegates to the ri
 | `/provider <name> <collection>` | Riverpod AsyncNotifier over a repository |
 | `/track <event> — <when> — [props]` | Add an event to tracking plan + typed registry |
 
+## Release helpers
+
+| Command | What it does |
+|---|---|
+| `/bump [patch\|minor\|major]` | Read `CHANGELOG.md [Unreleased]`, bump `version:` in `pubspec.yaml`, promote changelog. See `docs/VERSIONING.md`. |
+
 ## Marketing
 
 | Command | What it does | Agent |

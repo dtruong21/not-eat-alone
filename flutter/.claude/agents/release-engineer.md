@@ -20,9 +20,18 @@ Workflows are defined in `codemagic.yaml`. Each is triggered by pushing a tag (e
 
 ## Versioning
 
-- `version:` in `pubspec.yaml` follows SemVer + build number: `MAJOR.MINOR.PATCH+BUILD` (e.g. `0.3.0+42`). Flutter maps the segment before `+` to `CFBundleShortVersionString` / `versionName`, and the segment after `+` to `CFBundleVersion` / `versionCode`.
-- Bump MINOR on each feature release, PATCH on bugfix. The build number (`+BUILD`) increments monotonically on EVERY build, regardless of channel — never reuse a build number, the stores will reject it.
-- Tag the commit: `v<MAJOR.MINOR.PATCH>-<channel>`. The tag push is what triggers Codemagic.
+Full policy in [`docs/VERSIONING.md`](../../docs/VERSIONING.md). Quick reference:
+
+- **`version:` in `pubspec.yaml`** = `MAJOR.MINOR.PATCH+BUILD` (e.g. `0.3.0+42`). Flutter maps the part before `+` to `CFBundleShortVersionString` / `versionName`, the part after to `CFBundleVersion` / `versionCode`.
+- **Tag**: `git tag v<MAJOR.MINOR.PATCH>-<channel>` (e.g. `v0.3.0-staging`). The tag push triggers the matching Codemagic workflow in `codemagic.yaml`.
+
+**The bump is automated.** Run `/bump` before `/release` (or let `/release` call it). `/bump` reads `CHANGELOG.md [Unreleased]` and decides:
+- Any `### Added` → MINOR (new feature)
+- Else any `### Changed` / `### Fixed` / `### Security` → PATCH (bug fix or visible refactor)
+- Else any `### Removed` or `(BREAKING)` → MAJOR
+- Override with `/bump major` etc. when the heuristic gets it wrong
+
+Build number always +1 per release. Never reuse — the stores reject duplicates.
 
 ## Release checklist (before cutting `staging` or `production`)
 
