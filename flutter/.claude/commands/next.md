@@ -6,7 +6,7 @@ Read `docs/ROADMAP.md` and `docs/PRD.md`. Look at the current state of the repo 
 
 ```
 Next: <single action, ≤15 words>
-Agent: <which of the 5 agents owns it>
+Hat: <owning role: strategist | designer | engineer | qa | release | marketer>
 Why: <one sentence>
 ```
 
