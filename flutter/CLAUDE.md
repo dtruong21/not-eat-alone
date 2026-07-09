@@ -38,7 +38,7 @@ docs/               specs, process, release
 
 ## How we work (Pro-optimized)
 
-Routine work runs **in the main loop** via slash commands — no sub-agent spawn, no re-paid context tax. Spawn a sub-agent only when isolation genuinely pays: `/test` (the `qa-engineer` agent reads a lot) and wide multi-file searches (the built-in **Explore** agent).
+Routine work runs **in the main loop** via slash commands — no sub-agent spawn, no re-paid context tax. Spawn a sub-agent only when isolation genuinely pays: `/test` and `/qa-sweep` (the `qa-engineer` agent reads a lot) and wide multi-file searches (the built-in **Explore** agent).
 
 Workflow: `/spec → /design → /build → /test → /release → /launch`. Each phase's output feeds the next; don't skip. If a later phase finds an earlier one wrong, fix it there. Full process: `docs/WORKFLOWS.md`.
 
