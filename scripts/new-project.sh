@@ -6,7 +6,8 @@
 #   ./scripts/new-project.sh flutter      ~/Documents/my-new-app
 #
 # What it does:
-#   1. Copies <stack>/ into <target-dir> (excluding .git).
+#   1. Copies <stack>/ into <target-dir> (git-tracked files only — no gitignored
+#      local cruft like .claude/settings.local.json or .env leaks through).
 #   2. Initializes a fresh git repo on `main` in the target.
 #   3. Prints next steps (follow the target's SETUP.md from Step 2).
 
@@ -55,9 +56,16 @@ fi
 
 mkdir -p "$TARGET"
 
-# Copy everything from the stack subdir, excluding any nested .git (shouldn't
-# exist, but be defensive).
-( cd "$SRC" && tar --exclude=".git" -cf - . ) | ( cd "$TARGET" && tar -xf - )
+# Copy the stack subdir into the target. Prefer a git-tracked-files-only copy so
+# gitignored local cruft (.claude/settings.local.json, .env, build artifacts)
+# never leaks into the new project. Intended-empty dirs survive via their tracked
+# .gitkeep. If the template isn't a git checkout (e.g. extracted from a tarball),
+# fall back to a raw copy that still excludes .git and known local settings.
+if git -C "$SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  ( cd "$SRC" && git ls-files -z | tar --null --files-from=- -cf - ) | ( cd "$TARGET" && tar -xf - )
+else
+  ( cd "$SRC" && tar --exclude=".git" --exclude="settings.local.json" -cf - . ) | ( cd "$TARGET" && tar -xf - )
+fi
 
 cd "$TARGET"
 git init -b main >/dev/null
