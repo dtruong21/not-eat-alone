@@ -33,7 +33,7 @@ When you're torn, default to **Notion-GitHub** — it's the most neutral and age
 ## Discipline once picked
 
 The chosen system is the contract:
-- Add new tokens via the `ux-designer` agent (see `.claude/agents/ux-designer.md`).
+- Add new tokens via `/design` (see `docs/PRINCIPLES.md` � Role hats).
 - Components import from `lib/design/tokens.ts` — never use magic values.
 - If you find yourself fighting the system on 3+ screens, you picked the wrong one. Reset by re-running the picker — but ONLY before you've built much. Switching mid-build is expensive.
 

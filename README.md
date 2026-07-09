@@ -1,6 +1,6 @@
 # Project templates
 
-A family of opinionated scaffolds for solo-built mobile MVPs. One Gitea repo, one subdir per stack. Pick the stack — get the full Claude Code workflow, 6 specialized agents, 17 slash commands, 3 swappable design systems, QA gate, tracking plan, launch playbook.
+A family of opinionated scaffolds for solo-built mobile MVPs. One Gitea repo, one subdir per stack. Pick the stack — get a lean main-loop Claude Code workflow (1 custom sub-agent + 16 slash commands, role "hats" for the rest), 3 swappable design systems, QA gate, tracking plan, launch playbook. Tuned for Claude Pro usage limits.
 
 ## Stacks shipped
 
@@ -33,12 +33,12 @@ The helper copies the chosen stack, detaches the template's git history, and sta
 
 | Layer | What's in it |
 |---|---|
-| **Claude config** | 6 specialized agents (product-strategist, ux-designer, mobile-engineer, qa-engineer, release-engineer, marketer) + 17 slash commands |
-| **Workflow** | Strict `/spec → /design → /build → /test → /release → /launch` pipeline, agent handoffs documented in `docs/WORKFLOWS.md` |
+| **Claude config** | 1 custom sub-agent (`qa-engineer`) + 16 slash commands. Other roles run in the main loop as "hats" (`docs/PRINCIPLES.md`) — no per-phase sub-agent spawn. Tuned for Claude Pro. |
+| **Workflow** | Strict `/spec → /design → /build → /test → /release → /launch` pipeline, main-loop phases documented in `docs/WORKFLOWS.md` |
 | **Design system family** | 3 swappable: `notion-github`, `linear-minimal`, `warm-playful`. Pick one per project via `scripts/pick-design-system.sh`. |
 | **Analytics layer** | Tracking plan + typed event registry (TS for RN / Dart sealed class for Flutter) + provider-agnostic client. |
 | **Feedback loop** | In-app feedback feature scaffold + Firestore pattern + `feedback_submitted` event. |
-| **Launch playbook** | Marketer agent + `docs/LAUNCH.md` runbook + `/aso` + `/launch <channel>`. |
+| **Launch playbook** | Marketer hat + `docs/LAUNCH.md` runbook + `/aso` + `/launch <channel>`. |
 | **Solo-dev forcing functions** | `/weekly-review` Monday checkpoint, MVP-first defaults, burnout flagging. |
 | **QA gate** | Severity rubric, universal edge-case checklist, bug templates, pre-release gate. |
 | **Docs scaffolding** | PRD, ROADMAP, WORKFLOWS, TRACKING-PLAN, TEST-PLAN, RELEASE, LAUNCH, SECURITY, STORE_METADATA, legal templates. |
@@ -49,7 +49,7 @@ The helper copies the chosen stack, detaches the template's git history, and sta
 2. **UX is the top priority** — wins every trade-off except MVP scope. States (empty/loading/error/offline) are first-class.
 3. **QA gates releases.** No release ships with open P0/P1 bugs. Every fix ships with a regression test.
 4. **Analytics-first.** Tracking plan precedes code. Events are typed. No PII as properties.
-5. **Token discipline.** Slash commands delegate to agents; pre-filled prompts keep main-loop context lean.
+5. **Token discipline.** Commands run in the main loop as role "hats" (no per-phase sub-agent spawn); pre-filled prompts keep responses tight. Tuned for Claude Pro usage limits.
 
 ## File layout (this repo)
 
@@ -65,7 +65,7 @@ The helper copies the chosen stack, detaches the template's git history, and sta
 ├── react-native/             full React Native template
 │   ├── CLAUDE.md             RN constitution
 │   ├── SETUP.md              RN bootstrap (10 steps)
-│   ├── .claude/              6 agents + 17 commands
+│   ├── .claude/              qa-engineer agent + 16 commands
 │   ├── design-systems/       3 swappable
 │   ├── docs/                 PRD, ROADMAP, etc.
 │   ├── lib/                  analytics + features scaffold

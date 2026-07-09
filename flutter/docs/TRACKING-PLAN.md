@@ -103,5 +103,5 @@ Sparse — only properties that drive segmentation or are needed for cross-event
 ## Review cadence
 
 - **Per release:** `qa-engineer` verifies that every new event in this release actually fires in the dev build (instrumentation drift is real).
-- **Monthly:** `product-strategist` reviews this doc against the dashboards. Any event with zero usage in the last 30 days gets deleted (from both this doc and `events.dart`).
+- **Monthly:** review this doc (a `/weekly-review`-style pass) against the dashboards. Any event with zero usage in the last 30 days gets deleted (from both this doc and `events.dart`).
 - **Per pivot:** if the NSM changes, this doc is rewritten before any events get added or changed.

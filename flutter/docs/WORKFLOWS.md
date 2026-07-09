@@ -1,43 +1,21 @@
 # Workflows
 
-How work moves from idea to shipped. Six agents, five workflows.
+How work moves from idea to shipped. Five phases, one main loop.
 
-## Agent handoff map
+## The model (Pro-optimized)
+
+Each phase is a **hat you wear in the main loop** via a slash command — not a separate agent you spawn. Same conversation, same context, so you don't re-pay the context tax at every handoff. The one exception is QA, which spawns the `qa-engineer` sub-agent (`/test`, `/qa-sweep`) because it reads a lot and isolation keeps that off the main thread. Wide multi-file searches go to the built-in **Explore** agent.
 
 ```
-                  ┌─────────────────────┐
-                  │  product-strategist │   defines what + why
-                  └──────────┬──────────┘
-                             │ PRD entry
-                             ▼
-                  ┌─────────────────────┐
-                  │     ux-designer     │   defines how it looks
-                  └──────────┬──────────┘
-                             │ Design spec
-                             ▼
-                  ┌─────────────────────┐
-                  │   mobile-engineer   │   implements + instruments
-                  └──────────┬──────────┘
-                             │ Working code + tracked events
-                             ▼
-                  ┌─────────────────────┐
-                  │     qa-engineer     │   verifies (code + analytics)
-                  └──────────┬──────────┘
-                             │ Sign-off
-                             ▼
-                  ┌─────────────────────┐
-                  │  release-engineer   │   ships build
-                  └──────────┬──────────┘
-                             │ Build live on TestFlight / Play
-                             ▼
-                  ┌─────────────────────┐
-                  │      marketer       │   launches it to the world
-                  └─────────────────────┘
+/spec      strategist   →  defines what + why       (docs/PRD.md)
+/design    designer     →  defines how it looks      (docs/DESIGN.md)
+/build     engineer     →  implements + instruments  (code + tracked events)
+/test      qa-engineer  →  verifies (code+analytics) [SUB-AGENT]
+/release   release      →  ships the build via Codemagic
+/launch    marketer     →  launches it to the world  (parallel from T-4w)
 ```
 
-Each agent's output is the next agent's input. Don't skip steps.
-
-The `marketer` also runs in parallel with engineering during the T-4w → T-0 ramp (see `docs/LAUNCH.md`) — store listings, landing-page copy, ASO research happen alongside the build, not after.
+Each phase's output feeds the next. Don't skip. If a later phase finds an earlier one wrong, fix it at the source (re-`/spec` a bad requirement; re-`/design` a bad layout) — don't patch over it downstream. Hat operating rules live in `docs/PRINCIPLES.md § Role hats`.
 
 ---
 
@@ -45,16 +23,13 @@ The `marketer` also runs in parallel with engineering during the T-4w → T-0 ra
 
 **Trigger:** new feature idea, user request, or backlog item.
 
-1. **Strategize** — `/spec <name> — <idea>` (product-strategist). PRD entry: user story, acceptance criteria, edge cases, out of scope. Appended to `docs/PRD.md`.
-2. **Design** — `/design <screen>` (ux-designer). Screen spec, components list, states. Appended to `docs/DESIGN.md`. Mockup via Artifact if layout is non-obvious.
-3. **Implement** — `/build <feature>` (mobile-engineer). Data layer (`lib/core/firebase/...`) → Riverpod notifier → widget → route. In that order. Types everything. Tests happy path on iOS Simulator + Android Emulator.
-4. **QA** — `/test <feature>` (qa-engineer). Widget tests for the notifier + screen, edge-case sweep, bugs filed as `docs/bugs/<date>-<slug>.md`. Test plan updated.
-5. **Loop** until P0/P1 bugs are clear. Then mark PRD entry `shipped` and move on.
+1. **Spec** — `/spec <name> — <idea>`. PRD entry: user story, acceptance criteria, edge cases, out of scope. Appended to `docs/PRD.md`. Bias to CUT.
+2. **Design** — `/design <screen>`. Screen spec, widgets list, all states. Appended to `docs/DESIGN.md`. Mockup via Artifact only if the layout is non-obvious.
+3. **Build** — `/build <feature>`. Repository (`lib/core/firebase/…`) → Riverpod provider → widget → route, in that order. Types everything (freezed + `@TimestampConverter`). Runs codegen. Instruments analytics. Tests happy path on iOS Simulator + Android Emulator.
+4. **QA** — `/test <feature>`. Spawns `qa-engineer`: widget tests for the provider + screen, edge-case sweep, bugs filed as `docs/bugs/<date>-<slug>.md`, test plan updated.
+5. **Loop** until P0/P1 bugs are clear. Then mark the PRD entry `shipped` and move on.
 
-**Hard rules:**
-- Don't start step N before step N-1 is done.
-- If `mobile-engineer` discovers the spec is wrong, kick back to `product-strategist` — don't fix it on the fly.
-- If `ux-designer` realizes the design needs scope change, kick back to `product-strategist`.
+**Hard rule:** don't start step N before step N-1 is done. New scope mid-build → run `/scope-check`, don't just absorb it.
 
 ---
 
@@ -62,48 +37,44 @@ The `marketer` also runs in parallel with engineering during the T-4w → T-0 ra
 
 **Trigger:** bug reported (from QA, beta tester, production crash).
 
-1. **Triage** — `qa-engineer` confirms repro, assigns severity (P0–P3), files the report.
-2. **Diagnose** — `mobile-engineer` finds the root cause. If it's a spec gap (the bug exists because the requirement was ambiguous), kick to `product-strategist` for a PRD clarification.
-3. **Fix** — `mobile-engineer` writes the minimal fix + a regression test that would have caught it. **The regression test is the price of admission** — no fix ships without one.
-4. **Verify** — `qa-engineer` confirms the original repro is dead and runs related edge cases.
-5. **Close** — bug file moves to `docs/bugs/closed/`. If P0/P1, append entry to next release's CHANGELOG.
+1. **Triage** — `/bug` (or `/qa-sweep` for a spawned pass): confirm repro, assign severity (P0–P3), file the report.
+2. **Diagnose** — find root cause in the main loop. If it's a spec gap (bug exists because the requirement was ambiguous), re-`/spec` for a PRD clarification.
+3. **Fix** — write the minimal fix + a regression test that would have caught it. **The regression test is the price of admission** — no fix ships without one.
+4. **Verify** — `/test` (or `/qa-sweep`) confirms the original repro is dead and runs related edge cases.
+5. **Close** — bug file moves to `docs/bugs/closed/`. If P0/P1, add an entry to the next release's CHANGELOG.
 
-**Severity → urgency:**
-- P0: drop everything, ship a hotfix this day.
-- P1: must clear before next release.
-- P2: targeted for next release if cheap, otherwise next-next.
-- P3: backlog.
+**Severity → urgency:** P0 = hotfix today · P1 = clear before next release · P2 = next release if cheap · P3 = backlog.
 
 ---
 
 ## Workflow 3 — Release
 
-**Trigger:** milestone hit (e.g. all pillar-1 features shipping), or scheduled cadence (every 1–2 weeks).
+**Trigger:** milestone hit (all pillar-1 features shipping), or scheduled cadence (every 1–2 weeks).
 
-1. **QA sign-off** — `qa-engineer` runs the full pre-release checklist (`docs/TEST-PLAN.md` + agent's pre-release section). No P0/P1 outstanding.
-2. **Strategize the cut** — `product-strategist` confirms what's in. Anything half-built gets feature-flagged off.
-3. **Bump + tag** — `release-engineer` bumps `version:` in `pubspec.yaml` (`X.Y.Z+buildNumber`). Updates `CHANGELOG.md`. Tags the commit.
-4. **Build** — Codemagic staging workflow (or `flutter build ipa --release` / `flutter build appbundle --release` locally).
-5. **Deploy Firebase** — security rules + Cloud Functions deployed to target environment (`firebase deploy --only firestore:rules,functions`).
-6. **Submit** — Codemagic publishing (or fastlane) to TestFlight + Play Internal.
-7. **Smoke test the build** — `qa-engineer` installs the actual artifact on real device, runs the golden path. Not the simulator build — the store build.
+1. **QA sign-off** — `/test` / `/qa-sweep` runs the full pre-release checklist (`docs/TEST-PLAN.md` + qa-engineer's pre-release section: `flutter analyze` clean, `flutter test` + `integration_test` green). No P0/P1 outstanding.
+2. **Confirm the cut** — `/scope-check` anything half-built; feature-flag it off if it's not ready.
+3. **Release** — `/release <staging|production>`: runs the checklist in `docs/RELEASE.md`, calls `/bump` (`version: X.Y.Z+N` in `pubspec.yaml`), tags the commit, prints the tag-push + `firebase deploy` commands.
+4. **Build** — pushing the tag triggers the matching Codemagic workflow in `codemagic.yaml` (build + submit in one pass).
+5. **Deploy Firebase** — security rules + indexes + Cloud Functions to the target environment.
+6. **Submit** — Codemagic publishing to TestFlight + Play Internal.
+7. **Smoke test the build** — install the actual store artifact on a real device (not the simulator build) and run the golden path.
 8. **Promote** — if `staging` validates over 2–3 days, promote to `production`.
 
-**Rollback path:** if `production` ships a P0, hotfix off the last good tag. See `release-engineer` agent for full procedure.
+**Rollback:** if `production` ships a P0, hotfix off the last good tag — don't unpublish. Flutter has no OTA; every fix is a full rebuild + store submission (Apple review is the long pole). Full procedure in `docs/PRINCIPLES.md § Release` and `docs/RELEASE.md`.
 
 ---
 
 ## Workflow 4 — Launch
 
-**Trigger:** the release is live on TestFlight / Play Internal and ready for public discovery. Follows `docs/LAUNCH.md` start to finish.
+**Trigger:** the release is live on TestFlight / Play Internal and ready for public discovery. Follows `docs/LAUNCH.md`.
 
-1. **T-4w to T-2w (parallel with engineering)** — `marketer` builds the landing page, drafts initial store listing, opens the waitlist.
-2. **T-2w** — `marketer` runs `/aso` against the latest PRD — updates `docs/STORE_METADATA.md`.
-3. **T-1w** — `marketer` runs `/launch product-hunt`, `/launch tweet`, `/launch email` to draft assets. Drafts get a review pass.
-4. **T-0 (launch day)** — `marketer` executes the launch-day checklist in `docs/LAUNCH.md`. Replies to every comment/DM within 1h.
-5. **T+7d** — `product-strategist` writes the launch retro at `docs/postmortems/<date>-launch.md` (channels, NSM movement, v1.1 priorities).
+1. **T-4w → T-2w (parallel with engineering)** — build the landing page, draft the initial store listing, open the waitlist.
+2. **T-2w** — `/aso` against the latest PRD; update `docs/STORE_METADATA.md`.
+3. **T-1w** — `/launch product-hunt`, `/launch tweet`, `/launch email` to draft assets. Review pass.
+4. **T-0** — execute the launch-day checklist in `docs/LAUNCH.md`. Reply to every comment/DM within 1h.
+5. **T+7d** — write the launch retro at `docs/postmortems/<date>-launch.md` (channels, NSM movement, v1.1 priorities).
 
-**Hard rule:** don't launch with a cold list. T-4w marketing groundwork is non-negotiable.
+**Hard rule:** don't launch to a cold list. The T-4w groundwork is non-negotiable.
 
 ---
 
@@ -111,33 +82,29 @@ The `marketer` also runs in parallel with engineering during the T-4w → T-0 ra
 
 **Trigger:** a screen exists but feels wrong, or a new design token is needed.
 
-1. `ux-designer` proposes the change in `docs/DESIGN.md` (token diff + rationale).
-2. If a token changes, `mobile-engineer` updates `lib/core/design/tokens.dart` (and any `ThemeExtension` in `theme.dart`) and the widgets consuming it.
-3. `qa-engineer` does a visual regression sweep — every screen consuming the token, on light + dark. Golden tests re-baselined if intentional.
+1. `/design` proposes the change in `docs/DESIGN.md` (token diff + rationale).
+2. If a token changes, `/build` updates `lib/core/design/tokens.dart` (and any `ThemeExtension` in `theme.dart`) and every widget consuming it.
+3. `/qa-sweep` does a visual regression pass — every screen consuming the token, light + dark. Golden tests re-baselined if intentional.
 
 ---
 
 ## Cross-cutting practices
 
-### Per session
+**Per session**
+- **Use slash commands.** Each pre-fills context and runs in the main loop — the primary token-saving lever.
+- Unsure where to pick up? `git status` + `/next` — a couple lines tell you the state.
 
-- **Use slash commands.** Each `/command` delegates to the right agent with pre-filled context. That's the project's primary token-saving lever.
-- **Open with `/diff` and `/next`** when you're unsure where to pick up — three lines tell you the state.
-
-### Daily
-
-- Update `docs/PRD.md` when scope shifts. Stale PRD is worse than no PRD.
+**Daily**
+- Update `docs/PRD.md` when scope shifts. A stale PRD is worse than none.
 - Move closed bugs to `docs/bugs/closed/`. Don't let the active dir grow.
 
-### Weekly
+**Weekly (Monday)**
+- `/weekly-review` — 15-min forcing function: stalled work, open P1s, roadmap drift, burnout risk. Lands in `docs/weekly-reviews/<date>.md`.
+- Re-check `docs/ROADMAP.md` against actual progress; re-prioritize.
+- `/qa-sweep` on `main`.
+- Scan feedback (`lib/features/feedback/` Firestore collection) — reply within 24h to anything substantive.
 
-- **Monday morning:** run `/weekly-review` — 15-min forcing function that surfaces stalled work, open P1s, roadmap drift, burnout risk. Output lands in `docs/weekly-reviews/<date>.md`.
-- `product-strategist` reviews `docs/ROADMAP.md` against actual progress. Re-prioritize.
-- `qa-engineer` re-runs the edge-case checklist (`/qa-sweep`) on `main`.
-- Scan feedback (`features/feedback/` Firestore collection) — reply within 24h to anything substantive.
-
-### Per release
-
-- `release-engineer` writes a CHANGELOG entry that a non-technical user could understand.
-- Bump `version:` in `pubspec.yaml`. Tag the commit.
+**Per release**
+- CHANGELOG entry a non-technical user could understand.
+- `/bump` the `version:` in `pubspec.yaml`; tag the commit.
 - Smoke-test the store build on a real device.

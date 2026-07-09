@@ -110,7 +110,7 @@ Related PRD entry: `docs/PRD.md § Feature: {{feature-name}}`
 
 ## Pre-release gate (must pass — no exceptions)
 
-Before `release-engineer` cuts a build:
+Before `/release` cuts a build:
 
 - [ ] `flutter analyze` is clean (zero warnings)
 - [ ] `flutter test` is green

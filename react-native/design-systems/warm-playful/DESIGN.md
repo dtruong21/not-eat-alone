@@ -129,4 +129,4 @@ Bottom sheet, radius `xl` (32) top corners only, surface bg, drag handle at top 
 
 ## Screen specs
 
-Added by `ux-designer` via `/design`.
+Added via `/design`.

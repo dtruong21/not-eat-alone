@@ -1,5 +1,5 @@
 ---
-description: Bump version + build number based on CHANGELOG [Unreleased] (release-engineer)
+description: Bump version + build number based on CHANGELOG [Unreleased] (release hat)
 argument-hint: [patch | minor | major] — optional override
 ---
 

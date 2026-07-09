@@ -1,27 +1,27 @@
 ---
-description: Implement a feature (mobile-engineer)
+description: Implement a feature (engineer hat, main loop)
 argument-hint: <feature name from PRD>
 ---
 
-Use the `mobile-engineer` agent to implement: $ARGUMENTS
+Wear the **engineer hat** (`docs/PRINCIPLES.md § Role hats`). Read `docs/MASTER-SPEC.md` first. Implement: $ARGUMENTS
 
 Pre-flight (stop and ask if any fail):
 - PRD entry exists in `docs/PRD.md` for this feature.
 - Design spec exists in `docs/DESIGN.md` if a UI is involved.
 
 Build order (strict):
-1. Repository in `lib/core/firebase/<collection>_repository.dart` (freezed model + `.withConverter`)
-2. Riverpod provider in `lib/features/<name>/application/<name>_provider.dart` (AsyncNotifier via `@riverpod`)
-3. Widget(s) in `lib/features/<name>/presentation/`
-4. Route in `lib/core/routing/router.dart` (typed via `@TypedGoRoute`)
-5. Analytics events via `/track` for any user moment that maps to a metric in `docs/TRACKING-PLAN.md`
+1. Repository in `lib/core/firebase/<collection>_repository.dart` (freezed model + `.withConverter`) — use `/firestore` to scaffold.
+2. Riverpod provider in `lib/features/<name>/application/<name>_provider.dart` (AsyncNotifier via `@riverpod`) — use `/provider` to scaffold.
+3. Widget(s) in `lib/features/<name>/presentation/`, covering empty/loading/error states.
+4. Route in `lib/core/routing/routes.dart` (typed via `@TypedGoRoute`).
+5. Analytics via `/track` for any user moment that maps to a metric in `docs/TRACKING-PLAN.md`.
 
 Constraints:
-- No `dynamic`. No direct `cloud_firestore` imports in widgets or providers — only inside `lib/core/firebase/`.
-- No magic values — pull colors/spacing/typography from `lib/core/design/tokens.dart` and `Theme.of(context)`.
-- Use `const` constructors wherever possible. No relative imports across feature boundaries — `package:app_name/...` only.
+- No `dynamic`. No `cloud_firestore` imports in widgets/providers — only inside `lib/core/firebase/`.
+- No magic values — colors/spacing/type from `lib/core/design/tokens.dart` + `Theme.of(context)`. `const` constructors wherever possible.
+- Package imports only (`package:app_name/…`) across feature boundaries — no relative cross-feature imports.
 - No direct analytics SDK calls — always `track(AppEvent.x(...))` from `lib/core/analytics/client.dart`.
-- Run `dart run build_runner build --delete-conflicting-outputs` after touching anything annotated (`@freezed`, `@riverpod`, `@TypedGoRoute`).
-- Test the happy path: `flutter test test/features/<name>/` plus a manual run on iOS + Android sim before declaring done.
-- After done, hand off to `qa-engineer` via `/test <feature>`.
-- Output: file diffs only. No restating the spec, no walkthrough of the code unless asked.
+- Run `dart run build_runner build --delete-conflicting-outputs` after touching `@freezed`/`@riverpod`/`@TypedGoRoute`.
+- Test the happy path: `flutter test test/features/<name>/` + a manual run on iOS + Android sim before declaring done.
+- After done, hand off to QA: `/test <feature>`.
+- Output: file diffs / paths only. No restating the spec, no code walkthrough unless asked.

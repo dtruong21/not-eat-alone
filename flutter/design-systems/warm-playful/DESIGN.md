@@ -274,4 +274,4 @@ ClipRRect(
 
 ## Screen specs
 
-Added by `ux-designer` via `/design`.
+Added via `/design`.
