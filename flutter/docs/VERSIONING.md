@@ -66,7 +66,7 @@ The `/bump` command reads these headings to decide:
 | `### Removed` | MAJOR |
 | `### Security` | PATCH (urgency without breakage) |
 
-Anything not user-visible (internal refactor, dev tooling, test additions, codegen updates, CI tweaks) does NOT go in `CHANGELOG.md`. The release-engineer agent enforces this.
+Anything not user-visible (internal refactor, dev tooling, test additions, codegen updates, CI tweaks) does NOT go in `CHANGELOG.md`. The `/release` flow enforces this.
 
 ## Hotfix flow
 

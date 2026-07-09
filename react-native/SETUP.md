@@ -122,7 +122,7 @@ After running:
 
 ## Step 4 — Define your pillars in `docs/PRD.md`
 
-Open `docs/PRD.md` and replace the pillar placeholders with 2–4 *actual* pillars for your product. **This is the most important step.** Every future feature will be scored against these pillars by the `product-strategist` agent and the `/scope-check` command. If the pillars are vague, the gatekeeping is vague.
+Open `docs/PRD.md` and replace the pillar placeholders with 2–4 *actual* pillars for your product. **This is the most important step.** Every future feature will be scored against these pillars by `/spec` (strategist hat) and `/scope-check`. If the pillars are vague, the gatekeeping is vague.
 
 A good pillar:
 - Is one sentence.
@@ -240,7 +240,7 @@ Test the rules in the Firebase Console → Firestore → Rules → Playground ta
 /spec sign-in — Email/password auth with anonymous-account linking
 ```
 
-The `product-strategist` agent will write the entry under the matching pillar. Iterate until you're happy.
+`/spec` (strategist hat) will write the entry under the matching pillar. Iterate until you're happy.
 
 ---
 
@@ -252,13 +252,13 @@ The workflow is strict and the slash commands enforce it:
 /spec    →  /design   →  /build   →  /test   →  /release
 ```
 
-Each command delegates to the right agent. Each agent's output is the next agent's input. **Don't skip.**
+Each command runs in the main loop as a role "hat" (except `/test`, which spawns the `qa-engineer` sub-agent). Each phase's output is the next phase's input. **Don't skip.**
 
 When you're not sure where to pick up:
 
 ```bash
-/next       # one-line recommendation
-/diff       # what's in the working tree
+/next        # one-line recommendation
+git status   # what's in the working tree
 ```
 
 ---

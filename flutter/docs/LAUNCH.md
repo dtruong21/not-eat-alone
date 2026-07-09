@@ -8,19 +8,19 @@ Solo dev = solo marketer. The product won't market itself. This playbook is the 
 
 ## T-minus timeline (read backward from public launch day)
 
-| When | What | Owner |
+| When | What | Hat / command |
 |---|---|---|
-| **T-4 weeks** | Build a landing page with email capture | `marketer` |
-| **T-3 weeks** | Beta invite first 20 users (TestFlight + Play Internal) | `marketer` + `release-engineer` |
-| **T-2 weeks** | ASO research, draft store listing v1 | `marketer` |
-| **T-10 days** | Submit to App Store + Play Store review | `release-engineer` |
-| **T-7 days** | Draft launch-day tweet thread + Product Hunt assets | `marketer` |
-| **T-5 days** | Email "we're launching!" to waitlist | `marketer` |
-| **T-3 days** | Reach out to 5 niche newsletters / Discord communities | `marketer` |
-| **T-1 day** | Confirm Product Hunt hunter (or self-launch) | `marketer` |
-| **Launch day** | Coordinated post → PH → tweet thread → email → community pings | `marketer` |
-| **T+1 day** | Reply to every comment / DM / email personally | `marketer` |
-| **T+7 days** | Post-launch retrospective + plan v1.1 | `product-strategist` |
+| **T-4 weeks** | Build a landing page with email capture | marketer hat |
+| **T-3 weeks** | Beta invite first 20 users (TestFlight + Play Internal) | marketer hat + `/release` |
+| **T-2 weeks** | ASO research, draft store listing v1 | `/aso` |
+| **T-10 days** | Submit to App Store + Play Store review | `/release` |
+| **T-7 days** | Draft launch-day tweet thread + Product Hunt assets | `/launch` |
+| **T-5 days** | Email "we're launching!" to waitlist | `/launch email` |
+| **T-3 days** | Reach out to 5 niche newsletters / Discord communities | `/launch community` |
+| **T-1 day** | Confirm Product Hunt hunter (or self-launch) | marketer hat |
+| **Launch day** | Coordinated post → PH → tweet thread → email → community pings | marketer hat |
+| **T+1 day** | Reply to every comment / DM / email personally | marketer hat |
+| **T+7 days** | Post-launch retrospective + plan v1.1 | strategist hat |
 
 ---
 
@@ -115,7 +115,7 @@ Pin this. Tick as you go.
 
 ## After-action
 
-`product-strategist` writes a retrospective at `docs/postmortems/<date>-launch.md`:
+Write a retrospective (strategist hat) at `docs/postmortems/<date>-launch.md`:
 - Total signups
 - D1 retention
 - NSM after 7 days

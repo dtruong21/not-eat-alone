@@ -1,9 +1,9 @@
 ---
-description: ASO (App Store Optimization) research + draft (marketer)
+description: ASO (App Store Optimization) research + draft (marketer hat, main loop)
 argument-hint: [optional: focus area — e.g. "keyword research" or "title rewrite"]
 ---
 
-Use the `marketer` agent to do ASO work for the current project: $ARGUMENTS
+Wear the **marketer hat** (`docs/PRINCIPLES.md § Role hats`). Do ASO work for the current project: $ARGUMENTS
 
 Default scope (when no args): full ASO pass:
 1. Read `docs/PRD.md § Vision` + `docs/PRD.md § Pillars` to understand the product.

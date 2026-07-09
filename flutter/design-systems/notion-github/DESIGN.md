@@ -184,7 +184,7 @@ MaterialApp.router(
 
 ## Screen specs
 
-Added by `ux-designer` via `/design`. One entry per screen.
+Added via `/design`. One entry per screen.
 
 ---
 

@@ -93,7 +93,7 @@ Related PRD entry: `docs/PRD.md § Feature: {{feature-name}}`
 
 ## Pre-release gate (must pass — no exceptions)
 
-Before `release-engineer` cuts a build:
+Before `/release` cuts a build:
 
 - [ ] All universal edge cases pass on iOS + Android simulator
 - [ ] All feature checklists for this release pass

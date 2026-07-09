@@ -104,4 +104,4 @@ Inline `monoMd` chip showing a keyboard shortcut. `border` outline, `surface` bg
 
 ## Screen specs
 
-Added by `ux-designer` via `/design`.
+Added via `/design`.

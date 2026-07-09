@@ -207,4 +207,4 @@ Forgetting `part 'routes.g.dart';` in `routes.dart` results in cryptic "unresolv
 - New idiom (e.g. switch from `flutter_animate` to `flutter_motion`) → update §3 here AND the relevant agent prompt.
 - New gotcha discovered → append to §5 with a one-line cause + symptom + fix.
 
-The agents (`mobile-engineer`, `qa-engineer`) point here by name. Keep it accurate.
+The engineer hat (`/build`) and the `qa-engineer` agent point here by name. Keep it accurate.

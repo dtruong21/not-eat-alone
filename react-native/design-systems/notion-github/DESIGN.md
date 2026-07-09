@@ -100,4 +100,4 @@ Mono count + icon. `monoMd` default, `monoLg` for hero.
 
 ## Screen specs
 
-Added by `ux-designer` via `/design`. One entry per screen.
+Added via `/design`. One entry per screen.

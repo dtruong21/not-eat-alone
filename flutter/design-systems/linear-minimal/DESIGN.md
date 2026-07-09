@@ -168,4 +168,4 @@ The `hintBackground` / `hintBorder` / `hintText` tokens are exposed on the `AppP
 
 ## Screen specs
 
-Added by `ux-designer` via `/design`.
+Added via `/design`.

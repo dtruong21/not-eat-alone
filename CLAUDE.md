@@ -29,9 +29,9 @@ You're here because you're improving the templates (not building a new project).
 cd react-native/   # or: cd flutter/
 ```
 
-Inside the subdir, the full Claude Code setup is active — that subdir's `CLAUDE.md`, its 6 agents (`.claude/agents/`), its 17 slash commands (`.claude/commands/`). Work there.
+Inside the subdir, the full Claude Code setup is active — that subdir's `CLAUDE.md`, its one custom sub-agent (`qa-engineer` in `.claude/agents/`), its 16 slash commands (`.claude/commands/`), and its role "hats" in `docs/PRINCIPLES.md`. Most work runs in the main loop as a hat; only `/test` and `/qa-sweep` spawn a sub-agent. This is tuned for Claude Pro usage limits. Work there.
 
-If a change applies to BOTH stacks (e.g. a sharpened agent prompt, a new standing rule, an additional edge-case in TEST-PLAN.md), **mirror it across both stacks**. Otherwise they drift.
+If a change applies to BOTH stacks (e.g. a sharpened command or role hat, a new standing rule, an additional edge-case in TEST-PLAN.md), **mirror it across both stacks**. Otherwise they drift.
 
 ## Adding a new stack
 

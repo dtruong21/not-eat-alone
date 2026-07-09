@@ -23,7 +23,7 @@ Then produce a structured review in EXACTLY this format:
 - <commit gist 2>
 
 ## What's in flight
-- <feature>: <% done> — owner: <agent>, blocker: <none | <thing>>
+- <feature>: <% done> — blocker: <none | <thing>>
 
 ## Open bug surface
 - P0: <count>  ·  P1: <count>  ·  P2: <count>  ·  P3: <count>
@@ -32,7 +32,7 @@ Then produce a structured review in EXACTLY this format:
 ## Roadmap reality check
 - On track for <next phase>: <Y / N — one line why>
 - Slipping: <feature or N/A>
-- New scope creep: <feature or N/A — kick to product-strategist if Y>
+- New scope creep: <feature or N/A — run `/scope-check` if Y>
 
 ## Feedback signal
 - Top theme from last 7 days: <one line, or "no new feedback">

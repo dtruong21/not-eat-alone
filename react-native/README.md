@@ -10,16 +10,16 @@ A starting point for solo-built mobile MVPs. Ships the Claude Code config, docs 
 
 | Layer | Content |
 |---|---|
-| **Claude config** | 6 specialized agents (product-strategist, ux-designer, mobile-engineer, qa-engineer, release-engineer, marketer) + 17 slash commands |
+| **Claude config** | 1 custom sub-agent (`qa-engineer`) + 16 slash commands. The other roles run **in the main loop as "hats"** (`docs/PRINCIPLES.md § Role hats`) — no per-phase sub-agent spawn, so you don't re-pay the context tax. Tuned for Claude Pro usage limits. |
 | **Workflow** | Strict spec → design → build → test → release pipeline with handoff rules |
 | **Design system family** | 3 cross-platform pre-built systems: `notion-github`, `linear-minimal`, `warm-playful`. Pick one per project during setup. |
 | **Analytics layer** | Tracking plan (`docs/TRACKING-PLAN.md`) + typed event registry + provider-agnostic client. `/track` keeps the doc and types in sync. |
 | **Feedback loop** | In-app feedback hook + Firestore pattern + `feedback_submitted` event baked in. |
-| **Launch playbook** | Marketer agent + `LAUNCH.md` runbook + `/aso` + `/launch <channel>` commands. |
+| **Launch playbook** | Marketer hat + `LAUNCH.md` runbook + `/aso` + `/launch <channel>` commands. |
 | **Solo-dev forcing functions** | `/weekly-review` Monday checkpoint, energy check, burnout flagging. |
 | **Docs scaffolding** | PRD, Workflows, Tracking plan, Test plan, Roadmap, Release runbook, Launch playbook, Security, Store metadata, Legal templates |
 | **QA emphasis** | Severity rubric, universal edge-case checklist, bug templates, pre-release gate |
-| **Token discipline** | Slash commands delegate to agents (keeps main-loop context lean) + constrained output formats |
+| **Token discipline** | Commands run in the main loop as role "hats" — no per-phase sub-agent re-loading context (`docs/PRINCIPLES.md`) + constrained output formats |
 
 ---
 
@@ -30,14 +30,14 @@ Read [`SETUP.md`](SETUP.md) end-to-end. It walks you through copying the templat
 Once instantiated, the development loop is:
 
 ```
-/spec <feature>      → product-strategist writes the PRD entry
-/design <screen>     → ux-designer writes the screen spec
-/build <feature>     → mobile-engineer implements it
-/test <feature>      → qa-engineer writes tests + edge-case sweep
-/release <channel>   → release-engineer cuts the build
+/spec <feature>      → strategist hat writes the PRD entry
+/design <screen>     → designer hat writes the screen spec
+/build <feature>     → engineer hat implements it
+/test <feature>      → qa-engineer AGENT writes tests + edge-case sweep
+/release <channel>   → release hat cuts the build
 ```
 
-Plus micro-tasks (`/bug`, `/scope-check`, `/next`, `/qa-sweep`), scaffolds (`/firestore`, `/hook`), and efficiency commands (`/why`, `/diff`).
+All phases except `/test` run in the main loop. Plus micro-tasks (`/bug`, `/scope-check`, `/next`, `/qa-sweep`, `/weekly-review`), scaffolds (`/firestore`, `/hook`, `/track`), and release/marketing (`/bump`, `/aso`, `/launch`).
 
 Full slash-command index at [`.claude/commands/README.md`](.claude/commands/README.md).
 
@@ -46,7 +46,7 @@ Full slash-command index at [`.claude/commands/README.md`](.claude/commands/READ
 ## Design philosophy
 
 - **Solo developer first.** No CODEOWNERS, no PR templates, no team rituals. Add them when you have a team.
-- **Token efficiency through delegation.** Each agent's specialist context lives in its `.md` file — loaded only when its slash command fires.
+- **Token efficiency for Claude Pro.** Routine phases run in the main loop as role "hats" — no per-phase sub-agent re-loading CLAUDE.md + a role file + docs. Only heavy QA (`/test`, `/qa-sweep`) spawns a sub-agent.
 - **QA is the gate.** No release ships without a green run of the test plan.
 - **Strict ordering.** Spec → Design → Build → Test. Skipping a step always costs more later.
 
@@ -61,7 +61,7 @@ This template lives in the [`react-native/`](.) subdir of a multi-stack template
 | **React Native** (this one) | `react-native/` | JavaScript ecosystem, EAS Build for cloud builds, Zustand + TanStack Query, NativeWind. Fastest iteration. |
 | **Flutter** | `../flutter/` | Dart strict typing, native compiled UI, Material 3, Riverpod with codegen, Codemagic for cloud builds. Strongest correctness guarantees. |
 
-Both share the same workflow (`/spec → /design → /build → /test → /release → /launch`), the same 6 agents + 17 slash commands shape, the same 3 swappable design systems (notion-github, linear-minimal, warm-playful), and the same standing rules (MVP-first, UX priority, QA gate, analytics-first, token discipline). Pick the stack; the process is the same.
+Both share the same workflow (`/spec → /design → /build → /test → /release → /launch`), the same main-loop "hats" + slash-command shape (one custom `qa-engineer` sub-agent each), the same 3 swappable design systems (notion-github, linear-minimal, warm-playful), and the same standing rules (MVP-first, UX priority, QA gate, analytics-first, token discipline). Pick the stack; the process is the same.
 
 ## Why Firebase
 
@@ -80,8 +80,8 @@ If you're considering a different backend (Supabase, custom Node, etc.), this te
 
 ```
 .claude/
-  agents/          6 specialized agents (incl. marketer)
-  commands/        17 slash commands (workflow + micro-tasks + scaffolds + marketing + efficiency)
+  agents/          qa-engineer — the one custom sub-agent (others are main-loop "hats")
+  commands/        16 slash commands (workflow + micro-tasks + scaffolds + marketing)
 design-systems/    3 pre-built systems (pick one in SETUP.md Step 3.5)
   notion-github/   tokens.ts + DESIGN.md + tailwind preset + mood.svg
   linear-minimal/  ...
@@ -89,7 +89,8 @@ design-systems/    3 pre-built systems (pick one in SETUP.md Step 3.5)
   README.md        which-to-pick guide
 docs/
   PRD.md           Product requirements (pillars + feature specs)
-  WORKFLOWS.md     Agent handoff map + 4 workflows
+  PRINCIPLES.md    Standing rules (MVP/UX/analytics/QA/security) + role "hats"
+  WORKFLOWS.md     5-phase main-loop flow + 5 workflows
   TRACKING-PLAN.md Analytics PRD (events, properties, metrics, privacy)
   TEST-PLAN.md     QA checklist (universal + per-feature)
   ROADMAP.md       Phase status
@@ -121,6 +122,6 @@ This template is meant to evolve. After you ship a project and notice a pattern 
 
 - Add a new slash command if you typed the same prompt 3+ times
 - Add a new edge case to `docs/TEST-PLAN.md` § Universal if a bug bit two different projects
-- Refine an agent's prompt if the agent kept making the same wrong choice
+- Refine a command's prompt (or a role hat in `docs/PRINCIPLES.md`) if it kept making the same wrong choice
 
 The template is the accumulated lesson. Update it.

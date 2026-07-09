@@ -1,9 +1,9 @@
 ---
-description: Produce launch-day asset for a channel (marketer)
+description: Produce launch-day asset for a channel (marketer hat, main loop)
 argument-hint: <product-hunt | tweet | email | community | press>
 ---
 
-Use the `marketer` agent to produce a launch asset for channel: $ARGUMENTS
+Wear the **marketer hat** (`docs/PRINCIPLES.md § Role hats`). Produce a launch asset for channel: $ARGUMENTS
 
 Follow `docs/LAUNCH.md` for what each channel needs.
 
