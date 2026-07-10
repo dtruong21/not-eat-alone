@@ -1,12 +1,15 @@
 # Workflows
 
-How work moves from idea to shipped. Five phases, one main loop.
+How work moves from raw business idea to shipped and launched. One main loop.
 
 ## The model (Pro-optimized)
 
-Each phase is a **hat you wear in the main loop** via a slash command — not a separate agent you spawn. Same conversation, same context, so you don't re-pay the context tax at every handoff. The one exception is QA, which spawns the `qa-engineer` sub-agent (`/test`, `/qa-sweep`) because it reads a lot and isolation keeps that off the main thread. Wide multi-file searches go to the built-in **Explore** agent.
+Each phase is a **hat you wear in the main loop** via a slash command — not a separate agent you spawn. Same conversation, same context, so you don't re-pay the context tax at every handoff. The one default exception is QA, which spawns the `qa-engineer` sub-agent (`/test`, `/qa-sweep`) because it reads a lot and isolation keeps that off the main thread. Wide multi-file searches go to the built-in **Explore** agent.
+
+Every hat also exists as an **opt-in sub-agent** in `.claude/agents/` — spawn one only when the work is big enough to isolate (deep idea validation with web research, a whole-app design pass, a multi-feature build batch, a full launch-asset batch). Otherwise wear the hat.
 
 ```
+/idea      strategist   →  validates it's worth building (GO/PIVOT/KILL)
 /spec      strategist   →  defines what + why      (docs/PRD.md)
 /design    designer     →  defines how it looks     (docs/DESIGN.md)
 /build     engineer     →  implements + instruments (code + tracked events)
@@ -16,6 +19,19 @@ Each phase is a **hat you wear in the main loop** via a slash command — not a 
 ```
 
 Each phase's output feeds the next. Don't skip. If a later phase finds an earlier one wrong, fix it at the source (re-`/spec` a bad requirement; re-`/design` a bad layout) — don't patch over it downstream. Hat operating rules live in `docs/PRINCIPLES.md § Role hats`.
+
+---
+
+## Workflow 0 — Idea validation
+
+**Trigger:** a new business idea, before any PRD exists (project zero, or a pivot).
+
+1. **Validate** — `/idea <the idea>`: problem, alternatives, wedge, monetization → verdict. For a deep market/competitor sweep, spawn the `idea-validator` agent instead (heavy web reads).
+2. **KILL** → stop. Write nothing else; a dead idea is a cheap win.
+3. **PIVOT** → reshape and re-run `/idea` on the sharper version.
+4. **GO** → land `docs/PRD.md § Vision` + `§ Pillars` (max 3, each with a metric), then `/spec` the first pillar's features.
+
+**Hard rule:** no `/spec` before a GO. Scope written for an unvalidated idea is scope you'll throw away.
 
 ---
 

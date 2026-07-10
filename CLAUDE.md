@@ -9,7 +9,7 @@ This repo holds **multiple project templates**, one subdirectory per stack. Each
 | [`react-native/`](react-native/) | React Native (Expo) + Firebase | JS ecosystem, EAS Build, Zustand + TanStack Query, NativeWind |
 | [`flutter/`](flutter/) | Flutter + Firebase | Dart strict typing, Material 3, Riverpod, go_router, Codemagic |
 
-Both share the same workflow shape (`/spec → /design → /build → /test → /release → /launch`), the same 3 swappable design systems (`notion-github`, `linear-minimal`, `warm-playful`), and the same standing rules (MVP-first, UX priority, QA gate, analytics-first, token discipline).
+Both share the same workflow shape (`/idea → /spec → /design → /build → /test → /release → /launch`), the same 3 swappable design systems (`notion-github`, `linear-minimal`, `warm-playful`), and the same standing rules (MVP-first, UX priority, QA gate, analytics-first, token discipline).
 
 ## How to start a new project
 
@@ -29,7 +29,7 @@ You're here because you're improving the templates (not building a new project).
 cd react-native/   # or: cd flutter/
 ```
 
-Inside the subdir, the full Claude Code setup is active — that subdir's `CLAUDE.md`, its one custom sub-agent (`qa-engineer` in `.claude/agents/`), its 16 slash commands (`.claude/commands/`), and its role "hats" in `docs/PRINCIPLES.md`. Most work runs in the main loop as a hat; only `/test` and `/qa-sweep` spawn a sub-agent. This is tuned for Claude Pro usage limits. Work there.
+Inside the subdir, the full Claude Code setup is active — that subdir's `CLAUDE.md`, its 7-role agent roster in `.claude/agents/` (idea-validator, product-strategist, ux-designer, mobile-engineer, qa-engineer, release-manager, marketer), its 17 slash commands (`.claude/commands/`), and its role "hats" in `docs/PRINCIPLES.md`. Most work runs in the main loop as a hat; only `/test` and `/qa-sweep` spawn a sub-agent by default — the rest of the roster is opt-in, for work big enough to isolate. This is tuned for Claude Pro usage limits. Work there.
 
 If a change applies to BOTH stacks (e.g. a sharpened command or role hat, a new standing rule, an additional edge-case in TEST-PLAN.md), **mirror it across both stacks**. Otherwise they drift.
 

@@ -1,6 +1,6 @@
 # Project templates
 
-A family of opinionated scaffolds for solo-built mobile MVPs. One Gitea repo, one subdir per stack. Pick the stack — get a lean main-loop Claude Code workflow (1 custom sub-agent + 16 slash commands, role "hats" for the rest), 3 swappable design systems, QA gate, tracking plan, launch playbook. Tuned for Claude Pro usage limits.
+A family of opinionated scaffolds for solo-built mobile MVPs. One Gitea repo, one subdir per stack. Pick the stack — get a lean main-loop Claude Code workflow (a 7-role agent roster + 17 slash commands; roles run as main-loop "hats" by default, agents are opt-in), 3 swappable design systems, QA gate, tracking plan, launch playbook. Tuned for Claude Pro usage limits.
 
 ## Stacks shipped
 
@@ -33,8 +33,8 @@ The helper copies the chosen stack, detaches the template's git history, and sta
 
 | Layer | What's in it |
 |---|---|
-| **Claude config** | 1 custom sub-agent (`qa-engineer`) + 16 slash commands. Other roles run in the main loop as "hats" (`docs/PRINCIPLES.md`) — no per-phase sub-agent spawn. Tuned for Claude Pro. |
-| **Workflow** | Strict `/spec → /design → /build → /test → /release → /launch` pipeline, main-loop phases documented in `docs/WORKFLOWS.md` |
+| **Claude config** | 7-role agent roster (idea-validator → marketer) + 17 slash commands. Roles run in the main loop as "hats" (`docs/PRINCIPLES.md`) by default — only `qa-engineer` spawns automatically; the rest are opt-in for big isolatable work. Tuned for Claude Pro. |
+| **Workflow** | Strict `/idea → /spec → /design → /build → /test → /release → /launch` pipeline, main-loop phases documented in `docs/WORKFLOWS.md` |
 | **Design system family** | 3 swappable: `notion-github`, `linear-minimal`, `warm-playful`. Pick one per project via `scripts/pick-design-system.sh`. |
 | **Analytics layer** | Tracking plan + typed event registry (TS for RN / Dart sealed class for Flutter) + provider-agnostic client. |
 | **Feedback loop** | In-app feedback feature scaffold + Firestore pattern + `feedback_submitted` event. |
@@ -65,7 +65,7 @@ The helper copies the chosen stack, detaches the template's git history, and sta
 ├── react-native/             full React Native template
 │   ├── CLAUDE.md             RN constitution
 │   ├── SETUP.md              RN bootstrap (10 steps)
-│   ├── .claude/              qa-engineer agent + 16 commands
+│   ├── .claude/              7 role agents + 17 commands
 │   ├── design-systems/       3 swappable
 │   ├── docs/                 PRD, ROADMAP, etc.
 │   ├── lib/                  analytics + features scaffold

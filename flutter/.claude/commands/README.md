@@ -2,12 +2,13 @@
 
 Type these in Claude Code to skip the long prompts. Each pre-fills context so you don't re-type it.
 
-**How they run (Pro-optimized):** all of these run **in the main loop** — they make Claude wear a "hat" (`docs/PRINCIPLES.md § Role hats`) rather than spawning a fresh sub-agent. The only exceptions are `/test` and `/qa-sweep`, which spawn the `qa-engineer` agent because QA reads a lot and isolation keeps that off the main thread.
+**How they run (Pro-optimized):** all of these run **in the main loop** — they make Claude wear a "hat" (`docs/PRINCIPLES.md § Role hats`) rather than spawning a fresh sub-agent. The only exceptions are `/test` and `/qa-sweep`, which spawn the `qa-engineer` agent because QA reads a lot and isolation keeps that off the main thread. Every hat also has an **opt-in sub-agent** in `.claude/agents/` (idea-validator → marketer) for when the work is big enough to isolate — each agent file's description says when. Default stays the hat.
 
 ## Workflow (one per phase)
 
 | Command | What it does | Runs as |
 |---|---|---|
+| `/idea <business idea>` | Validate before speccing — GO / PIVOT / KILL | strategist hat |
 | `/spec <name> — <idea>` | Write PRD entry, reject if not pillar-fit | strategist hat |
 | `/design <screen>` | Design screen spec, append to DESIGN.md | designer hat |
 | `/build <feature>` | Implement: repository → provider → widget → route | engineer hat |
