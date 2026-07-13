@@ -58,6 +58,7 @@ The helper copies the chosen stack, detaches the template's git history, and sta
 ├── CLAUDE.md                 root index (thin)
 ├── README.md                 this file
 ├── SETUP.md                  short — most setup is per-stack
+├── DUAL-PC-WORKFLOW.md       Claude Code PC vs ChatGPT Go PC — task routing + git protocol
 ├── LICENSE
 ├── .gitignore                cross-cutting only
 ├── scripts/
