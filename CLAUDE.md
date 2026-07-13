@@ -47,6 +47,7 @@ No central refactor needed — each stack stays isolated.
 
 - `CLAUDE.md` — this file, the index
 - `README.md` — landing page on Gitea
+- `DUAL-PC-WORKFLOW.md` — standing split of work across the two machines (Claude Code Pro build PC vs ChatGPT Go support PC)
 - `LICENSE` — repo-wide
 - `.gitignore` — cross-cutting ignores only; stack-specific ignores live in each subdir's `.gitignore`
 - `scripts/new-project.sh` — the bootstrap helper
