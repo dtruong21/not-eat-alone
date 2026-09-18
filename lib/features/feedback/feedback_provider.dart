@@ -26,8 +26,8 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../core/analytics/client.dart';
-import '../../core/analytics/events.dart';
+import 'package:not_eat_alone/core/analytics/client.dart';
+import 'package:not_eat_alone/core/analytics/events.dart';
 
 // import '../../core/firebase/feedback_repository.dart';  // user creates via /firestore
 

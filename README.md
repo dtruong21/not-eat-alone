@@ -1,19 +1,20 @@
 # not-eat-alone
 
-> Project scaffold. Concept and stack details land here once the idea is locked in.
+Post a meal at a restaurant, match 1:1 with someone nearby, and don't eat alone.
 
-## Status
+## Run
 
-Early setup. Repo initialized, remote pointed at GitHub, license in place.
-
-## Getting started
+Pinned via [FVM](https://fvm.app). Two flavors, `stage` and `prod`, each pointed at its own Firebase app registration and Firestore database:
 
 ```bash
-git clone https://github.com/dtruong21/not-eat-alone.git
-cd not-eat-alone
+fvm flutter run --flavor stage -t lib/main_stage.dart
+fvm flutter run --flavor prod  -t lib/main_prod.dart
 ```
 
-Build and run instructions will be added once the stack is chosen.
+## Docs
+
+- [Spec](docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md)
+- [Roadmap](docs/superpowers/plans/2026-09-18-not-eat-alone-roadmap.md)
 
 ## License
 

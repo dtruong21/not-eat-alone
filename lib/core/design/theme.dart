@@ -18,7 +18,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'tokens.dart';
+import 'package:not_eat_alone/core/design/tokens.dart';
 
 /// Builds the Warm Playful [ThemeData] for the given [brightness].
 ThemeData buildTheme(Brightness brightness) {

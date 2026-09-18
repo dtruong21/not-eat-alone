@@ -9,7 +9,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 
-import 'events.dart';
+import 'package:not_eat_alone/core/analytics/events.dart';
 
 // ─── Provider wiring (pick one, uncomment) ───────────────────────────────────
 //
