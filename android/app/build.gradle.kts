@@ -14,6 +14,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        resValues = true
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.daki.noteatalone.not_eat_alone"
@@ -23,6 +27,20 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "env"
+    productFlavors {
+        create("stage") {
+            dimension = "env"
+            applicationId = "com.daki.noteatalone.stage"
+            resValue("string", "app_name", "not-eat-alone (stage)")
+        }
+        create("prod") {
+            dimension = "env"
+            applicationId = "com.daki.noteatalone"
+            resValue("string", "app_name", "not-eat-alone")
+        }
     }
 
     buildTypes {
