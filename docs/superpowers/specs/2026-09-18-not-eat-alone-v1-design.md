@@ -51,16 +51,19 @@ From the repository's `flutter/` template:
 
 ## 6. Environments
 
-Two isolated **Firebase projects**, one per environment, wired via **Flutter flavors**:
+**One Firebase project** (`not-eat-alone`, #966331142604, org `daki-tle-26-org`) with **two app registrations** and **split Firestore**, wired via **Flutter flavors**:
 
-| Flavor | Firebase project | Purpose |
-|---|---|---|
-| `prod` | `not-eat-alone` (#966331142604, org `daki-tle-26-org`) | Production |
-| `stage` | `not-eat-alone-stage` (to create) | Staging / QA |
+| Flavor | App id (Android/iOS) | Firestore database | Purpose |
+|---|---|---|---|
+| `prod` | `com.daki.noteatalone` | `(default)` | Production |
+| `stage` | `com.daki.noteatalone.stage` | `stage` | Staging / QA |
 
-- Each flavor has its own `firebase_options` / `google-services.json` / `GoogleService-Info.plist`.
-- API keys (Firebase, Places, Maps) are separate per environment and restricted by platform + bundle id / package name.
-- A local `dev` flavor is out of scope for now (can be added later).
+- Each flavor has its own `firebase_options_<flavor>.dart` / `google-services.json` / `GoogleService-Info.plist`, all pointing at the one project.
+- **What is isolated:** Firestore (separate named databases) and FCM (per-app-registration tokens, so prod/stage devices never cross).
+- **What is shared** (single-project trade-off, accepted): Auth user pool, Storage bucket, quotas, billing. Stage vs prod data in the shared surfaces is distinguished by **naming convention** (env-prefixed Storage paths; a test flag on stage accounts), not hard isolation.
+- Flutter SDK pinned to **3.47.4** via FVM (`.fvmrc`); CI = **GitHub Actions**.
+- **Follow-up (before Plan 3 writes Firestore):** deploy security rules/indexes to the `stage` database too — `firebase.json`'s `firestore` block currently targets only `(default)`; switch it to the array form with a target per database.
+- Full-isolation fallback (separate `not-eat-alone-stage` project) remains available later if the shared Auth pool becomes a problem.
 
 ## 7. Data model (Firestore)
 

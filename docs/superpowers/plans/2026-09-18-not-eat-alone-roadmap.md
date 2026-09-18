@@ -38,3 +38,6 @@ begins (so details stay fresh and reflect what earlier phases actually built).
 - **Paris gating** appears in Plan 5 (discovery query bound) and is enforced/confirmed in Plan 11 (launch).
 - **Monetization** (ads + subscription) is explicitly out of every v1 phase.
 - Group meals, swipe, and reservations remain out of scope until a future v2 roadmap.
+- **Env architecture (decided in Plan 1):** one Firebase project, two app registrations, split Firestore (`(default)`=prod, `stage`=stage); Auth/Storage shared, distinguished by naming convention; FCM split per app. See spec §6.
+- **Plan 3 prerequisite:** deploy Firestore rules/indexes to the `stage` database (not just `(default)`) — update `firebase.json`'s `firestore` block to the array form (one target per database) before the first stage Firestore writes.
+- **Deferred from Plan 1:** re-add `riverpod_lint` + `custom_lint` once upstream `custom_lint` supports analyzer ≥13; wire `sentry_flutter` (bumped to v9, currently unused) in Plan 11.
