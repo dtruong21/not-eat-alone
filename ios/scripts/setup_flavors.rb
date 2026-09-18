@@ -100,6 +100,33 @@ end
   end
 end
 
+# ---------------------------------------------------------------------------
+# "Copy Firebase plist" Run Script build phase
+# ---------------------------------------------------------------------------
+# Copies ios/config/{prod,stage}/GoogleService-Info.plist into the built app
+# based on $CONFIGURATION (see ios/scripts/copy_firebase_plist.sh). Runs after
+# "Copy Bundle Resources" so it overwrites whatever GoogleService-Info.plist
+# ended up there (flutterfire configure writes ios/Runner/GoogleService-Info.plist
+# directly, which is git-ignored and only used as flutterfire's scratch output).
+COPY_PLIST_PHASE_NAME = 'Copy Firebase plist'
+existing_phase = runner_target.shell_script_build_phases.find { |p| p.name == COPY_PLIST_PHASE_NAME }
+if existing_phase
+  copy_plist_phase = existing_phase
+else
+  copy_plist_phase = runner_target.new_shell_script_build_phase(COPY_PLIST_PHASE_NAME)
+  # Insert right after "Copy Bundle Resources" so our copy wins.
+  resources_phase = runner_target.resources_build_phase
+  if resources_phase
+    phases = runner_target.build_phases
+    phases.delete(copy_plist_phase)
+    insert_at = phases.index(resources_phase) + 1
+    phases.insert(insert_at, copy_plist_phase)
+  end
+end
+copy_plist_phase.shell_path = '/bin/sh'
+copy_plist_phase.shell_script = '"$SRCROOT/scripts/copy_firebase_plist.sh"'
+copy_plist_phase.show_env_vars_in_log = '1'
+
 # Info.plist's CFBundleDisplayName is switched to
 # $(INFOPLIST_KEY_CFBundleDisplayName) below, but the base (unflavored)
 # Debug/Release/Profile configs never had that build setting -- only the new

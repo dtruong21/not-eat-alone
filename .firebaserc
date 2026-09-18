@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "not-eat-alone",
+    "prod": "not-eat-alone",
+    "stage": "not-eat-alone"
+  }
+}

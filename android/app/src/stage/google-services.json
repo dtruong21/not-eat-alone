@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "966331142604",
+    "project_id": "not-eat-alone",
+    "storage_bucket": "not-eat-alone.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966331142604:android:bc8b17036fe7049d524d69",
+        "android_client_info": {
+          "package_name": "com.daki.noteatalone"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxoJR88vX2GBhyZU_TK8HU2L-bDmZJano"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966331142604:android:91c9e311c1ff8e58524d69",
+        "android_client_info": {
+          "package_name": "com.daki.noteatalone.stage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxoJR88vX2GBhyZU_TK8HU2L-bDmZJano"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
