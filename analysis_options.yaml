@@ -2,8 +2,11 @@
 # Base: very_good_analysis (Verily/VGV preset — the strictest mainstream baseline).
 # Layered on top: project-specific rules from the master spec.
 #
-# Custom-lint host is enabled so riverpod_lint contributes IDE assists.
+# custom_lint / riverpod_lint are deferred (not a dependency right now) —
+# see the TODO below. Do not add `analyzer: plugins: - custom_lint` back
+# until the package is actually in dev_dependencies again.
 
+# TODO: re-add custom_lint + riverpod_lint when custom_lint supports analyzer >=13 (blocked by upstream as of 2026-09-18)
 include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
@@ -26,8 +29,8 @@ analyzer:
     - "**/generated_plugin_registrant.dart"
     - "build/**"
     - ".dart_tool/**"
-  plugins:
-    - custom_lint
+    - android/**
+    - ios/**
 
 linter:
   rules:
