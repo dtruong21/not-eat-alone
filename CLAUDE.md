@@ -1,4 +1,4 @@
-# {{PROJECT_NAME}} — Claude constitution
+# not-eat-alone — Claude constitution
 
 Loaded every turn — kept tight on purpose. Full standing rules: `docs/PRINCIPLES.md`. Process: `docs/WORKFLOWS.md`. Spec: `docs/PRD.md`. Design: `docs/DESIGN.md`. Analytics: `docs/TRACKING-PLAN.md`. Flutter idioms/pins/gotchas: `docs/MASTER-SPEC.md`.
 

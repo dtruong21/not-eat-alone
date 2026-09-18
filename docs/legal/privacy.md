@@ -1,6 +1,6 @@
-# Privacy Policy — {{PROJECT_NAME}}
+# Privacy Policy — not-eat-alone
 
-*Last updated: {{DATE}}*
+*Last updated: 2026-09-18*
 
 This is a starter template. Customize it for your project's actual data practices. **Host the rendered version publicly** (GitHub Pages, Notion, your domain) and link it from `.env PRIVACY_URL` + the App Store listing.
 

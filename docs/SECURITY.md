@@ -1,6 +1,6 @@
 # Security & Secrets
 
-How {{PROJECT_NAME}} handles secrets, what's safe to commit, and what isn't.
+How not-eat-alone handles secrets, what's safe to commit, and what isn't.
 
 ---
 
@@ -59,7 +59,7 @@ If you generate a service account JSON for admin scripts (e.g. one-off migration
 
 ```bash
 # DO: keep in a path that's gitignored
-~/secrets/{{project}}-admin.json
+~/secrets/not-eat-alone-admin.json
 
 # DON'T: project root
 ./service-account.json   # not gitignored — risk
@@ -97,7 +97,7 @@ For self-hosted CI (Gitea Actions / GitHub Actions): use repo secrets, reference
 
 ## Threat model
 
-{{PROJECT_NAME}} stores personal user data — not financial, not health-protected, not regulated. The threat model is: a malicious user trying to read/write *another user's* data. Mitigated by Firestore rules + Firebase Auth. A leaked Firebase web config doesn't change the model. A leaked Cloud Function service account or signing key WOULD — those are the actual secrets, and they live with Codemagic / Firebase, not in this repo.
+not-eat-alone stores personal user data — not financial, not health-protected, not regulated. The threat model is: a malicious user trying to read/write *another user's* data. Mitigated by Firestore rules + Firebase Auth. A leaked Firebase web config doesn't change the model. A leaked Cloud Function service account or signing key WOULD — those are the actual secrets, and they live with Codemagic / Firebase, not in this repo.
 
 ---
 

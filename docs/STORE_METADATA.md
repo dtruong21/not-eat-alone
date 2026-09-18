@@ -6,7 +6,7 @@ Drafts for App Store + Play Store listings. Replace placeholders, lock in before
 
 ## App name
 
-- **Display name**: {{PROJECT_NAME}}
+- **Display name**: not-eat-alone
 - **iOS subtitle** (30 chars): {{SUBTITLE}}
 - **Tagline** (used in marketing): {{TAGLINE}}
 

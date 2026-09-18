@@ -1,6 +1,6 @@
 # Release Runbook
 
-How to take {{PROJECT_NAME}} from "code complete" to shipping in App Store + Play Store.
+How to take not-eat-alone from "code complete" to shipping in App Store + Play Store.
 
 ---
 

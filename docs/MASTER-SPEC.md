@@ -6,7 +6,7 @@ The single source of truth for the Flutter project template's stack picks, idiom
 
 ## 1. Pinned packages
 
-Flutter SDK pinned to **3.44.x** via `.fvmrc`. Dart SDK comes from Flutter. All packages below are caret-pinned in `pubspec.yaml` — bump deliberately, not casually.
+Flutter SDK pinned to **3.47.4** via `.fvmrc`. Dart SDK comes from Flutter. All packages below are caret-pinned in `pubspec.yaml` — bump deliberately, not casually.
 
 ### Runtime
 
@@ -39,6 +39,8 @@ Flutter SDK pinned to **3.44.x** via `.fvmrc`. Dart SDK comes from Flutter. All 
 | `very_good_analysis` | Lint preset. Strict by default — extends in `analysis_options.yaml`. |
 | `flutter_launcher_icons`, `flutter_native_splash` | Icon + splash generation from source assets. |
 | `integration_test` (SDK) | End-to-end tests against a running app. |
+
+`riverpod_lint` + `custom_lint` are temporarily deferred (upstream `custom_lint` has no `analyzer` >=13 release as of 2026-09-18); re-add when available.
 
 Codemagic is the CI/CD platform — see `codemagic.yaml`. No EAS analog, no managed expo-style OTA updates.
 

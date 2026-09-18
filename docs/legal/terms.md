@@ -1,6 +1,6 @@
-# Terms of Service — {{PROJECT_NAME}}
+# Terms of Service — not-eat-alone
 
-*Last updated: {{DATE}}*
+*Last updated: 2026-09-18*
 
 This is a starter template. Customize it for your project's actual terms. **Host the rendered version publicly** and link it from `.env TERMS_URL` + the App Store listing.
 
@@ -8,7 +8,7 @@ This is a starter template. Customize it for your project's actual terms. **Host
 
 ## Acceptance
 
-By using {{PROJECT_NAME}}, you agree to these terms. If you don't agree, don't use it.
+By using not-eat-alone, you agree to these terms. If you don't agree, don't use it.
 
 ## Eligibility
 

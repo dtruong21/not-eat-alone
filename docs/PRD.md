@@ -1,10 +1,12 @@
-# {{PROJECT_NAME}} — Product Requirements
+# not-eat-alone — Product Requirements
 
 > **Rule zero — v1 is an MVP.** Every feature in this doc that's tagged `in-MVP` must serve a pillar outcome AND be the smallest version of itself that still delivers that outcome. Default verdict on new proposals is POST-MVP. Make us argue features INTO v1, not out of it.
 
 ## Vision
 
-{{Vision paragraph — what this product is, who it's for, why it matters. Replace this with the actual pitch when you instantiate the template.}}
+Post a meal at a restaurant, match 1:1 with someone nearby, and don't eat alone.
+
+People want to try new restaurants but often won't go alone. not-eat-alone lets someone post a specific meal — a restaurant and a time — and match 1:1 with a nearby person who wants to join. Anchoring every match to a public restaurant at a fixed time keeps first meetings lighter and safer than a conventional date. Dating may follow, but the product is meal-first, not people-first.
 
 ## Target user
 
@@ -14,24 +16,31 @@
 
 Every MVP feature must serve one of these. Anything else gets cut to post-MVP. Replace these with the actual pillars for your project — typically 2–4 of them.
 
-### Pillar 1 — {{Name}}
+### Pillar 1 — Meal-first
 
-{{One-sentence description of the core value this pillar delivers.}}
+Every match is organized around trying a specific restaurant, not browsing people.
 
 **Features:**
 - [ ] {{Feature 1}}
 - [ ] {{Feature 2}}
 
-### Pillar 2 — {{Name}}
+### Pillar 2 — Low-pressure
 
-{{Description.}}
+A public restaurant at a fixed time keeps first meetings light, not a loaded date.
 
 **Features:**
 - [ ] {{Feature 1}}
 
-### Pillar 3 — {{Name}}
+### Pillar 3 — Trust & safety
 
-{{Description.}}
+Joiners are approval-gated, women-only meals exist, and block/report is always on.
+
+**Features:**
+- [ ] {{Feature 1}}
+
+### Pillar 4 — Liquidity over reach
+
+Depth in one city (Paris) beats thin coverage everywhere.
 
 **Features:**
 - [ ] {{Feature 1}}
@@ -69,7 +78,7 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 
 ## Constraints
 
-- **Solo build, ~{{N}} week target** to first TestFlight / internal release.
+- **Solo build, ~16 week target** to first TestFlight / internal release.
 - **No backend code beyond Firebase** — Cloud Functions only when client-side won't do.
 - **Free tier viable.** Firestore reads kept low via Riverpod caching + `.snapshots()` reuse.
 - **{{Other project-specific constraint}}**

@@ -1,6 +1,6 @@
-# {{PROJECT_NAME}} — Roadmap
+# not-eat-alone — Roadmap
 
-Updated **{{DATE}}** — reflects actual state, not the original plan.
+Updated **2026-09-18** — reflects actual state, not the original plan.
 
 > **v1 = MVP, no exceptions.** This roadmap covers what ships in v1 (the minimum across all pillars) and what's deferred to v1.1+. If you find yourself adding "just one more thing" to v1, it goes under § Intentionally deferred instead.
 

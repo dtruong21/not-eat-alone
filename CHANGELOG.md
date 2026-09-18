@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to {{PROJECT_NAME}} that affect users. Format follows [Keep a Changelog](https://keepachangelog.com/). This project adheres to [Semantic Versioning](https://semver.org/) — see [`docs/VERSIONING.md`](docs/VERSIONING.md) for the bump policy.
+All notable changes to not-eat-alone that affect users. Format follows [Keep a Changelog](https://keepachangelog.com/). This project adheres to [Semantic Versioning](https://semver.org/) — see [`docs/VERSIONING.md`](docs/VERSIONING.md) for the bump policy.
 
 **Rule:** Only user-visible changes go here. Internal refactors, dev tooling, test additions, codegen updates, and CI tweaks do NOT belong in this file. If a user couldn't notice the change, it doesn't get a line.
 
@@ -29,6 +29,6 @@ All notable changes to {{PROJECT_NAME}} that affect users. Format follows [Keep 
 
 ---
 
-## [0.0.1] — {{DATE}}
+## [0.0.1] — 2026-09-18
 
 - Initial scaffolding from Flutter project template
