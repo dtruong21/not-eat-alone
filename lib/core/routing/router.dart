@@ -29,9 +29,9 @@
 /// provider re-watches it, so the router rebuilds on sign-in / sign-out.
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:not_eat_alone/features/home/placeholder_home.dart';
 
 /// The app's top-level router. Watch via `ref.watch(routerProvider)` in
 /// `app.dart`. Wrap with `@riverpod` codegen once you have more than one
@@ -47,7 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // codegen runs.
       GoRoute(
         path: '/',
-        builder: (context, state) => const _PlaceholderHome(),
+        builder: (context, state) => const PlaceholderHome(),
       ),
     ],
     // redirect: (context, state) {
@@ -59,25 +59,3 @@ final routerProvider = Provider<GoRouter>((ref) {
     // },
   );
 });
-
-class _PlaceholderHome extends StatelessWidget {
-  const _PlaceholderHome();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Flutter template')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Replace this with your home screen.\n\n'
-            'Add typed routes via `lib/core/routing/routes.dart` and the '
-            '`@TypedGoRoute` annotation, then list them above.',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-  }
-}

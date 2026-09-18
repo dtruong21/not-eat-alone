@@ -48,7 +48,7 @@ dependencies:
   google_fonts: ^8.2.1
   lucide_icons: ^0.257.0
   flutter_animate: ^4.5.2
-  sentry_flutter: ^8.14.2
+  sentry_flutter: ^9.30.0
   posthog_flutter: ^5.44.2
   flutter_dotenv: ^6.0.1
 
@@ -86,6 +86,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
+  assets:
+    - .env
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

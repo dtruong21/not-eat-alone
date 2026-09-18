@@ -33,9 +33,17 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:not_eat_alone/core/config/flavor.dart';
 
-/// The default Firestore instance. Use only inside `lib/core/firebase/`.
-FirebaseFirestore get db => FirebaseFirestore.instance;
+/// The Firestore instance for the active flavor. Single Firebase project,
+/// split databases: prod reads `(default)`, stage reads the named `stage`
+/// database — see [FlavorConfig.firestoreDatabaseId]. Use only inside
+/// `lib/core/firebase/`.
+FirebaseFirestore get db => FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: FlavorConfig.current.firestoreDatabaseId,
+    );
 
 /// The default Auth instance. Use only inside `lib/core/firebase/` and the
 /// auth feature.
