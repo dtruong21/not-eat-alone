@@ -20,7 +20,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'tokens.dart';
 
 /// Builds the Warm Playful [ThemeData] for the given [brightness].
-ThemeData buildWarmPlayfulTheme(Brightness brightness) {
+ThemeData buildTheme(Brightness brightness) {
   final isLight = brightness == Brightness.light;
 
   final bg = isLight ? WarmPlayfulColorsLight.bg : WarmPlayfulColorsDark.bg;
