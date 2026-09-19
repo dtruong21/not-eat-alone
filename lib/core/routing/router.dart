@@ -33,6 +33,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/presentation/age_gate_screen.dart';
 import 'package:not_eat_alone/features/home/placeholder_home.dart';
 
 const _signInPath = '/auth/signin';
@@ -108,11 +109,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             const Scaffold(body: Center(child: Text('signin'))),
       ),
-      // TODO: replace with real screen (plan2 task 10).
       GoRoute(
         path: _ageGatePath,
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('age gate'))),
+        builder: (context, state) => const AgeGateScreen(),
       ),
     ],
   );
