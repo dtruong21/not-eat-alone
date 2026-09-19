@@ -12,7 +12,12 @@
           "package_name": "com.daki.noteatalone"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "966331142604-h4m792kbte8h50jphr5kl99ubhlv2rol.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAxoJR88vX2GBhyZU_TK8HU2L-bDmZJano"
@@ -20,7 +25,55 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966331142604-h4m792kbte8h50jphr5kl99ubhlv2rol.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966331142604-379ua0h916ul42dc7anu8prkutqdejf5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.daki.noteatalone.stage"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966331142604:android:91c9e311c1ff8e58524d69",
+        "android_client_info": {
+          "package_name": "com.daki.noteatalone.stage"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "966331142604-h4m792kbte8h50jphr5kl99ubhlv2rol.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxoJR88vX2GBhyZU_TK8HU2L-bDmZJano"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966331142604-h4m792kbte8h50jphr5kl99ubhlv2rol.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966331142604-379ua0h916ul42dc7anu8prkutqdejf5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.daki.noteatalone.stage"
+              }
+            }
+          ]
         }
       }
     }

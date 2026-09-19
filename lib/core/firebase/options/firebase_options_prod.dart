@@ -56,13 +56,13 @@ class DefaultFirebaseOptions {
     projectId: 'not-eat-alone',
     storageBucket: 'not-eat-alone.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAL2eDBqnMue82MFjkwYaFYSScyqUlaM44',
     appId: '1:966331142604:ios:3b5e294b6c8e108c524d69',
     messagingSenderId: '966331142604',
     projectId: 'not-eat-alone',
     storageBucket: 'not-eat-alone.firebasestorage.app',
+    iosClientId: '966331142604-e1dc0nfeugp88b439212mbm8eb1gs231.apps.googleusercontent.com',
     iosBundleId: 'com.daki.noteatalone',
   );
 }
