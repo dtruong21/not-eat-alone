@@ -29,14 +29,16 @@
 /// provider re-watches it, so the router rebuilds on sign-in / sign-out.
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/age_gate_screen.dart';
+import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
+import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 import 'package:not_eat_alone/features/home/placeholder_home.dart';
 
 const _signInPath = '/auth/signin';
+const _phoneVerifyPath = '/auth/phone';
 const _ageGatePath = '/onboarding/age';
 const _homePath = '/';
 
@@ -45,12 +47,16 @@ const _homePath = '/';
 /// `GoRouter` — see `test/core/routing/redirect_test.dart`.
 ///
 /// Rules:
-///   - not signed in -> `/auth/signin` (unless already there, else a
+///   - not signed in -> `/auth/signin` (unless already there, or on
+///     `/auth/phone` — the phone-OTP screen is reached mid sign-in, before
+///     `signedIn` flips true, so it must not bounce back to signin; else a
 ///     redirect loop: go_router re-runs `redirect` on the target location).
 ///   - signed in, not age-verified -> `/onboarding/age` (unless already
 ///     there, same loop guard).
 ///   - signed in + age-verified, but sitting on an auth/onboarding screen ->
-///     `/` (nothing left to gate on those screens).
+///     `/` (nothing left to gate on those screens — this includes
+///     `/auth/phone`, so completing phone verification advances home
+///     instead of stranding the user on the OTP screen).
 ///   - otherwise -> `null` (stay put).
 String? authRedirect({
   required bool signedIn,
@@ -58,12 +64,15 @@ String? authRedirect({
   required String location,
 }) {
   if (!signedIn) {
-    return location == _signInPath ? null : _signInPath;
+    if (location == _signInPath || location == _phoneVerifyPath) return null;
+    return _signInPath;
   }
   if (!ageVerified) {
     return location == _ageGatePath ? null : _ageGatePath;
   }
-  if (location == _signInPath || location == _ageGatePath) {
+  if (location == _signInPath ||
+      location == _phoneVerifyPath ||
+      location == _ageGatePath) {
     return _homePath;
   }
   return null;
@@ -103,11 +112,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: _homePath,
         builder: (context, state) => const PlaceholderHome(),
       ),
-      // TODO: replace with real screen (plan2 task 9).
       GoRoute(
         path: _signInPath,
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('signin'))),
+        builder: (context, state) => const SigninScreen(),
+      ),
+      GoRoute(
+        path: _phoneVerifyPath,
+        builder: (context, state) => PhoneVerifyScreen(
+          verificationId: state.extra! as String,
+        ),
       ),
       GoRoute(
         path: _ageGatePath,

@@ -14,4 +14,16 @@ void main() {
   test('signed in + verified on home -> stay', () {
     expect(authRedirect(signedIn: true, ageVerified: true, location: '/'), null);
   });
+  test('signed out on phone verify -> stay (mid phone sign-in)', () {
+    expect(
+      authRedirect(signedIn: false, ageVerified: false, location: '/auth/phone'),
+      null,
+    );
+  });
+  test('signed in + verified on phone verify -> home', () {
+    expect(
+      authRedirect(signedIn: true, ageVerified: true, location: '/auth/phone'),
+      '/',
+    );
+  });
 }
