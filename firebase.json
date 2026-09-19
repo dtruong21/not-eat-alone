@@ -1,8 +1,8 @@
 {
-  "firestore": {
-    "rules": "firebase/firestore.rules",
-    "indexes": "firebase/firestore.indexes.json"
-  },
+  "firestore": [
+    { "database": "(default)", "rules": "firebase/firestore.rules", "indexes": "firebase/firestore.indexes.json" },
+    { "database": "stage",     "rules": "firebase/firestore.rules", "indexes": "firebase/firestore.indexes.json" }
+  ],
   "functions": [
     {
       "source": "firebase/functions",

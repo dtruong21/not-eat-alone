@@ -18,8 +18,13 @@ service cloud.firestore {
 
     // Per-user docs
     match /users/{uid} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isOwner(uid);
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+                    && request.resource.data.uid == uid
+                    && request.resource.data.dob is timestamp
+                    && request.resource.data.ageVerified is bool;
+      allow update: if isOwner(uid);
+      allow delete: if false; // account deletion via Cloud Function later
 
       // Add subcollections here as you build features.
       // Each subcollection should have its own explicit allow/deny block.
