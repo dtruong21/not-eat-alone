@@ -1,5 +1,6 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/core/firebase/users_repository.dart';
 
 void main() {
@@ -32,6 +33,22 @@ void main() {
       final user = await repository.watch('missing').first;
 
       expect(user, isNull);
+    });
+
+    test('watch of a malformed doc throws RepositoryParseException',
+        () async {
+      // Write directly through the raw (non-converter) collection so the
+      // doc is missing the required `dob` field — this should fail
+      // AppUser.fromJson and surface as a typed parse exception, never a
+      // raw one. fake_cloud_firestore resolves the initial snapshot
+      // synchronously, so the exception surfaces from `watch()` itself
+      // rather than through the returned stream/future.
+      await firestore.collection('users').doc('bad').set({'uid': 'bad'});
+
+      expect(
+        () => repository.watch('bad'),
+        throwsA(isA<RepositoryParseException>()),
+      );
     });
   });
 }

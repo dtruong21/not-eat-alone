@@ -7,6 +7,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:not_eat_alone/core/firebase/firebase_client.dart';
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/auth/domain/app_user.dart';
 
 /// Repository for reading and writing `users/{uid}` documents.
@@ -33,26 +34,31 @@ class UsersRepository {
   static AppUser _fromFirestore(
     DocumentSnapshot<Map<String, Object?>> snapshot,
   ) {
-    final data = Map<String, Object?>.from(snapshot.data() ?? const {});
+    try {
+      final data = Map<String, Object?>.from(snapshot.data() ?? const {});
 
-    // `Timestamp.toDate()` returns a local (non-UTC) `DateTime` for the same
-    // instant. `DateTime`'s equality considers the UTC flag, so normalize
-    // to UTC here to keep `AppUser.dob`/`createdAt` consistently UTC.
-    final dob = data['dob'];
-    if (dob is Timestamp) {
-      data['dob'] = dob.toDate().toUtc().toIso8601String();
+      // `Timestamp.toDate()` returns a local (non-UTC) `DateTime` for the
+      // same instant. `DateTime`'s equality considers the UTC flag, so
+      // normalize to UTC here to keep `AppUser.dob`/`createdAt`
+      // consistently UTC.
+      final dob = data['dob'];
+      if (dob is Timestamp) {
+        data['dob'] = dob.toDate().toUtc().toIso8601String();
+      }
+
+      final createdAt = data['createdAt'];
+      if (createdAt is Timestamp) {
+        data['createdAt'] = createdAt.toDate().toUtc().toIso8601String();
+      } else {
+        // Nullable on optimistic snapshots — serverTimestamp() hasn't
+        // resolved yet, or the field was never set.
+        data['createdAt'] = null;
+      }
+
+      return AppUser.fromJson(data);
+    } catch (e, st) {
+      throw RepositoryParseException('users', snapshot.id, e, st);
     }
-
-    final createdAt = data['createdAt'];
-    if (createdAt is Timestamp) {
-      data['createdAt'] = createdAt.toDate().toUtc().toIso8601String();
-    } else {
-      // Nullable on optimistic snapshots — serverTimestamp() hasn't
-      // resolved yet, or the field was never set.
-      data['createdAt'] = null;
-    }
-
-    return AppUser.fromJson(data);
   }
 
   static Map<String, Object?> _toFirestore(AppUser user) {
@@ -71,10 +77,17 @@ class UsersRepository {
 
   /// Marks [uid] as age-verified with the given [dob], merging into
   /// `users/{uid}` and stamping `createdAt` with the server time.
-  Future<void> upsertAgeVerified({required String uid, required DateTime dob}) {
-    return _usersRef.doc(uid).set(
-          AppUser(uid: uid, dob: dob, ageVerified: true),
-          SetOptions(merge: true),
-        );
+  Future<void> upsertAgeVerified({
+    required String uid,
+    required DateTime dob,
+  }) async {
+    try {
+      await _usersRef.doc(uid).set(
+            AppUser(uid: uid, dob: dob, ageVerified: true),
+            SetOptions(merge: true),
+          );
+    } catch (e, st) {
+      throw RepositoryWriteException('users', e, st);
+    }
   }
 }
