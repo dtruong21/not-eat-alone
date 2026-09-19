@@ -42,7 +42,7 @@ final class AppOpened extends AppEvent {
 }
 
 /// Auth methods. Keep in sync with `SigninMethod` if you split the two.
-enum SignupMethod { email, google, apple, anonymous }
+enum SignupMethod { email, google, apple, phone, anonymous }
 
 final class SignupCompleted extends AppEvent {
   const SignupCompleted({required this.method});
@@ -55,7 +55,18 @@ final class SignupCompleted extends AppEvent {
   Map<String, Object?> get props => {'method': method.name};
 }
 
-enum SigninMethod { email, google, apple }
+enum SigninMethod { email, google, apple, phone }
+
+final class SigninStarted extends AppEvent {
+  const SigninStarted({required this.method});
+  final SigninMethod method;
+
+  @override
+  String get name => 'signin_started';
+
+  @override
+  Map<String, Object?> get props => {'method': method.name};
+}
 
 final class SigninCompleted extends AppEvent {
   const SigninCompleted({required this.method});
@@ -66,6 +77,26 @@ final class SigninCompleted extends AppEvent {
 
   @override
   Map<String, Object?> get props => {'method': method.name};
+}
+
+final class AgeGatePassed extends AppEvent {
+  const AgeGatePassed();
+
+  @override
+  String get name => 'age_gate_passed';
+
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class AgeGateFailed extends AppEvent {
+  const AgeGateFailed();
+
+  @override
+  String get name => 'age_gate_failed';
+
+  @override
+  Map<String, Object?> get props => const {};
 }
 
 final class SignoutCompleted extends AppEvent {

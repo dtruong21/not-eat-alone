@@ -69,8 +69,11 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | Event | When it fires | Properties | Feeds metric |
 |---|---|---|---|
 | `app_opened` | App enters foreground from cold start or background | `is_cold_start: bool` | WAU, retention |
-| `signup_completed` | New user finishes account creation | `method: 'email' \| 'google' \| 'apple' \| 'anonymous'` | Signups |
-| `signin_completed` | Returning user signs in | `method: 'email' \| 'google' \| 'apple'` | Auth method mix |
+| `signup_completed` | New user finishes account creation | `method: 'email' \| 'google' \| 'apple' \| 'phone' \| 'anonymous'` | Signups |
+| `signin_started` | User initiates a sign-in flow (before the provider/OTP completes) | `method: 'email' \| 'google' \| 'apple' \| 'phone'` | Auth funnel drop-off |
+| `signin_completed` | Returning user signs in | `method: 'email' \| 'google' \| 'apple' \| 'phone'` | Auth method mix |
+| `age_gate_passed` | User clears the age-verification gate | — | Signup funnel |
+| `age_gate_failed` | User fails the age-verification gate (under minimum age) | — | Signup funnel, compliance |
 | `signout_completed` | User explicitly signs out | — | (rare — investigate spikes) |
 | `feedback_submitted` | User submits in-app feedback | `category: 'bug' \| 'idea' \| 'praise' \| 'other'`, `length_chars: int` | Listening rate |
 
@@ -85,7 +88,7 @@ Sparse — only properties that drive segmentation or are needed for cross-event
 | Property | When set | Type | Use |
 |---|---|---|---|
 | `signup_date` | On `signup_completed` | ISO date string | Cohort analysis |
-| `signup_method` | On `signup_completed` | `'email' \| 'google' \| 'apple' \| 'anonymous'` | Auth-channel cohorts |
+| `signup_method` | On `signup_completed` | `'email' \| 'google' \| 'apple' \| 'phone' \| 'anonymous'` | Auth-channel cohorts |
 | `app_version` | On `app_opened` | semver string | Roll out / regression tracking |
 | `platform` | On `app_opened` | `'ios' \| 'android' \| 'web'` | Platform-specific issues |
 
