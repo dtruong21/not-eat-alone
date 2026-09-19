@@ -108,6 +108,35 @@ Related PRD entry: `docs/PRD.md § Feature: {{feature-name}}`
 
 ---
 
+### Feature: Auth & 18+ onboarding
+
+Status: active
+Related PRD entry: `docs/PRD.md § Auth`
+
+**Golden path:**
+- [ ] Signed-out launch lands on `/auth/signin` (verified 2026-09-19, iOS Simulator, stage flavor — screen renders Google/Apple/phone, phone defaults to +33).
+- [ ] Google sign-in (iOS stage) → age gate on first run → home. *(Needs a real Google account tap; not automatable — run manually.)*
+- [ ] New user hits the 18+ age gate; DOB ≥ 18 → writes `users/{uid}` (ageVerified) → home; DOB < 18 → blocked message + auto sign-out.
+- [ ] Returning verified user skips the age gate → straight to home.
+- [ ] Sign out → returns to `/auth/signin`.
+- [ ] Phone: `+33` number → "Send code" → OTP screen → verify → age gate/home. *(Needs APNs + a real SMS — pending native setup.)*
+
+**Edge cases (specific to this feature):**
+- [ ] DOB exactly 18 today = allowed; one day short = blocked (unit-tested in `age_test.dart`).
+- [ ] DOB stored UTC-midnight — no timezone day-drift on read (unit-tested in `users_repository_test.dart`).
+- [ ] Malformed `users` doc surfaces `RepositoryParseException`, not a raw crash.
+- [ ] Non-owner cannot read/write another user's `users/{uid}` doc (Firestore rules).
+- [ ] Redirect never loops across signin / age-gate / home / OTP (unit-tested in `redirect_test.dart`).
+
+**Pending native config (blocks live tests):**
+- Apple sign-in: provider + App ID capability not yet enabled.
+- Phone: APNs auth key (iOS), Android SHA-256 + Play Integrity not yet registered.
+
+**Known issues:**
+- none filed
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:
