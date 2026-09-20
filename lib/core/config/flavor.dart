@@ -26,4 +26,8 @@ class FlavorConfig {
   /// Firestore database id for this flavor — `'stage'` for the stage
   /// flavor, `'(default)'` for prod. Both live in the same Firebase project.
   String get firestoreDatabaseId => isStage ? 'stage' : '(default)';
+
+  /// Root path segment in the SHARED Storage bucket, keeping stage and prod
+  /// objects apart: `'stage'` for stage, `'prod'` for prod.
+  String get storagePathPrefix => isStage ? 'stage' : 'prod';
 }

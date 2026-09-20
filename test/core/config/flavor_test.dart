@@ -7,11 +7,13 @@ void main() {
     expect(c.isStage, true);
     expect(c.appTitle, 'Convyve (stage)');
     expect(c.firestoreDatabaseId, 'stage');
+    expect(c.storagePathPrefix, 'stage');
   });
   test('prod config', () {
     final c = FlavorConfig(flavor: Flavor.prod);
     expect(c.isStage, false);
     expect(c.appTitle, 'Convyve');
     expect(c.firestoreDatabaseId, '(default)');
+    expect(c.storagePathPrefix, 'prod');
   });
 }
