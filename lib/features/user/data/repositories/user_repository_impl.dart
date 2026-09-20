@@ -12,6 +12,7 @@ import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/user/data/dtos/app_user_dto.dart';
 import 'package:not_eat_alone/features/user/data/mappers/app_user_mapper.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
+import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
 /// Repository for reading and writing `users/{uid}` documents.
@@ -95,6 +96,35 @@ class UserRepositoryImpl implements UserRepository {
             AppUserDto(uid: uid, dob: dob, ageVerified: true),
             SetOptions(merge: true),
           );
+    } catch (e, st) {
+      throw RepositoryWriteException('users', e, st);
+    }
+  }
+
+  /// Partially updates `users/{uid}` with only the provided fields, via a
+  /// raw (non-converter) merge write — a partial map isn't a full
+  /// [AppUserDto], so it can't go through [_usersRef]. Never touches
+  /// `dob`/`ageVerified`/`createdAt`.
+  @override
+  Future<void> updateProfile({
+    required String uid,
+    String? displayName,
+    List<String>? photoUrls,
+    String? bio,
+    Gender? gender,
+  }) async {
+    final data = <String, Object?>{
+      if (displayName != null) 'displayName': displayName,
+      if (photoUrls != null) 'photoUrls': photoUrls,
+      if (bio != null) 'bio': bio,
+      if (gender != null) 'gender': gender.name,
+    };
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .set(data, SetOptions(merge: true));
     } catch (e, st) {
       throw RepositoryWriteException('users', e, st);
     }

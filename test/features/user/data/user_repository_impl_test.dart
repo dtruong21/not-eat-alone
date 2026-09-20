@@ -2,6 +2,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/user/data/repositories/user_repository_impl.dart';
+import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
 void main() {
   group('UserRepositoryImpl', () {
@@ -50,6 +51,37 @@ void main() {
         () => repository.watch('bad'),
         throwsA(isA<RepositoryParseException>()),
       );
+    });
+
+    test(
+        'updateProfile merges profile fields without clobbering '
+        'age-verification fields', () async {
+      final dob = DateTime.utc(2000, 1, 1);
+      await repository.upsertAgeVerified(uid: 'u1', dob: dob);
+
+      await repository.updateProfile(
+        uid: 'u1',
+        displayName: 'Ada',
+        photoUrls: ['u'],
+        gender: Gender.woman,
+      );
+
+      final user = await repository.watch('u1').first;
+
+      expect(user, isNotNull);
+      expect(user!.displayName, 'Ada');
+      expect(user.photoUrls, ['u']);
+      expect(user.gender, Gender.woman);
+      expect(user.ageVerified, isTrue);
+      expect(user.dob, dob);
+
+      await repository.updateProfile(uid: 'u1', bio: 'hi');
+
+      final updatedUser = await repository.watch('u1').first;
+
+      expect(updatedUser, isNotNull);
+      expect(updatedUser!.bio, 'hi');
+      expect(updatedUser.displayName, 'Ada');
     });
   });
 }
