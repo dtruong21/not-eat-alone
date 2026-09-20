@@ -1,4 +1,4 @@
-# not-eat-alone — Roadmap
+# Convyve — Roadmap
 
 Updated **2026-09-18** — reflects actual state, not the original plan.
 

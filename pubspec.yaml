@@ -1,5 +1,5 @@
 name: not_eat_alone
-description: "A new Flutter project."
+description: "Convyve — post a meal at a restaurant, match 1:1, and don't eat alone."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

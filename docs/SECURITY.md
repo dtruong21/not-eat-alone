@@ -1,6 +1,6 @@
 # Security & Secrets
 
-How not-eat-alone handles secrets, what's safe to commit, and what isn't.
+How Convyve handles secrets, what's safe to commit, and what isn't.
 
 ---
 
@@ -97,7 +97,7 @@ For self-hosted CI (Gitea Actions / GitHub Actions): use repo secrets, reference
 
 ## Threat model
 
-not-eat-alone stores personal user data — not financial, not health-protected, not regulated. The threat model is: a malicious user trying to read/write *another user's* data. Mitigated by Firestore rules + Firebase Auth. A leaked Firebase web config doesn't change the model. A leaked Cloud Function service account or signing key WOULD — those are the actual secrets, and they live with Codemagic / Firebase, not in this repo.
+Convyve stores personal user data — not financial, not health-protected, not regulated. The threat model is: a malicious user trying to read/write *another user's* data. Mitigated by Firestore rules + Firebase Auth. A leaked Firebase web config doesn't change the model. A leaked Cloud Function service account or signing key WOULD — those are the actual secrets, and they live with Codemagic / Firebase, not in this repo.
 
 ---
 

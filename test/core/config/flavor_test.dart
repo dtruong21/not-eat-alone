@@ -5,13 +5,13 @@ void main() {
   test('stage config', () {
     final c = FlavorConfig(flavor: Flavor.stage);
     expect(c.isStage, true);
-    expect(c.appTitle, 'not-eat-alone (stage)');
+    expect(c.appTitle, 'Convyve (stage)');
     expect(c.firestoreDatabaseId, 'stage');
   });
   test('prod config', () {
     final c = FlavorConfig(flavor: Flavor.prod);
     expect(c.isStage, false);
-    expect(c.appTitle, 'not-eat-alone');
+    expect(c.appTitle, 'Convyve');
     expect(c.firestoreDatabaseId, '(default)');
   });
 }

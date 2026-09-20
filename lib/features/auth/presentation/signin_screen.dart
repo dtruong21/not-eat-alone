@@ -132,7 +132,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
             children: [
               const SizedBox(height: WarmPlayfulSpacing.s6),
               Text(
-                'Welcome to not-eat-alone',
+                'Welcome to Convyve',
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   color: colors.onSurface,

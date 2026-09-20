@@ -78,7 +78,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('You must be 18 or older to use not-eat-alone.'),
+        find.text('You must be 18 or older to use Convyve.'),
         findsOneWidget,
       );
       verify(() => authRepository.signOut()).called(1);

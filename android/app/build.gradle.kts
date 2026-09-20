@@ -37,12 +37,12 @@ android {
         create("stage") {
             dimension = "env"
             applicationId = "com.daki.noteatalone.stage"
-            resValue("string", "app_name", "not-eat-alone (stage)")
+            resValue("string", "app_name", "Convyve (stage)")
         }
         create("prod") {
             dimension = "env"
             applicationId = "com.daki.noteatalone"
-            resValue("string", "app_name", "not-eat-alone")
+            resValue("string", "app_name", "Convyve")
         }
     }
 

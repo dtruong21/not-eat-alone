@@ -1,4 +1,4 @@
-# Privacy Policy — not-eat-alone
+# Privacy Policy — Convyve
 
 *Last updated: 2026-09-18*
 

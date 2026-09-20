@@ -1,4 +1,4 @@
-# not-eat-alone
+# Convyve
 
 Post a meal at a restaurant, match 1:1 with someone nearby, and don't eat alone.
 

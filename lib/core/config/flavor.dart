@@ -21,7 +21,7 @@ class FlavorConfig {
 
   bool get isStage => flavor == Flavor.stage;
 
-  String get appTitle => isStage ? 'not-eat-alone (stage)' : 'not-eat-alone';
+  String get appTitle => isStage ? 'Convyve (stage)' : 'Convyve';
 
   /// Firestore database id for this flavor — `'stage'` for the stage
   /// flavor, `'(default)'` for prod. Both live in the same Firebase project.

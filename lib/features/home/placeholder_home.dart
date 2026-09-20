@@ -27,7 +27,7 @@ class PlaceholderHome extends ConsumerWidget {
           ),
         ],
       ),
-      body: const Center(child: Text('not-eat-alone — foundation OK')),
+      body: const Center(child: Text('Convyve — foundation OK')),
     );
   }
 }

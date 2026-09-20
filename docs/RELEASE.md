@@ -1,6 +1,6 @@
 # Release Runbook
 
-How to take not-eat-alone from "code complete" to shipping in App Store + Play Store.
+How to take Convyve from "code complete" to shipping in App Store + Play Store.
 
 ---
 

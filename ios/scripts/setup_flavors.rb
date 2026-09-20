@@ -17,7 +17,7 @@
 #     schemes' Test action is ever run.)
 #   - On every "*-stage" Runner target configuration, sets:
 #       PRODUCT_BUNDLE_IDENTIFIER        = com.daki.noteatalone.stage
-#       INFOPLIST_KEY_CFBundleDisplayName = not-eat-alone (stage)
+#       INFOPLIST_KEY_CFBundleDisplayName = Convyve (stage)
 #       FLUTTER_TARGET                    = lib/main_stage.dart
 #     and the analogous prod values on every "*-prod" configuration.
 #   - Writes two SHARED schemes, `stage` and `prod`, under
@@ -52,12 +52,12 @@ BASE_CONFIGS = %w[Debug Release Profile].freeze
 FLAVOR_SETTINGS = {
   'stage' => {
     'PRODUCT_BUNDLE_IDENTIFIER' => 'com.daki.noteatalone.stage',
-    'INFOPLIST_KEY_CFBundleDisplayName' => 'not-eat-alone (stage)',
+    'INFOPLIST_KEY_CFBundleDisplayName' => 'Convyve (stage)',
     'FLUTTER_TARGET' => 'lib/main_stage.dart',
   },
   'prod' => {
     'PRODUCT_BUNDLE_IDENTIFIER' => 'com.daki.noteatalone',
-    'INFOPLIST_KEY_CFBundleDisplayName' => 'not-eat-alone',
+    'INFOPLIST_KEY_CFBundleDisplayName' => 'Convyve',
     'FLUTTER_TARGET' => 'lib/main_prod.dart',
   },
 }.freeze
@@ -133,7 +133,7 @@ copy_plist_phase.show_env_vars_in_log = '1'
 # *-stage/*-prod ones do. Backfill it on the base Runner target configs so
 # the original "Runner" scheme keeps showing the same display name it always
 # has instead of resolving to an empty string.
-BASE_DISPLAY_NAME = 'Not Eat Alone'
+BASE_DISPLAY_NAME = 'Convyve'
 runner_config_list = runner_target.build_configuration_list
 BASE_CONFIGS.each do |base_name|
   base_config = runner_config_list.build_configurations.find { |c| c.name == base_name }

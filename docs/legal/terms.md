@@ -1,4 +1,4 @@
-# Terms of Service — not-eat-alone
+# Terms of Service — Convyve
 
 *Last updated: 2026-09-18*
 
@@ -8,7 +8,7 @@ This is a starter template. Customize it for your project's actual terms. **Host
 
 ## Acceptance
 
-By using not-eat-alone, you agree to these terms. If you don't agree, don't use it.
+By using Convyve, you agree to these terms. If you don't agree, don't use it.
 
 ## Eligibility
 

@@ -1,4 +1,4 @@
-# not-eat-alone — Product Requirements
+# Convyve — Product Requirements
 
 > **Rule zero — v1 is an MVP.** Every feature in this doc that's tagged `in-MVP` must serve a pillar outcome AND be the smallest version of itself that still delivers that outcome. Default verdict on new proposals is POST-MVP. Make us argue features INTO v1, not out of it.
 
@@ -6,7 +6,7 @@
 
 Post a meal at a restaurant, match 1:1 with someone nearby, and don't eat alone.
 
-People want to try new restaurants but often won't go alone. not-eat-alone lets someone post a specific meal — a restaurant and a time — and match 1:1 with a nearby person who wants to join. Anchoring every match to a public restaurant at a fixed time keeps first meetings lighter and safer than a conventional date. Dating may follow, but the product is meal-first, not people-first.
+People want to try new restaurants but often won't go alone. Convyve lets someone post a specific meal — a restaurant and a time — and match 1:1 with a nearby person who wants to join. Anchoring every match to a public restaurant at a fixed time keeps first meetings lighter and safer than a conventional date. Dating may follow, but the product is meal-first, not people-first.
 
 ## Target user
 

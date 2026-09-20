@@ -119,7 +119,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                   ),
                   const SizedBox(height: WarmPlayfulSpacing.s4),
                   Text(
-                    'You must be 18 or older to use not-eat-alone.',
+                    'You must be 18 or older to use Convyve.',
                     textAlign: TextAlign.center,
                     style: textTheme.titleMedium?.copyWith(
                       color: colors.onSurface,
@@ -154,7 +154,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s2),
               Text(
-                'You must be 18 or older to use not-eat-alone.',
+                'You must be 18 or older to use Convyve.',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium?.copyWith(color: colors.outline),
               ),

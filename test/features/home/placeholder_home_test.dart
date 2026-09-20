@@ -31,7 +31,7 @@ void main() {
 
     await pumpHome(tester);
 
-    expect(find.text('not-eat-alone'), findsOneWidget);
+    expect(find.text('Convyve'), findsOneWidget);
   });
 
   testWidgets('tapping sign out calls AuthRepository.signOut', (
