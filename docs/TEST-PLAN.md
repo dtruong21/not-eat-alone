@@ -137,6 +137,34 @@ Related PRD entry: `docs/PRD.md § Auth`
 
 ---
 
+### Feature: Profile
+
+Status: active
+Related PRD entry: `docs/PRD.md § Profile`
+
+**Golden path:**
+- [ ] After the 18+ gate, an incomplete-profile user is forced to `/onboarding/profile` (routing unit-tested); cannot reach home or skip.
+- [ ] Setup: enter displayName + pick ≥1 photo + select gender → Continue enables → profile saved (`profile_completed` fired) → router advances to home.
+- [ ] Returning complete-profile user skips setup → straight to home.
+- [ ] Edit (settings) → change name/bio/gender/photos → Save persists (partial merge, doesn't clobber dob/ageVerified).
+- [ ] Photo upload works end-to-end (needs Storage enabled + a real image). *(Blocked until Storage bucket + rules deployed — see below.)*
+
+**Edge cases (specific to this feature):**
+- [ ] `profileComplete` = name non-blank && ≥1 photo && gender set (unit-tested).
+- [ ] Photo cap: 6 max; add tile hidden/disabled at 6 (controller no-ops at ≥6).
+- [ ] Remove photo updates the doc before deleting the Storage object (no dangling URL).
+- [ ] DOB is not editable in the profile (age shown, derived).
+- [ ] Non-owner cannot write another user's photos (Storage rules: owner-only write, signed-in read).
+- [ ] Env-prefixed Storage paths (`stage/` vs `prod/`) keep flavors apart in the shared bucket.
+
+**Pending (blocks live photo tests):**
+- Firebase **Storage not yet enabled** on the project — click "Get Started" in the console, then `firebase deploy --only storage`. Until then, `upload()` I/O is unverified (only path-building + delete are unit-tested).
+
+**Known issues:**
+- none filed
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:
