@@ -128,6 +128,37 @@ final class SignoutCompleted extends AppEvent {
 //       };
 // }
 
+final class ProfileCompleted extends AppEvent {
+  const ProfileCompleted();
+
+  @override
+  String get name => 'profile_completed';
+
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class ProfilePhotoAdded extends AppEvent {
+  const ProfilePhotoAdded({required this.count});
+  final int count;
+
+  @override
+  String get name => 'profile_photo_added';
+
+  @override
+  Map<String, Object?> get props => {'count': count};
+}
+
+final class ProfileEdited extends AppEvent {
+  const ProfileEdited();
+
+  @override
+  String get name => 'profile_edited';
+
+  @override
+  Map<String, Object?> get props => const {};
+}
+
 // ─── User properties registry ────────────────────────────────────────────────
 
 /// Sparse by design. Add a property only when it drives segmentation or is

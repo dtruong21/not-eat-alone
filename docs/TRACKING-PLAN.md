@@ -75,6 +75,9 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `age_gate_passed` | User clears the age-verification gate | — | Signup funnel |
 | `age_gate_failed` | User fails the age-verification gate (under minimum age) | — | Signup funnel, compliance |
 | `signout_completed` | User explicitly signs out | — | (rare — investigate spikes) |
+| `profile_completed` | User finishes forced onboarding profile setup (name, gender, ≥1 photo) | — | Onboarding funnel |
+| `profile_photo_added` | User uploads a profile photo | `count: int` (photo count after upload) | Profile completeness |
+| `profile_edited` | User saves changes to their profile from settings | — | Engagement |
 
 {{Add project-specific events below as `/track` runs append them.}}
 
