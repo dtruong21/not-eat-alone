@@ -14,7 +14,7 @@ Flutter SDK pinned to **3.47.4** via `.fvmrc`. Dart SDK comes from Flutter. All 
 |---|---|
 | `firebase_core` | Initializes FlutterFire. Required first import in `main()`. |
 | `firebase_auth` | Anonymous + email + OAuth. Anonymous-to-real linking preserves the uid. |
-| `cloud_firestore` | Primary datastore. Wrapped exclusively in `lib/core/firebase/*_repository.dart`. |
+| `cloud_firestore` | Primary datastore. Wrapped exclusively in each feature's `data/repositories/*_repository_impl.dart` — see §2a. |
 | `cloud_functions` | Server-side callables (cascade-deletes, server validation). |
 | `firebase_analytics` | First-party funnels. Kept thin — PostHog carries product analytics. |
 | `flutter_riverpod` + `riverpod_annotation` | State + code-gen providers (`@riverpod`). |
@@ -52,10 +52,10 @@ Codemagic is the CI/CD platform — see `codemagic.yaml`. No EAS analog, no mana
 lib/
   main.dart                          entry — Firebase + PostHog + Sentry + ProviderScope + router
   core/
-    firebase/                        Firestore boundary (one repo per collection)
-      firebase_client.dart           db + auth getters
-      repository_exception.dart      typed parse/write errors
-      <name>_repository.dart         per-collection repository with .withConverter
+    firebase/                        cross-cutting Firebase infra only (NOT per-collection repos)
+      firebase_client.dart           flavor-aware db + auth getters
+      repository_exception.dart      typed parse/write errors, reused by every feature's data layer
+      options/                       firebase_options_<flavor>.dart
     design/
       tokens.dart                    from the chosen design system
       theme.dart                     ThemeData light + dark factories
@@ -63,13 +63,20 @@ lib/
       client.dart                    track / identify / reset
       events.dart                    sealed class AppEvent — the typed registry
     routing/
-      router.dart                    GoRouter instance
+      router.dart                    GoRouter instance — the composition root; wires feature application providers
       routes.dart                    @TypedGoRoute classes (generated → routes.g.dart)
   features/
     <name>/
-      data/                          DTOs, mappers (when repository output needs transforming)
-      domain/                        freezed models for this feature (sometimes the model lives next to the repo instead — that's fine)
-      application/                   Riverpod providers (@riverpod AsyncNotifier)
+      domain/
+        entities/                    pure freezed entities, NO json, zero Flutter/Firebase imports
+        repositories/                abstract repository interfaces (e.g. abstract class XRepository)
+      data/
+        dtos/                        freezed + json + Firestore/Timestamp mapping
+        mappers/                     extension methods: XDto.toEntity() / X.toDto()
+        repositories/                <name>_repository_impl.dart — implements the domain interface; the
+                                      ONLY place in the feature allowed to import cloud_firestore/firebase_auth
+        datasources/                 optional — only when a remote/local source is worth isolating
+      application/                   Riverpod notifiers + providers (state + impl→interface binding)
       presentation/                  widgets + screens
 test/
 integration_test/
@@ -82,6 +89,31 @@ design-systems/                      3 swappable systems — deleted after picke
 .claude/                             agents + commands
 scripts/                             pick-design-system.sh
 ```
+
+---
+
+## 2a. Clean Architecture — layer boundaries (canonical)
+
+Full design + rationale: `docs/superpowers/specs/2026-09-19-clean-architecture-design.md`. This section is the canonical summary; keep it in sync if the design spec changes.
+
+**The dependency rule (non-negotiable):**
+
+```
+presentation → application → domain ← data
+```
+
+- **`domain`** — pure Dart, zero Flutter/Firebase/IO imports. Freezed entities (no `fromJson`/`toJson`) + abstract repository interfaces (`abstract class XRepository { ... }`).
+- **`data`** — the ONLY layer allowed to import `cloud_firestore`, `firebase_auth`, `google_sign_in`, `sign_in_with_apple`. Holds the DTO (freezed + json + `Timestamp`↔`DateTime` handling), the mapper (extension methods bridging DTO ↔ entity), and the `*_repository_impl.dart` implementing the domain interface via `.withConverter`.
+- **`application`** — Riverpod (`@riverpod` / provider + notifier). Depends on domain interfaces; binds the concrete `data` impl to the interface at a single provider wiring point (`xRepositoryProvider = Provider<XRepository>((ref) => XRepositoryImpl())`). Never imports `data` types elsewhere.
+- **`presentation`** — depends on application + domain only. Never imports Firestore/Auth SDKs.
+
+**Entity/DTO/mapper pattern** (reference: `lib/features/user/`):
+- `domain/entities/app_user.dart` — `AppUser` (pure freezed, no json).
+- `data/dtos/app_user_dto.dart` — `AppUserDto` (freezed + json, carries `Timestamp` conversion).
+- `data/mappers/app_user_mapper.dart` — `extension AppUserDtoX on AppUserDto { AppUser toEntity() => ...; }` and the reverse `AppUserX.toDto()`.
+- `data/repositories/user_repository_impl.dart` — implements `domain/repositories/user_repository.dart`, throws `RepositoryParseException`/`RepositoryWriteException` from `core/firebase/repository_exception.dart`, defaults its Firestore instance to `db` from `core/firebase/firebase_client.dart`.
+
+`core/firebase/` keeps only cross-cutting infra with no feature ownership (`firebase_client.dart`, `repository_exception.dart`, `options/`) — it no longer holds per-collection repositories; those live in each feature's `data/` layer. Scaffold new collections with `/firestore`, new application-layer notifiers with `/provider`.
 
 ---
 
@@ -139,10 +171,10 @@ Navigate by calling `const HabitRoute(id: '...').push(context)` — no raw path 
 
 ### 3.3 Repository pattern — `.withConverter` always
 
-Pattern fixed in `lib/core/firebase/README.md`. Highlights:
-- One file per collection.
-- Every `CollectionReference<Model>` built with `.withConverter`.
-- `fromFirestore` wraps `Model.fromJson` in try/catch that throws `RepositoryParseException`.
+Pattern fixed in §2a above and demonstrated in `lib/features/user/data/repositories/user_repository_impl.dart`. Highlights:
+- One `*_repository_impl.dart` per collection, living in that feature's `data/repositories/`, implementing an abstract interface from that feature's `domain/repositories/`.
+- Every `CollectionReference<Dto>` built with `.withConverter`.
+- `fromFirestore` wraps `Dto.fromJson` in try/catch that throws `RepositoryParseException`; writes that fail throw `RepositoryWriteException` (both from `core/firebase/repository_exception.dart`).
 - Repository methods never return `null` to signal failure — only to signal valid absence.
 
 ### 3.4 Theming — Material 3 + ThemeExtension

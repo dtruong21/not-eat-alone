@@ -17,11 +17,15 @@ A React Native sibling template (same workflow, different stack) lives at `../re
 ```
 lib/
   main.dart / app.dart / firebase_options.dart (generated, committed)
-  core/firebase/    one repository per collection (typed .withConverter)
+  core/firebase/    firebase_client.dart (db/auth handles) + repository_exception.dart + options/
   core/design/      tokens.dart + theme.dart
   core/analytics/   client.dart + events.dart (typed registry)
-  core/routing/     router.dart + routes.dart (typed go_router)
-  features/<name>/  data / domain (freezed) / application (Riverpod) / presentation
+  core/routing/     router.dart + routes.dart (typed go_router) — composition root
+  features/<name>/
+    domain/         entities/ (pure freezed, no json) + repositories/ (abstract interfaces)
+    data/           dtos/ (freezed+json) + mappers/ (extensions) + repositories/ (impl) + datasources/ (optional)
+    application/    Riverpod notifiers + providers
+    presentation/   screens + widgets
 test/               mirrors lib/ (unit + widget) · integration_test/ (E2E)
 firebase/           firestore.rules (deployed) + functions/
 docs/               specs, process, release
@@ -30,7 +34,7 @@ docs/               specs, process, release
 ## Conventions (non-negotiable)
 
 - Dart strict via `very_good_analysis`. No `dynamic` at boundaries — narrow with freezed + json_serializable.
-- Firestore only via `lib/core/firebase/<collection>_repository.dart`. Never import `cloud_firestore` from feature code.
+- Dependency rule: `presentation → application → domain ← data`. Repositories are ABSTRACT interfaces in `domain/repositories/`, implemented in `data/repositories/`. `cloud_firestore`/`firebase_auth`/`google_sign_in`/`sign_in_with_apple` imports allowed ONLY in a feature's `data/` layer. `domain/` has zero Flutter/Firebase imports.
 - Widgets are functions or `ConsumerWidget`. One screen = one widget in `features/<name>/presentation/`; logic in `application/`.
 - `ref.watch` only in `build()`; inside notifier methods use `ref.read`.
 - Server-set fields (`serverTimestamp`) are nullable in freezed models — `.withConverter` runs on optimistic snapshots.
