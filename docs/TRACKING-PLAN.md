@@ -75,7 +75,6 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `age_gate_passed` | User clears the age-verification gate | — | Signup funnel |
 | `age_gate_failed` | User fails the age-verification gate (under minimum age) | — | Signup funnel, compliance |
 | `signout_completed` | User explicitly signs out | — | (rare — investigate spikes) |
-| `feedback_submitted` | User submits in-app feedback | `category: 'bug' \| 'idea' \| 'praise' \| 'other'`, `length_chars: int` | Listening rate |
 
 {{Add project-specific events below as `/track` runs append them.}}
 

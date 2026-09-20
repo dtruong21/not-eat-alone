@@ -109,25 +109,6 @@ final class SignoutCompleted extends AppEvent {
   Map<String, Object?> get props => const {};
 }
 
-final class FeedbackSubmitted extends AppEvent {
-  const FeedbackSubmitted({required this.category, required this.lengthChars});
-
-  /// One of 'bug' | 'idea' | 'praise' | 'other'. Kept as a String here so
-  /// feature code doesn't have to import the feature enum; the feature owns
-  /// validation at its call site.
-  final String category;
-  final int lengthChars;
-
-  @override
-  String get name => 'feedback_submitted';
-
-  @override
-  Map<String, Object?> get props => {
-        'category': category,
-        'length_chars': lengthChars,
-      };
-}
-
 // ─── Project-specific events (extend below — keep this section growing) ──────
 //
 // Example: uncomment and adapt.
