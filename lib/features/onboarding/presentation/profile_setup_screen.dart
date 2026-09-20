@@ -38,7 +38,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   ProfileFormData? get debugFormData => _formData;
 
   void _onFormChanged(ProfileFormData data) {
-    setState(() => _formData = data);
+    if (data != _formData) setState(() => _formData = data);
   }
 
   Future<void> _continue() async {

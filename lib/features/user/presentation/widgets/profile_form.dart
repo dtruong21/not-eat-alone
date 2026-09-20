@@ -97,6 +97,17 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
 
   Uint8List? _debugPickedBytes;
 
+  /// The last [ProfileFormData] reported to [ProfileForm.onChanged].
+  ///
+  /// `build()` reports the current form values on every build (via
+  /// [_notifyChanged]'s post-frame callback), and the parent's handler
+  /// typically calls `setState`, which triggers another build. Without this
+  /// guard, that would fire `onChanged` — and therefore `setState` — every
+  /// frame forever, since the data is only compared by the parent, not here.
+  /// Skipping the callback once the reported value stops changing breaks
+  /// that loop.
+  ProfileFormData? _lastReported;
+
   /// Test-only hook: makes the next "add photo" tap use [bytes] instead of
   /// invoking `ImagePicker`. Production code should only ever populate this
   /// via the real picker in [_pickPhoto].
@@ -119,6 +130,9 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
       bio: _bioController.text,
       photoCount: photoCount,
     );
+    if (data == _lastReported) return;
+    _lastReported = data;
+
     // Scheduled rather than called inline: this runs from build(), and the
     // parent's onChanged typically calls setState — doing that synchronously
     // while a build is in flight would throw.

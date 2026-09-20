@@ -27,7 +27,7 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   ProfileFormData? _formData;
 
   void _onFormChanged(ProfileFormData data) {
-    setState(() => _formData = data);
+    if (data != _formData) setState(() => _formData = data);
   }
 
   Future<void> _save() async {

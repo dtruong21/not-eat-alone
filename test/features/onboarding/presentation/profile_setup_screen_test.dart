@@ -68,6 +68,33 @@ void main() {
     },
   );
 
+  testWidgets(
+    'the tree reaches idle instead of rebuilding forever',
+    (tester) async {
+      final controller = FakeProfileController();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserDocProvider.overrideWith(
+              (ref) => Stream.value(_user()),
+            ),
+            profileControllerProvider.overrideWith(() => controller),
+          ],
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light),
+            home: const ProfileSetupScreen(),
+          ),
+        ),
+      );
+
+      // Regression test: ProfileForm.build() used to schedule
+      // widget.onChanged unconditionally on every frame, and both host
+      // screens' onChanged handlers called setState unconditionally, so the
+      // tree never settled and this would time out.
+      await tester.pumpAndSettle();
+    },
+  );
+
   testWidgets('no back navigation is offered', (tester) async {
     await pumpScreen(tester);
 
