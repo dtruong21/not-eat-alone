@@ -1,17 +1,14 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
-import 'package:not_eat_alone/core/firebase/auth_repository.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
-
-class MockUserCredential extends Mock implements UserCredential {}
 
 /// `analytics.track()` drops to `debugPrint` in debug builds (see
 /// `lib/core/analytics/client.dart`) — intercept it here rather than mocking
@@ -58,7 +55,7 @@ void main() {
     (tester) async {
       when(
         () => authRepository.signInWithGoogle(),
-      ).thenAnswer((_) async => MockUserCredential());
+      ).thenAnswer((_) async {});
 
       await pumpScreen(tester);
 

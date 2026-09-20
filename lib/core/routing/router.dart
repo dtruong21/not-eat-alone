@@ -32,10 +32,11 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
-import 'package:not_eat_alone/features/auth/presentation/age_gate_screen.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 import 'package:not_eat_alone/features/home/placeholder_home.dart';
+import 'package:not_eat_alone/features/onboarding/presentation/age_gate_screen.dart';
+import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 const _signInPath = '/auth/signin';
 const _phoneVerifyPath = '/auth/phone';

@@ -26,7 +26,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/util/age.dart';
-import 'package:not_eat_alone/features/auth/application/auth_providers_v2.dart';
+import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 part 'age_gate_controller.g.dart';
