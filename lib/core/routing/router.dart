@@ -36,14 +36,16 @@ import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dar
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 import 'package:not_eat_alone/features/home/placeholder_home.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/age_gate_screen.dart';
+import 'package:not_eat_alone/features/onboarding/presentation/profile_setup_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 const _signInPath = '/auth/signin';
 const _phoneVerifyPath = '/auth/phone';
 const _ageGatePath = '/onboarding/age';
+const _profileSetupPath = '/onboarding/profile';
 const _homePath = '/';
 
-/// Pure redirect decision for the three auth states. Kept side-effect-free
+/// Pure redirect decision for the four auth states. Kept side-effect-free
 /// and exported so it's directly unit-testable without spinning up a
 /// `GoRouter` — see `test/core/routing/redirect_test.dart`.
 ///
@@ -54,14 +56,17 @@ const _homePath = '/';
 ///     redirect loop: go_router re-runs `redirect` on the target location).
 ///   - signed in, not age-verified -> `/onboarding/age` (unless already
 ///     there, same loop guard).
-///   - signed in + age-verified, but sitting on an auth/onboarding screen ->
-///     `/` (nothing left to gate on those screens — this includes
-///     `/auth/phone`, so completing phone verification advances home
-///     instead of stranding the user on the OTP screen).
+///   - signed in + age-verified, but profile incomplete ->
+///     `/onboarding/profile` (unless already there, same loop guard).
+///   - signed in + age-verified + profile complete, but sitting on an
+///     auth/onboarding screen -> `/` (nothing left to gate on those screens
+///     — this includes `/auth/phone`, so completing phone verification
+///     advances home instead of stranding the user on the OTP screen).
 ///   - otherwise -> `null` (stay put).
 String? authRedirect({
   required bool signedIn,
   required bool ageVerified,
+  required bool profileComplete,
   required String location,
 }) {
   if (!signedIn) {
@@ -71,9 +76,13 @@ String? authRedirect({
   if (!ageVerified) {
     return location == _ageGatePath ? null : _ageGatePath;
   }
+  if (!profileComplete) {
+    return location == _profileSetupPath ? null : _profileSetupPath;
+  }
   if (location == _signInPath ||
       location == _phoneVerifyPath ||
-      location == _ageGatePath) {
+      location == _ageGatePath ||
+      location == _profileSetupPath) {
     return _homePath;
   }
   return null;
@@ -94,8 +103,9 @@ String? authRedirect({
 /// sitting on the age gate mid-load.
 final routerProvider = Provider<GoRouter>((ref) {
   final signedIn = ref.watch(authStateProvider).value != null;
-  final ageVerified =
-      ref.watch(currentUserDocProvider).value?.ageVerified ?? false;
+  final userDoc = ref.watch(currentUserDocProvider).value;
+  final ageVerified = userDoc?.ageVerified ?? false;
+  final profileComplete = userDoc?.profileComplete ?? false;
 
   return GoRouter(
     initialLocation: '/',
@@ -103,6 +113,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) => authRedirect(
       signedIn: signedIn,
       ageVerified: ageVerified,
+      profileComplete: profileComplete,
       location: state.matchedLocation,
     ),
     routes: [
@@ -126,6 +137,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: _ageGatePath,
         builder: (context, state) => const AgeGateScreen(),
+      ),
+      GoRoute(
+        path: _profileSetupPath,
+        builder: (context, state) => const ProfileSetupScreen(),
       ),
     ],
   );
