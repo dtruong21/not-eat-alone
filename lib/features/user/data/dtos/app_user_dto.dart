@@ -10,6 +10,10 @@ abstract class AppUserDto with _$AppUserDto {
     required DateTime dob,
     @Default(false) bool ageVerified,
     DateTime? createdAt, // server-set; nullable on optimistic snapshots
+    String? displayName,
+    @Default(<String>[]) List<String> photoUrls,
+    String? bio,
+    String? gender, // stores Gender.name
   }) = _AppUserDto;
 
   factory AppUserDto.fromJson(Map<String, Object?> json) =>

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
+import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
 void main() {
   group('AppUser', () {
@@ -42,6 +43,27 @@ void main() {
       final b = AppUser(uid: 'u1', dob: DateTime.utc(2000, 1, 1));
 
       expect(a, equals(b));
+    });
+
+    test('profileComplete requires name, photo, and gender', () {
+      final base = AppUser(uid: 'u1', dob: DateTime.utc(2000, 1, 1));
+      expect(base.profileComplete, false);
+      expect(
+        base
+            .copyWith(displayName: 'Ada', photoUrls: ['url'], gender: Gender.woman)
+            .profileComplete,
+        true,
+      );
+      expect(
+        base.copyWith(displayName: 'Ada', gender: Gender.woman).profileComplete,
+        false,
+      ); // no photo
+      expect(
+        base
+            .copyWith(displayName: '  ', photoUrls: ['url'], gender: Gender.man)
+            .profileComplete,
+        false,
+      ); // blank name
     });
   });
 }
