@@ -165,6 +165,32 @@ Related PRD entry: `docs/PRD.md § Profile`
 
 ---
 
+### Feature: Meal creation
+
+Status: active
+Related PRD entry: `docs/PRD.md § Meals`
+
+**Golden path:**
+- [ ] From home, "Create a meal" → restaurant search (list) → search filters the Paris list → tap a restaurant → details.
+- [ ] Details: pick a future date/time, optional note, women-only toggle → "Create meal" → a `meals/{id}` doc is written (hostId = me, status `open`, geohash set) → back to home with confirmation.
+- [ ] Women-only toggle persists on the meal doc.
+- [ ] Host can read/update/delete only their own meals (rules); a non-host cannot (rules-tested manually once discovery opens read in Plan 5).
+
+**Edge cases (specific to this feature):**
+- [ ] geohash computed at creation from the restaurant lat/lng (unit-tested against the canonical reference).
+- [ ] Create-meal error (write fails) renders an error, does NOT fire `meal_created` (analytics only on success).
+- [ ] Deep-link/restart on `/meals/new/details` with no restaurant → falls back to search (no crash).
+- [ ] `seats` fixed at 1 (1:1); date/time is future-only.
+
+**Deferred (needs the Google API key — 30-day GCP wait):**
+- Real **Places API** restaurant search (currently a fake 20-restaurant Paris list behind `RestaurantSearchRepository` — swap one datasource).
+- **Map preview** of the restaurant (list-first now; map added with the same keyed task).
+
+**Known issues:**
+- none filed
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:
