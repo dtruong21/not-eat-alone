@@ -64,7 +64,11 @@ final discoveryControllerProvider =
     return const Stream.empty();
   }
 
-  final prefix = encodeGeohash(loc.lat, loc.lng, precision: 4);
+  // Precision 3 (~156km cell) covers all of Paris + Île-de-France in a
+  // single cell, so no meals are missed near a cell boundary. Finer,
+  // multi-cell neighbour queries are the multi-city scale-up (see the
+  // discovery design spec §3/§11).
+  final prefix = encodeGeohash(loc.lat, loc.lng, precision: 3);
 
   return ref
       .watch(mealRepositoryProvider)
