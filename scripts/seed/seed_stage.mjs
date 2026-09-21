@@ -104,10 +104,16 @@ async function seed(db) {
 }
 
 async function wipeCollection(db, collectionName) {
+  // '~' (0x7E) sorts after every character used in our seed ids, so bounding
+  // the range with `< 'seed_~'` selects exactly the docs whose id starts
+  // with "seed_" and nothing else — same trick the app's watchDiscoverable
+  // query uses for geohash prefix bounds (see meal_repository_impl.dart).
+  // ASCII '~' is used instead of a Unicode private-use sentinel so the bound
+  // stays visible/unambiguous in diffs and terminals.
   const snapshot = await db
     .collection(collectionName)
     .where('__name__', '>=', 'seed_')
-    .where('__name__', '<', 'seed_')
+    .where('__name__', '<', 'seed_~')
     .get();
 
   if (snapshot.empty) {
