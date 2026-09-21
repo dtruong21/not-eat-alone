@@ -159,6 +159,27 @@ final class ProfileEdited extends AppEvent {
   Map<String, Object?> get props => const {};
 }
 
+final class RestaurantSelected extends AppEvent {
+  const RestaurantSelected();
+
+  @override
+  String get name => 'restaurant_selected';
+
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class MealCreated extends AppEvent {
+  const MealCreated({required this.womenOnly});
+  final bool womenOnly;
+
+  @override
+  String get name => 'meal_created';
+
+  @override
+  Map<String, Object?> get props => {'women_only': womenOnly};
+}
+
 // ─── User properties registry ────────────────────────────────────────────────
 
 /// Sparse by design. Add a property only when it drives segmentation or is

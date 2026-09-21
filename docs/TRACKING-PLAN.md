@@ -78,6 +78,8 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `profile_completed` | User finishes forced onboarding profile setup (name, gender, ≥1 photo) | — | Onboarding funnel |
 | `profile_photo_added` | User uploads a profile photo | `count: int` (photo count after upload) | Profile completeness |
 | `profile_edited` | User saves changes to their profile from settings | — | Engagement |
+| `restaurant_selected` | User picks a restaurant from search results while creating a meal | — | Meal-creation funnel |
+| `meal_created` | User finishes creating a meal (restaurant, time, optional note, women-only toggle) | `women_only: bool` | Meals created, women-only adoption |
 
 {{Add project-specific events below as `/track` runs append them.}}
 
