@@ -46,6 +46,35 @@ service cloud.firestore {
       allow update, delete: if isSignedIn() && resource.data.hostId == request.auth.uid;
     }
 
+    // Join requests: guest creates for an OPEN meal; host reviews.
+    match /requests/{requestId} {
+      allow read: if isSignedIn()
+                  && (resource.data.guestId == request.auth.uid
+                      || resource.data.hostId == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.guestId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.hostId != request.auth.uid
+                    && exists(/databases/$(database)/documents/meals/$(request.resource.data.mealId))
+                    && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.status == 'open'
+                    && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.hostId == request.resource.data.hostId;
+      allow update: if isSignedIn()
+                    && resource.data.hostId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if false;
+    }
+
+    // Matches: readable by the two parties; created by the host (in the
+    // approve transaction); immutable in v1.
+    match /matches/{matchId} {
+      allow read: if isSignedIn()
+                  && (resource.data.hostId == request.auth.uid
+                      || resource.data.guestId == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.hostId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // Public reference data (handles, usernames, etc.) — adapt per project
     // Example:
     // match /handles/{handle} {

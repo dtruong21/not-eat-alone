@@ -7,6 +7,15 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "geohash", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hostId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
