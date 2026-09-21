@@ -60,7 +60,8 @@ service cloud.firestore {
                     && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.hostId == request.resource.data.hostId;
       allow update: if isSignedIn()
                     && resource.data.hostId == request.auth.uid
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+                    && request.resource.data.status in ['approved', 'denied'];
       allow delete: if false;
     }
 
