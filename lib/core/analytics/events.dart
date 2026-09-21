@@ -202,6 +202,40 @@ final class MealOpened extends AppEvent {
   Map<String, Object?> get props => {'women_only': womenOnly};
 }
 
+final class JoinRequested extends AppEvent {
+  const JoinRequested({required this.womenOnly});
+  final bool womenOnly;
+  @override
+  String get name => 'join_requested';
+  @override
+  Map<String, Object?> get props => {'women_only': womenOnly};
+}
+
+final class RequestApproved extends AppEvent {
+  const RequestApproved();
+  @override
+  String get name => 'request_approved';
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class RequestDenied extends AppEvent {
+  const RequestDenied();
+  @override
+  String get name => 'request_denied';
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class MatchCreated extends AppEvent {
+  const MatchCreated({required this.womenOnly});
+  final bool womenOnly;
+  @override
+  String get name => 'match_created';
+  @override
+  Map<String, Object?> get props => {'women_only': womenOnly};
+}
+
 // ─── User properties registry ────────────────────────────────────────────────
 
 /// Sparse by design. Add a property only when it drives segmentation or is

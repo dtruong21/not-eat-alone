@@ -13,3 +13,8 @@ final currentUserDocProvider = StreamProvider<AppUser?>((ref) {
   if (user == null) return Stream.value(null);
   return ref.watch(userRepositoryProvider).watch(user.uid);
 });
+
+/// Any user's `users/{uid}` document — for showing a host/guest profile.
+final userDocProvider = StreamProvider.family<AppUser?, String>((ref, uid) {
+  return ref.watch(userRepositoryProvider).watch(uid);
+});
