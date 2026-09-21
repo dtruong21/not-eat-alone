@@ -191,6 +191,33 @@ Related PRD entry: `docs/PRD.md § Meals`
 
 ---
 
+### Feature: Discovery
+
+Status: active
+Related PRD entry: `docs/PRD.md § Discovery`
+
+**Golden path:**
+- [ ] A fully-onboarded user lands on the **discovery feed** at `/` (replaces the placeholder home).
+- [ ] The feed lists open, future meals near the user (device GPS via geolocator; **Paris-center fallback** if location denied), sorted by distance; each card shows restaurant, time, distance, host name/photo.
+- [ ] Tap a meal → detail (restaurant + host profile + time/note/women-only); "Request to join" is present but **disabled** (Plan 6).
+- [ ] Pull-to-refresh re-reads location + refreshes the feed. "Create a meal" FAB works.
+- [ ] Seed script (`scripts/seed`, firebase-admin → **stage** DB) populates ~12 users + ~18 meals so the feed has content. `npm run wipe` cleans them.
+
+**Edge cases (specific to this feature):**
+- [ ] My own meals are excluded from the feed; past meals excluded.
+- [ ] **Women-only meals hidden** from non-women viewers; visible (with badge) to women.
+- [ ] Location denied/error → Paris center; feed still works.
+- [ ] geohash prefix query (precision 4 ~Paris cell) + client distance sort; any signed-in user can READ meals + host profiles (rules opened; writes still owner-only).
+- [ ] Empty state ("No meals near you yet") when nothing matches.
+
+**Deferred (needs the Google API key — 30-day GCP wait):**
+- **Map view** of the feed (list-first now; map added with the same keyed task as Places).
+
+**Known issues:**
+- none filed
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:
