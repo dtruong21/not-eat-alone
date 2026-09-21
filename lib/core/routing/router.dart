@@ -35,6 +35,9 @@ import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 import 'package:not_eat_alone/features/home/placeholder_home.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/features/meal/presentation/create_meal_screen.dart';
+import 'package:not_eat_alone/features/meal/presentation/restaurant_search_screen.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/age_gate_screen.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/profile_setup_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -141,6 +144,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: _profileSetupPath,
         builder: (context, state) => const ProfileSetupScreen(),
+      ),
+      GoRoute(
+        path: '/meals/new',
+        builder: (context, state) => const RestaurantSearchScreen(),
+      ),
+      GoRoute(
+        path: '/meals/new/details',
+        builder: (context, state) {
+          final restaurant = state.extra;
+          if (restaurant is! Restaurant) {
+            // Deep link / app restart on this path with no restaurant in
+            // memory (`extra` doesn't survive process death) — fall back to
+            // search instead of crashing on a bad cast.
+            return const RestaurantSearchScreen();
+          }
+          return CreateMealScreen(restaurant: restaurant);
+        },
       ),
     ],
   );
