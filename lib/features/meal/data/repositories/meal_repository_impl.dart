@@ -10,6 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:not_eat_alone/core/firebase/firebase_client.dart';
 import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/core/util/geohash.dart';
+import 'package:not_eat_alone/features/meal/data/dtos/meal_dto.dart';
 import 'package:not_eat_alone/features/meal/data/mappers/meal_mapper.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/repositories/meal_repository.dart';
@@ -57,5 +58,54 @@ class MealRepositoryImpl implements MealRepository {
     }
 
     return newId;
+  }
+
+  /// Streams `meals` documents with `status == 'open'` whose `geohash`
+  /// starts with [geohashPrefix].
+  ///
+  /// `'~'` (0x7E) sorts after every base-32 geohash character, so bounding
+  /// the range with `geohash < '$geohashPrefix~'` selects exactly the docs
+  /// whose geohash starts with [geohashPrefix]. The equality + range filter
+  /// needs the composite index declared in
+  /// `firebase/firestore.indexes.json` (`status` ASC, `geohash` ASC).
+  ///
+  /// A doc that fails to parse (schema drift) surfaces as a
+  /// [RepositoryParseException] error event on the stream, same as
+  /// `UserRepositoryImpl`'s converter.
+  @override
+  Stream<List<Meal>> watchDiscoverable({required String geohashPrefix}) {
+    return _firestore
+        .collection('meals')
+        .where('status', isEqualTo: 'open')
+        .where('geohash', isGreaterThanOrEqualTo: geohashPrefix)
+        .where('geohash', isLessThan: '$geohashPrefix~')
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(_mealFromDoc).toList(growable: false),
+        );
+  }
+
+  static Meal _mealFromDoc(QueryDocumentSnapshot<Map<String, Object?>> doc) {
+    try {
+      final data = Map<String, Object?>.from(doc.data())..['id'] = doc.id;
+
+      // Same Timestamp→ISO-DateTime translation as
+      // `UserRepositoryImpl._fromFirestore` — `dateTime`/`createdAt` are
+      // `DateTime`/nullable-`DateTime` in the model but `Timestamp` on disk.
+      final dateTime = data['dateTime'];
+      if (dateTime is Timestamp) {
+        data['dateTime'] = dateTime.toDate().toUtc().toIso8601String();
+      }
+
+      final createdAt = data['createdAt'];
+      if (createdAt is Timestamp) {
+        data['createdAt'] = createdAt.toDate().toUtc().toIso8601String();
+      }
+
+      return MealDto.fromJson(data).toEntity();
+    } catch (e, st) {
+      throw RepositoryParseException('meals', doc.id, e, st);
+    }
   }
 }
