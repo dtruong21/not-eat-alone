@@ -80,6 +80,8 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `profile_edited` | User saves changes to their profile from settings | — | Engagement |
 | `restaurant_selected` | User picks a restaurant from search results while creating a meal | — | Meal-creation funnel |
 | `meal_created` | User finishes creating a meal (restaurant, time, optional note, women-only toggle) | `women_only: bool` | Meals created, women-only adoption |
+| `discovery_viewed` | Discovery feed loads or refreshes with a (possibly empty) result list | `count: int` (number of meals shown) | Discovery engagement, feed health |
+| `meal_opened` | User opens a meal's detail view from the discovery feed | `women_only: bool` | Meal engagement, women-only funnel |
 
 {{Add project-specific events below as `/track` runs append them.}}
 
