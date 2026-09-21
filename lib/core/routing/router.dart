@@ -34,9 +34,11 @@ import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
-import 'package:not_eat_alone/features/home/placeholder_home.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/create_meal_screen.dart';
+import 'package:not_eat_alone/features/meal/presentation/discovery_screen.dart';
+import 'package:not_eat_alone/features/meal/presentation/meal_detail_screen.dart';
 import 'package:not_eat_alone/features/meal/presentation/restaurant_search_screen.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/age_gate_screen.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/profile_setup_screen.dart';
@@ -125,7 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // codegen runs.
       GoRoute(
         path: _homePath,
-        builder: (context, state) => const PlaceholderHome(),
+        builder: (context, state) => const DiscoveryScreen(),
       ),
       GoRoute(
         path: _signInPath,
@@ -160,6 +162,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             return const RestaurantSearchScreen();
           }
           return CreateMealScreen(restaurant: restaurant);
+        },
+      ),
+      GoRoute(
+        path: '/meals/detail',
+        builder: (context, state) {
+          final meal = state.extra;
+          if (meal is! Meal) {
+            // Deep link / app restart on this path with no meal in memory
+            // (`extra` doesn't survive process death) — fall back to
+            // discovery instead of crashing on a bad cast.
+            return const DiscoveryScreen();
+          }
+          return MealDetailScreen(meal: meal);
         },
       ),
     ],
