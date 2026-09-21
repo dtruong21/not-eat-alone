@@ -28,6 +28,10 @@ doc/api/
 .env.*
 !.env.example
 
+# Seed script (out-of-app Node, firebase-admin) — never commit credentials
+scripts/seed/service-account.json
+scripts/seed/node_modules/
+
 # iOS
 ios/Pods/
 ios/Flutter/Flutter.framework

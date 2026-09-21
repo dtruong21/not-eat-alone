@@ -1,0 +1,15 @@
+{
+  "name": "convyve-seed",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "firebase-admin seed script for the Convyve STAGE Firestore database (users + meals).",
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  },
+  "scripts": {
+    "seed": "node seed_stage.mjs",
+    "wipe": "node seed_stage.mjs --wipe",
+    "test": "node --test"
+  }
+}
