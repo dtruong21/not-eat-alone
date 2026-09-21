@@ -4,15 +4,22 @@
 /// (photo/name/derived age/bio via `UserRepository.watch(hostId)`),
 /// date/time, note (if any), and a "Women only" badge when applicable.
 ///
-/// Carries a "Request to join" button that is present but disabled
-/// (`onPressed: null`) with a "Coming soon" caption — the join flow itself
-/// is Plan 6 scope; this screen only stakes out where the control will live.
+/// Carries the live "Request to join" control (`_RequestAction`), driven by
+/// `mealRequestStateProvider(meal.id)`: enabled "Request to join" when the
+/// viewer has no request yet, disabled "Requested" while pending, a
+/// "Matched!" banner once approved, disabled "Not selected" once denied, and
+/// nothing (a "Your meal" chip) when the viewer is the host — a host never
+/// requests their own meal.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/matching/application/create_request_controller.dart';
+import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
+import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
@@ -141,25 +148,7 @@ class MealDetailScreen extends ConsumerWidget {
               const SizedBox(height: WarmPlayfulSpacing.s3),
               _HostBlock(hostId: meal.hostId),
               const SizedBox(height: WarmPlayfulSpacing.s6),
-              FilledButton(
-                key: const Key('meal_detail_request_to_join_button'),
-                onPressed: null,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
-                child: const Text('Request to join'),
-              ),
-              const SizedBox(height: WarmPlayfulSpacing.s1),
-              Text(
-                'Coming soon',
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(color: colors.outline),
-              ),
+              _RequestAction(meal: meal),
             ],
           ),
         ),
@@ -281,6 +270,234 @@ class _HostBlock extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// The live "Request to join" control. Switches on whether the viewer is the
+/// meal's host (read via [authStateProvider]) and, if not, on
+/// [mealRequestStateProvider]'s `AsyncValue<JoinRequest?>` for this meal — a
+/// host never requests their own meal, so that case short-circuits before
+/// touching the request stream at all.
+class _RequestAction extends ConsumerWidget {
+  const _RequestAction({required this.meal});
+
+  final Meal meal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final viewerUid = ref.watch(authStateProvider).value?.uid;
+    if (viewerUid != null && viewerUid == meal.hostId) {
+      return const _YourMealChip();
+    }
+
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final requestState = ref.watch(mealRequestStateProvider(meal.id));
+
+    return requestState.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => Column(
+        children: [
+          Text(
+            'Something went wrong — please try again.',
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(color: colors.error),
+          ),
+          const SizedBox(height: WarmPlayfulSpacing.s2),
+          TextButton(
+            key: const Key('meal_detail_request_retry_button'),
+            onPressed: () =>
+                ref.invalidate(mealRequestStateProvider(meal.id)),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+      data: (request) {
+        if (request == null) {
+          return _RequestToJoinButton(meal: meal);
+        }
+        return switch (request.status) {
+          RequestStatus.pending =>
+            _RequestedState(colors: colors, textTheme: textTheme),
+          RequestStatus.approved =>
+            _MatchedBanner(colors: colors, textTheme: textTheme),
+          RequestStatus.denied =>
+            _NotSelectedState(colors: colors, textTheme: textTheme),
+        };
+      },
+    );
+  }
+}
+
+/// Enabled "Request to join" button; disables itself and shows a spinner
+/// while [createRequestControllerProvider] is submitting.
+class _RequestToJoinButton extends ConsumerWidget {
+  const _RequestToJoinButton({required this.meal});
+
+  final Meal meal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final isSubmitting = ref.watch(createRequestControllerProvider).isLoading;
+
+    return FilledButton(
+      key: const Key('meal_detail_request_to_join_button'),
+      onPressed: isSubmitting
+          ? null
+          : () =>
+              ref.read(createRequestControllerProvider.notifier).request(meal),
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+        ),
+      ),
+      child: isSubmitting
+          ? SizedBox(
+              height: WarmPlayfulSpacing.s4,
+              width: WarmPlayfulSpacing.s4,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colors.onPrimary,
+              ),
+            )
+          : const Text('Request to join'),
+    );
+  }
+}
+
+/// Disabled "Requested" button + a "Waiting for the host" hint — rendered
+/// while the viewer's request on this meal is [RequestStatus.pending].
+class _RequestedState extends StatelessWidget {
+  const _RequestedState({required this.colors, required this.textTheme});
+
+  final ColorScheme colors;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        FilledButton(
+          key: const Key('meal_detail_requested_button'),
+          onPressed: null,
+          style: FilledButton.styleFrom(
+            padding:
+                const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+            ),
+          ),
+          child: const Text('Requested'),
+        ),
+        const SizedBox(height: WarmPlayfulSpacing.s1),
+        Text(
+          'Waiting for the host',
+          textAlign: TextAlign.center,
+          style: textTheme.bodySmall?.copyWith(color: colors.outline),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Matched!" banner — rendered once the viewer's request on this meal is
+/// [RequestStatus.approved]. Real-time chat is a later plan; this screen
+/// only confirms the match.
+class _MatchedBanner extends StatelessWidget {
+  const _MatchedBanner({required this.colors, required this.textTheme});
+
+  final ColorScheme colors;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('meal_detail_matched_banner'),
+      padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+      decoration: BoxDecoration(
+        color: colors.tertiaryContainer,
+        borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Matched!',
+            style: textTheme.titleMedium?.copyWith(
+              color: colors.onTertiaryContainer,
+              fontWeight: WarmPlayfulType.h2Weight,
+            ),
+          ),
+          const SizedBox(height: WarmPlayfulSpacing.s1),
+          Text(
+            "You're in — chat coming soon",
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.onTertiaryContainer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Disabled "Not selected" button — rendered once the viewer's request on
+/// this meal is [RequestStatus.denied].
+class _NotSelectedState extends StatelessWidget {
+  const _NotSelectedState({required this.colors, required this.textTheme});
+
+  final ColorScheme colors;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      key: const Key('meal_detail_not_selected_button'),
+      onPressed: null,
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+        ),
+      ),
+      child: const Text('Not selected'),
+    );
+  }
+}
+
+/// Subtle chip shown instead of a request button when the viewer is the
+/// meal's host — a host never requests their own meal.
+class _YourMealChip extends StatelessWidget {
+  const _YourMealChip();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Center(
+      child: Container(
+        key: const Key('meal_detail_your_meal_chip'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: WarmPlayfulSpacing.s3,
+          vertical: WarmPlayfulSpacing.s2,
+        ),
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
+        ),
+        child: Text(
+          'Your meal',
+          style: textTheme.bodySmall?.copyWith(
+            color: colors.outline,
+            fontWeight: WarmPlayfulType.captionWeight,
+          ),
+        ),
+      ),
     );
   }
 }

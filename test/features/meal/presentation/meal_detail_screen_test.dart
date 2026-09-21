@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
+import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/meal_detail_screen.dart';
@@ -65,6 +68,11 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(userRepository),
+          authStateProvider.overrideWith(
+            (ref) => Stream.value(const AuthUser(uid: 'guest1')),
+          ),
+          mealRequestStateProvider(_meal.id)
+              .overrideWith((ref) => Stream.value(null)),
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
@@ -90,7 +98,8 @@ void main() {
     expect(find.text(_host.bio!), findsOneWidget);
   });
 
-  testWidgets('"Request to join" is present and disabled', (tester) async {
+  testWidgets('"Request to join" is present and enabled for a guest viewer',
+      (tester) async {
     await pumpDetail(tester);
 
     final button = tester.widget<FilledButton>(
@@ -98,7 +107,6 @@ void main() {
     );
 
     expect(find.text('Request to join'), findsOneWidget);
-    expect(button.onPressed, isNull);
-    expect(find.text('Coming soon'), findsOneWidget);
+    expect(button.onPressed, isNotNull);
   });
 }
