@@ -7,6 +7,7 @@ import 'package:not_eat_alone/core/firebase/firebase_client.dart';
 import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/matching/data/dtos/join_request_dto.dart';
 import 'package:not_eat_alone/features/matching/data/mappers/join_request_mapper.dart';
+import 'package:not_eat_alone/features/matching/data/repositories/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
 import 'package:not_eat_alone/features/matching/domain/repositories/request_repository.dart';
 
@@ -77,8 +78,51 @@ class RequestRepositoryImpl implements RequestRepository {
   }
 
   @override
-  Future<void> approve(JoinRequest request) {
-    throw UnimplementedError('approve lands in Task 4');
+  Future<void> approve(JoinRequest request) async {
+    final mealRef = _firestore.collection('meals').doc(request.mealId);
+    final reqRef = _firestore.collection('requests').doc(request.id);
+    final matchRef = _firestore.collection('matches').doc(request.mealId);
+
+    try {
+      await _firestore.runTransaction((txn) async {
+        final mealSnap = await txn.get(mealRef);
+        if (!mealSnap.exists || mealSnap.data()!['status'] != 'open') {
+          throw MealNoLongerOpenException(request.mealId);
+        }
+        txn.update(mealRef, {'status': 'matched', 'guestId': request.guestId});
+        txn.update(reqRef, {'status': 'approved'});
+        txn.set(matchRef, {
+          'id': request.mealId,
+          'mealId': request.mealId,
+          'hostId': request.hostId,
+          'guestId': request.guestId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      });
+    } on MealNoLongerOpenException {
+      rethrow;
+    } catch (e, st) {
+      throw RepositoryWriteException('matches', e, st);
+    }
+
+    // Post-commit: deny the losing pending requests. Firestore transactions
+    // cannot run queries, so this is a follow-up batch. The meal is already
+    // `matched`, so rules block any new pending request from appearing.
+    final siblings = await _firestore
+        .collection('requests')
+        .where('mealId', isEqualTo: request.mealId)
+        .where('status', isEqualTo: 'pending')
+        .get();
+    if (siblings.docs.isEmpty) return;
+    final batch = _firestore.batch();
+    for (final doc in siblings.docs) {
+      batch.update(doc.reference, {'status': 'denied'});
+    }
+    try {
+      await batch.commit();
+    } catch (e, st) {
+      throw RepositoryWriteException('requests', e, st);
+    }
   }
 
   static JoinRequest _fromDoc(String id, Map<String, Object?> raw) {
