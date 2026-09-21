@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 
@@ -10,6 +11,11 @@ import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 /// exists. Calling `AuthRepository.signOut()` clears the session;
 /// `authStateProvider` picks that up and the router's redirect sends the
 /// user back to `/auth/signin`.
+///
+/// Also carries a "Create a meal" entry point into the meal-creation flow
+/// (Plan 4) — pushes `/meals/new`, the restaurant search screen. That route
+/// is wired in a later task (Task 7); this screen only issues the
+/// navigation call.
 class PlaceholderHome extends ConsumerWidget {
   const PlaceholderHome({super.key});
 
@@ -28,6 +34,12 @@ class PlaceholderHome extends ConsumerWidget {
         ],
       ),
       body: const Center(child: Text('Convyve — foundation OK')),
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('placeholder_home_create_meal_button'),
+        onPressed: () => context.push('/meals/new'),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Create a meal'),
+      ),
     );
   }
 }
