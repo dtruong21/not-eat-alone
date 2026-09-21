@@ -332,7 +332,9 @@ class _RequestAction extends ConsumerWidget {
 }
 
 /// Enabled "Request to join" button; disables itself and shows a spinner
-/// while [createRequestControllerProvider] is submitting.
+/// while [createRequestControllerProvider] is submitting, and surfaces a
+/// SnackBar if the write fails — the button re-enabling on its own isn't
+/// feedback enough.
 class _RequestToJoinButton extends ConsumerWidget {
   const _RequestToJoinButton({required this.meal});
 
@@ -340,6 +342,22 @@ class _RequestToJoinButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Error transition (loading -> error): guarded on that edge so this
+    // fires exactly once per failed submit, never on every rebuild.
+    ref.listen<AsyncValue<void>>(createRequestControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (previous?.isLoading == true && next.hasError) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Couldn't send your request. Try again."),
+          ),
+        );
+      }
+    });
+
     final colors = Theme.of(context).colorScheme;
     final isSubmitting = ref.watch(createRequestControllerProvider).isLoading;
 

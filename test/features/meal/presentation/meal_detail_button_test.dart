@@ -5,9 +5,12 @@ import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
+import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
+import 'package:not_eat_alone/features/matching/application/request_providers.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
+import 'package:not_eat_alone/features/matching/domain/repositories/request_repository.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/meal_detail_screen.dart';
@@ -16,6 +19,10 @@ import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
 class MockUserRepository extends Mock implements UserRepository {}
+
+class MockAuthRepository extends Mock implements AuthRepository {}
+
+class MockRequestRepository extends Mock implements RequestRepository {}
 
 const _restaurant = Restaurant(
   placeId: 'p1',
@@ -141,4 +148,58 @@ void main() {
     );
     expect(find.text('Your meal'), findsOneWidget);
   });
+
+  testWidgets(
+    'request() failure -> SnackBar, button re-enables',
+    (tester) async {
+      final authRepository = MockAuthRepository();
+      final requestRepository = MockRequestRepository();
+      when(() => authRepository.currentUser)
+          .thenReturn(const AuthUser(uid: 'guest1'));
+      when(
+        () => requestRepository.createRequest(
+          mealId: any(named: 'mealId'),
+          guestId: any(named: 'guestId'),
+          hostId: any(named: 'hostId'),
+        ),
+      ).thenThrow(Exception('network error'));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userRepositoryProvider.overrideWithValue(userRepository),
+            authStateProvider.overrideWith(
+              (ref) => Stream.value(const AuthUser(uid: 'guest1')),
+            ),
+            authRepositoryProvider.overrideWithValue(authRepository),
+            requestRepositoryProvider.overrideWithValue(requestRepository),
+            mealRequestStateProvider(_meal.id)
+                .overrideWith((ref) => Stream.value(null)),
+          ],
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light),
+            home: MealDetailScreen(meal: _meal),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(
+        find.byKey(const Key('meal_detail_request_to_join_button')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.text("Couldn't send your request. Try again."),
+        findsOneWidget,
+      );
+
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('meal_detail_request_to_join_button')),
+      );
+      expect(button.onPressed, isNotNull);
+    },
+  );
 }

@@ -46,7 +46,20 @@ void main() {
     await db.collection('meals').doc('m1').update({'status': 'matched'});
     final r1 = (await repo.watchRequest(mealId: 'm1', guestId: 'g1').first)!;
     expect(() => repo.approve(r1), throwsA(isA<MealNoLongerOpenException>()));
+
     final match = await db.collection('matches').doc('m1').get();
     expect(match.exists, isFalse);
+
+    // The aborted transaction must not have written anything else either:
+    // the meal stays 'matched' (its pre-approve value), and both requests
+    // stay 'pending' — neither the target nor its sibling got flipped.
+    final meal = await db.collection('meals').doc('m1').get();
+    expect(meal.data()!['status'], 'matched');
+
+    final request = await db.collection('requests').doc('m1_g1').get();
+    expect(request.data()!['status'], 'pending');
+
+    final sibling = await db.collection('requests').doc('m1_g2').get();
+    expect(sibling.data()!['status'], 'pending');
   });
 }
