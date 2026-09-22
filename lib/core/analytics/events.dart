@@ -270,6 +270,14 @@ final class PushOpened extends AppEvent {
   Map<String, Object?> get props => {'type': type};
 }
 
+final class UserBlocked extends AppEvent {
+  const UserBlocked();
+  @override
+  String get name => 'user_blocked';
+  @override
+  Map<String, Object?> get props => const {};
+}
+
 // ─── User properties registry ────────────────────────────────────────────────
 
 /// Sparse by design. Add a property only when it drives segmentation or is
