@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/matching/application/match_providers.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/match.dart';
+import 'package:not_eat_alone/features/safety/application/block_providers.dart';
 
 /// One row in the Chats tab.
 class ChatListItem {
@@ -25,12 +26,14 @@ class ChatListItem {
 final chatListProvider = StreamProvider<List<ChatListItem>>((ref) {
   final uid = ref.watch(authStateProvider).value?.uid;
   if (uid == null) return Stream.value(const []);
+  final blocked = ref.watch(blockedUserIdsProvider).value ?? <String>{};
   return ref.watch(matchRepositoryProvider).watchMatchesForUser(uid).map(
         (matches) => matches
             .map((m) => ChatListItem(
                   match: m,
                   otherUid: m.hostId == uid ? m.guestId : m.hostId,
                 ))
+            .where((item) => !blocked.contains(item.otherUid))
             .toList(growable: false),
       );
 });
