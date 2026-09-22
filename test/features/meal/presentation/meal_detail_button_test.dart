@@ -16,6 +16,7 @@ import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/meal_detail_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
+import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
 class MockUserRepository extends Mock implements UserRepository {}
@@ -41,6 +42,15 @@ final _meal = Meal(
 );
 
 final _host = AppUser(uid: 'host1', dob: DateTime(1990, 3, 15));
+
+final _womenOnlyMeal = Meal(
+  id: 'm2',
+  hostId: 'host1',
+  restaurant: _restaurant,
+  dateTime: DateTime(2027, 1, 5, 19, 30),
+  geohash: 'u09tvw',
+  womenOnly: true,
+);
 
 const _pendingRequest = JoinRequest(
   id: 'm1_guest1',
@@ -78,7 +88,10 @@ void main() {
     WidgetTester tester, {
     required String viewerUid,
     required JoinRequest? request,
+    Meal? meal,
+    Gender? viewerGender,
   }) async {
+    final effectiveMeal = meal ?? _meal;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -86,12 +99,18 @@ void main() {
           authStateProvider.overrideWith(
             (ref) => Stream.value(AuthUser(uid: viewerUid)),
           ),
-          mealRequestStateProvider(_meal.id)
+          currentUserDocProvider.overrideWith(
+            (ref) => Stream.value(
+              AppUser(uid: viewerUid, dob: DateTime(1995, 6, 1))
+                  .copyWith(gender: viewerGender),
+            ),
+          ),
+          mealRequestStateProvider(effectiveMeal.id)
               .overrideWith((ref) => Stream.value(request)),
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
-          home: MealDetailScreen(meal: _meal),
+          home: MealDetailScreen(meal: effectiveMeal),
         ),
       ),
     );
@@ -150,6 +169,56 @@ void main() {
   });
 
   testWidgets(
+    'women-only meal, non-woman viewer -> disabled button + note',
+    (tester) async {
+      await pumpWith(
+        tester,
+        viewerUid: 'guest1',
+        request: null,
+        meal: _womenOnlyMeal,
+        viewerGender: Gender.man,
+      );
+
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('meal_detail_women_only_disabled_button')),
+      );
+      expect(button.onPressed, isNull);
+      expect(
+        find.byKey(const Key('meal_detail_women_only_note')),
+        findsOneWidget,
+      );
+      expect(find.text('This meal is women-only.'), findsOneWidget);
+      expect(
+        find.byKey(const Key('meal_detail_request_to_join_button')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'women-only meal, woman viewer -> normal request button',
+    (tester) async {
+      await pumpWith(
+        tester,
+        viewerUid: 'guest1',
+        request: null,
+        meal: _womenOnlyMeal,
+        viewerGender: Gender.woman,
+      );
+
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('meal_detail_request_to_join_button')),
+      );
+      expect(find.text('Request to join'), findsOneWidget);
+      expect(button.onPressed, isNotNull);
+      expect(
+        find.byKey(const Key('meal_detail_women_only_note')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
     'request() failure -> SnackBar, button re-enables',
     (tester) async {
       final authRepository = MockAuthRepository();
@@ -173,6 +242,7 @@ void main() {
             ),
             authRepositoryProvider.overrideWithValue(authRepository),
             requestRepositoryProvider.overrideWithValue(requestRepository),
+            currentUserDocProvider.overrideWith((ref) => Stream.value(null)),
             mealRequestStateProvider(_meal.id)
                 .overrideWith((ref) => Stream.value(null)),
           ],

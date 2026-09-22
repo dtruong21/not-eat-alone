@@ -9,7 +9,8 @@
 /// viewer has no request yet, disabled "Requested" while pending, a
 /// "Matched!" banner once approved, disabled "Not selected" once denied, and
 /// nothing (a "Your meal" chip) when the viewer is the host — a host never
-/// requests their own meal.
+/// requests their own meal. A non-woman viewer on a women-only meal instead
+/// sees a disabled button with a "This meal is women-only." note.
 library;
 
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ import 'package:not_eat_alone/features/matching/domain/entities/request_status.d
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
+import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
 const _monthNames = [
   'January',
@@ -279,7 +281,10 @@ class _HostBlock extends ConsumerWidget {
 /// meal's host (read via [authStateProvider]) and, if not, on
 /// [mealRequestStateProvider]'s `AsyncValue<JoinRequest?>` for this meal — a
 /// host never requests their own meal, so that case short-circuits before
-/// touching the request stream at all.
+/// touching the request stream at all. A non-woman viewer on a
+/// [Meal.womenOnly] meal is blocked next, client-side, before ever touching
+/// the request stream — mirrors the women-only check the Firestore rules
+/// enforce server-side on `requests/{id}` create.
 class _RequestAction extends ConsumerWidget {
   const _RequestAction({required this.meal});
 
@@ -290,6 +295,11 @@ class _RequestAction extends ConsumerWidget {
     final viewerUid = ref.watch(authStateProvider).value?.uid;
     if (viewerUid != null && viewerUid == meal.hostId) {
       return const _YourMealChip();
+    }
+
+    final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
+    if (meal.womenOnly && viewerGender != Gender.woman) {
+      return const _WomenOnlyGuard();
     }
 
     final theme = Theme.of(context);
@@ -499,6 +509,44 @@ class _NotSelectedState extends StatelessWidget {
         ),
       ),
       child: const Text('Not selected'),
+    );
+  }
+}
+
+/// Disabled request button + note shown when a non-woman viewer opens a
+/// [Meal.womenOnly] meal — a client-side mirror of the women-only check the
+/// Firestore rules enforce server-side on `requests/{id}` create.
+class _WomenOnlyGuard extends StatelessWidget {
+  const _WomenOnlyGuard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Column(
+      children: [
+        FilledButton(
+          key: const Key('meal_detail_women_only_disabled_button'),
+          onPressed: null,
+          style: FilledButton.styleFrom(
+            padding:
+                const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+            ),
+          ),
+          child: const Text('Request to join'),
+        ),
+        const SizedBox(height: WarmPlayfulSpacing.s1),
+        Text(
+          'This meal is women-only.',
+          key: const Key('meal_detail_women_only_note'),
+          textAlign: TextAlign.center,
+          style: textTheme.bodySmall?.copyWith(color: colors.outline),
+        ),
+      ],
     );
   }
 }
