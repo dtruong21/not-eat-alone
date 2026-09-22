@@ -29,8 +29,10 @@
 /// provider re-watches it, so the router rebuilds on sign-in / sign-out.
 library;
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:not_eat_alone/core/routing/app_shell.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
@@ -44,12 +46,13 @@ import 'package:not_eat_alone/features/meal/presentation/restaurant_search_scree
 import 'package:not_eat_alone/features/onboarding/presentation/age_gate_screen.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/profile_setup_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/features/user/presentation/profile_edit_screen.dart';
 
 const _signInPath = '/auth/signin';
 const _phoneVerifyPath = '/auth/phone';
 const _ageGatePath = '/onboarding/age';
 const _profileSetupPath = '/onboarding/profile';
-const _homePath = '/';
+const _homePath = '/discover';
 
 /// Pure redirect decision for the four auth states. Kept side-effect-free
 /// and exported so it's directly unit-testable without spinning up a
@@ -65,9 +68,10 @@ const _homePath = '/';
 ///   - signed in + age-verified, but profile incomplete ->
 ///     `/onboarding/profile` (unless already there, same loop guard).
 ///   - signed in + age-verified + profile complete, but sitting on an
-///     auth/onboarding screen -> `/` (nothing left to gate on those screens
-///     — this includes `/auth/phone`, so completing phone verification
-///     advances home instead of stranding the user on the OTP screen).
+///     auth/onboarding screen -> `/discover` (nothing left to gate on those
+///     screens — this includes `/auth/phone`, so completing phone
+///     verification advances home instead of stranding the user on the OTP
+///     screen).
 ///   - otherwise -> `null` (stay put).
 String? authRedirect({
   required bool signedIn,
@@ -114,7 +118,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final profileComplete = userDoc?.profileComplete ?? false;
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: _homePath,
     debugLogDiagnostics: true,
     redirect: (context, state) => authRedirect(
       signedIn: signedIn,
@@ -123,12 +127,48 @@ final routerProvider = Provider<GoRouter>((ref) {
       location: state.matchedLocation,
     ),
     routes: [
-      // TODO: replace with `$homeRoute` from `routes.g.dart` once typed routes
-      // are scaffolded. Inline route kept here so the template compiles before
-      // codegen runs.
-      GoRoute(
-        path: _homePath,
-        builder: (context, state) => const DiscoveryScreen(),
+      // TODO: replace with typed routes from `routes.g.dart` once scaffolded.
+      // Inline routes kept here so the template compiles before codegen runs.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: _homePath,
+                builder: (context, state) => const DiscoveryScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/chats',
+                // TODO(Task 8): swap for `ChatListScreen`.
+                builder: (context, state) => const Scaffold(
+                  body: Center(child: Text('Chats')),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/requests',
+                builder: (context, state) => const RequestInboxScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfileEditScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: _signInPath,
@@ -177,10 +217,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           }
           return MealDetailScreen(meal: meal);
         },
-      ),
-      GoRoute(
-        path: '/requests',
-        builder: (context, state) => const RequestInboxScreen(),
       ),
     ],
   );
