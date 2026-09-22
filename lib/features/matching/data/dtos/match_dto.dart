@@ -11,6 +11,7 @@ abstract class MatchDto with _$MatchDto {
     required String hostId,
     required String guestId,
     DateTime? createdAt,
+    @Default(<String>[]) List<String> participants,
   }) = _MatchDto;
 
   factory MatchDto.fromJson(Map<String, Object?> json) =>
