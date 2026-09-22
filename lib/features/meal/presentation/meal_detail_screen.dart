@@ -23,6 +23,7 @@ import 'package:not_eat_alone/features/matching/application/create_request_contr
 import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
+import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
@@ -79,7 +80,12 @@ class MealDetailScreen extends ConsumerWidget {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Meal details')),
+      appBar: AppBar(
+        title: const Text('Meal details'),
+        actions: [
+          SafetyActions(reportTargetType: 'meal', reportTargetId: meal.id),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
