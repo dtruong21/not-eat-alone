@@ -29,13 +29,14 @@
 /// provider re-watches it, so the router rebuilds on sign-in / sign-out.
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/routing/app_shell.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
+import 'package:not_eat_alone/features/chat/presentation/chat_list_screen.dart';
+import 'package:not_eat_alone/features/chat/presentation/chat_screen.dart';
 import 'package:not_eat_alone/features/matching/presentation/request_inbox_screen.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
@@ -145,10 +146,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/chats',
-                // TODO(Task 8): swap for `ChatListScreen`.
-                builder: (context, state) => const Scaffold(
-                  body: Center(child: Text('Chats')),
-                ),
+                builder: (context, state) => const ChatListScreen(),
               ),
             ],
           ),
@@ -216,6 +214,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             return const DiscoveryScreen();
           }
           return MealDetailScreen(meal: meal);
+        },
+      ),
+      GoRoute(
+        path: '/chats/:matchId',
+        builder: (context, state) {
+          final matchId = state.pathParameters['matchId'];
+          if (matchId == null || matchId.isEmpty) {
+            // Guard a missing/blank path param instead of crashing on a
+            // non-null assertion — falls back to the chat list.
+            return const ChatListScreen();
+          }
+          return ChatScreen(matchId: matchId);
         },
       ),
     ],

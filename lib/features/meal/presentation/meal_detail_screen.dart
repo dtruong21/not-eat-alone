@@ -14,6 +14,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -321,8 +322,14 @@ class _RequestAction extends ConsumerWidget {
         return switch (request.status) {
           RequestStatus.pending =>
             _RequestedState(colors: colors, textTheme: textTheme),
-          RequestStatus.approved =>
-            _MatchedBanner(colors: colors, textTheme: textTheme),
+          RequestStatus.approved => _MatchedBanner(
+              colors: colors,
+              textTheme: textTheme,
+              // matchId == mealId: `matches/{mealId}` is the hand-off doc
+              // Plan 6's approve transaction writes (see `docs/PRD.md §
+              // Matching`), so the meal's own id is the chat route param.
+              mealId: meal.id,
+            ),
           RequestStatus.denied =>
             _NotSelectedState(colors: colors, textTheme: textTheme),
         };
@@ -423,41 +430,50 @@ class _RequestedState extends StatelessWidget {
 }
 
 /// "Matched!" banner — rendered once the viewer's request on this meal is
-/// [RequestStatus.approved]. Real-time chat is a later plan; this screen
-/// only confirms the match.
+/// [RequestStatus.approved]. Tapping it deep-links into the chat for this
+/// match (`matchId == mealId`, see `router.dart`'s `/chats/:matchId`).
 class _MatchedBanner extends StatelessWidget {
-  const _MatchedBanner({required this.colors, required this.textTheme});
+  const _MatchedBanner({
+    required this.colors,
+    required this.textTheme,
+    required this.mealId,
+  });
 
   final ColorScheme colors;
   final TextTheme textTheme;
+  final String mealId;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: const Key('meal_detail_matched_banner'),
-      padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-      decoration: BoxDecoration(
-        color: colors.tertiaryContainer,
+    return Material(
+      color: colors.tertiaryContainer,
+      borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
+      child: InkWell(
+        key: const Key('meal_detail_matched_banner'),
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Matched!',
-            style: textTheme.titleMedium?.copyWith(
-              color: colors.onTertiaryContainer,
-              fontWeight: WarmPlayfulType.h2Weight,
-            ),
+        onTap: () => context.push('/chats/$mealId'),
+        child: Padding(
+          padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+          child: Column(
+            children: [
+              Text(
+                'Matched!',
+                style: textTheme.titleMedium?.copyWith(
+                  color: colors.onTertiaryContainer,
+                  fontWeight: WarmPlayfulType.h2Weight,
+                ),
+              ),
+              const SizedBox(height: WarmPlayfulSpacing.s1),
+              Text(
+                'Tap to start chatting',
+                textAlign: TextAlign.center,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.onTertiaryContainer,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: WarmPlayfulSpacing.s1),
-          Text(
-            "You're in — chat coming soon",
-            textAlign: TextAlign.center,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colors.onTertiaryContainer,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
