@@ -92,6 +92,7 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `push_opened` | User taps a push notification and the app opens/routes from it | `type: string` (push route type, e.g. `'match'`, `'message'`) (No PII) | Push engagement, re-engagement funnel |
 | `user_blocked` | User blocks another user | — (No PII) | Safety, block rate |
 | `user_reported` | User submits a report against a user, meal, or message | `target_type: string` (category — `'user'` \| `'meal'` \| `'message'`; No PII, no uid/target id) | Safety, report rate |
+| `account_deletion_requested` | User confirms account deletion from profile | — (No PII) | Account deletion rate, churn signal |
 
 {{Add project-specific events below as `/track` runs append them.}}
 
