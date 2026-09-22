@@ -236,6 +236,22 @@ final class MatchCreated extends AppEvent {
   Map<String, Object?> get props => {'women_only': womenOnly};
 }
 
+final class ChatOpened extends AppEvent {
+  const ChatOpened();
+  @override
+  String get name => 'chat_opened';
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class MessageSent extends AppEvent {
+  const MessageSent();
+  @override
+  String get name => 'message_sent';
+  @override
+  Map<String, Object?> get props => const {};
+}
+
 // ─── User properties registry ────────────────────────────────────────────────
 
 /// Sparse by design. Add a property only when it drives segmentation or is
