@@ -4,6 +4,11 @@ name: CI
 # release/hotfix branch, and on the post-merge commit of develop/main before
 # deploy. Pins Flutter to the .fvmrc version. Generated files
 # (*.freezed.dart / *.g.dart) are git-ignored, so every job runs build_runner.
+#
+# `.env` is git-ignored (real values never committed) but pubspec.yaml lists it
+# as an asset, so every job seeds it from the committed .env.example — otherwise
+# `flutter analyze` reports asset_does_not_exist (a fatal warning) and builds
+# fail on the missing asset.
 
 on:
   pull_request:
@@ -30,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Seed .env from example
+        run: cp .env.example .env
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -49,6 +56,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Seed .env from example
+        run: cp .env.example .env
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -70,6 +79,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Seed .env from example
+        run: cp .env.example .env
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
