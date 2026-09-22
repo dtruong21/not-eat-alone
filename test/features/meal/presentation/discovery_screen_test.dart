@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
@@ -61,6 +62,11 @@ void main() {
     authRepository = MockAuthRepository();
     userRepository = MockUserRepository();
     when(() => authRepository.signOut()).thenAnswer((_) async {});
+    // Read by `_onSignOut` to look up the uid for token cleanup — signed
+    // out here so the unregister branch is skipped and this test stays
+    // focused on the sign-out call itself.
+    when(() => authRepository.authStateChanges())
+        .thenAnswer((_) => Stream<AuthUser?>.value(null));
     when(() => userRepository.watch('host1'))
         .thenAnswer((_) => Stream.value(_host));
   });
