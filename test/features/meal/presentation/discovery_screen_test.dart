@@ -13,6 +13,8 @@ import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.da
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/discovery_screen.dart';
+import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
+import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
@@ -21,6 +23,8 @@ import 'package:not_eat_alone/features/user/domain/repositories/user_repository.
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class MockUserRepository extends Mock implements UserRepository {}
+
+class MockPushRepository extends Mock implements PushRepository {}
 
 const _restaurant = Restaurant(
   placeId: 'p1',
@@ -63,10 +67,9 @@ void main() {
     userRepository = MockUserRepository();
     when(() => authRepository.signOut()).thenAnswer((_) async {});
     // Read by `_onSignOut` to look up the uid for token cleanup — signed
-    // out here so the unregister branch is skipped and this test stays
-    // focused on the sign-out call itself.
-    when(() => authRepository.authStateChanges())
-        .thenAnswer((_) => Stream<AuthUser?>.value(null));
+    // out here by default so the unregister branch is skipped and most
+    // tests stay focused on their own concern.
+    when(() => authRepository.currentUser).thenReturn(null);
     when(() => userRepository.watch('host1'))
         .thenAnswer((_) => Stream.value(_host));
   });
@@ -75,6 +78,7 @@ void main() {
     WidgetTester tester, {
     required List<DiscoverableMeal> meals,
     Gender? viewerGender,
+    PushRepository? pushRepository,
   }) async {
     final router = GoRouter(
       initialLocation: '/',
@@ -104,6 +108,8 @@ void main() {
           currentUserDocProvider.overrideWith(
             (ref) => Stream.value(_viewer(viewerGender ?? Gender.man)),
           ),
+          if (pushRepository != null)
+            pushRepositoryProvider.overrideWithValue(pushRepository),
         ],
         child: MaterialApp.router(
           theme: buildTheme(Brightness.light),
@@ -181,4 +187,34 @@ void main() {
 
     verify(() => authRepository.signOut()).called(1);
   });
+
+  testWidgets(
+    'sign out unregisters the push token for the current uid before '
+    'signing out',
+    (tester) async {
+      final pushRepository = MockPushRepository();
+      when(() => pushRepository.unregisterCurrentToken(any()))
+          .thenAnswer((_) async {});
+      // Signed in as 'viewer1' — `_onSignOut` reads this uid off
+      // `authRepository.currentUser` to unregister the right token before
+      // signing out.
+      when(() => authRepository.currentUser)
+          .thenReturn(const AuthUser(uid: 'viewer1'));
+
+      await pumpDiscovery(
+        tester,
+        meals: [_discoverableMeal],
+        pushRepository: pushRepository,
+      );
+
+      await tester.tap(find.byKey(const Key('discovery_sign_out_button')));
+      await tester.pump();
+      await tester.pump();
+
+      verifyInOrder([
+        () => pushRepository.unregisterCurrentToken('viewer1'),
+        () => authRepository.signOut(),
+      ]);
+    },
+  );
 }

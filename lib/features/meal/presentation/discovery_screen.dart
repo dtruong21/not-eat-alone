@@ -80,7 +80,11 @@ class DiscoveryScreen extends ConsumerWidget {
   /// Firestore rules edge case, etc.) must never block the user from signing
   /// out — a stale token doc means, at worst, one failed push send later.
   Future<void> _onSignOut(WidgetRef ref) async {
-    final uid = ref.read(authStateProvider).value?.uid;
+    // `authRepository.currentUser` (synchronous) rather than
+    // `authStateProvider.value` — the latter is a `StreamProvider` that may
+    // still be `AsyncLoading` (uid `null`) at the moment of the tap if
+    // nothing else has watched it yet to prime the stream subscription.
+    final uid = ref.read(authRepositoryProvider).currentUser?.uid;
     if (uid != null) {
       try {
         await ref

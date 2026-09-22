@@ -88,7 +88,11 @@ class PushListenerState extends ConsumerState<PushListener> {
     _openedSub = ref.read(openedPushMessagesProvider).listen(_onTap);
     unawaited(
       ref.read(initialPushMessageProvider)().then((message) {
-        if (message != null) _onTap(message);
+        // The future can resolve after this State is disposed (auth flip
+        // rebuilding `routerProvider` / shell teardown, or a fast nav) —
+        // touching `ref`/navigation past that point is a use-after-dispose.
+        if (!mounted || message == null) return;
+        _onTap(message);
       }),
     );
   }
