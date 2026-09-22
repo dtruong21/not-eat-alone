@@ -81,6 +81,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Seed .env from example
         run: cp .env.example .env
+      - name: Select stage GoogleService-Info.plist
+        # iOS has no build phase that copies the per-flavor plist into Runner/
+        # (unlike Android's gradle sourceSets), and the default-path plist is
+        # git-ignored scratch. Place the committed stage config where the Xcode
+        # project expects it. See docs/CICD.md (iOS flavor plist).
+        run: cp ios/config/stage/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}

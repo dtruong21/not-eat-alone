@@ -75,3 +75,13 @@ Play Integrity, signing assets). When ready, add a signed-build workflow
   that. Red CI now means a real code failure — debug it, don't wait it out.
 - Locally, verify the same gate with `fvm flutter analyze` + `fvm flutter test`
   before pushing.
+- **iOS flavor plist (known gap):** committed Firebase configs live per-flavor
+  (`ios/config/{prod,stage}/GoogleService-Info.plist`,
+  `android/app/src/{prod,stage}/google-services.json`). Android's gradle
+  sourceSets auto-select the flavor file; iOS has **no** build phase copying the
+  flavor plist into `ios/Runner/GoogleService-Info.plist` (that path is
+  git-ignored scratch). CI copies the stage plist explicitly before the iOS
+  build. Follow-up (needed for signed prod iOS builds): add an Xcode run-script
+  build phase that copies `ios/config/${FLAVOR}/GoogleService-Info.plist` into
+  place per configuration, so local + release flavor builds pick the right one
+  without a manual copy.
