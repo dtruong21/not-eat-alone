@@ -29,6 +29,7 @@ import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_composer.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
+import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_card.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 String? _otherUidFor(List<ChatListItem> items, String matchId) {
@@ -134,6 +135,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+              child: const SafetyTipsCard(),
+            ),
             Expanded(
               child: messagesAsync.when(
                 loading: () =>
