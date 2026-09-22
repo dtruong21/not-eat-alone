@@ -90,10 +90,9 @@ class PushRepositoryImpl implements PushRepository {
                 'platform': _platform,
                 'updatedAt': FieldValue.serverTimestamp(),
               })
-              .catchError((dynamic e, dynamic st) {
-                // Best effort: ignore errors so they don't crash the app
-              })
-              .ignore();
+              .catchError((Object e, StackTrace st) {
+                throw RepositoryWriteException('fcmTokens', e, st);
+              });
         },
       );
     }
@@ -101,6 +100,12 @@ class PushRepositoryImpl implements PushRepository {
 
   @override
   Future<void> unregisterCurrentToken(String uid) async {
+    // Cancel token refresh subscription to prevent stale writes after sign-out
+    if (_refreshSubscription != null) {
+      await _refreshSubscription!.cancel();
+      _refreshSubscription = null;
+    }
+
     final token = await _readToken();
     if (token == null || token.isEmpty) return;
     try {

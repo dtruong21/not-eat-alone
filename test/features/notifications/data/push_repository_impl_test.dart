@@ -71,4 +71,42 @@ void main() {
 
     addTearDown(controller.close);
   });
+
+  test('unregisterCurrentToken cancels refresh subscription to prevent stale writes',
+      () async {
+    final controller = StreamController<String>();
+    final repo = PushRepositoryImpl(
+      firestore: db,
+      readToken: () async => 'tok123',
+      requestPermissionFn: () async => true,
+      platformName: 'ios',
+      tokenRefreshStream: controller.stream,
+    );
+    await repo.registerToken('u1');
+
+    // Verify initial token is written
+    var snap =
+        await db.collection('users').doc('u1').collection('fcmTokens').doc('tok123').get();
+    expect(snap.exists, isTrue);
+
+    // Unregister the token
+    await repo.unregisterCurrentToken('u1');
+
+    // Verify the initial token is deleted
+    snap = await db.collection('users').doc('u1').collection('fcmTokens').doc('tok123').get();
+    expect(snap.exists, isFalse);
+
+    // Emit a refreshed token after unregister
+    controller.add('tok-refreshed');
+
+    // Wait for any potential write
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    // Verify the refreshed token is NOT written (subscription was cancelled)
+    snap = await db.collection('users').doc('u1').collection('fcmTokens').doc('tok-refreshed')
+        .get();
+    expect(snap.exists, isFalse);
+
+    addTearDown(controller.close);
+  });
 }
