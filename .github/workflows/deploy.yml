@@ -1,0 +1,85 @@
+name: Deploy
+
+# Continuous delivery for the Firebase backend + GitHub releases.
+#
+# - Push to develop / main  -> deploy Firestore rules+indexes and Storage rules
+#   to the single `not-eat-alone` project (shared across the (default) and stage
+#   databases). develop is the integration deploy; main re-asserts at release.
+# - Push of a v* tag        -> publish a GitHub Release (tags live only on main).
+#
+# Functions are intentionally NOT deployed: `firebase/functions/` does not exist
+# yet (its predeploy `npm run build` would fail). When Cloud Functions land
+# (Plan 8), add `functions` to the --only list below.
+#
+# Requires repo secret FIREBASE_SERVICE_ACCOUNT (a Firebase deploy service
+# account JSON). Until it is set, the deploy job exits green with a notice.
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    tags:
+      - 'v*'
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-firebase:
+    name: Deploy Firebase backend
+    # Only for branch pushes (not tag pushes).
+    if: startsWith(github.ref, 'refs/heads/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for deploy credentials
+        id: guard
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::FIREBASE_SERVICE_ACCOUNT secret not set — skipping Firebase deploy."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        if: steps.guard.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Write service account
+        if: steps.guard.outputs.present == 'true'
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+
+      - name: Deploy Firestore + Storage rules
+        if: steps.guard.outputs.present == 'true'
+        run: |
+          npx --yes firebase-tools@13 deploy \
+            --only firestore,storage \
+            --project not-eat-alone \
+            --non-interactive
+
+  github-release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
