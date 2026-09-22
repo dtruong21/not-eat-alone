@@ -1,6 +1,6 @@
 # Convyve — Claude constitution
 
-Loaded every turn — kept tight on purpose. Full standing rules: `docs/PRINCIPLES.md`. Process: `docs/WORKFLOWS.md`. Spec: `docs/PRD.md`. Design: `docs/DESIGN.md`. Analytics: `docs/TRACKING-PLAN.md`. Flutter idioms/pins/gotchas: `docs/MASTER-SPEC.md`.
+Loaded every turn — kept tight on purpose. Full standing rules: `docs/PRINCIPLES.md`. Process: `docs/WORKFLOWS.md`. Spec: `docs/PRD.md`. Design: `docs/DESIGN.md`. Analytics: `docs/TRACKING-PLAN.md`. Flutter idioms/pins/gotchas: `docs/MASTER-SPEC.md`. Branching + CI/CD: `docs/GITFLOW.md` + `docs/CICD.md`.
 
 A React Native sibling template (same workflow, different stack) lives at `../react-native/` — cross-reference when a rule applies to both.
 
@@ -10,7 +10,7 @@ A React Native sibling template (same workflow, different stack) lives at `../re
 - **Backend**: Firebase — Auth, Firestore, Cloud Functions
 - **State**: Riverpod (`@riverpod` codegen, AsyncNotifier) for local state + server cache
 - **UI**: Material 3 `ThemeData`; tokens in `lib/core/design/tokens.dart`
-- **Build**: Codemagic (CI), `flutter build` (local) · **Test**: flutter_test + integration_test + mocktail · **Validate**: freezed + json_serializable at Firestore boundaries
+- **Build/CI-CD**: GitHub Actions — PR gate (analyze/test + unsigned stage builds) + backend CD (Firestore/Storage rules on develop/main). `flutter build` (local). Store signing is a later additive workflow. See `docs/CICD.md`. · **Test**: flutter_test + integration_test + mocktail · **Validate**: freezed + json_serializable at Firestore boundaries
 
 ## Layout
 
