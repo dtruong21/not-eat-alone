@@ -39,6 +39,10 @@ service cloud.firestore {
       // match /things/{thingId} {
       //   allow read, write: if isOwner(uid);
       // }
+
+      match /fcmTokens/{token} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // Meal listings created by a host

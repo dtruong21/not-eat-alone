@@ -8,7 +8,7 @@ macOS runners). Branching model: `docs/GITFLOW.md`.
 ### `.github/workflows/ci.yml` — the quality gate
 
 Runs on every PR into `main` / `develop` / `release/**` / `hotfix/**`, and on
-the post-merge commit of `develop` / `main`. Three jobs, Flutter pinned to the
+the post-merge commit of `develop` / `main`. Four jobs, Flutter pinned to the
 `.fvmrc` version:
 
 | Job | Runner | What |
@@ -16,24 +16,44 @@ the post-merge commit of `develop` / `main`. Three jobs, Flutter pinned to the
 | `Analyze & test` | ubuntu | `pub get` → `build_runner` → `flutter analyze --no-fatal-infos` → `flutter test` |
 | `Build Android (stage, unsigned)` | ubuntu | `flutter build apk --flavor stage --debug` — compile/flavor verification |
 | `Build iOS (stage, no codesign)` | macOS | `flutter build ios --flavor stage --debug --no-codesign` — iOS + Pods compile, no certs |
+| `Functions build & test` | ubuntu | `firebase/functions`: `npm ci` → `npm run build` → `npm test` — TypeScript Cloud Functions gate (Plan 8) |
 
-Generated files (`*.freezed.dart`, `*.g.dart`) are git-ignored, so every job
-runs `build_runner`. These three are the required status checks for branch
-protection.
+Generated files (`*.freezed.dart`, `*.g.dart`) are git-ignored, so every Flutter
+job runs `build_runner`. The three Flutter jobs are the required status checks
+for branch protection today; **`Functions build & test` should be added as a
+fourth required check** (branch protection is configured outside this repo via
+`gh api`/GitHub UI — not something a workflow file controls).
 
 ### `.github/workflows/deploy.yml` — backend CD + releases
 
 | Trigger | Job | What |
 |---|---|---|
-| push to `develop` / `main` | `Deploy Firebase backend` | `firebase deploy --only firestore,storage` to project `not-eat-alone` |
+| push to `develop` / `main` | `Deploy Firebase backend` | `firebase deploy --only firestore,storage,functions` to project `not-eat-alone` |
 | push tag `v*` | `Publish GitHub Release` | GitHub Release with auto-generated notes |
 
 The Firebase project is single (`.firebaserc`), and the rules files are shared,
 so one deploy keeps both the `(default)` and `stage` databases current.
-`develop` is the integration deploy; `main` re-asserts the same rules at release
-time (idempotent). **Functions are excluded** until `firebase/functions/`
-exists — when Cloud Functions land (Plan 8), add `functions` to the `--only`
-list in `deploy.yml`.
+`develop` is the integration deploy; `main` re-asserts the same rules (and
+functions) at release time (idempotent).
+
+### Cloud Functions deploy requirements (Plan 8)
+
+- **Firebase Blaze plan required.** Cloud Functions (and their outbound
+  network calls, e.g. to FCM) only deploy on the pay-as-you-go **Blaze**
+  plan — the free **Spark** plan cannot deploy functions at all. The CD job
+  will fail at the `functions` deploy step until the project is upgraded in
+  the [Firebase console](https://console.firebase.google.com/project/not-eat-alone/usage/details).
+- **Region: `europe-west1`.** All functions in `firebase/functions/` are
+  pinned to `europe-west1` (matches the Firestore project's home region).
+  Deploys create/update functions in that region only.
+- **CI gate: `functions-build`.** Every PR/push compiles the Functions
+  TypeScript and runs its Jest suite before merge — a broken trigger can't
+  reach `develop`/`main`, independent of whether Blaze/deploy secrets are set.
+- **Service account role.** The `FIREBASE_SERVICE_ACCOUNT` secret's service
+  account needs the **Cloud Functions Admin** role in addition to the
+  rules-deploy roles listed below (Firebase Rules Admin, Cloud Datastore
+  Index Admin, Storage Admin) — without it, the `functions` deploy target
+  fails with a permissions error even on Blaze.
 
 ## Required secret: `FIREBASE_SERVICE_ACCOUNT`
 
@@ -44,7 +64,8 @@ backend CD:
 1. In the [Firebase / Google Cloud console](https://console.firebase.google.com/project/not-eat-alone/settings/serviceaccounts/adminsdk),
    generate a new private key for a service account. For a solo project the
    default Firebase Admin SDK service account is fine; least-privilege is
-   Firebase Rules Admin + Cloud Datastore Index Admin + Storage Admin.
+   Firebase Rules Admin + Cloud Datastore Index Admin + Storage Admin +
+   Cloud Functions Admin.
 2. Copy the **entire JSON** file contents.
 3. Repo → Settings → Secrets and variables → Actions → **New repository secret**:
    - Name: `FIREBASE_SERVICE_ACCOUNT`

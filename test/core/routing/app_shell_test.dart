@@ -1,9 +1,12 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/notifications/push_listener.dart';
 import 'package:not_eat_alone/core/routing/app_shell.dart';
+import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 
 /// Minimal shell router mirroring `router.dart`'s `StatefulShellRoute` shape
@@ -76,6 +79,15 @@ Future<void> _pumpShell(WidgetTester tester, {required int pending}) async {
     ProviderScope(
       overrides: [
         pendingRequestCountProvider.overrideWithValue(pending),
+        // AppShell mounts PushListener around the branch body — signed-out
+        // + stub FirebaseMessaging seams so this widget test never touches
+        // the real plugin/Firebase.initializeApp().
+        authStateProvider.overrideWith((ref) => Stream.value(null)),
+        foregroundPushMessagesProvider
+            .overrideWithValue(const Stream<RemoteMessage>.empty()),
+        openedPushMessagesProvider
+            .overrideWithValue(const Stream<RemoteMessage>.empty()),
+        initialPushMessageProvider.overrideWithValue(() async => null),
       ],
       child: MaterialApp.router(
         theme: buildTheme(Brightness.light),

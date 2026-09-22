@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:not_eat_alone/core/notifications/push_listener.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 
 /// Bottom-navigation shell hosting the four primary destinations. Each tab is
@@ -17,7 +18,7 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pending = ref.watch(pendingRequestCountProvider);
     return Scaffold(
-      body: navigationShell,
+      body: PushListener(child: navigationShell),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (i) => navigationShell.goBranch(
