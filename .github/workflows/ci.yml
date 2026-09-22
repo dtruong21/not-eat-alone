@@ -1,32 +1,100 @@
 name: CI
 
+# Quality gate for the gitflow model. Runs on every PR into a long-lived or
+# release/hotfix branch, and on the post-merge commit of develop/main before
+# deploy. Pins Flutter to the .fvmrc version. Generated files
+# (*.freezed.dart / *.g.dart) are git-ignored, so every job runs build_runner.
+#
+# `.env` is git-ignored (real values never committed) but pubspec.yaml lists it
+# as an asset, so every job seeds it from the committed .env.example — otherwise
+# `flutter analyze` reports asset_does_not_exist (a fatal warning) and builds
+# fail on the missing asset.
+
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
+      - develop
+      - 'release/**'
+      - 'hotfix/**'
+  push:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.4'
 
 jobs:
-  analyze-and-test:
+  analyze-test:
+    name: Analyze & test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - name: Seed .env from example
+        run: cp .env.example .env
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.47.4
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
-
+          cache: true
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Run code generation
+      - name: Code generation
         run: dart run build_runner build --delete-conflicting-outputs
-
       - name: Analyze
         run: flutter analyze --no-fatal-infos
-
       - name: Test
         run: flutter test
+
+  build-android:
+    name: Build Android (stage, unsigned)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seed .env from example
+        run: cp .env.example .env
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Build stage APK (debug, compile-verify)
+        run: flutter build apk --flavor stage -t lib/main_stage.dart --debug
+
+  build-ios:
+    name: Build iOS (stage, no codesign)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seed .env from example
+        run: cp .env.example .env
+      - name: Select stage GoogleService-Info.plist
+        # iOS has no build phase that copies the per-flavor plist into Runner/
+        # (unlike Android's gradle sourceSets), and the default-path plist is
+        # git-ignored scratch. Place the committed stage config where the Xcode
+        # project expects it. See docs/CICD.md (iOS flavor plist).
+        run: cp ios/config/stage/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Build stage iOS (debug, no codesign, compile-verify)
+        run: flutter build ios --flavor stage -t lib/main_stage.dart --debug --no-codesign
