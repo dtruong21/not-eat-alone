@@ -82,9 +82,7 @@ class MealDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Meal details'),
-        actions: [
-          SafetyActions(reportTargetType: 'meal', reportTargetId: meal.id),
-        ],
+        actions: [_MealSafetyActions(meal: meal)],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -162,6 +160,34 @@ class MealDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The app bar's safety menu for meal detail — always offers reporting the
+/// meal, and (only when the viewer isn't the meal's own host) also reporting
+/// and blocking the host. Reporting a user is otherwise only reachable from
+/// chat, post-match, so this is the only pre-match safety entry point for a
+/// bad host seen in discovery.
+class _MealSafetyActions extends ConsumerWidget {
+  const _MealSafetyActions({required this.meal});
+
+  final Meal meal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final viewerUid = ref.watch(authStateProvider).value?.uid;
+    final isHost = viewerUid != null && viewerUid == meal.hostId;
+
+    return SafetyActions(
+      reportTargetType: 'meal',
+      reportTargetId: meal.id,
+      reportLabel: isHost ? 'Report' : 'Report this meal',
+      secondaryReportTargetType: isHost ? null : 'user',
+      secondaryReportTargetId: isHost ? null : meal.hostId,
+      secondaryReportLabel: 'Report host',
+      blockUid: isHost ? null : meal.hostId,
+      blockLabel: 'Block host',
     );
   }
 }

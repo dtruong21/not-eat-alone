@@ -2,11 +2,15 @@
 /// into the chat header and meal detail app bars (see
 /// `docs/superpowers/specs/2026-09-22-safety-design.md § 3. Report`).
 ///
-/// "Report" opens `showReportSheet` for the given target. "Block" (only
-/// shown when [blockUid] is provided) confirms via an [AlertDialog], then
-/// calls `BlockController.block`; on success [onBlocked] fires (chat uses it
-/// to pop back to the chats list, since a blocked match should no longer be
-/// open).
+/// The primary "Report" item opens `showReportSheet` for
+/// [reportTargetType]/[reportTargetId]. An optional second report item
+/// ([secondaryReportTargetType]/[secondaryReportTargetId]) covers meal
+/// detail's need to report both the meal *and* its host from one menu
+/// (pre-match — reporting a user is otherwise only reachable from chat,
+/// post-match). "Block" (only shown when [blockUid] is provided) confirms
+/// via an [AlertDialog], then calls `BlockController.block`; on success
+/// [onBlocked] fires (chat uses it to pop back to the chats list, since a
+/// blocked match should no longer be open).
 library;
 
 import 'dart:async';
@@ -17,13 +21,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/features/safety/application/block_controller.dart';
 import 'package:not_eat_alone/features/safety/presentation/report_sheet.dart';
 
-enum _SafetyAction { report, block }
+enum _SafetyAction { report, reportSecondary, block }
 
 class SafetyActions extends ConsumerWidget {
   const SafetyActions({
     required this.reportTargetType,
     required this.reportTargetId,
+    this.reportLabel = 'Report',
+    this.secondaryReportTargetType,
+    this.secondaryReportTargetId,
+    this.secondaryReportLabel,
     this.blockUid,
+    this.blockLabel = 'Block',
     this.onBlocked,
     super.key,
   });
@@ -32,12 +41,28 @@ class SafetyActions extends ConsumerWidget {
   final String reportTargetType;
   final String reportTargetId;
 
+  /// Menu label for the primary report item — meal detail overrides this to
+  /// "Report this meal" so it reads clearly alongside "Report host".
+  final String reportLabel;
+
+  /// A second, optional report target (meal detail uses this to also report
+  /// the host: `targetType: 'user', targetId: meal.hostId`). Both
+  /// [secondaryReportTargetType] and [secondaryReportTargetId] must be
+  /// non-null for the item to show.
+  final String? secondaryReportTargetType;
+  final String? secondaryReportTargetId;
+  final String? secondaryReportLabel;
+
   /// The uid to block, if this menu should expose blocking at all. `null`
   /// hides the "Block" item entirely.
   final String? blockUid;
 
+  /// Menu label for the block item — meal detail overrides this to
+  /// "Block host".
+  final String blockLabel;
+
   /// Fires after a successful block — `null` if the caller has nothing to
-  /// do (e.g. meal detail, which has no block entry point).
+  /// do.
   final VoidCallback? onBlocked;
 
   Future<bool> _confirmBlock(BuildContext context) async {
@@ -105,21 +130,35 @@ class SafetyActions extends ConsumerWidget {
                 targetId: reportTargetId,
               ),
             );
+          case _SafetyAction.reportSecondary:
+            final type = secondaryReportTargetType;
+            final id = secondaryReportTargetId;
+            if (type == null || id == null) return;
+            unawaited(
+              showReportSheet(context, targetType: type, targetId: id),
+            );
           case _SafetyAction.block:
             unawaited(_block(context, ref));
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
-          key: Key('safety_actions_report_item'),
+        PopupMenuItem(
+          key: const Key('safety_actions_report_item'),
           value: _SafetyAction.report,
-          child: Text('Report'),
+          child: Text(reportLabel),
         ),
+        if (secondaryReportTargetType != null &&
+            secondaryReportTargetId != null)
+          PopupMenuItem(
+            key: const Key('safety_actions_report_secondary_item'),
+            value: _SafetyAction.reportSecondary,
+            child: Text(secondaryReportLabel ?? 'Report'),
+          ),
         if (blockUid != null)
-          const PopupMenuItem(
-            key: Key('safety_actions_block_item'),
+          PopupMenuItem(
+            key: const Key('safety_actions_block_item'),
             value: _SafetyAction.block,
-            child: Text('Block'),
+            child: Text(blockLabel),
           ),
       ],
     );
