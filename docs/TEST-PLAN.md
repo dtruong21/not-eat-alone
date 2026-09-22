@@ -275,6 +275,32 @@ Related PRD entry: `docs/PRD.md § Chat`
 
 ---
 
+### Feature: Push notifications
+
+Status: active
+Related PRD entry: `docs/PRD.md § Push notifications`
+
+**Golden path (emulator/device):**
+- [ ] A guest sends a request to join a meal → the host's device receives a push notification; tapping it opens `/requests`.
+- [ ] A participant sends a chat message → the other participant's device receives a push notification; tapping it opens that chat (`/chats/:matchId`).
+- [ ] The host approves a request → the approved guest's device receives a push notification.
+
+**Edge cases (specific to this feature):**
+- [ ] A recipient with no registered `fcmTokens` entry is a silent no-op — the trigger completes without error, no push attempted.
+- [ ] An invalid/expired token (FCM reports `messaging/registration-token-not-registered` or similar) is pruned from `users/{uid}/fcmTokens` by the trigger, not just skipped.
+- [ ] `users/{uid}/fcmTokens/{token}` is readable/writable only by the owning user (Firestore rules) — verify a non-owner is denied via Rules Playground or emulator.
+- [ ] Cold-start tap on a push (app not running) deep-links correctly without crashing on a disposed/uninitialized router state.
+- [ ] Foreground message while the relevant screen is already open shows an in-app banner, not a duplicate system notification.
+- [ ] Triggers fire correctly against **both** Firestore databases (`(default)`=prod, `stage`=stage) — each is registered separately in `index.ts`.
+
+**Pending native config (blocks live delivery):**
+- Live end-to-end delivery is unverified pending **Blaze plan** upgrade (Cloud Functions can't deploy on Spark), an **APNs auth key** (iOS push), and registering the **Android SHA-256** fingerprint — all user homework, tracked in `docs/CICD.md` / build-state memory. Until then, the Functions triggers are unit/integration-tested in isolation (`firebase/functions/test/`) but not exercised against a real device.
+
+**Known issues:**
+- none filed
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:

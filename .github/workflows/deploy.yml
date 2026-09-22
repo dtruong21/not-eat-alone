@@ -2,17 +2,19 @@ name: Deploy
 
 # Continuous delivery for the Firebase backend + GitHub releases.
 #
-# - Push to develop / main  -> deploy Firestore rules+indexes and Storage rules
-#   to the single `not-eat-alone` project (shared across the (default) and stage
-#   databases). develop is the integration deploy; main re-asserts at release.
+# - Push to develop / main  -> deploy Firestore rules+indexes, Storage rules,
+#   and Cloud Functions to the single `not-eat-alone` project (shared across
+#   the (default) and stage databases). develop is the integration deploy;
+#   main re-asserts at release.
 # - Push of a v* tag        -> publish a GitHub Release (tags live only on main).
 #
-# Functions are intentionally NOT deployed: `firebase/functions/` does not exist
-# yet (its predeploy `npm run build` would fail). When Cloud Functions land
-# (Plan 8), add `functions` to the --only list below.
+# Cloud Functions (region europe-west1) require the project to be on the
+# Firebase Blaze (pay-as-you-go) plan to deploy — see docs/CICD.md. If the
+# project is still on Spark, this step will fail even with valid credentials.
 #
 # Requires repo secret FIREBASE_SERVICE_ACCOUNT (a Firebase deploy service
-# account JSON). Until it is set, the deploy job exits green with a notice.
+# account JSON, with the Cloud Functions Admin role in addition to the rules
+# roles). Until the secret is set, the deploy job exits green with a notice.
 
 on:
   push:
@@ -61,11 +63,15 @@ jobs:
           printf '%s' "$SA" > "$RUNNER_TEMP/firebase-sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
 
-      - name: Deploy Firestore + Storage rules
+      - name: Install functions deps
+        if: steps.guard.outputs.present == 'true'
+        run: npm --prefix firebase/functions ci
+
+      - name: Deploy Firestore + Storage + Functions
         if: steps.guard.outputs.present == 'true'
         run: |
           npx --yes firebase-tools@13 deploy \
-            --only firestore,storage \
+            --only firestore,storage,functions \
             --project not-eat-alone \
             --non-interactive
 
