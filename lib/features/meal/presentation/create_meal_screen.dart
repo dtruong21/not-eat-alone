@@ -133,7 +133,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Meal created!')),
         );
-        context.go('/');
+        context.go('/discover');
       }
     });
 

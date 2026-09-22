@@ -1,4 +1,5 @@
-/// Discovery feed screen (`/`) — the app's home screen.
+/// Discovery feed screen (`/discover`) — the app's home screen, the
+/// Discover tab of the bottom-navigation shell (`app_shell.dart`).
 ///
 /// Renders whatever `AsyncValue<List<DiscoverableMeal>>`
 /// [discoveryControllerProvider] reports (loading / error / empty / data),
@@ -25,7 +26,6 @@ import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
-import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -111,7 +111,6 @@ class DiscoveryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(discoveryControllerProvider);
     final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
-    final pendingRequestCount = ref.watch(pendingRequestCountProvider);
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -150,17 +149,6 @@ class DiscoveryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(FlavorConfig.current.appTitle),
         actions: [
-          IconButton(
-            key: const Key('discovery_inbox_button'),
-            tooltip: 'Requests',
-            icon: Badge(
-              key: const Key('discovery_inbox_badge'),
-              isLabelVisible: pendingRequestCount > 0,
-              label: Text('$pendingRequestCount'),
-              child: const Icon(Icons.inbox_rounded),
-            ),
-            onPressed: () => context.push('/requests'),
-          ),
           IconButton(
             key: const Key('discovery_sign_out_button'),
             tooltip: 'Sign out',

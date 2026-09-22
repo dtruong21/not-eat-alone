@@ -31,6 +31,7 @@ void main() {
     expect(match.exists, isTrue);
     expect(match.data()!['guestId'], 'g1');
     expect(match.data()!['hostId'], 'h1');
+    expect(match.data()!['participants'], ['h1', 'g1']);
 
     final approved = await db.collection('requests').doc('m1_g1').get();
     expect(approved.data()!['status'], 'approved');

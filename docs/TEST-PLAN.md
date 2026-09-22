@@ -247,6 +247,34 @@ Related PRD entry: `docs/PRD.md § Matching`
 
 ---
 
+### Feature: Chat
+
+Status: active
+Related PRD entry: `docs/PRD.md § Chat`
+
+**Golden path:**
+- [ ] Host approves a request → guest's meal-detail "Matched!" banner is tappable → pushes `/chats/{mealId}` straight into the new chat.
+- [ ] Chats tab (`/chats`) lists every match as a row (other participant photo/name, last-message preview, relative time); tapping a row opens `/chats/:matchId`.
+- [ ] Chat screen: app bar shows the other participant's name/photo (looked up via `chatListProvider`); sending a message via the composer writes to `matches/{matchId}/messages` and appears immediately (mine, right-aligned).
+- [ ] The other participant, viewing the same match in a second session, sees the message arrive in realtime (left-aligned) and the sender's bubble flips to "Seen" once the other participant opens the chat (`reads/{uid}.lastReadAt` compared to the message's `createdAt`).
+- [ ] Bottom-nav tab switching preserves each tab's navigation stack (Chats list ↔ chat detail) independently of Discover/Requests/Profile (`StatefulShellRoute`, unit-tested in `app_shell_test.dart`).
+
+**Edge cases (specific to this feature):**
+- [ ] A signed-in user who is **not** a participant on a match cannot read its `messages`/`reads` subcollections — verify via Rules Playground or emulator (`firebase/firestore.rules`).
+- [ ] Blank/whitespace-only text is blocked client-side (`ChatController.send` no-ops on blank; composer's send button stays disabled while the field is empty) and rejected repository-side (`sendMessage` throws on 0/`>2000` chars).
+- [ ] Chats-tab unread dot: shown when the last message on a match is inbound (`senderId != me`); hidden once I've sent the most recent message. (Simplified heuristic — a full compare against my own `reads` doc is deferred, not required for MVP.)
+- [ ] Empty states: no matches yet → "No chats yet — match on a meal to start talking"; a match with no messages yet → "Say hi 👋".
+- [ ] `chat_opened` fires once per chat-screen open (guarded in `initState`, not on every rebuild); `message_sent` fires only after a successful write.
+- [ ] Route guard: `/chats/:matchId` with a missing/blank `matchId` falls back to the chat list instead of crashing on a null path param.
+
+**Manual rules note:**
+- [ ] `matches/{matchId}/messages/{id}` and `matches/{matchId}/reads/{uid}` are readable/writable only by `match.hostId`/`match.guestId` (participants array) — verify a third user is denied both read and write via emulator.
+
+**Known issues:**
+- none filed
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:

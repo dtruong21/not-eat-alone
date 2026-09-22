@@ -1,9 +1,9 @@
 /// Host's request inbox (`/requests`) — every pending join request across
 /// the signed-in host's meals, newest first, driven by [hostInboxProvider].
 ///
-/// Reached from the discovery app bar's badged inbox action
-/// (`discovery_screen.dart`); each row is a [RequestInboxTile] that lets the
-/// host Approve or Deny in place.
+/// The Requests tab of the bottom-navigation shell (`app_shell.dart`), whose
+/// badge count is also driven by `pendingRequestCountProvider`; each row is
+/// a [RequestInboxTile] that lets the host Approve or Deny in place.
 library;
 
 import 'package:flutter/material.dart';

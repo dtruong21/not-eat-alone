@@ -10,5 +10,6 @@ abstract class Match with _$Match {
     required String hostId,
     required String guestId,
     DateTime? createdAt,
+    @Default(<String>[]) List<String> participants,
   }) = _Match;
 }
