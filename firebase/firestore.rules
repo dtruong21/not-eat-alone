@@ -114,6 +114,13 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.reporterId == request.auth.uid
+                    && request.resource.data.targetType in ['user', 'meal', 'message'];
+      allow read, update, delete: if false;
+    }
+
     // Public reference data (handles, usernames, etc.) — adapt per project
     // Example:
     // match /handles/{handle} {
