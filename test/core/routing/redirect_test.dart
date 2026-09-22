@@ -32,7 +32,7 @@ void main() {
         profileComplete: true,
         location: '/auth/signin',
       ),
-      '/',
+      '/discover',
     );
   });
   test('signed in + verified on home -> stay', () {
@@ -41,7 +41,7 @@ void main() {
         signedIn: true,
         ageVerified: true,
         profileComplete: true,
-        location: '/',
+        location: '/discover',
       ),
       null,
     );
@@ -65,7 +65,7 @@ void main() {
         profileComplete: true,
         location: '/auth/phone',
       ),
-      '/',
+      '/discover',
     );
   });
   test('age-verified, profile incomplete -> profile setup', () {
@@ -98,7 +98,7 @@ void main() {
         profileComplete: true,
         location: '/onboarding/profile',
       ),
-      '/',
+      '/discover',
     );
   });
   test('complete on home -> stay', () {
@@ -107,7 +107,7 @@ void main() {
         signedIn: true,
         ageVerified: true,
         profileComplete: true,
-        location: '/',
+        location: '/discover',
       ),
       null,
     );

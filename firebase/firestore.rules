@@ -16,6 +16,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function matchParticipant(matchId) {
+      let m = get(/databases/$(database)/documents/matches/$(matchId)).data;
+      return isSignedIn()
+             && (request.auth.uid == m.hostId || request.auth.uid == m.guestId);
+    }
+
     // Per-user docs
     match /users/{uid} {
       allow read: if isSignedIn();
@@ -33,6 +39,10 @@ service cloud.firestore {
       // match /things/{thingId} {
       //   allow read, write: if isOwner(uid);
       // }
+
+      match /fcmTokens/{token} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // Meal listings created by a host
@@ -70,10 +80,27 @@ service cloud.firestore {
     match /matches/{matchId} {
       allow read: if isSignedIn()
                   && (resource.data.hostId == request.auth.uid
-                      || resource.data.guestId == request.auth.uid);
+                      || resource.data.guestId == request.auth.uid
+                      || (resource.data.participants is list
+                          && request.auth.uid in resource.data.participants));
       allow create: if isSignedIn()
                     && request.resource.data.hostId == request.auth.uid;
       allow update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if matchParticipant(matchId);
+        allow create: if matchParticipant(matchId)
+                      && request.resource.data.senderId == request.auth.uid
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 2000;
+        allow update, delete: if false;
+      }
+
+      match /reads/{uid} {
+        allow read: if matchParticipant(matchId);
+        allow write: if matchParticipant(matchId) && uid == request.auth.uid;
+      }
     }
 
     // Public reference data (handles, usernames, etc.) — adapt per project

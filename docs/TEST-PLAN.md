@@ -247,6 +247,60 @@ Related PRD entry: `docs/PRD.md § Matching`
 
 ---
 
+### Feature: Chat
+
+Status: active
+Related PRD entry: `docs/PRD.md § Chat`
+
+**Golden path:**
+- [ ] Host approves a request → guest's meal-detail "Matched!" banner is tappable → pushes `/chats/{mealId}` straight into the new chat.
+- [ ] Chats tab (`/chats`) lists every match as a row (other participant photo/name, last-message preview, relative time); tapping a row opens `/chats/:matchId`.
+- [ ] Chat screen: app bar shows the other participant's name/photo (looked up via `chatListProvider`); sending a message via the composer writes to `matches/{matchId}/messages` and appears immediately (mine, right-aligned).
+- [ ] The other participant, viewing the same match in a second session, sees the message arrive in realtime (left-aligned) and the sender's bubble flips to "Seen" once the other participant opens the chat (`reads/{uid}.lastReadAt` compared to the message's `createdAt`).
+- [ ] Bottom-nav tab switching preserves each tab's navigation stack (Chats list ↔ chat detail) independently of Discover/Requests/Profile (`StatefulShellRoute`, unit-tested in `app_shell_test.dart`).
+
+**Edge cases (specific to this feature):**
+- [ ] A signed-in user who is **not** a participant on a match cannot read its `messages`/`reads` subcollections — verify via Rules Playground or emulator (`firebase/firestore.rules`).
+- [ ] Blank/whitespace-only text is blocked client-side (`ChatController.send` no-ops on blank; composer's send button stays disabled while the field is empty) and rejected repository-side (`sendMessage` throws on 0/`>2000` chars).
+- [ ] Chats-tab unread dot: shown when the last message on a match is inbound (`senderId != me`); hidden once I've sent the most recent message. (Simplified heuristic — a full compare against my own `reads` doc is deferred, not required for MVP.)
+- [ ] Empty states: no matches yet → "No chats yet — match on a meal to start talking"; a match with no messages yet → "Say hi 👋".
+- [ ] `chat_opened` fires once per chat-screen open (guarded in `initState`, not on every rebuild); `message_sent` fires only after a successful write.
+- [ ] Route guard: `/chats/:matchId` with a missing/blank `matchId` falls back to the chat list instead of crashing on a null path param.
+
+**Manual rules note:**
+- [ ] `matches/{matchId}/messages/{id}` and `matches/{matchId}/reads/{uid}` are readable/writable only by `match.hostId`/`match.guestId` (participants array) — verify a third user is denied both read and write via emulator.
+
+**Known issues:**
+- none filed
+
+---
+
+### Feature: Push notifications
+
+Status: active
+Related PRD entry: `docs/PRD.md § Push notifications`
+
+**Golden path (emulator/device):**
+- [ ] A guest sends a request to join a meal → the host's device receives a push notification; tapping it opens `/requests`.
+- [ ] A participant sends a chat message → the other participant's device receives a push notification; tapping it opens that chat (`/chats/:matchId`).
+- [ ] The host approves a request → the approved guest's device receives a push notification.
+
+**Edge cases (specific to this feature):**
+- [ ] A recipient with no registered `fcmTokens` entry is a silent no-op — the trigger completes without error, no push attempted.
+- [ ] An invalid/expired token (FCM reports `messaging/registration-token-not-registered` or similar) is pruned from `users/{uid}/fcmTokens` by the trigger, not just skipped.
+- [ ] `users/{uid}/fcmTokens/{token}` is readable/writable only by the owning user (Firestore rules) — verify a non-owner is denied via Rules Playground or emulator.
+- [ ] Cold-start tap on a push (app not running) deep-links correctly without crashing on a disposed/uninitialized router state.
+- [ ] Foreground message while the relevant screen is already open shows an in-app banner, not a duplicate system notification.
+- [ ] Triggers fire correctly against **both** Firestore databases (`(default)`=prod, `stage`=stage) — each is registered separately in `index.ts`.
+
+**Pending native config (blocks live delivery):**
+- Live end-to-end delivery is unverified pending **Blaze plan** upgrade (Cloud Functions can't deploy on Spark), an **APNs auth key** (iOS push), and registering the **Android SHA-256** fingerprint — all user homework, tracked in `docs/CICD.md` / build-state memory. Until then, the Functions triggers are unit/integration-tested in isolation (`firebase/functions/test/`) but not exercised against a real device.
+
+**Known issues:**
+- none filed
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:

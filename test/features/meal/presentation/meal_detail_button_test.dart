@@ -126,7 +126,7 @@ void main() {
     await pumpWith(tester, viewerUid: 'guest1', request: _approvedRequest);
 
     expect(find.text('Matched!'), findsOneWidget);
-    expect(find.text("You're in — chat coming soon"), findsOneWidget);
+    expect(find.text('Tap to start chatting'), findsOneWidget);
   });
 
   testWidgets('denied request -> disabled "Not selected"', (tester) async {

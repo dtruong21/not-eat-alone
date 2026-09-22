@@ -1,4 +1,5 @@
-/// Discovery feed screen (`/`) — the app's home screen.
+/// Discovery feed screen (`/discover`) — the app's home screen, the
+/// Discover tab of the bottom-navigation shell (`app_shell.dart`).
 ///
 /// Renders whatever `AsyncValue<List<DiscoverableMeal>>`
 /// [discoveryControllerProvider] reports (loading / error / empty / data),
@@ -25,9 +26,9 @@ import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
-import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
+import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
@@ -75,6 +76,27 @@ class DiscoveryScreen extends ConsumerWidget {
     await ref.read(locationProvider.future);
   }
 
+  /// Best-effort token cleanup before sign-out: a failure here (offline,
+  /// Firestore rules edge case, etc.) must never block the user from signing
+  /// out — a stale token doc means, at worst, one failed push send later.
+  Future<void> _onSignOut(WidgetRef ref) async {
+    // `authRepository.currentUser` (synchronous) rather than
+    // `authStateProvider.value` — the latter is a `StreamProvider` that may
+    // still be `AsyncLoading` (uid `null`) at the moment of the tap if
+    // nothing else has watched it yet to prime the stream subscription.
+    final uid = ref.read(authRepositoryProvider).currentUser?.uid;
+    if (uid != null) {
+      try {
+        await ref
+            .read(pushRegistrationControllerProvider.notifier)
+            .unregister(uid);
+      } on Exception {
+        // Ignored — see doc comment above.
+      }
+    }
+    await ref.read(authRepositoryProvider).signOut();
+  }
+
   Future<void> _onTapMeal(
     BuildContext context,
     DiscoverableMeal item,
@@ -111,7 +133,6 @@ class DiscoveryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(discoveryControllerProvider);
     final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
-    final pendingRequestCount = ref.watch(pendingRequestCountProvider);
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -151,21 +172,10 @@ class DiscoveryScreen extends ConsumerWidget {
         title: Text(FlavorConfig.current.appTitle),
         actions: [
           IconButton(
-            key: const Key('discovery_inbox_button'),
-            tooltip: 'Requests',
-            icon: Badge(
-              key: const Key('discovery_inbox_badge'),
-              isLabelVisible: pendingRequestCount > 0,
-              label: Text('$pendingRequestCount'),
-              child: const Icon(Icons.inbox_rounded),
-            ),
-            onPressed: () => context.push('/requests'),
-          ),
-          IconButton(
             key: const Key('discovery_sign_out_button'),
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout_rounded),
-            onPressed: () => ref.read(authRepositoryProvider).signOut(),
+            onPressed: () => _onSignOut(ref),
           ),
         ],
       ),

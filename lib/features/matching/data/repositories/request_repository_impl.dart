@@ -96,6 +96,7 @@ class RequestRepositoryImpl implements RequestRepository {
           'mealId': request.mealId,
           'hostId': request.hostId,
           'guestId': request.guestId,
+          'participants': [request.hostId, request.guestId],
           'createdAt': FieldValue.serverTimestamp(),
         });
       });

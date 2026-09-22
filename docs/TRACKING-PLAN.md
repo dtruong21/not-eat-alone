@@ -86,6 +86,10 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `request_approved` | Host approves a pending join request | — (No PII) | Request funnel, host responsiveness |
 | `request_denied` | Host denies a pending join request | — (No PII) | Request funnel |
 | `match_created` | A match is created after a host approves a request | `women_only: bool` (No PII) | Matches created, women-only adoption |
+| `chat_opened` | User opens a match's chat thread | — (No PII) | Chat engagement |
+| `message_sent` | User sends a chat message | — (No PII) | Chat engagement, messages per match |
+| `push_permission_granted` | OS notification-permission prompt is resolved (on registration attempt) | `granted: bool` (No PII — the device token is never sent as a property) | Push opt-in rate |
+| `push_opened` | User taps a push notification and the app opens/routes from it | `type: string` (push route type, e.g. `'match'`, `'message'`) (No PII) | Push engagement, re-engagement funnel |
 
 {{Add project-specific events below as `/track` runs append them.}}
 

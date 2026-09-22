@@ -236,6 +236,40 @@ final class MatchCreated extends AppEvent {
   Map<String, Object?> get props => {'women_only': womenOnly};
 }
 
+final class ChatOpened extends AppEvent {
+  const ChatOpened();
+  @override
+  String get name => 'chat_opened';
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class MessageSent extends AppEvent {
+  const MessageSent();
+  @override
+  String get name => 'message_sent';
+  @override
+  Map<String, Object?> get props => const {};
+}
+
+final class PushPermissionGranted extends AppEvent {
+  const PushPermissionGranted({required this.granted});
+  final bool granted;
+  @override
+  String get name => 'push_permission_granted';
+  @override
+  Map<String, Object?> get props => {'granted': granted};
+}
+
+final class PushOpened extends AppEvent {
+  const PushOpened({required this.type});
+  final String type;
+  @override
+  String get name => 'push_opened';
+  @override
+  Map<String, Object?> get props => {'type': type};
+}
+
 // ─── User properties registry ────────────────────────────────────────────────
 
 /// Sparse by design. Add a property only when it drives segmentation or is

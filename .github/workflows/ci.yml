@@ -98,3 +98,18 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Build stage iOS (debug, no codesign, compile-verify)
         run: flutter build ios --flavor stage -t lib/main_stage.dart --debug --no-codesign
+
+  functions-build:
+    name: Functions build & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firebase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test

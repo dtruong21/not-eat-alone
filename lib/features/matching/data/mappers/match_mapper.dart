@@ -8,6 +8,7 @@ extension MatchDtoX on MatchDto {
         hostId: hostId,
         guestId: guestId,
         createdAt: createdAt,
+        participants: participants,
       );
 }
 
@@ -18,5 +19,6 @@ extension MatchX on Match {
         hostId: hostId,
         guestId: guestId,
         createdAt: createdAt,
+        participants: participants,
       );
 }
