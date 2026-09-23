@@ -27,6 +27,12 @@ service cloud.firestore {
              && !exists(/databases/$(database)/documents/blocks/$(b + '_' + a));
     }
 
+    function ratingParticipantsValid(matchId, rater, target) {
+      let m = get(/databases/$(database)/documents/matches/$(matchId)).data;
+      return (rater == m.hostId && target == m.guestId)
+          || (rater == m.guestId && target == m.hostId);
+    }
+
     // Per-user docs
     match /users/{uid} {
       allow read: if isSignedIn();
@@ -133,6 +139,23 @@ service cloud.firestore {
                     && request.resource.data.reporterId == request.auth.uid
                     && request.resource.data.targetType in ['user', 'meal', 'message'];
       allow read, update, delete: if false;
+    }
+
+    match /ratings/{ratingId} {
+      allow read: if isSignedIn() && resource.data.raterUid == request.auth.uid;
+      allow create: if isSignedIn()
+                    && request.resource.data.raterUid == request.auth.uid
+                    && request.resource.data.raterUid != request.resource.data.targetUid
+                    && request.resource.data.stars is int
+                    && request.resource.data.stars >= 1
+                    && request.resource.data.stars <= 5
+                    && request.resource.data.showedUp is bool
+                    && (!('comment' in request.resource.data)
+                        || request.resource.data.comment.size() <= 200)
+                    && ratingParticipantsValid(request.resource.data.matchId,
+                                               request.resource.data.raterUid,
+                                               request.resource.data.targetUid);
+      allow update, delete: if false;
     }
 
     // Public reference data (handles, usernames, etc.) — adapt per project
