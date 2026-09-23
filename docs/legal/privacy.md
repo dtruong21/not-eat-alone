@@ -111,11 +111,10 @@ Account deletion is **PERMANENT and IRREVERSIBLE**. When you delete your account
 - All blocks you created or received
 - All Firebase Cloud Messaging (FCM) device tokens
 - Your Firebase Authentication account
+- **Ratings you authored** (your reviews of other users) — the affected users' aggregate rating (average and count) is automatically adjusted to remove your rating's contribution
+- **Ratings about you** (other users' reviews of you)
 
-**Retained after deletion:**
-- **Ratings:** Ratings you authored (your reviews of other users) and ratings others gave you may be **retained** to preserve the integrity of user ratings and recommendations. Broader ratings erasure is planned for a future update. If you wish to request deletion of ratings as part of a GDPR erasure request, contact us at **placeholder@convyve.com**.
-
-**Note:** You retain the right to request complete data deletion under GDPR (Art. 17). The account-deletion flow automatically implements deletion of most personal data; if you wish to specifically request deletion of retained ratings or data not automatically deleted, include this in your GDPR erasure request. See "Your rights" below.
+**Note:** You retain the right to request complete data deletion under GDPR (Art. 17). The account-deletion flow automatically implements deletion of all personal data listed above; if you believe any data was not deleted, include this in a GDPR erasure request. See "Your rights" below.
 
 ---
 
