@@ -15,6 +15,8 @@ import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
 import 'package:not_eat_alone/features/chat/domain/repositories/chat_repository.dart';
 import 'package:not_eat_alone/features/chat/presentation/chat_screen.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/match.dart';
+import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
+import 'package:not_eat_alone/features/rating/application/my_rating_provider.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
@@ -99,6 +101,13 @@ void main() {
               MessageRead(uid: key.otherUid, lastReadAt: otherLastReadAt),
             ),
           ),
+          // The post-meal card's own providers — stubbed out so the widget
+          // tree never reaches the real Firestore-backed repositories (no
+          // Firebase app is initialized in these widget tests). Returning no
+          // meal keeps `PostMealCard` self-hidden, which is the behaviour
+          // these existing tests (no meal past-due) expect anyway.
+          matchMealProvider.overrideWith((ref, matchId) async => null),
+          myRatingProvider.overrideWith((ref, matchId) => Stream.value(null)),
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),

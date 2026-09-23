@@ -14,6 +14,8 @@ abstract class AppUserDto with _$AppUserDto {
     @Default(<String>[]) List<String> photoUrls,
     String? bio,
     String? gender, // stores Gender.name
+    @Default(0) int ratingCount,
+    @Default(0) double ratingAvg,
   }) = _AppUserDto;
 
   factory AppUserDto.fromJson(Map<String, Object?> json) =>

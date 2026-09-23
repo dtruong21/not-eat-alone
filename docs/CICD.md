@@ -36,7 +36,7 @@ so one deploy keeps both the `(default)` and `stage` databases current.
 `develop` is the integration deploy; `main` re-asserts the same rules (and
 functions) at release time (idempotent).
 
-### Cloud Functions deploy requirements (Plan 8)
+### Cloud Functions deploy requirements (Plan 8 + Plan 10)
 
 - **Firebase Blaze plan required.** Cloud Functions (and their outbound
   network calls, e.g. to FCM) only deploy on the pay-as-you-go **Blaze**
@@ -46,6 +46,13 @@ functions) at release time (idempotent).
 - **Region: `europe-west1`.** All functions in `firebase/functions/` are
   pinned to `europe-west1` (matches the Firestore project's home region).
   Deploys create/update functions in that region only.
+- **Scheduled functions (Plan 10 onwards).** The `postMealReminder` scheduled
+  function (Pub/Sub hourly, europe-west1) requires **Cloud Scheduler**,
+  which is automatically provisioned and managed by the Firebase CLI on
+  deploy; no extra configuration needed.
+- **Rating aggregate function (Plan 10).** The `onRatingCreated` trigger
+  (Firestore document trigger) updates `AppUser` rating aggregate fields
+  (`ratingCount`, `ratingAvg`) on every new rating — requires **Blaze**.
 - **CI gate: `functions-build`.** Every PR/push compiles the Functions
   TypeScript and runs its Jest suite before merge — a broken trigger can't
   reach `develop`/`main`, independent of whether Blaze/deploy secrets are set.

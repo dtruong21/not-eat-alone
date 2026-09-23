@@ -50,4 +50,27 @@ void main() {
     ).toEntity();
     expect(entity.gender, isNull);
   });
+
+  test('dto <-> entity round-trip preserves rating aggregate fields', () {
+    final dto = AppUserDto(
+      uid: 'u1',
+      dob: DateTime.utc(2000, 1, 1),
+      ratingCount: 3,
+      ratingAvg: 4.5,
+    );
+
+    final entity = dto.toEntity();
+    expect(entity.ratingCount, 3);
+    expect(entity.ratingAvg, 4.5);
+
+    final back = entity.toDto();
+    expect(back.ratingCount, 3);
+    expect(back.ratingAvg, 4.5);
+  });
+
+  test('dto with absent rating fields maps to zero-default entity', () {
+    final entity = AppUserDto(uid: 'u1', dob: DateTime.utc(2000, 1, 1)).toEntity();
+    expect(entity.ratingCount, 0);
+    expect(entity.ratingAvg, 0);
+  });
 }

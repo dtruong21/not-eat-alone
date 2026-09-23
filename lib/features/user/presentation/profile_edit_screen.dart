@@ -15,8 +15,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
+import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/presentation/widgets/profile_form.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
@@ -112,6 +114,7 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final myUid = ref.watch(currentUserDocProvider).value?.uid;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Edit profile')),
@@ -121,6 +124,10 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (myUid != null) ...[
+                RatingBadge(uid: myUid),
+                const SizedBox(height: WarmPlayfulSpacing.s4),
+              ],
               ProfileForm(onChanged: _onFormChanged),
               const SizedBox(height: WarmPlayfulSpacing.s5),
               FilledButton(

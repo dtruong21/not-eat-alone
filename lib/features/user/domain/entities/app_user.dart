@@ -14,6 +14,8 @@ abstract class AppUser with _$AppUser {
     @Default(<String>[]) List<String> photoUrls,
     String? bio,
     Gender? gender,
+    @Default(0) int ratingCount,
+    @Default(0) double ratingAvg,
   }) = _AppUser;
 
   const AppUser._();

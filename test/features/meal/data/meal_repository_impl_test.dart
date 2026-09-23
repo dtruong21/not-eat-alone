@@ -109,6 +109,29 @@ void main() {
       expect(results.map((m) => m.id), ['a']);
       expect(results.single.status, MealStatus.open);
     });
+
+    test('getMeal returns the meal for an existing id', () async {
+      final meal = Meal(
+        id: '',
+        hostId: 'u1',
+        restaurant: restaurant,
+        dateTime: DateTime.utc(2026, 10, 1, 19, 30),
+        geohash: '',
+      );
+      final id = await repository.createMeal(meal);
+
+      final result = await repository.getMeal(id);
+
+      expect(result, isNotNull);
+      expect(result!.id, id);
+      expect(result.hostId, 'u1');
+    });
+
+    test('getMeal returns null when the doc does not exist', () async {
+      final result = await repository.getMeal('missing');
+
+      expect(result, isNull);
+    });
   });
 }
 

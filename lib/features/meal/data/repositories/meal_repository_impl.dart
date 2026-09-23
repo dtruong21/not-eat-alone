@@ -86,9 +86,20 @@ class MealRepositoryImpl implements MealRepository {
         );
   }
 
-  static Meal _mealFromDoc(QueryDocumentSnapshot<Map<String, Object?>> doc) {
+  /// Reads `meals/{id}` once, or `null` if it doesn't exist.
+  @override
+  Future<Meal?> getMeal(String id) async {
+    final snapshot = await _firestore.collection('meals').doc(id).get();
+    if (!snapshot.exists) return null;
+    return _mealFromData(id, snapshot.data()!);
+  }
+
+  static Meal _mealFromDoc(QueryDocumentSnapshot<Map<String, Object?>> doc) =>
+      _mealFromData(doc.id, doc.data());
+
+  static Meal _mealFromData(String id, Map<String, Object?> raw) {
     try {
-      final data = Map<String, Object?>.from(doc.data())..['id'] = doc.id;
+      final data = Map<String, Object?>.from(raw)..['id'] = id;
 
       // Same Timestamp→ISO-DateTime translation as
       // `UserRepositoryImpl._fromFirestore` — `dateTime`/`createdAt` are
@@ -105,7 +116,7 @@ class MealRepositoryImpl implements MealRepository {
 
       return MealDto.fromJson(data).toEntity();
     } catch (e, st) {
-      throw RepositoryParseException('meals', doc.id, e, st);
+      throw RepositoryParseException('meals', id, e, st);
     }
   }
 }

@@ -5,4 +5,7 @@ abstract class MealRepository {
 
   /// Streams `open` meals whose `geohash` starts with [geohashPrefix].
   Stream<List<Meal>> watchDiscoverable({required String geohashPrefix});
+
+  /// Reads `meals/{id}` once, or `null` if it doesn't exist.
+  Future<Meal?> getMeal(String id);
 }

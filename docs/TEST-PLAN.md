@@ -340,6 +340,41 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 
 ---
 
+### Feature: Post-meal & ratings
+
+Status: active
+Related PRD entry: `docs/PRD.md § Ratings`
+
+**Golden path:**
+- [ ] After the meal `dateTime` has passed, the post-meal card ("How was your meal?") appears in the match's chat.
+- [ ] Tap the card → rating sheet appears with star picker (1–5), show-up toggle, and optional comment field.
+- [ ] Select stars + toggle show-up (true/false) + optionally type a comment (≤200 chars) → "Submit" writes a `ratings/{matchId}_{raterUid}` doc.
+- [ ] Both participants receive a post-meal nudge push notification (type `'rate'`) shortly after rating.
+- [ ] After rating, the target user's profile card shows a rating badge (⭐ count displayed, e.g. "⭐ 4.5 (12)").
+- [ ] The target user's `AppUser.ratingAvg` and `ratingCount` are updated by the `onRatingCreated` aggregate Function in realtime; their profile screen reflects the new aggregate.
+
+**Edge cases (specific to this feature):**
+- [ ] Only meal participants can rate — a non-participant attempting to write a rating is rejected by rules.
+- [ ] A user cannot rate themselves — the rule rejects if `raterUid == targetUid`.
+- [ ] Star count must be 1–5 inclusive — submit disabled if outside range (client); rule rejects otherwise.
+- [ ] Comment is optional, but if present must be ≤200 chars (both client validation + rule check).
+- [ ] One rating per match per rater — a second attempt to rate the same match writes to the same doc (idempotent ID), overwriting the previous rating.
+- [ ] `AppUser.ratingCount` and `ratingAvg` are write-protected: client cannot write them directly (Firestore rules validate `ratingSum/ratingCount/ratingAvg` unchanged in user updates).
+- [ ] Scheduled post-meal push (`postMealReminder`, hourly Pub/Sub) is deduplicated via the `postMealNotified` flag; once sent, a meal does not re-notify its participants.
+- [ ] After both participants rate, the meal's `status` flips to `completed` by the scheduled Function.
+
+**Manual emulator/Blaze verification:**
+- [ ] Firestore rules reject a rating where `raterUid == targetUid` (write forbidden).
+- [ ] Firestore rules reject a rating from a non-participant (the match doc must exist and the rater must be hostId or guestId).
+- [ ] `onRatingCreated` trigger updates the target's `ratingCount` and `ratingAvg` (requires Blaze; emulator trigger does not execute remotely, so inspection of the updated user doc confirms the Function logic).
+- [ ] Scheduled `postMealReminder` function runs hourly and sends a notification to non-notified participants (requires Blaze + Cloud Scheduler; emulator cannot run scheduled triggers).
+
+**Known issues:**
+- The post-meal push-notification tap handler (type `'rate'`) does not yet have a deep-link case in the Dart mapper; the in-app post-meal card in chat is the primary path to rating.
+- Live aggregate updates + scheduled push notification delivery require the project to be on **Blaze** plan; if still on Spark, Functions deploy fails and rating aggregates/pushes are non-functional.
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:

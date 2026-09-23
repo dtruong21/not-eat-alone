@@ -11,6 +11,8 @@ void main() {
       expect(user.dob, DateTime.utc(2000, 1, 1));
       expect(user.ageVerified, isFalse);
       expect(user.createdAt, isNull);
+      expect(user.ratingCount, 0);
+      expect(user.ratingAvg, 0);
     });
 
     test('constructs with all fields set', () {
