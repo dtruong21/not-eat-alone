@@ -9,14 +9,12 @@
 /// settings.
 library;
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
-import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/presentation/widgets/profile_form.dart';
@@ -55,69 +53,27 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
   }
 
-  Future<bool> _confirmDeleteAccount(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          "This permanently deletes your account and all your data. "
-          "This can't be undone.",
-        ),
-        actions: [
-          TextButton(
-            key: const Key('profile_delete_account_cancel'),
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            key: const Key('profile_delete_account_confirm'),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(dialogContext).colorScheme.error,
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete account'),
-          ),
-        ],
-      ),
-    );
-    return confirmed ?? false;
-  }
-
-  Future<void> _deleteAccount() async {
-    final confirmed = await _confirmDeleteAccount(context);
-    if (!confirmed) return;
-    if (!mounted) return;
-
-    await ref.read(accountDeletionControllerProvider.notifier).delete();
-
-    if (!mounted) return;
-    final error = ref.read(accountDeletionControllerProvider).error;
-    if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't delete account. Try again."),
-        ),
-      );
-    }
-    // On success, signOut flips authState and the router redirect sends the
-    // user to /auth/signin automatically — no navigation needed here.
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
     final isSubmitting = state.isLoading;
-    final isDeleting = ref.watch(
-      accountDeletionControllerProvider.select((s) => s.isLoading),
-    );
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final myUid = ref.watch(currentUserDocProvider).value?.uid;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit profile')),
+      appBar: AppBar(
+        title: const Text('Edit profile'),
+        actions: [
+          IconButton(
+            key: const Key('profile_settings_button'),
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
@@ -150,33 +106,6 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         ),
                       )
                     : const Text('Save'),
-              ),
-              const SizedBox(height: WarmPlayfulSpacing.s6),
-              OutlinedButton(
-                key: const Key('profile_delete_account_button'),
-                onPressed: isDeleting
-                    ? null
-                    : () => unawaited(_deleteAccount()),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colors.error,
-                  side: BorderSide(color: colors.error),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
-                child: isDeleting
-                    ? SizedBox(
-                        height: WarmPlayfulSpacing.s4,
-                        width: WarmPlayfulSpacing.s4,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colors.error,
-                        ),
-                      )
-                    : const Text('Delete account'),
               ),
             ],
           ),
