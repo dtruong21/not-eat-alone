@@ -275,6 +275,45 @@ Related PRD entry: `docs/PRD.md § Chat`
 
 ---
 
+### Feature: Safety & moderation
+
+Status: active
+Related PRD entry: `docs/PRD.md § Safety`
+
+**Golden path:**
+- [ ] Block a user from meal detail or chat → a `blocks/{a}_{b}` doc created with pair array → blocker's perspective: user vanishes from discovery feed and they cannot appear in the blocker's inbox/chat (rules enforce both directions).
+- [ ] Blocked user attempts to request a meal from the blocker → `noBlockBetween` rule rejects (`create_request_controller` displays "User not available").
+- [ ] Blocked user sends a chat message → `noBlockBetween` rule rejects in `matches/{matchId}/messages` create.
+- [ ] Report a user/meal/message → a `reports/{id}` doc is written (create-only, contains reporterId, targetType, targetId, reason) → Firestore records the report (no immediate action on client).
+- [ ] Non-woman user requests a women-only meal → meal-detail shows "Women only — you don't qualify" (client guard) and the rule rejects the create if the guard fails.
+- [ ] Woman user requests a women-only meal → request succeeds (rules allow).
+- [ ] Account deletion: tap Settings → Delete account → confirmation dialog → password confirmation → `deleteAccount` callable is invoked → success dialog → sign-out → user profile + all data purged (Cloud Function processes the cascade).
+
+**Edge cases (specific to this feature):**
+- [ ] Blocking is bidirectional: if A blocks B, both A→B and B→A interactions are denied (rules verify both `blocks/{a}_{b}` and `blocks/{b}_{a}` do not exist).
+- [ ] Reports are create-only (no read/update/delete via client); Firestore rules reject any attempt.
+- [ ] Women-only meal rule enforces gender field read: a malformed user (missing gender) is treated as non-woman.
+- [ ] Block deletion: blocker can unblock via `blocks/{blockId}` delete (blockerUid check); blocked user cannot (rule rejects).
+- [ ] Deletion is cascading: deleteAccount callable deletes the user doc, all user-owned meals, all requests as guest, all matches as a participant, FCM tokens, profile pictures (deferred: Storage Rules + Function cleanup).
+- [ ] After account deletion, all references to the deleted user's profile (name, photo) in persisted matches/messages are stale (no retroactive cleanup — acceptable for MVP).
+
+**Manual emulator verification (off-platform):**
+- [ ] Block rules work in both directions (use Firestore Emulator to inspect blocks/{blockId} and verify the pair constraint).
+- [ ] Report create-only verified via Firestore rules or emulator (client cannot read/update a report).
+- [ ] Women-only rule verified in Rules Playground: a user with `gender: 'woman'` passes; no gender or `gender: 'man'` fails.
+- [ ] Deletion cascade verified: delete a user → ensure their meals, requests, matches, fcmTokens are all gone (emulator Firestore inspection).
+
+**Deferred (post-MVP):**
+- Automated content moderation (Cloud Function listening to `reports` for spam/abuse, flagging/deleting content).
+- Silent-block mirror: Function writes to a parallel collection for analytics without user awareness.
+- Live account deletion via UI (requires **Blaze plan**; current callable requires manual backend trigger or custom Cloud Function for email verification).
+
+**Known issues:**
+- Account deletion is via callable, not full UI flow yet (user has to call the backend; email confirmation Flow deferred pending Blaze).
+- Block detection is possible via direct Firestore inspection (silent-block mirror not yet implemented).
+
+---
+
 ### Feature: Push notifications
 
 Status: active

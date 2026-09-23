@@ -22,6 +22,11 @@ service cloud.firestore {
              && (request.auth.uid == m.hostId || request.auth.uid == m.guestId);
     }
 
+    function noBlockBetween(a, b) {
+      return !exists(/databases/$(database)/documents/blocks/$(a + '_' + b))
+             && !exists(/databases/$(database)/documents/blocks/$(b + '_' + a));
+    }
+
     // Per-user docs
     match /users/{uid} {
       allow read: if isSignedIn();
@@ -67,7 +72,10 @@ service cloud.firestore {
                     && request.resource.data.hostId != request.auth.uid
                     && exists(/databases/$(database)/documents/meals/$(request.resource.data.mealId))
                     && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.status == 'open'
-                    && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.hostId == request.resource.data.hostId;
+                    && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.hostId == request.resource.data.hostId
+                    && noBlockBetween(request.resource.data.guestId, request.resource.data.hostId)
+                    && (get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.womenOnly == false
+                        || get(/databases/$(database)/documents/users/$(request.resource.data.guestId)).data.gender == 'woman');
       allow update: if isSignedIn()
                     && resource.data.hostId == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
@@ -93,7 +101,13 @@ service cloud.firestore {
                       && request.resource.data.senderId == request.auth.uid
                       && request.resource.data.text is string
                       && request.resource.data.text.size() > 0
-                      && request.resource.data.text.size() <= 2000;
+                      && request.resource.data.text.size() <= 2000
+                      && noBlockBetween(
+                           request.auth.uid,
+                           get(/databases/$(database)/documents/matches/$(matchId)).data.hostId == request.auth.uid
+                             ? get(/databases/$(database)/documents/matches/$(matchId)).data.guestId
+                             : get(/databases/$(database)/documents/matches/$(matchId)).data.hostId
+                         );
         allow update, delete: if false;
       }
 
@@ -101,6 +115,24 @@ service cloud.firestore {
         allow read: if matchParticipant(matchId);
         allow write: if matchParticipant(matchId) && uid == request.auth.uid;
       }
+    }
+
+    // User blocks: one user blocks another to prevent meal interactions
+    match /blocks/{blockId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.pair;
+      allow create: if isSignedIn()
+                    && request.resource.data.blockerUid == request.auth.uid
+                    && request.resource.data.blockerUid != request.resource.data.blockedUid
+                    && request.resource.data.pair == [request.resource.data.blockerUid, request.resource.data.blockedUid];
+      allow delete: if isSignedIn() && resource.data.blockerUid == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.reporterId == request.auth.uid
+                    && request.resource.data.targetType in ['user', 'meal', 'message'];
+      allow read, update, delete: if false;
     }
 
     // Public reference data (handles, usernames, etc.) — adapt per project

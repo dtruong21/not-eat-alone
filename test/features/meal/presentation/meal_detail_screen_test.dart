@@ -63,13 +63,16 @@ void main() {
         .thenAnswer((_) => Stream.value(_host));
   });
 
-  Future<void> pumpDetail(WidgetTester tester) async {
+  Future<void> pumpDetail(
+    WidgetTester tester, {
+    String viewerUid = 'guest1',
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(userRepository),
           authStateProvider.overrideWith(
-            (ref) => Stream.value(const AuthUser(uid: 'guest1')),
+            (ref) => Stream.value(AuthUser(uid: viewerUid)),
           ),
           mealRequestStateProvider(_meal.id)
               .overrideWith((ref) => Stream.value(null)),
@@ -109,4 +112,32 @@ void main() {
     expect(find.text('Request to join'), findsOneWidget);
     expect(button.onPressed, isNotNull);
   });
+
+  testWidgets(
+    'guest viewer sees "Report host" + "Block host" in the safety menu',
+    (tester) async {
+      await pumpDetail(tester);
+
+      await tester.tap(find.byKey(const Key('safety_actions_menu')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Report this meal'), findsOneWidget);
+      expect(find.text('Report host'), findsOneWidget);
+      expect(find.text('Block host'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'host viewing their own meal sees no "Report host" / "Block host"',
+    (tester) async {
+      await pumpDetail(tester, viewerUid: 'host1');
+
+      await tester.tap(find.byKey(const Key('safety_actions_menu')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Report'), findsOneWidget);
+      expect(find.text('Report host'), findsNothing);
+      expect(find.text('Block host'), findsNothing);
+    },
+  );
 }

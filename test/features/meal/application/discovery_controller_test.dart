@@ -11,6 +11,7 @@ import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.da
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/domain/repositories/meal_repository.dart';
+import 'package:not_eat_alone/features/safety/application/block_providers.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
@@ -144,11 +145,18 @@ void main() {
     ).thenAnswer((_) => Stream.value(meals));
   });
 
-  ProviderContainer buildContainer(AppUser viewer) => ProviderContainer(
+  ProviderContainer buildContainer(
+    AppUser viewer, {
+    Set<String> blocked = const <String>{},
+  }) =>
+      ProviderContainer(
         overrides: [
           locationProvider.overrideWith((ref) async => _viewerLoc),
           currentUserDocProvider.overrideWith((ref) => Stream.value(viewer)),
           mealRepositoryProvider.overrideWithValue(mealRepository),
+          blockedUserIdsProvider.overrideWith(
+            (ref) => Stream.value(blocked),
+          ),
         ],
       );
 
@@ -190,6 +198,58 @@ void main() {
           [...result.map((d) => d.distanceMeters)]..sort(),
         ),
       );
+    },
+  );
+
+  test(
+    'excludes meals hosted by a blocked user, keeping meals from '
+    'non-blocked hosts',
+    () async {
+      final blockedRepository = MockMealRepository();
+      when(
+        () => blockedRepository.watchDiscoverable(
+          geohashPrefix: any(named: 'geohashPrefix'),
+        ),
+      ).thenAnswer(
+        (_) => Stream.value([
+          _meal(
+            id: 'from_blocked_host',
+            hostId: 'blockedHost',
+            restaurant: _nearRestaurant,
+            dateTime: _future,
+          ),
+          _meal(
+            id: 'from_ok_host',
+            hostId: 'other',
+            restaurant: _nearRestaurant,
+            dateTime: _future,
+          ),
+        ]),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          locationProvider.overrideWith((ref) async => _viewerLoc),
+          currentUserDocProvider.overrideWith(
+            (ref) => Stream.value(
+              AppUser(
+                uid: 'viewer_1',
+                dob: DateTime.utc(1990),
+                gender: Gender.man,
+              ),
+            ),
+          ),
+          mealRepositoryProvider.overrideWithValue(blockedRepository),
+          blockedUserIdsProvider.overrideWith(
+            (ref) => Stream.value(const {'blockedHost'}),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await _awaitDiscoveryResult(container);
+
+      expect(result.map((d) => d.meal.id), ['from_ok_host']);
     },
   );
 }

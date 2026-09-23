@@ -35,6 +35,7 @@ import 'package:not_eat_alone/core/util/distance.dart';
 import 'package:not_eat_alone/core/util/geohash.dart';
 import 'package:not_eat_alone/features/meal/application/meal_providers.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
+import 'package:not_eat_alone/features/safety/application/block_providers.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
@@ -42,6 +43,7 @@ final discoveryControllerProvider =
     StreamProvider<List<DiscoverableMeal>>((ref) {
   final locationAsync = ref.watch(locationProvider);
   final viewerAsync = ref.watch(currentUserDocProvider);
+  final blocked = ref.watch(blockedUserIdsProvider).value ?? <String>{};
 
   if (locationAsync.hasError) {
     return Stream.error(
@@ -79,6 +81,7 @@ final discoveryControllerProvider =
         .where((m) => m.dateTime.isAfter(now))
         .where((m) => m.hostId != viewer.uid)
         .where((m) => !(m.womenOnly && viewer.gender != Gender.woman))
+        .where((m) => !blocked.contains(m.hostId))
         .map(
           (m) => DiscoverableMeal(
             meal: m,
