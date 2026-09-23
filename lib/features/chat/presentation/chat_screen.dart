@@ -28,6 +28,7 @@ import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_composer.dart';
+import 'package:not_eat_alone/features/rating/presentation/widgets/post_meal_card.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_card.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -135,6 +136,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            if (otherUid != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  WarmPlayfulSpacing.s4,
+                  WarmPlayfulSpacing.s4,
+                  WarmPlayfulSpacing.s4,
+                  0,
+                ),
+                child: PostMealCard(
+                  matchId: widget.matchId,
+                  targetUid: otherUid,
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
               child: const SafetyTipsCard(),
