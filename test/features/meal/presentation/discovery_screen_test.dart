@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -217,4 +218,22 @@ void main() {
       ]);
     },
   );
+
+  testWidgets('sign out fires the SignoutCompleted analytics event', (
+    tester,
+  ) async {
+    analytics.debugSetForceSend(true);
+    final calls = <String>[];
+    analytics.debugSetLogSink((name, params) async {
+      calls.add(name);
+    });
+    addTearDown(analytics.debugResetAnalytics);
+
+    await pumpDiscovery(tester, meals: [_discoverableMeal]);
+
+    await tester.tap(find.byKey(const Key('discovery_sign_out_button')));
+    await tester.pump();
+
+    expect(calls, contains('signout_completed'));
+  });
 }

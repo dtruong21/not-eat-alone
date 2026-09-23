@@ -375,6 +375,63 @@ Related PRD entry: `docs/PRD.md § Ratings`
 
 ---
 
+## Manual-device checklist (pending — requires a signed build + real device)
+
+The 2026-09-23 QA sweep (Plan 11, Task 8) was a static/automated pass only —
+`fvm flutter analyze`, `fvm flutter test`, and the Functions build/test ran
+clean, and the code was reviewed, but nothing here was exercised on an actual
+simulator, emulator, or device from this environment. These items are **not
+satisfied yet** and must be run by the user (or whoever cuts the release)
+before shipping, per the pre-release gate below:
+
+- [ ] **Real-device smoke** — full golden path (sign in → age gate/profile →
+  discovery → create meal → request/match → chat → rate) on at least one
+  physical iOS device and one physical Android device (not simulator/emulator).
+- [ ] **Offline write + reconnect** — toggle airplane mode mid-action (send a
+  chat message, submit a request) → verify the write queues via Firestore
+  offline persistence, UI shows optimistic/cached state (not blank), then
+  reconnect and confirm the queued write lands.
+- [ ] **Push delivery end-to-end** — now unblocked by Blaze + APNs/Android SHA-256
+  (see build-state memory) if configured: request/approve/message pushes
+  actually arrive on a real device; cold-start tap on a push deep-links
+  correctly; foreground message shows an in-app banner, not a duplicate
+  system notification.
+- [ ] **Deep links** — cold-open the app via each `go_router` deep link
+  (`/chats/:matchId`, `/meals/detail`, a push-notification tap) and confirm it
+  lands on the right screen without a redirect loop or crash.
+- [ ] **Cold start to right screen** — force-kill, relaunch, confirm the app
+  reaches the correct screen (signin / age-gate / profile-setup / home) within
+  3s on a mid-tier Android device.
+- [ ] **Dark mode parity** — every shipped screen (auth, onboarding, discovery,
+  meal detail, requests inbox, chat, settings, rating sheet, report sheet) in
+  both `ThemeMode.light` and `ThemeMode.dark`.
+- [ ] **Dynamic type** — `MediaQuery.textScaler` at 1.5–2.0x on the same screen
+  list; confirm no truncated/overlapping critical text (sign-in, request
+  buttons, chat composer, settings rows).
+- [ ] **VoiceOver / TalkBack** — walk every interactive element on the golden
+  path (sign-in buttons, age-gate DOB picker, meal card, request/approve/deny
+  buttons, chat composer + send, rating stars, report chips, settings rows,
+  delete-account confirmation) and confirm a screen reader announces a
+  meaningful label for each.
+- [ ] **Firestore rules — live verification** — Rules Playground or the
+  Firestore emulator, not just code review: non-owner denied on `users/{uid}`,
+  `requests`, `matches/{id}/messages`, `matches/{id}/reads`, `fcmTokens`; block
+  bidirectionality; women-only meal gate; reports create-only.
+- [ ] **Memory/perf** — 5 min of typical use in DevTools memory tab (flat
+  line, no runaway growth), no dropped frames (>16ms) on the discovery feed
+  scroll with 100+ seeded meals.
+- [ ] **Slow-3G throttle** — discovery feed load, chat send, meal creation
+  still complete (with visible loading state) rather than hanging or
+  crashing.
+
+None of the above can be exercised from this sweep's environment (no
+simulator/emulator/device access here) — they gate the release per
+`docs/TEST-PLAN.md`'s own rule ("No release ships without a green run of this
+plan on iOS Simulator + Android Emulator + at least one real device") and must
+be run before `/release` signs off.
+
+---
+
 ## Pre-release gate (must pass — no exceptions)
 
 Before `/release` cuts a build:

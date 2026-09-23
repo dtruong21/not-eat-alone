@@ -80,6 +80,10 @@ class DiscoveryScreen extends ConsumerWidget {
   /// Best-effort token cleanup before sign-out: a failure here (offline,
   /// Firestore rules edge case, etc.) must never block the user from signing
   /// out — a stale token doc means, at worst, one failed push send later.
+  ///
+  /// Mirrors `settings_screen.dart`'s `_signOut` (unregister token, track
+  /// `SignoutCompleted`, sign out) so the sign-out analytics event fires
+  /// regardless of which entry point the user taps.
   Future<void> _onSignOut(WidgetRef ref) async {
     // `authRepository.currentUser` (synchronous) rather than
     // `authStateProvider.value` — the latter is a `StreamProvider` that may
@@ -95,6 +99,7 @@ class DiscoveryScreen extends ConsumerWidget {
         // Ignored — see doc comment above.
       }
     }
+    await analytics.track(const SignoutCompleted());
     await ref.read(authRepositoryProvider).signOut();
   }
 
