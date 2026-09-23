@@ -8,6 +8,8 @@ test('deletion targets cover the user data surfaces', () => {
   expect(t.requestsWhere.map((q) => q.field)).toEqual(['guestId', 'hostId']);
   expect(t.matchesWhere).toEqual({ field: 'participants', op: 'array-contains', value: 'u1' });
   expect(t.blocksWhere).toEqual({ field: 'pair', op: 'array-contains', value: 'u1' });
+  expect(t.ratingsAuthoredWhere).toEqual({ field: 'raterUid', op: '==', value: 'u1' });
+  expect(t.ratingsAboutWhere).toEqual({ field: 'targetUid', op: '==', value: 'u1' });
   expect(t.storagePrefixFor('stage')).toBe('stage/users/u1/');
   expect(t.storagePrefixFor('(default)')).toBe('prod/users/u1/');
 });

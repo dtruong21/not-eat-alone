@@ -12,6 +12,8 @@ export interface DeletionTargets {
   requestsWhere: WhereQuery[];
   matchesWhere: WhereQuery;
   blocksWhere: WhereQuery;
+  ratingsAuthoredWhere: WhereQuery;
+  ratingsAboutWhere: WhereQuery;
   storagePrefixFor: (databaseId: string) => string;
 }
 
@@ -31,6 +33,8 @@ export function deletionTargets(uid: string): DeletionTargets {
     ],
     matchesWhere: { field: 'participants', op: 'array-contains', value: uid },
     blocksWhere: { field: 'pair', op: 'array-contains', value: uid },
+    ratingsAuthoredWhere: { field: 'raterUid', op: '==', value: uid },
+    ratingsAboutWhere: { field: 'targetUid', op: '==', value: uid },
     storagePrefixFor: (databaseId: string) => `${storagePrefixFor(databaseId)}/users/${uid}/`,
   };
 }
