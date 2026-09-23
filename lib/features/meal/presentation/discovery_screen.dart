@@ -28,6 +28,7 @@ import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
+import 'package:not_eat_alone/features/meal/presentation/widgets/paris_notice.dart';
 import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
@@ -137,7 +138,7 @@ class DiscoveryScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final body = state.when(
+    final contentBody = state.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) => _scrollableMessage(
         'Something went wrong — please try again.',
@@ -165,6 +166,15 @@ class DiscoveryScreen extends ConsumerWidget {
                 );
               },
             ),
+    );
+
+    final body = Column(
+      children: [
+        const ParisNotice(),
+        Expanded(
+          child: contentBody,
+        ),
+      ],
     );
 
     return Scaffold(
