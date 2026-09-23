@@ -30,3 +30,10 @@ export function buildMessageCreated(senderName: string, text: string, matchId = 
     data: { type: 'message', matchId },
   };
 }
+
+export function buildPostMealPrompt(otherName: string): PushPayload {
+  return {
+    notification: { title: 'How was it?', body: `Rate your meal with ${otherName}.` },
+    data: { type: 'rate', matchId: '' },
+  };
+}
