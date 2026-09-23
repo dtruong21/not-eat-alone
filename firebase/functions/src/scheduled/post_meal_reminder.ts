@@ -25,9 +25,15 @@ export const makePostMealReminder = (database: string) =>
           p.data.matchId = matchId;
           return p;
         };
-        if (hostId) await sendToUser(database, hostId, payloadFor('your match'));
-        if (guestId) await sendToUser(database, guestId, payloadFor('your match'));
-        await doc.ref.set({ status: 'completed', postMealNotified: true }, { merge: true });
+        // Isolate each meal: one meal's messaging/write failure must not abort
+        // the whole scheduled run and starve the remaining meals in this batch.
+        try {
+          if (hostId) await sendToUser(database, hostId, payloadFor('your match'));
+          if (guestId) await sendToUser(database, guestId, payloadFor('your match'));
+          await doc.ref.set({ status: 'completed', postMealNotified: true }, { merge: true });
+        } catch (err) {
+          console.error(`[postMealReminder] failed for meal ${matchId}`, err);
+        }
       }
     },
   );

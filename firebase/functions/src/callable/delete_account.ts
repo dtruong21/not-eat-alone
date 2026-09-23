@@ -16,11 +16,21 @@ export const makeDeleteAccount = () =>
     const db = getFirestore(getApp(), databaseId);
 
     // matches (+ subcollections) then requests, meals, blocks, user doc.
-    const matchSnap = await db
-      .collection('matches')
-      .where(t.matchesWhere.field, 'array-contains', uid)
-      .get();
-    for (const m of matchSnap.docs) {
+    // Union three queries: the `participants` array-contains (current) plus
+    // hostId/guestId equality — legacy matches created before the participants
+    // array existed have no `participants` field and would otherwise be missed,
+    // leaving orphaned matches + messages after a deletion.
+    const matchDocs = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+    const matchQueries = [
+      db.collection('matches').where(t.matchesWhere.field, 'array-contains', uid),
+      db.collection('matches').where('hostId', '==', uid),
+      db.collection('matches').where('guestId', '==', uid),
+    ];
+    for (const q of matchQueries) {
+      const s = await q.get();
+      for (const d of s.docs) matchDocs.set(d.id, d);
+    }
+    for (const m of matchDocs.values()) {
       for (const sub of ['messages', 'reads']) {
         const subSnap = await m.ref.collection(sub).get();
         await Promise.all(subSnap.docs.map((d) => d.ref.delete()));
