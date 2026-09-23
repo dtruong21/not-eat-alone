@@ -81,7 +81,7 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 - **Solo build, ~16 week target** to first TestFlight / internal release.
 - **No backend code beyond Firebase** — Cloud Functions only when client-side won't do.
 - **Free tier viable.** Firestore reads kept low via Riverpod caching + `.snapshots()` reuse.
-- **{{Other project-specific constraint}}**
+- **Paris soft-launch (v1).** Liquidity beats reach — v1 is Paris-only, enforced by defaulting location fallback to Paris center, not by hard geo-gating. A dismissible in-app notice ("Coming soon in Paris") greets first-time users (deferred to post-v1: full geo-expansion, multi-city seed data, location-based marketing).
 
 ## Open questions
 
