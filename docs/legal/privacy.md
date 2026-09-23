@@ -94,22 +94,28 @@ All processors have signed Data Processing Addendums (DPAs) as part of Google's 
 
 ### Automatic retention
 
-- **Active account data** (profile, meals, matches, messages, ratings): retained while your account is active
-- **Deleted messages:** soft-deleted (marked as deleted in Firestore) but may remain in backups for up to 30 days
-- **Analytics & crash data:** Firebase retains for up to 60 days by default
+- **Active account data:** retained while your account is active
+- **Analytics & crash data:** retained per Google Firebase's standard retention policies
 - **Push tokens:** retained until revoked or the app is uninstalled
 
 ### Account deletion
 
-When you delete your account via **Settings → Delete Account**, we will:
-- Permanently delete your account, profile photo, and personal data
-- Depersonalize your meal posts (convert to "anonymous user meal")
-- Depersonalize your ratings and review comments (remove your name)
-- Depersonalize your messages (clear sender name; content may remain for other participants)
-- Remove your profile from search and discovery
-- Disable sign-in with your credentials
+Account deletion is **PERMANENT and IRREVERSIBLE**. When you delete your account via **Settings → Delete Account**, we immediately and permanently delete:
 
-**Note:** You retain the right to request complete data deletion under GDPR; this account-deletion flow implements that right. See "Your rights" below.
+**Deleted:**
+- Your user profile (displayName, bio, date of birth, age, gender, authentication credentials)
+- All profile photos (from Cloud Storage)
+- All meals you hosted
+- All meal requests you made or received
+- All matches you participated in, including all messages and read status within those matches
+- All blocks you created or received
+- All Firebase Cloud Messaging (FCM) device tokens
+- Your Firebase Authentication account
+
+**Retained after deletion:**
+- **Ratings:** Ratings you authored (your reviews of other users) and ratings others gave you may be **retained** to preserve the integrity of user ratings and recommendations. Broader ratings erasure is planned for a future update. If you wish to request deletion of ratings as part of a GDPR erasure request, contact us at **placeholder@convyve.com**.
+
+**Note:** You retain the right to request complete data deletion under GDPR (Art. 17). The account-deletion flow automatically implements deletion of most personal data; if you wish to specifically request deletion of retained ratings or data not automatically deleted, include this in your GDPR erasure request. See "Your rights" below.
 
 ---
 
