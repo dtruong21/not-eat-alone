@@ -12,6 +12,8 @@ extension AppUserDtoX on AppUserDto {
         photoUrls: photoUrls,
         bio: bio,
         gender: _genderFromString(gender),
+        ratingCount: ratingCount,
+        ratingAvg: ratingAvg,
       );
 }
 
@@ -25,6 +27,8 @@ extension AppUserX on AppUser {
         photoUrls: photoUrls,
         bio: bio,
         gender: gender?.name,
+        ratingCount: ratingCount,
+        ratingAvg: ratingAvg,
       );
 }
 

@@ -40,7 +40,10 @@ service cloud.firestore {
                     && request.resource.data.uid == uid
                     && request.resource.data.dob is timestamp
                     && request.resource.data.ageVerified is bool;
-      allow update: if isOwner(uid);
+      allow update: if isOwner(uid)
+                    && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
+                    && request.resource.data.get('ratingCount', 0) == resource.data.get('ratingCount', 0)
+                    && request.resource.data.get('ratingAvg', 0) == resource.data.get('ratingAvg', 0);
       allow delete: if false; // account deletion via Cloud Function later
 
       // Add subcollections here as you build features.
