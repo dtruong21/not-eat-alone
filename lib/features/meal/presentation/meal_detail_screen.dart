@@ -23,6 +23,7 @@ import 'package:not_eat_alone/features/matching/application/create_request_contr
 import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
+import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
@@ -290,6 +291,8 @@ class _HostBlock extends ConsumerWidget {
                       fontWeight: WarmPlayfulType.h2Weight,
                     ),
                   ),
+                  const SizedBox(height: WarmPlayfulSpacing.s1),
+                  RatingBadge(uid: hostId),
                   if (host.bio != null && host.bio!.trim().isNotEmpty) ...[
                     const SizedBox(height: WarmPlayfulSpacing.s1),
                     Text(

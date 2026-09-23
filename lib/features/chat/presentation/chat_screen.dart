@@ -29,6 +29,7 @@ import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_composer.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/post_meal_card.dart';
+import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_card.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -242,7 +243,19 @@ class _ChatAppBarTitle extends ConsumerWidget {
               : null,
         ),
         const SizedBox(width: WarmPlayfulSpacing.s2),
-        Text(user?.displayName ?? 'Chat'),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user?.displayName ?? 'Chat',
+                overflow: TextOverflow.ellipsis,
+              ),
+              RatingBadge(uid: otherUid),
+            ],
+          ),
+        ),
       ],
     );
   }
