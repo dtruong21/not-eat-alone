@@ -83,6 +83,31 @@ If you accidentally commit `.env`: rotate every value in it. Reality check: sinc
 
 ---
 
+## App Check + Crashlytics
+
+Convyve activates Firebase App Check and Crashlytics at bootstrap (`lib/main_common.dart`).
+
+### App Check
+
+App Check attests that requests hitting Firebase (Firestore, Storage, Functions, Auth) come from the genuine Convyve app, not a scripted client replaying our public Firebase config:
+
+- **Production:** Play Integrity on Android, DeviceCheck on iOS.
+- **Debug builds:** the debug provider — each dev/CI device prints a debug token on first run that must be registered in the Firebase console (Project Settings → App Check → Manage debug tokens) before requests succeed locally.
+
+**The client activating App Check is not the same as App Check being enforced.** Enforcement is a per-product toggle in the Firebase console (Firestore, Storage, Functions, Auth each have their own App Check enforcement switch, off by default). Turning those on is deployment homework — not covered by this task — and should happen only after debug tokens are registered for every active dev/CI device, or those clients get silently rejected.
+
+This is *why* the public Firebase config (`firebase_options.dart`, `google-services.json`) staying in git is fine: App Check (once enforced) plus Firestore/Storage rules are the actual gate on abuse, not secrecy of config values.
+
+### Crashlytics
+
+Crashlytics collection is **off in debug** (`setCrashlyticsCollectionEnabled(!kDebugMode)`) so local development and CI runs never upload crash reports. `FlutterError.onError` and `PlatformDispatcher.instance.onError` are wired to Crashlytics so both framework and uncaught async errors are captured in release/stage builds.
+
+**iOS dSYM upload** (required for Crashlytics to symbolicate native crashes) is a code-signing-workflow step — it runs as part of the Xcode/Codemagic build pipeline, not the Dart bootstrap — and is deferred to the store-signing task.
+
+Real secrets are unchanged by this: Admin service account JSON, signing keystores/certificates, and OAuth client secrets still never touch the repo.
+
+---
+
 ## CI / deploy secrets
 
 Codemagic stores env vars encrypted at rest. Add them via the dashboard, not via `codemagic.yaml`:

@@ -28,6 +28,7 @@ import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
+import 'package:not_eat_alone/features/meal/presentation/widgets/paris_notice.dart';
 import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
@@ -79,6 +80,10 @@ class DiscoveryScreen extends ConsumerWidget {
   /// Best-effort token cleanup before sign-out: a failure here (offline,
   /// Firestore rules edge case, etc.) must never block the user from signing
   /// out — a stale token doc means, at worst, one failed push send later.
+  ///
+  /// Mirrors `settings_screen.dart`'s `_signOut` (unregister token, track
+  /// `SignoutCompleted`, sign out) so the sign-out analytics event fires
+  /// regardless of which entry point the user taps.
   Future<void> _onSignOut(WidgetRef ref) async {
     // `authRepository.currentUser` (synchronous) rather than
     // `authStateProvider.value` — the latter is a `StreamProvider` that may
@@ -94,6 +99,7 @@ class DiscoveryScreen extends ConsumerWidget {
         // Ignored — see doc comment above.
       }
     }
+    await analytics.track(const SignoutCompleted());
     await ref.read(authRepositoryProvider).signOut();
   }
 
@@ -137,7 +143,7 @@ class DiscoveryScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final body = state.when(
+    final contentBody = state.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) => _scrollableMessage(
         'Something went wrong — please try again.',
@@ -165,6 +171,15 @@ class DiscoveryScreen extends ConsumerWidget {
                 );
               },
             ),
+    );
+
+    final body = Column(
+      children: [
+        const ParisNotice(),
+        Expanded(
+          child: contentBody,
+        ),
+      ],
     );
 
     return Scaffold(

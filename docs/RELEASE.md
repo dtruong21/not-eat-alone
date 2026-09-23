@@ -1,261 +1,614 @@
-# Release Runbook
+# Release Runbook — Convyve Go-Live
 
-How to take Convyve from "code complete" to shipping in App Store + Play Store.
+How to take Convyve from "code complete" (end of Plan 11: Release Hardening) to shipping in App Store + Play Store.
 
----
+**Current state (end of Plan 11):** All code hardening is complete. Observability is wired to Firebase (Crashlytics + Analytics, Analytics non-throwing on errors). App Check is activated but enforcement is off. Settings screen is live (legal links, account deletion, sign-out, version). Paris soft-launch notice is in the app (dismissible in-app notice, not geo-gated). Firestore rules and Cloud Functions are compiled and ready to deploy. QA sweep is complete (215 tests green, no P0/P1).
 
-## Step 0 — One-time setup (~$124 total)
-
-| Item | Cost | Required for |
-|------|------|--------------|
-| Apple Developer Program | $99/yr | iOS dev build, TestFlight, App Store |
-| Google Play Console | $25 one-time | Play Store submission |
-| Codemagic account | Free tier (500 build min/mo) | CI builds, store submission |
-| Firebase project (Blaze plan if Functions) | Free tier viable | Backend |
-| Privacy/Terms hosting (GitHub Pages or similar) | Free | App Store / Play Store requirement |
-
-Sign up:
-- Apple: https://developer.apple.com/programs/enroll/
-- Google: https://play.google.com/console/signup
-- Codemagic: https://codemagic.io/
-- Firebase CLI: `npm install -g firebase-tools && firebase login`
-- FlutterFire CLI: `dart pub global activate flutterfire_cli`
+**What's left before submission:** User-facing homework gates (backend, native auth, store accounts, legal hosting) + CI/CD verification + release mechanics.
 
 ---
 
-## Step 1 — Configure FlutterFire
+## Phase 1 — Backend Setup
 
-Generates `lib/firebase_options.dart` from your Firebase project. **Commit this file** — the web API key it contains is not secret (security comes from Firestore rules + App Check).
+### 1.1 Upgrade Firebase to Blaze plan
 
-```bash
-flutterfire configure --project=<your-firebase-project-id>
-```
+**Why:** Cloud Functions (push notifications, account deletion cascade, post-meal reminders, ratings aggregation) only deploy on the **Blaze** (pay-as-you-go) plan. The free Spark plan blocks function deployment.
 
-Pick the platforms you'll ship (iOS, Android, optionally web). This wires `GoogleService-Info.plist` (iOS), `google-services.json` (Android), and the Dart options file in one shot.
+**Action:**
+1. Go to [Firebase Console](https://console.firebase.google.com/project/not-eat-alone/usage/details)
+2. Click **Upgrade** to Blaze
+3. Confirm billing — keep spend limits on if you prefer
+4. Verify upgrade completes (~5 min)
 
----
+Once upgraded, `firebase deploy --only functions` will succeed on CI (currently the deploy job exits green with a notice).
 
-## Step 2 — Brand assets
+### 1.2 App Check: Register attestation providers + debug token
 
-Configured via `pubspec.yaml`, generated with two packages.
+**Why:** App Check prevents abuse of Firestore, Storage, and Cloud Functions. Enforcement is currently OFF (console settings apply after you register providers).
 
-### App icon (`flutter_launcher_icons`)
+**Action:**
 
-Drop a 1024×1024 PNG at `assets/branding/icon.png` (no transparency, no rounded corners — the stores add them).
+#### iOS: DeviceCheck
 
-```yaml
-# pubspec.yaml
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/branding/icon.png"
-  adaptive_icon_background: "#FFFFFF"   # or "assets/branding/icon_background.png"
-  adaptive_icon_foreground: "assets/branding/icon_foreground.png"
-  remove_alpha_ios: true
-```
+1. Firebase Console → Project Settings → App Check
+2. Click the iOS app (`com.daki.noteatalone`)
+3. Providers → **DeviceCheck** → Enable
+4. For local development: **Add debug token**
+   - In Xcode, run the app on a simulator (or real device if you have it)
+   - App logs: `[DebugAppCheckToken]` — copy it
+   - Paste into Firebase Console App Check → **Debug tokens** → add
+5. Debug tokens expire in 24h; renew before testing
 
-Generate:
-```bash
-dart run flutter_launcher_icons
-```
+#### Android: Play Integrity API
 
-### Splash screen (`flutter_native_splash`)
+1. Firebase Console → Project Settings → App Check
+2. Click the Android app (`com.daki.noteatalone.stage` for now)
+3. Providers → **Play Integrity API** → Enable
+4. Google Play Console: go to your app → API and Services → enable Google Play Integrity API
+5. For local development: generate a **debug token**
+   - See `google_mobile_ads` / `play_integrity` docs if needed; Android's play_core library auto-generates one
+   - Add it to Firebase Console App Check → **Debug tokens**
 
-```yaml
-# pubspec.yaml
-flutter_native_splash:
-  color: "#FFFFFF"
-  image: "assets/branding/splash.png"   # 1152×1152 centered
-  android_12:
-    image: "assets/branding/splash_android12.png"
-    color: "#FFFFFF"
-```
+### 1.3 Enable App Check enforcement in Firebase Console
 
-Generate:
-```bash
-dart run flutter_native_splash:create
-```
+**Why:** Once providers are registered, you must explicitly turn ON enforcement per product. Until then, requests without App Check tokens are allowed.
 
-Re-run both whenever the source asset changes. Generated native files are committed (they're part of the platform projects).
+**Action:**
+1. Firebase Console → Firestore Security → **App Check** tab
+2. Enforce App Check: **ON** (Firestore will reject unsigned requests)
+3. Repeat for **Storage** → Rules → App Check enforcement → **ON**
+4. Repeat for **Cloud Functions** → Quotas → App Check enforcement → **ON**
 
----
+**⚠️ Test this in staging first** (against the `stage` database). Once enforcement is ON, unsigned clients can't write. Web + emulator clients need to be offline or behind a real App Check token.
 
-## Step 3 — Host Privacy + Terms
+### 1.4 Deploy Cloud Functions
 
-Required by App Store and Play Store. Markdown lives in `docs/legal/`. Host options:
+Once Blaze is upgraded, functions deploy automatically via CI on every `develop` push (see `docs/CICD.md`). The functions are pre-built and tested:
 
-- **GitHub Pages** (free, ~10 min) — push to a public repo, enable Pages.
-- **Notion** — paste, "Publish to web", copy URL.
-- **Your domain** — host the rendered HTML.
+- `onRequestCreated` — push to host when guest requests
+- `onRequestUpdated` — push to guest on approve/deny
+- `onMessageCreated` — push to other chat participant
+- `postMealReminder` — hourly Pub/Sub, sends "rate your meal" nudges
+- `onRatingCreated` — computes rolling ratings aggregate on target user
 
-Update `.env`:
-```
-PRIVACY_URL=https://your.url/privacy
-TERMS_URL=https://your.url/terms
-```
-
-(These are read via `flutter_dotenv` — they bundle into the app, same threat model as the Firebase web config.)
-
----
-
-## Step 4 — Deploy Cloud Functions
-
-If you have any (account-deletion cascade, server-side validation, etc.):
-
+If you need to deploy manually (or this is your first time):
 ```bash
 cd firebase/functions
-npm install
+npm ci
 npm run build
 cd ../..
 firebase deploy --only functions
 ```
 
-First-time setup may require enabling billing (Blaze plan). Most MVPs stay within free tier.
+Verify in [Cloud Functions dashboard](https://console.cloud.google.com/functions?project=not-eat-alone&location=europe-west1) — all 5 functions should be green.
 
 ---
 
-## Step 5 — Configure Codemagic
+## Phase 2 — Native Auth + Push Notifications
 
-Codemagic reads `codemagic.yaml` at the repo root. The template ships a baseline with three workflows: `pr-checks`, `staging`, `production`.
+### 2.1 iOS: APNs auth key
 
-Connect the repo:
-1. Codemagic dashboard → Add application → connect Gitea/GitHub.
-2. Configure environment variables in the Codemagic UI (under the app's "Environment variables" tab):
-   - `FIREBASE_TOKEN` (from `firebase login:ci`)
-   - `APP_STORE_CONNECT_KEY_IDENTIFIER`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_PRIVATE_KEY`
-   - `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` (JSON)
-   - `CERTIFICATE_PRIVATE_KEY` (iOS signing — Codemagic Code Signing manages the rest)
+**Why:** Push notifications to iPhones require an APNs (Apple Push Notification service) authentication key.
 
-The first build picks up signing credentials via Codemagic's managed code signing — no certs on disk locally.
+**Action:**
+1. Apple Developer → Certificates, Identifiers & Profiles → **Keys**
+2. Create a new key → **Apple Push Notifications service (APNs)**
+3. Download the `.p8` file (save it; only downloadable once)
+4. Firebase Console → Project Settings → **Cloud Messaging** → Apple app → **APNs Authentication Key**
+5. Upload the `.p8` file + key ID (from Apple Developer)
+6. Verify: Firebase Cloud Messaging → Apple app → Key ID visible
 
----
+Once uploaded, Firebase can send push via APNs.
 
-## Step 6 — Cut the first dev build (Android first, free)
+### 2.2 Android: SHA-256 fingerprint + Play Integrity API
 
-Android dev builds don't require Apple Developer Program. Start there:
+**Why:** Google Play requires your app's SHA-256 signing fingerprint for OAuth, Google Sign-In, and Play Integrity (used by App Check).
 
+**Action:**
+
+#### Get SHA-256 for signing keys
+
+For **debug** (local development):
 ```bash
-flutter build apk --release
-# OR via Codemagic UI: trigger the staging workflow on android
+cd /path/to/not-eat-alone/android
+./gradlew signingReport
+# Look for the SHA-256 fingerprint under debugAndroidTest / debug
 ```
 
-For iOS (needs Apple Developer):
+For **release** (Play Store signing):
+- Go to Google Play Console → Your app → Setup → App signing
+- Copy the **app signing certificate**'s SHA-256 (or download it and run `keytool -printcert -file <cert>`)
+
+#### Add SHA-256 to Google Cloud
+
+1. Google Cloud Console → APIs & Services → Credentials
+2. For each OAuth client (Google Sign-In, if you use it) and App Check:
+   - **Android**: Credentials → Android OAuth Client → add SHA-256 fingerprints
+   - Select the **debug** SHA-256 for local dev
+   - Select the **release** SHA-256 for Play Store submission
+
+#### Enable Play Integrity API
+
+1. Google Cloud Console → APIs & Services → Enable **Play Integrity API**
+2. Firebase Console → App Check → Android provider → **Play Integrity** (should auto-detect after API is enabled)
+
+### 2.3 iOS: Apple Sign-In provider + entitlement
+
+**Why:** App Store policy: if you support third-party sign-in (Google), you must also support Sign in with Apple.
+
+**Action:**
+1. Apple Developer → Identifiers → Your app ID (`com.daki.noteatalone`)
+2. Capabilities → enable **Sign In with Apple**
+3. Firebase Console → Authentication → **Sign-in method** → enable **Apple**
+4. Xcode → Runner → Signing & Capabilities → add **Sign in with Apple** capability (auto-adds entitlement)
+5. Local verification: run on simulator, auth screen should show "Sign in with Apple" button
+
+---
+
+## Phase 3 — Maps & Places API
+
+### 3.1 Real Places API key + Map view
+
+**Current state:** Restaurants come from `FakeRestaurantSearchDataSource` (20 hardcoded Paris restaurants). Maps are not yet integrated (design deferred with the API key).
+
+**Action:**
+
+1. **GCP new project or existing:** Go to [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project or reuse `not-eat-alone`
+   - Enable **Places API** (Autocomplete + Nearby Search)
+   - Enable **Maps SDK for iOS** + **Maps SDK for Android**
+   - Create API key (or restrict existing key to these APIs)
+   - Store in a secure config — `lib/core/config/gcp_keys.dart` or `.env`
+
+2. **Swap FakeRestaurantSearchDataSource:**
+   - File: `lib/features/meal_creation/data/datasources/restaurant_search_datasource.dart`
+   - Subclass `RestaurantSearchDatasource`
+   - Call Places API (Nearby Search) for Paris center
+   - Parse response into `RestaurantDto` list
+   - Test: feed real restaurant results into meal creation flow
+
+3. **Map view (optional for v1, design deferred):**
+   - Add `google_maps_flutter` to `pubspec.yaml`
+   - Meal detail screen: embed map showing restaurant location
+   - Requires API key + iOS/Android native setup (see [google_maps_flutter docs](https://pub.dev/packages/google_maps_flutter))
+   - Design spec → `/design` if you want to add this
+
+4. **Await API provision:** Google may take 30 days to provision new APIs for new projects. If you're on an existing project, it's instant.
+
+---
+
+## Phase 4 — Signing & Store Accounts
+
+### 4.1 iOS: Signing certificate + provisioning profile
+
+**Why:** App Store requires a valid signing certificate. Codemagic handles signing automatically if you use Codemagic for builds; for local builds, you need the cert.
+
+**Action:**
+
+1. **Create/renew signing certificate:**
+   - Apple Developer → Certificates, Identifiers & Profiles → **Certificates**
+   - Create **iOS App Development** (for TestFlight) and **iOS Distribution** (for App Store)
+   - Download `.cer` files
+   - Codemagic Code Signing: upload the private key + cert, and Codemagic auto-manages provisioning profiles
+
+2. **Provisioning profiles:**
+   - App Store (Xcode auto-managing) or
+   - Manual: Create → App Store profile → select signing cert → download + install in Xcode
+
+3. **Xcode local build:**
+   - Open `ios/Runner.xcworkspace` (not `.xcodeproj`)
+   - Runner → Build Settings → Signing → select cert + provisioning profile
+   - `flutter build ipa --release` should succeed
+
+4. **For CI (Codemagic):** Managed automatically; no local cert needed.
+
+### 4.2 Android: Keystore + Play Console upload key
+
+**Why:** Google Play requires your app signed with a keystore and tracks signing certificates across all versions.
+
+**Action:**
+
+1. **Create keystore (if you don't have one):**
+   ```bash
+   keytool -genkey -v -keystore ~/convyve-release.jks \
+     -keyalg RSA -keysize 2048 -validity 10000 \
+     -alias convyve-release
+   # Follow prompts for password, org name, etc.
+   ```
+
+2. **Configure Android build:**
+   - Create `android/key.properties` (gitignored):
+     ```properties
+     storeFile=/path/to/convyve-release.jks
+     storePassword=<your-password>
+     keyPassword=<your-key-password>
+     keyAlias=convyve-release
+     ```
+   - `android/app/build.gradle` already reads these (see template)
+
+3. **Google Play Console app (next section):**
+   - Create new app → Get Play Console's **upload key certificate**
+   - For your keystore, get SHA-256: `keytool -list -v -keystore ~/convyve-release.jks`
+   - Keep the keystore safe; Google Play *locks your cert* once you use it
+
+4. **Local test:**
+   ```bash
+   flutter build appbundle --release
+   # → build/app/outputs/bundle/release/app-release.aab
+   ```
+
+### 4.3 Store accounts
+
+#### App Store Connect
+
+1. Go to [App Store Connect](https://appstoreconnect.apple.com)
+2. Create new app:
+   - Name: **Convyve**
+   - Bundle ID: `com.daki.noteatalone`
+   - SKU: `convyve-v1` (internal only)
+   - Platform: iOS
+3. Fill in basic metadata (name, subtitle, category)
+4. Later (Phase 5): Add privacy policy, rating questionnaire, screenshots, full description
+
+#### Google Play Console
+
+1. Go to [Google Play Console](https://play.google.com/console)
+2. Create new app:
+   - Name: **Convyve**
+   - App ID: auto-generated
+   - Category: Social
+3. Store listing:
+   - Short description (80 chars): "Meet for a meal, don't eat alone"
+   - Full description (4000 chars): see Phase 5
+   - Store icon, screenshots: Phase 5
+4. Setup:
+   - **App signing:** create internal testing track, upload your signed bundle (v1.0.0+1)
+   - Play Console will show you its **app signing certificate** (SHA-256) — add this to Google Cloud + Firebase App Check (Phase 2)
+
+---
+
+## Phase 5 — Legal Documents & Store Metadata
+
+### 5.1 Host Privacy + Terms
+
+**Current state:** `docs/legal/privacy.md` + `docs/legal/terms.md` exist (drafted, GDPR-aware). `lib/core/config/legal_urls.dart` has placeholders pointing to `https://convyve.com/privacy` and `https://convyve.com/terms`.
+
+**Action:**
+
+1. **Choose hosting:**
+   - **GitHub Pages** (free): Push to a public repo, enable Pages in settings, files served as HTML
+   - **Notion** (free, email-gated): Paste markdown, publish to web, copy URL
+   - **Your domain** (convyve.com): Host the rendered HTML
+
+2. **Render + upload:**
+   - Markdown → HTML (use a Markdown-to-HTML converter, e.g., `marked`, GitHub's web renderer, or Notion's "publish")
+   - Upload to your chosen host
+   - Note the URLs (e.g., `https://convyve.com/privacy`)
+
+3. **Update `lib/core/config/legal_urls.dart`:**
+   ```dart
+   const privacyPolicyUrl = 'https://your-domain/privacy';
+   const termsOfServiceUrl = 'https://your-domain/terms';
+   ```
+   - Both URLs must be HTTPS and accessible to real users (not `localhost`)
+   - App Store + Play Store verify these before approval
+
+4. **Verify in app:**
+   - Settings screen → "Privacy Policy" / "Terms of Service" buttons
+   - Tap → should open web view with the hosted document
+
+### 5.2 Store metadata
+
+**Current state:** `docs/store/listing.md` exists (drafted). iOS + Android require metadata submitted via their store consoles.
+
+#### App Store Connect
+
+1. Your app → **Pricing and Availability**
+   - Price: Free
+   - Territories: at least France (Part of launch scope; expand post-v1)
+
+2. Your app → **App Information**
+   - **Privacy Policy URL:** link from Phase 5.1
+   - **Support URL:** your email or support page (e.g., `mailto:support@convyve.com` or a contact form)
+
+3. Your app → **General App Information**
+   - App Category: **Social Networking**
+   - Rating Questionnaire: Answer "Does your app access/collect user data?" → **Yes**
+     - Select all applicable categories (minimal for v1: location, contacts if people-search, maybe "Sensitive info in communications")
+     - Apple generates a privacy label automatically
+
+4. Your app → **App Store Listing**
+   - **Name:** Convyve (120 chars max)
+   - **Subtitle:** Don't eat alone (30 chars max)
+   - **Description:** (4000 chars)
+     ```
+     Connect with people over a meal. Post your favorite restaurant and a time,
+     match 1:1 with someone nearby, and try something new together.
+     
+     Features:
+     — Meal-first matching: every connection centers on trying a specific restaurant
+     — Women-only meals: post private events for friends only
+     — Block & report: safety always on
+     — Real profiles: all users are verified
+     ```
+   - **Keywords:** restaurant, dating, friends, social, meal (100 chars comma-separated)
+   - **Promotional Text:** (170 chars, updatable post-launch)
+     - "Try a new restaurant this week. Match 1:1 with someone nearby."
+   - **Support URL:** as above
+
+5. Your app → **Screenshots**
+   - 5–8 screenshots (see Phase 5.3)
+   - Formats: iPhone 6.9" (1320×2868), iPhone 6.5" (1242×2688)
+   - Use release build only (debug build looks different)
+
+#### Google Play Console
+
+1. Your app → **Store listing**
+   - Same metadata as above
+   - **Privacy Policy URL:** link from Phase 5.1
+   - **Support email:** your support contact (required)
+   - **Store icon:** 512×512 PNG (or see pubspec.yaml asset)
+   - **Feature graphic:** 1024×500 PNG (banner, optional for v1)
+
+2. Your app → **Content rating questionnaire**
+   - Answer a ~20-question form about content
+   - For Convyve (social, no explicit content): safe to answer "No" to most
+   - Play Console assigns a rating (e.g., 13+)
+
+3. Your app → **Data safety**
+   - **Data being collected & shared:**
+     - Location (required for meal discovery)
+     - Name, profile photo (required for matching)
+     - Messages (in chats)
+     - Ratings (after a meal)
+   - **Data privacy:**
+     - Link to your Privacy Policy
+     - Is data encrypted in transit? Yes
+     - Can users request data deletion? Yes (Settings → Delete Account)
+
+4. Your app → **Screenshots**
+   - Phone format: 1080×1920 (16:9) or larger
+   - 5–8 screenshots (see Phase 5.3)
+   - Use release build
+
+### 5.3 Screenshots
+
+**Timing:** Take these from the release build AFTER Phase 4 (signing). Debug builds look visually different.
+
+**Process:**
+1. Build release APK/IPA locally or via Codemagic
+2. Run on iPhone 17 Pro Simulator or Pixel 8 Emulator
+3. Navigate to 5 key screens (e.g., home feed, meal detail, chat, profile, settings)
+4. Take screenshot (Cmd+S simulator, or use Android Studio)
+5. Resize to required dimensions:
+   - **iOS:** 1320×2868 (6.9"), 1242×2688 (6.5"), or 1242×2208 (6.5" old)
+   - **Android:** 1080×1920 (or 16:9 scaled)
+6. Add optional text overlay (e.g., "Find local meals") if your design tool supports it
+7. Upload to App Store Connect / Play Console
+
+---
+
+## Phase 6 — CI/CD Verification
+
+### 6.1 Verify CI gates pass
+
+**Current state:** GitHub Actions workflows (`.github/workflows/ci.yml`) run on every PR into `develop`/`main`. Four jobs (3 required checks, 1 optional "Functions build"):
+
+1. **Analyze & test** — `flutter analyze` + `flutter test` (215 tests, all green)
+2. **Build Android (stage, unsigned)** — APK compile (verify no build errors)
+3. **Build iOS (stage, no codesign)** — Xcode + Pods compile (verify no build errors)
+4. **Functions build & test** — Cloud Functions TypeScript (all green)
+
+**Action:**
+1. Ensure all CI checks are passing on `main` (or the release branch you're pushing)
+2. The three Flutter checks are currently **required** (branch protection); **Functions build should be added as a 4th required check** via GitHub UI (Settings → Branches → Branch protection rules → Edit `main` → Require status checks to pass)
+
+### 6.2 Manual device QA
+
+**Current state:** Automated tests cover the happy path (215 tests). Manual device testing catches visual regressions, flow issues, and edge cases that simulators miss.
+
+**Action:** Run the full checklist from `docs/TEST-PLAN.md`:
+
+#### Universal edge cases (every release)
+
+- [ ] Timezone math: Date-keyed data respects local TZ, not UTC
+- [ ] Date rollover at midnight: "today" advances without manual refresh
+- [ ] Long strings (≥1000 chars) don't crash
+- [ ] Long lists (≥100 items) render without dropped frames
+
+#### Feature checklists (per spec)
+
+- [ ] Meal creation: create a meal in Paris, verify it appears in discovery
+- [ ] Meal discovery: launch app, see the feed, distance/time sorting correct
+- [ ] Requests & matching: request to join, host approves, `matches/{mealId}` creates
+- [ ] Chat: message in a match, see send/receive, read receipt shows "Seen"
+- [ ] Push notifications: send a test notification via FCM, app receives it + deep-links correct
+- [ ] Safety: block a user, verify they don't appear in discovery/chat
+- [ ] Ratings: post-meal card appears, submit 1–5 stars, target's profile badge updates
+- [ ] Settings: view legal links (open web view), delete account, sign out
+- [ ] Soft Paris notice: first launch shows "Coming soon in Paris" dismissible banner
+
+#### Device requirement
+
+- At least one **real device** (iPhone or Android) — simulators can't test:
+  - App Check (needs real device attestation)
+  - Push notifications (background foreground state)
+  - GPS location (simulator GPS is fake)
+  - Camera/photo picker (some flows may use this)
+
+**If not possible:** Document the blockers and note in the QA summary. App Store reviewers will test on real devices.
+
+---
+
+## Phase 7 — Release Process
+
+### 7.1 Gitflow release branch
+
+**Current state:** The repo uses gitflow (`docs/GITFLOW.md`):
+- `develop` = integration branch (stage DB, functions deployed here first)
+- `main` = production branch (stable releases)
+- `feature/*` = feature branches (branch off `develop`)
+- `release/*` = release branches (cut from `develop`, merged to `main` + `develop`)
+
+**Action:**
+
+1. **Ensure `develop` is stable:**
+   ```bash
+   git checkout develop
+   git pull origin develop
+   # Verify CI is green
+   ```
+
+2. **Cut release branch:**
+   ```bash
+   git checkout -b release/v1.0.0
+   ```
+
+3. **Bump version in `pubspec.yaml`:**
+   ```yaml
+   version: 1.0.0+1
+   # Format: X.Y.Z+buildNumber
+   # X = major, Y = minor, Z = patch (semver)
+   # buildNumber = monotonic int, increments every build
+   ```
+
+4. **Update `CHANGELOG.md`:**
+   ```markdown
+   ## [1.0.0] - 2026-09-23
+
+   ### Added
+   - Initial release: meal-first matching, chat, ratings, safety (block/report), push notifications
+
+   ### Removed
+   - N/A
+
+   ### Fixed
+   - N/A
+   ```
+
+5. **Commit:**
+   ```bash
+   git add pubspec.yaml CHANGELOG.md
+   git commit -m "chore(release): bump to v1.0.0"
+   ```
+
+6. **Push & open PR to `main`:**
+   ```bash
+   git push -u origin release/v1.0.0
+   gh pr create --base main --title "Release v1.0.0" --body "First production release"
+   ```
+
+7. **Wait for CI to pass,** then merge (via GitHub UI or `gh pr merge`)
+
+### 7.2 Tag & publish
+
+Once the release PR is merged to `main`:
+
 ```bash
-flutter build ipa --release
-# OR via Codemagic UI: trigger the staging workflow on ios
+git checkout main
+git pull origin main
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-Install the APK/IPA on a device, verify it boots and signs in.
+This triggers:
+- **CD deploy job:** `firebase deploy --only firestore,storage,functions` to production
+- **GitHub Release:** auto-generated release notes with the changelog
+
+### 7.3 Submit to stores
+
+Once tagged + deployed:
+
+#### App Store
+
+1. Xcode or Codemagic: build + sign with **App Store distribution certificate**
+2. App Store Connect → Your app → TestFlight → **Build** (select your signed IPA)
+3. Wait for processing (~5–30 min)
+4. **Submit for Review** (or use **Phased Release** for a softer rollout)
+5. Apple review: 1–3 days, may ask for clarifications (usually privacy-related)
+
+#### Play Store
+
+1. Codemagic or locally: `flutter build appbundle --release`
+2. Google Play Console → Your app → **Internal testing** → **Upload new build**
+3. Wait for processing (~5 min)
+4. **Internal testing → Production:** promote to production track
+5. Submit for Review
+6. Google Play review: usually <24h, rare rejections
+
+### 7.4 Post-release
+
+1. **Announce:** blog post, social media, in-app notification
+2. **Monitor:** Crashlytics, Analytics (Firebase Console)
+3. **Hotfix workflow** (if needed):
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b hotfix/1.0.1
+   # Fix the bug
+   git commit -m "fix(auth): sign-in race condition"
+   git push -u origin hotfix/1.0.1
+   gh pr create --base main --title "Hotfix v1.0.1"
+   # Merge, tag, deploy (same as 7.1–7.3 but version is 1.0.1+2)
+   ```
 
 ---
 
-## Step 7 — Wire native auth providers (after dev build)
+## Known Follow-Ups
 
-With a real bundle ID from a dev build, create OAuth credentials:
+After v1.0.0 ships:
 
-- **Google iOS**: Google Cloud → Credentials → Create iOS OAuth Client ID, bundle ID = your production bundle. Copy `REVERSED_CLIENT_ID` into `ios/Runner/Info.plist` URL schemes.
-- **Google Android**: Google Cloud → Credentials → Create Android OAuth Client ID. SHA-1 from `cd android && ./gradlew signingReport` (debug) or Codemagic's signing cert (release).
-- **Apple Sign-In** (required if Google is enabled, per App Store policy): Apple Developer → Identifiers → enable "Sign In with Apple" capability for the bundle ID. Firebase Console → Authentication → enable Apple. The `firebase_auth` package handles the rest on iOS 13+.
-
----
-
-## Step 8 — Store metadata
-
-Fill in `docs/STORE_METADATA.md`. Required:
-
-- Short description (Play Store, 80 chars)
-- Full description (4000 chars each store)
-- Keywords (App Store, 100 chars comma-separated)
-- Promotional text (App Store, 170 chars, updatable post-submit)
-- What's New (per version)
-- Privacy policy URL (Step 3)
-- Support URL (your contact email or page)
+- **Ratings GDPR completeness:** Account deletion does not yet purge `ratings` (where the user is the rater or target). Add this to `deleteAccount` Cloud Function after feedback from privacy review.
+- **Pre-meal reminders:** Scheduled nudges 1–2 hours before meal time (non-goal for v1, deferred pending user feedback)
+- **Comments on ratings:** Users can add short text; add moderation queue if spam surfaces
+- **Edit/delete ratings:** Allow up to 24h to withdraw a rating
+- **Live map integration:** Place card shows restaurant on map (requires Maps SDK setup; v1 uses list-only discovery)
+- **Geofence expansion:** Auto-prompt "expand search beyond Paris" if no results (v1 Paris-only soft-launch)
 
 ---
 
-## Step 9 — Screenshots
+## Troubleshooting
 
-Take from the actual release build (NOT the debug build — looks different). Use iPhone 17 Pro simulator and Pixel 8 emulator.
-
-**iOS sizes:**
-- 6.9" iPhone: 1320×2868
-- 6.5" iPhone: 1242×2688
-
-**Android:**
-- Phone: 1080×1920 minimum, 16:9
-
-5 screens recommended — pick the most product-defining ones.
-
----
-
-## Step 10 — TestFlight / Internal track
-
-Bump `version:` in `pubspec.yaml` first (format: `X.Y.Z+buildNumber`, e.g. `0.1.0+1`).
-
-Trigger Codemagic's `production` workflow (or run locally):
-
-```bash
-flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
-flutter build appbundle --release
-
-# Submit (Codemagic's publishing block handles this automatically, or use fastlane locally):
-# iOS: App Store Connect API upload
-# Android: Play Console internal track upload
-```
-
-First iOS submission asks for the ASC App ID — create the listing in App Store Connect first.
-
-Invite 5–10 testers. Run a 1–2 week closed beta. Listen.
+| Issue | Likely cause | Fix |
+|---|---|---|
+| CI: "No Firebase App '[DEFAULT]' has been created" | `lib/firebase_options.dart` missing or gitignored | Re-run `flutterfire configure` + commit the file |
+| CI: Functions build fails on Spark | Blaze plan not upgraded | Upgrade Firebase to Blaze in console (Phase 1.1) |
+| iOS build fails: signing certificate not found | Xcode doesn't have the cert or provisioning profile | Codemagic: re-fetch Code Signing profiles; locally: `flutter clean && cd ios && pod install --repo-update` |
+| Android build fails: upload keystore not found | `android/key.properties` missing or wrong path | Create keystore (Phase 4.2), add `key.properties`, verify paths |
+| App Store review rejection: "Missing privacy URL" | `lib/core/config/legal_urls.dart` not updated | Verify both URLs are live + HTTPS and App Store can fetch them |
+| Play Store review rejection: "App signing certificate mismatch" | Signed with wrong keystore or mismatched SHA-256 | Verify Play Console's upload cert SHA-256 matches your keystore (Phase 4.2) |
+| Push notifications not arriving | App Check enforcement ON but debug token not added | Add App Check debug token to Firebase (Phase 1.2) |
+| Firestore rules rejected by App Check | Enforcement ON but app not signing requests | Verify app has valid App Check token (simulator/emulator may need debug token added) |
 
 ---
 
-## Step 11 — Public launch
+## One-Time Setup Summary
 
-1. Bump `version:` in `pubspec.yaml` (PATCH for fixes, MINOR for features, bump the `+buildNumber` always)
-2. Update `CHANGELOG.md`
-3. Update "What's New" in store metadata
-4. Trigger Codemagic `production` workflow on `main`
-5. Codemagic publishes to TestFlight + Play Console production track
-6. App Store review: 1–3 days
-7. Play Store review: usually <24h
+Before your first submission:
 
----
-
-## Recurring releases
-
-```bash
-# After feature work:
-# 1. Update CHANGELOG.md
-# 2. Bump version: in pubspec.yaml (PATCH for fixes, MINOR for features; ALWAYS bump +buildNumber)
-git tag v0.X.Y
-git push --tags
-# Codemagic auto-triggers production workflow on tag push (configured in codemagic.yaml)
-```
-
-### Dependency hygiene
-
-Flutter and FlutterFire move fast. Stale deps cause friction at the worst time (right before submission). Treat this as part of every release:
-
-```bash
-# Check for outdated direct deps
-flutter pub outdated --no-dev-dependencies
-
-# Upgrade within constraints in pubspec.yaml
-flutter pub upgrade
-
-# For minor/major bumps that need pubspec edits, do them one package at a time:
-# Test, run analyze, run integration_test, then commit per-package.
-```
-
-**Pin the Flutter SDK** via `.fvmrc` so CI and local builds match. When you bump the Flutter pin in `.fvmrc`, also bump it in `codemagic.yaml` AND bump Codemagic's cache key — the SDK cache is keyed aggressively and stale entries produce confusing build errors.
+1. ✅ Blaze plan upgraded
+2. ✅ App Check registered + enforcement ON
+3. ✅ Cloud Functions deployed
+4. ✅ APNs key uploaded
+5. ✅ Android SHA-256 registered
+6. ✅ Apple Sign-In enabled
+7. ✅ Places API key (optional if swapping to real API)
+8. ✅ iOS signing certificate + provisioning profile
+9. ✅ Android keystore + Play Console upload key
+10. ✅ App Store Connect app created
+11. ✅ Google Play Console app created
+12. ✅ Privacy + Terms hosted (HTTPS)
+13. ✅ `lib/core/config/legal_urls.dart` updated with real URLs
+14. ✅ Store metadata + screenshots uploaded
+15. ✅ CI gates passing on `main`
+16. ✅ Manual device QA complete
+17. ✅ Ready for `release/v1.0.0` → `main` → tag + deploy + submit
 
 ---
 
-## When things break
+## Questions?
 
-- **Stale Codemagic SDK cache** — bump the cache key in `codemagic.yaml` after a Flutter pin change.
-- **iOS code signing failure** — re-sync via Codemagic UI → Code Signing → re-fetch profiles. Locally, `flutter clean && cd ios && pod install --repo-update`.
-- **Android signing failure** — verify upload keystore + JKS password in Codemagic env vars match Play Console.
-- **App Store rejection** — usually privacy. Missing privacy URL or account deletion not actually deleting (Cloud Function in Step 4). Or a missing usage-description string in `ios/Runner/Info.plist`.
-- **"App icon required" rejection** — Step 2 isn't done, or `flutter_launcher_icons` was run but the generated files weren't committed.
-- **"No Firebase App '[DEFAULT]' has been created"** — `lib/firebase_options.dart` is gitignored or wasn't generated. Re-run `flutterfire configure` and commit the file.
+- **Gitflow unclear?** See `docs/GITFLOW.md`
+- **CI/CD setup unclear?** See `docs/CICD.md`
+- **QA checklist unclear?** See `docs/TEST-PLAN.md`
+- **Missing a step?** File an issue or ask in the repo's Discussions tab
