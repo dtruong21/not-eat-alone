@@ -33,13 +33,25 @@ service cloud.firestore {
           || (rater == m.guestId && target == m.hostId);
     }
 
+    // Reads the parent match ONCE (via `let`) to check both that `uid` is a
+    // participant and that no block exists between the two parties — avoids the
+    // repeated get() of the same match doc a per-condition inline check needs.
+    function matchMessageCreateOk(matchId, uid) {
+      let m = get(/databases/$(database)/documents/matches/$(matchId)).data;
+      return (uid == m.hostId || uid == m.guestId)
+             && noBlockBetween(uid, uid == m.hostId ? m.guestId : m.hostId);
+    }
+
     // Per-user docs
     match /users/{uid} {
       allow read: if isSignedIn();
       allow create: if isOwner(uid)
                     && request.resource.data.uid == uid
                     && request.resource.data.dob is timestamp
-                    && request.resource.data.ageVerified is bool;
+                    && request.resource.data.ageVerified is bool
+                    && request.resource.data.get('ratingSum', 0) == 0
+                    && request.resource.data.get('ratingCount', 0) == 0
+                    && request.resource.data.get('ratingAvg', 0) == 0;
       allow update: if isOwner(uid)
                     && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
                     && request.resource.data.get('ratingCount', 0) == resource.data.get('ratingCount', 0)
@@ -106,17 +118,12 @@ service cloud.firestore {
 
       match /messages/{messageId} {
         allow read: if matchParticipant(matchId);
-        allow create: if matchParticipant(matchId)
+        allow create: if isSignedIn()
                       && request.resource.data.senderId == request.auth.uid
                       && request.resource.data.text is string
                       && request.resource.data.text.size() > 0
                       && request.resource.data.text.size() <= 2000
-                      && noBlockBetween(
-                           request.auth.uid,
-                           get(/databases/$(database)/documents/matches/$(matchId)).data.hostId == request.auth.uid
-                             ? get(/databases/$(database)/documents/matches/$(matchId)).data.guestId
-                             : get(/databases/$(database)/documents/matches/$(matchId)).data.hostId
-                         );
+                      && matchMessageCreateOk(matchId, request.auth.uid);
         allow update, delete: if false;
       }
 
