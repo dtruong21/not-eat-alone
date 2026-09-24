@@ -56,7 +56,18 @@ void main() {
         DateTime.now().isBefore(deadline)) {
       await tester.pump(const Duration(milliseconds: 200));
     }
-    await tester.pumpAndSettle();
+    // Bounded to a few seconds, NOT `pumpAndSettle()`'s 10-minute default —
+    // if Discover never renders (a real regression) and the app is stuck on
+    // an actively-animating widget (e.g. `DiscoveryScreen`'s loading
+    // `CircularProgressIndicator` — the same ticker mechanism that hung
+    // `pumpAndSettle()` for the native location-permission dialog; see
+    // task-3-report.md), this must fail fast at the assertion below rather
+    // than hang CI for up to 10 minutes.
+    await tester.pumpAndSettle(
+      const Duration(milliseconds: 100),
+      EnginePhase.sendSemanticsUpdate,
+      const Duration(seconds: 5),
+    );
 
     expect(
       discoverMarker,
