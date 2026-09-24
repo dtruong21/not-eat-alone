@@ -23,18 +23,36 @@ const String kEmulatorHost = '127.0.0.1';
 /// emulators for [kProjectId], via the emulators' admin REST endpoints.
 /// Call between tests (or in `setUp`) to start from a clean slate.
 Future<void> clearEmulators() async {
-  await http.delete(
+  final firestoreRes = await http.delete(
     Uri.parse(
       'http://$kEmulatorHost:8080/emulator/v1/projects/$kProjectId/'
       'databases/(default)/documents',
     ),
   );
-  await http.delete(
+  _checkOk(firestoreRes, 'clearEmulators (Firestore)');
+  final authRes = await http.delete(
     Uri.parse(
       'http://$kEmulatorHost:9099/emulator/v1/projects/$kProjectId/accounts',
     ),
   );
+  _checkOk(authRes, 'clearEmulators (Auth)');
 }
+
+/// Throws a clear [StateError] (status + truncated body) when [res] isn't a
+/// 2xx — so a not-yet-booted emulator or a wrong project id/port fails
+/// loudly here instead of surfacing as an opaque downstream
+/// `FormatException` from a later `jsonDecode` of an HTML error page.
+void _checkOk(http.Response res, String what) {
+  if (res.statusCode < 200 || res.statusCode >= 300) {
+    throw StateError('$what failed: HTTP ${res.statusCode} '
+        '${_truncate(res.body)}');
+  }
+}
+
+/// Truncates [body] for inclusion in an exception message so a large HTML/
+/// JSON error page doesn't flood test output.
+String _truncate(String body, {int maxLength = 500}) =>
+    body.length <= maxLength ? body : '${body.substring(0, maxLength)}...';
 
 /// Polls [probe] on [interval] until it returns a non-null value, then
 /// returns that value. Throws a [TimeoutException] if [timeout] elapses

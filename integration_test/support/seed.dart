@@ -25,6 +25,15 @@ FirebaseFirestore get _db => FirebaseFirestore.instance;
 /// (`ratingCount`/`ratingAvg` default to `0`; `ratingSum` isn't a DTO field,
 /// so it's omitted rather than written — the rules' `get(..., 0)` default
 /// matches an absent field). Must run while signed in as [uid].
+///
+/// Also writes `displayName`/`photoUrls` — not in the brief's original
+/// snippet, but `AppUser.profileComplete` (`lib/features/user/domain/
+/// entities/app_user.dart`) requires a non-empty `displayName`, a non-empty
+/// `photoUrls`, and a non-null `gender` before `routerProvider`'s
+/// `authRedirect` (`lib/core/routing/router.dart`) lets a signed-in user
+/// past `/onboarding/profile` to `/discover`. Without these two fields the
+/// seeded user is stuck on the profile-setup gate — confirmed live in Task
+/// 3's smoke test.
 Future<void> seedUserProfile({
   required String uid,
   String gender = 'woman',
@@ -35,6 +44,8 @@ Future<void> seedUserProfile({
     'dob': Timestamp.fromDate(dob ?? DateTime(1995)),
     'ageVerified': true,
     'gender': gender,
+    'displayName': 'Test User',
+    'photoUrls': ['https://example.com/avatar.png'],
     'ratingCount': 0,
     'ratingAvg': 0,
   });

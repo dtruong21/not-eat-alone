@@ -47,6 +47,12 @@ Future<User> signInTestUser({
       'returnIdpCredential': true,
     }),
   );
+  if (res.statusCode < 200 || res.statusCode >= 300) {
+    throw StateError(
+      'signInWithIdp failed: HTTP ${res.statusCode} '
+      '${_truncate(res.body)}',
+    );
+  }
   final decoded = jsonDecode(res.body) as Map<String, Object?>;
   final idToken = decoded['idToken'];
   if (idToken is! String) {
@@ -66,3 +72,8 @@ Future<User> signInTestUser({
 
 /// Signs the current Firebase Auth SDK session out.
 Future<void> signOutTestUser() => FirebaseAuth.instance.signOut();
+
+/// Truncates [body] for inclusion in an exception message so a large HTML/
+/// JSON error page doesn't flood test output.
+String _truncate(String body, {int maxLength = 500}) =>
+    body.length <= maxLength ? body : '${body.substring(0, maxLength)}...';
