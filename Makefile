@@ -95,13 +95,32 @@ ios-privacy: ios-sim-boot
 # it every 2s for the run's duration is a robust belt-and-suspenders fix:
 # idempotent, and guaranteed to land within 2s of any alert appearing,
 # well inside the smoke test's 20s bounded pump loop.
+# `--only firestore` (unqualified) makes firebase-tools' emulator controller
+# select EVERY database entry in firebase.json's `firestore` array
+# ((default) + stage — see firebase.json) via its internal
+# `getFirestoreConfig()`; when more than one entry comes back, the Firestore
+# emulator logs "does not support multiple databases yet" and silently
+# starts with OPEN rules (no enforcement at all) instead of loading
+# firebase/firestore.rules — confirmed live: `firebase emulators:exec --only
+# firestore ...` prints exactly that warning, and an unauthenticated REST
+# write against the emulator then succeeds. `firestore:(default)` scopes
+# `--only` to just the `(default)` database entry (the one the app's E2E
+# flavor — Flavor.prod, firestoreDatabaseId '(default)' — connects to), so
+# getFirestoreConfig() returns a single-element array and the emulator loads
+# and enforces firebase/firestore.rules normally (confirmed live: the same
+# REST write then returns 403 PERMISSION_DENIED). This does NOT affect
+# `firebase deploy` — deploy's `--only firestore` (no colon) is unchanged and
+# still resolves to `allDatabases = true`, deploying rules to both
+# `(default)` and `stage` (verified against both firebase-tools 15.24 and
+# the CI-pinned firebase-tools@13 line: identical selection logic in
+# lib/firestore/fsConfig.js on both).
 .PHONY: e2e
 e2e: ios-plist ios-sim-boot ios-privacy
 	cd firebase/functions && npm ci && npm run build
 	@udid=$$(xcrun simctl list devices available | awk -F '[()]' -v name="$(DEVICE)" '$$0 ~ name && !/unavailable/ {print $$2; exit}'); \
 	( while true; do sleep 2; xcrun simctl privacy "$$udid" revoke location $(BUNDLE_ID) >/dev/null 2>&1; done ) & \
 	watchdog=$$!; \
-	firebase emulators:exec --only auth,firestore,functions,storage \
+	firebase emulators:exec --only "auth,firestore:(default),functions,storage" \
 		--project not-eat-alone \
 		"fvm flutter test integration_test -d '$(DEVICE)'"; \
 	status=$$?; \
