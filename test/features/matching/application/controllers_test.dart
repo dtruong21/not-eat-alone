@@ -103,30 +103,38 @@ void main() {
   });
 
   group('InboxActionController', () {
-    test('approve() calls repo.approve and leaves state AsyncData', () async {
-      await container
-          .read(inboxActionControllerProvider.notifier)
-          .approve(_request);
+    test(
+      'approve() calls repo.approve, leaves state AsyncData, and returns '
+      'null',
+      () async {
+        final result = await container
+            .read(inboxActionControllerProvider.notifier)
+            .approve(_request);
 
-      verify(() => requestRepository.approve(_request)).called(1);
+        verify(() => requestRepository.approve(_request)).called(1);
 
-      final state = container.read(inboxActionControllerProvider);
-      expect(state.hasError, isFalse);
-      expect(state, isA<AsyncData<void>>());
-    });
+        final state = container.read(inboxActionControllerProvider);
+        expect(state.hasError, isFalse);
+        expect(state, isA<AsyncData<void>>());
+        expect(result, isNull);
+      },
+    );
 
     test(
-      'approve() leaves state.hasError true when the meal is no longer open',
+      'approve() leaves state.hasError true and RETURNS the error when the '
+      'meal is no longer open — so a caller never has to re-read state '
+      'after the await (unsafe once the caller may be unmounted)',
       () async {
         when(() => requestRepository.approve(any()))
             .thenThrow(MealNoLongerOpenException('meal_1'));
 
-        await container
+        final result = await container
             .read(inboxActionControllerProvider.notifier)
             .approve(_request);
 
         final state = container.read(inboxActionControllerProvider);
         expect(state.hasError, isTrue);
+        expect(result, isA<MealNoLongerOpenException>());
       },
     );
 
