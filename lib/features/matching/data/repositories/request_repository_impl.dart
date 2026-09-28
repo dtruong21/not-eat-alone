@@ -109,10 +109,16 @@ class RequestRepositoryImpl implements RequestRepository {
     // Post-commit: deny the losing pending requests. Firestore transactions
     // cannot run queries, so this is a follow-up batch. The meal is already
     // `matched`, so rules block any new pending request from appearing.
+    // `hostId` is redundant for correctness (every request on this meal has
+    // the meal's host) but required by firestore.rules: a `list` query must
+    // be constrained so every possible result satisfies the rule's
+    // `hostId == auth.uid` branch — without it the query is PERMISSION_DENIED
+    // after the transaction has already committed.
     final siblings = await _firestore
         .collection('requests')
         .where('mealId', isEqualTo: request.mealId)
         .where('status', isEqualTo: 'pending')
+        .where('hostId', isEqualTo: request.hostId)
         .get();
     if (siblings.docs.isEmpty) return;
     final batch = _firestore.batch();

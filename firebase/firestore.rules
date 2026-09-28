@@ -84,7 +84,18 @@ service cloud.firestore {
 
     // Join requests: guest creates for an OPEN meal; host reviews.
     match /requests/{requestId} {
-      allow read: if isSignedIn()
+      // get: a party to an existing request, OR the guest reading their OWN
+      // not-yet-created request (id is `{mealId}_{guestId}` — see
+      // RequestRepositoryImpl._requestId) so the meal-detail listener resolves
+      // to "no request yet". Scoping the null case to the caller's own id
+      // avoids an existence oracle on other users' requests.
+      allow get: if isSignedIn()
+                 && ((resource == null
+                      && requestId.matches('.*_' + request.auth.uid))
+                     || (resource != null
+                         && (resource.data.guestId == request.auth.uid
+                             || resource.data.hostId == request.auth.uid)));
+      allow list: if isSignedIn()
                   && (resource.data.guestId == request.auth.uid
                       || resource.data.hostId == request.auth.uid);
       allow create: if isSignedIn()
