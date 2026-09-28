@@ -17,7 +17,18 @@ endif
 # udid, since simulator udids differ per machine. The device must already
 # be booted (see `ios-sim-boot` below) — `flutter test -d <name>` targets a
 # running simulator, it doesn't boot one itself.
-DEVICE ?= iPhone 17 Pro
+#
+# Dedicated to this project: "Convyve E2E" is a project-specific simulator
+# (not the generic "iPhone 17 Pro" one other local projects' agents may run
+# concurrently on the same machine) — sharing a simulator across concurrent,
+# unrelated `flutter run`/`flutter test` sessions causes severe resource
+# contention and flaky/hung runs (confirmed live: a standalone `chat_test.dart`
+# run hung for 12+ minutes while another project's agent was running on the
+# same "iPhone 17 Pro" device). Create it once with:
+#   xcrun simctl create "Convyve E2E" <iPhone-17-Pro devicetype id> <latest iOS runtime id>
+# (ids from `xcrun simctl list devicetypes` / `xcrun simctl list runtimes`).
+# `ios-sim-boot` below boots it if needed, same as any other $(DEVICE).
+DEVICE ?= Convyve E2E
 
 # Unflavored `Runner` scheme's bundle id (see ios/Runner.xcodeproj — the
 # "prod"/"stage" schemes use different, flavor-suffixed ids; `flutter test
