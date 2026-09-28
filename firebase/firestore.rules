@@ -118,11 +118,20 @@ service cloud.firestore {
     // Matches: readable by the two parties; created by the host (in the
     // approve transaction); immutable in v1.
     match /matches/{matchId} {
-      allow read: if isSignedIn()
-                  && (resource.data.hostId == request.auth.uid
-                      || resource.data.guestId == request.auth.uid
-                      || (resource.data.participants is list
-                          && request.auth.uid in resource.data.participants));
+      // Split get/list: a `get` can freely dereference `resource.data` (a
+      // single, already-fetched doc), but a `list` query must be provable
+      // from the QUERY's own constraints alone — only the `participants`
+      // `array-contains` branch is (the documented `array-contains` ->
+      // `in` pattern); the `hostId`/`guestId` OR-branches aren't, so a
+      // combined `read` denies every `list` (see the Chats tab's
+      // `arrayContains('participants', uid)` query, which needs `list`).
+      allow get: if isSignedIn()
+                 && (resource.data.hostId == request.auth.uid
+                     || resource.data.guestId == request.auth.uid
+                     || (resource.data.participants is list
+                         && request.auth.uid in resource.data.participants));
+      allow list: if isSignedIn()
+                  && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn()
                     && request.resource.data.hostId == request.auth.uid;
       allow update, delete: if false;
@@ -163,7 +172,19 @@ service cloud.firestore {
     }
 
     match /ratings/{ratingId} {
-      allow read: if isSignedIn() && resource.data.raterUid == request.auth.uid;
+      // Same get/list split as `matches` (and the same shape as `requests`'
+      // c133e20 fix): a `get` on a doc id ending in the caller's own uid
+      // resolves "not yet rated" (not-exists, no error) instead of hanging
+      // a listener on PERMISSION_DENIED — narrowed to the caller's own id
+      // suffix so it isn't an existence oracle for anyone else's rating.
+      // `list` can't dereference an as-yet-unfetched `resource.data`, so it
+      // stays pinned to `raterUid` (provable only once the caller's own
+      // `where('raterUid', ...)`-shaped query is used).
+      allow get: if isSignedIn()
+                 && ((resource == null && ratingId.matches('.*_' + request.auth.uid))
+                     || (resource != null && resource.data.raterUid == request.auth.uid));
+      allow list: if isSignedIn()
+                  && resource.data.raterUid == request.auth.uid;
       allow create: if isSignedIn()
                     && request.resource.data.raterUid == request.auth.uid
                     && request.resource.data.raterUid != request.resource.data.targetUid

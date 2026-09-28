@@ -119,4 +119,116 @@ void main() {
       );
     },
   );
+
+  // `matches/{matchId}` read rule (`firebase/firestore.rules`): split into
+  // `get`/`list` so the Chats tab's `arrayContains('participants', uid)` +
+  // `orderBy('createdAt')` query — which only the `list` rule's
+  // `participants`-pinned condition can prove — succeeds, while a `get` by
+  // a non-participant still denies.
+  testWidgets(
+    "a match participant's list query "
+    '(participants array-contains + orderBy createdAt) succeeds',
+    (tester) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'rules-match-list-host');
+      const matchId = 'rules-match-list-match-1';
+      const otherUid = 'rules-match-list-guest';
+      await _db.collection('matches').doc(matchId).set({
+        'id': matchId,
+        'mealId': matchId,
+        'hostId': host.uid,
+        'guestId': otherUid,
+        'participants': [host.uid, otherUid],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      final snap = await _db
+          .collection('matches')
+          .where('participants', arrayContains: host.uid)
+          .orderBy('createdAt', descending: true)
+          .get(const GetOptions(source: Source.server));
+
+      expect(snap.docs.map((d) => d.id), contains(matchId));
+    },
+  );
+
+  testWidgets(
+    "a non-participant's get on someone else's match is permission-denied",
+    (tester) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'rules-match-get-host');
+      const matchId = 'rules-match-get-match-1';
+      await _db.collection('matches').doc(matchId).set({
+        'id': matchId,
+        'mealId': matchId,
+        'hostId': host.uid,
+        'guestId': 'rules-match-get-guest',
+        'participants': [host.uid, 'rules-match-get-guest'],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await signInTestUser(uid: 'rules-match-get-outsider');
+      Future<void> probeOther() => _db
+          .collection('matches')
+          .doc(matchId)
+          .get(const GetOptions(source: Source.server));
+
+      await expectLater(
+        probeOther,
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  // `ratings/{ratingId}` read rule: same get/list split shape as `requests`
+  // (`c133e20`) and `matches` above — id is `{matchId}_{raterUid}`
+  // (`RatingRepositoryImpl`), so a rater's own not-yet-created rating
+  // resolves to "not rated yet" instead of hanging a listener on
+  // PERMISSION_DENIED, narrowed to the caller's own id suffix.
+  testWidgets(
+    'a user can get their own not-yet-created rating (resolves '
+    'not-exists, no error)',
+    (tester) async {
+      await _bootOnce(tester);
+      final user = await signInTestUser(uid: 'rules-own-rating-1');
+
+      final snap = await _db
+          .collection('ratings')
+          .doc('some-match_${user.uid}')
+          .get(const GetOptions(source: Source.server));
+
+      expect(snap.exists, isFalse);
+    },
+  );
+
+  testWidgets(
+    "getting someone else's not-yet-created rating is permission-denied "
+    '(no existence oracle)',
+    (tester) async {
+      await _bootOnce(tester);
+      final user = await signInTestUser(uid: 'rules-other-rating-1');
+
+      Future<void> probeOther() => _db
+          .collection('ratings')
+          .doc('some-match_${user.uid}-not-me')
+          .get(const GetOptions(source: Source.server));
+
+      await expectLater(
+        probeOther,
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
 }
