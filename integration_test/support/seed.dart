@@ -81,3 +81,53 @@ Future<String> seedOpenMeal({
   });
   return ref.id;
 }
+
+/// Seeds a pending `requests/{mealId}_{guestId}` doc — the same id shape and
+/// field set `RequestRepositoryImpl.createRequest` writes (`lib/features/
+/// matching/data/repositories/request_repository_impl.dart`), so it passes
+/// the `requests` create rule (open meal, matching hostId, no block,
+/// women-only check). Must run while signed in as [guestId]. Returns the
+/// request id.
+Future<String> seedPendingRequest({
+  required String mealId,
+  required String guestId,
+  required String hostId,
+}) async {
+  final id = '${mealId}_$guestId';
+  await _db.collection('requests').doc(id).set({
+    'id': id,
+    'mealId': mealId,
+    'guestId': guestId,
+    'hostId': hostId,
+    'status': 'pending',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+  return id;
+}
+
+/// Seeds a matched meal plus its `matches/{mealId}` hand-off doc — the end
+/// state `RequestRepositoryImpl.approve`'s transaction produces — for
+/// scenarios that start post-match (e.g. chat). Must run while signed in as
+/// [hostId]: `meals` update and `matches` create both require the host.
+/// Returns the match id, which is the meal id (`matchId == mealId`
+/// throughout the app, e.g. router `/chats/:matchId`).
+Future<String> seedMatch({
+  required String hostId,
+  required String guestId,
+  DateTime? dateTime,
+}) async {
+  final mealId = await seedOpenMeal(hostId: hostId, dateTime: dateTime);
+  await _db.collection('meals').doc(mealId).update({
+    'status': 'matched',
+    'guestId': guestId,
+  });
+  await _db.collection('matches').doc(mealId).set({
+    'id': mealId,
+    'mealId': mealId,
+    'hostId': hostId,
+    'guestId': guestId,
+    'participants': [hostId, guestId],
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+  return mealId;
+}
