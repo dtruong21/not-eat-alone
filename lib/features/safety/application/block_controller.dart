@@ -17,12 +17,18 @@ class BlockController extends _$BlockController {
   AsyncValue<void> build() => const AsyncValue.data(null);
 
   Future<void> block(String blockedUid) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      await ref.read(blockRepositoryProvider).block(uid, blockedUid);
-      await analytics.track(const UserBlocked());
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        await ref.read(blockRepositoryProvider).block(uid, blockedUid);
+        await analytics.track(const UserBlocked());
+      });
+    } finally {
+      link.close();
+    }
   }
 
   Future<void> unblock(String blockedUid) async {

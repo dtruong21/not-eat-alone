@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -7,6 +9,8 @@ import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.
 import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
 import 'package:not_eat_alone/features/safety/application/account_providers.dart';
 import 'package:not_eat_alone/features/safety/domain/repositories/account_repository.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -73,5 +77,26 @@ void main() {
         verifyNever(() => authRepository.signOut());
       },
     );
+  });
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('AccountDeletionController.delete survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(() => accountRepository.deleteAccount())
+        .thenAnswer((_) => gate.future);
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      accountDeletionControllerProvider,
+      action: () => container
+          .read(accountDeletionControllerProvider.notifier)
+          .delete(),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last, isA<AsyncData<void>>());
+    verify(() => authRepository.signOut()).called(1);
   });
 }

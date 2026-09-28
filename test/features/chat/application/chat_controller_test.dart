@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -7,6 +9,8 @@ import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.
 import 'package:not_eat_alone/features/chat/application/chat_controller.dart';
 import 'package:not_eat_alone/features/chat/application/chat_providers.dart';
 import 'package:not_eat_alone/features/chat/domain/repositories/chat_repository.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -106,5 +110,28 @@ void main() {
         () => chatRepository.markRead(matchId: 'match_1', uid: 'user_1'),
       ).called(1);
     });
+  });
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('ChatController.send survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(() => chatRepository.sendMessage(
+          matchId: any(named: 'matchId'),
+          senderId: any(named: 'senderId'),
+          text: any(named: 'text'),
+        )).thenAnswer((_) => gate.future);
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      chatControllerProvider,
+      action: () => container
+          .read(chatControllerProvider.notifier)
+          .send(matchId: 'match_1', text: 'hello'),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last, isA<AsyncData<void>>());
   });
 }

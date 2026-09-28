@@ -25,8 +25,13 @@ class RestaurantSearchController extends _$RestaurantSearchController {
   /// Searches for [query] and replaces the state with the results.
   Future<void> search(String query) async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => ref.read(restaurantSearchRepositoryProvider).search(query),
     );
+    // A query, not an action: if the picker closed mid-search nobody wants
+    // the results, so drop them rather than keep the provider alive (and
+    // rather than throw UnmountedRefException on a disposed ref).
+    if (!ref.mounted) return;
+    state = result;
   }
 }

@@ -20,11 +20,17 @@ class AccountDeletionController extends _$AccountDeletionController {
   /// out. On repo failure, does NOT sign out — the state is left in error so
   /// the UI can surface it and the user can retry.
   Future<void> delete() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      await analytics.track(const AccountDeletionRequested());
-      await ref.read(accountRepositoryProvider).deleteAccount();
-      await ref.read(authRepositoryProvider).signOut();
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        await analytics.track(const AccountDeletionRequested());
+        await ref.read(accountRepositoryProvider).deleteAccount();
+        await ref.read(authRepositoryProvider).signOut();
+      });
+    } finally {
+      link.close();
+    }
   }
 }

@@ -14,14 +14,20 @@ class ChatController extends _$ChatController {
 
   Future<void> send({required String matchId, required String text}) async {
     if (text.trim().isEmpty) return;
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      await ref.read(chatRepositoryProvider).sendMessage(
-            matchId: matchId, senderId: uid, text: text,
-          );
-      await analytics.track(const MessageSent());
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        await ref.read(chatRepositoryProvider).sendMessage(
+              matchId: matchId, senderId: uid, text: text,
+            );
+        await analytics.track(const MessageSent());
+      });
+    } finally {
+      link.close();
+    }
   }
 
   Future<void> markRead(String matchId) async {

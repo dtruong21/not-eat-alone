@@ -45,32 +45,44 @@ class ProfileController extends _$ProfileController {
     required Gender gender,
     String? bio,
   }) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      await ref.read(userRepositoryProvider).updateProfile(
-            uid: uid,
-            displayName: displayName,
-            gender: gender,
-            bio: bio,
-          );
-      await analytics.track(const ProfileCompleted());
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        await ref.read(userRepositoryProvider).updateProfile(
+              uid: uid,
+              displayName: displayName,
+              gender: gender,
+              bio: bio,
+            );
+        await analytics.track(const ProfileCompleted());
+      });
+    } finally {
+      link.close();
+    }
   }
 
   /// Saves an edit from the settings screen and fires `profile_edited`.
   Future<void> save({String? displayName, String? bio, Gender? gender}) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      await ref.read(userRepositoryProvider).updateProfile(
-            uid: uid,
-            displayName: displayName,
-            bio: bio,
-            gender: gender,
-          );
-      await analytics.track(const ProfileEdited());
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        await ref.read(userRepositoryProvider).updateProfile(
+              uid: uid,
+              displayName: displayName,
+              bio: bio,
+              gender: gender,
+            );
+        await analytics.track(const ProfileEdited());
+      });
+    } finally {
+      link.close();
+    }
   }
 
   /// Uploads [bytes] as the next photo slot and appends its URL to the
@@ -79,20 +91,26 @@ class ProfileController extends _$ProfileController {
     final current = ref.read(currentUserDocProvider).value?.photoUrls ?? [];
     if (current.length >= _maxPhotos) return;
 
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      final url = await ref.read(photoStorageDataSourceProvider).upload(
-            uid: uid,
-            index: current.length,
-            bytes: bytes,
-          );
-      await ref.read(userRepositoryProvider).updateProfile(
-            uid: uid,
-            photoUrls: [...current, url],
-          );
-      await analytics.track(ProfilePhotoAdded(count: current.length + 1));
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        final url = await ref.read(photoStorageDataSourceProvider).upload(
+              uid: uid,
+              index: current.length,
+              bytes: bytes,
+            );
+        await ref.read(userRepositoryProvider).updateProfile(
+              uid: uid,
+              photoUrls: [...current, url],
+            );
+        await analytics.track(ProfilePhotoAdded(count: current.length + 1));
+      });
+    } finally {
+      link.close();
+    }
   }
 
   /// Removes [url] from the user's `photoUrls` and deletes the underlying
@@ -100,15 +118,21 @@ class ProfileController extends _$ProfileController {
   Future<void> removePhoto(String url) async {
     final current = ref.read(currentUserDocProvider).value?.photoUrls ?? [];
 
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      final updated = current.where((u) => u != url).toList();
-      await ref.read(userRepositoryProvider).updateProfile(
-            uid: uid,
-            photoUrls: updated,
-          );
-      await ref.read(photoStorageDataSourceProvider).deleteByUrl(url);
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        final updated = current.where((u) => u != url).toList();
+        await ref.read(userRepositoryProvider).updateProfile(
+              uid: uid,
+              photoUrls: updated,
+            );
+        await ref.read(photoStorageDataSourceProvider).deleteByUrl(url);
+      });
+    } finally {
+      link.close();
+    }
   }
 }

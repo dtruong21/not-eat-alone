@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -8,6 +10,8 @@ import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.
 import 'package:not_eat_alone/features/safety/application/block_controller.dart';
 import 'package:not_eat_alone/features/safety/application/block_providers.dart';
 import 'package:not_eat_alone/features/safety/domain/repositories/block_repository.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -74,5 +78,23 @@ void main() {
 
       verify(() => blockRepository.unblock('me', 'x')).called(1);
     });
+  });
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('BlockController.block survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(() => blockRepository.block(any(), any()))
+        .thenAnswer((_) => gate.future);
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      blockControllerProvider,
+      action: () => container.read(blockControllerProvider.notifier).block('x'),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last, isA<AsyncData<void>>());
   });
 }

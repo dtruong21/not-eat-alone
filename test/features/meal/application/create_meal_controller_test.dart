@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +12,8 @@ import 'package:not_eat_alone/features/meal/application/meal_providers.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/domain/repositories/meal_repository.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -114,4 +118,28 @@ void main() {
       expect(state.hasError, isFalse);
     },
   );
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('CreateMealController.create survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(() => mealRepository.createMeal(any()))
+        .thenAnswer((_) => gate.future.then((_) => 'meal_1'));
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      createMealControllerProvider,
+      action: () => container
+          .read(createMealControllerProvider.notifier)
+          .create(
+            restaurant: _restaurant,
+            dateTime: DateTime.utc(2030),
+            womenOnly: false,
+          ),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last, isA<AsyncData<void>>());
+  });
 }

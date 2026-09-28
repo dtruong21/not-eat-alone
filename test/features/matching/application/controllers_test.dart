@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,6 +14,8 @@ import 'package:not_eat_alone/features/matching/domain/entities/join_request.dar
 import 'package:not_eat_alone/features/matching/domain/repositories/request_repository.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -135,6 +139,115 @@ void main() {
 
       final state = container.read(inboxActionControllerProvider);
       expect(state.hasError, isFalse);
+    });
+  });
+
+  // Regression: the only watcher unmounting mid-action (live E2E: the
+  // "Request to join" button is swapped for "Requested" by Firestore latency
+  // compensation before the write resolves) used to dispose the autoDispose
+  // controller, so the trailing `state =` threw UnmountedRefException and a
+  // failure never reached the error listener.
+  group('in-flight listener removal', () {
+    test('CreateRequestController.request lands AsyncData on the same '
+        'instance', () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.createRequest(
+            mealId: any(named: 'mealId'),
+            guestId: any(named: 'guestId'),
+            hostId: any(named: 'hostId'),
+          )).thenAnswer((_) => gate.future);
+
+      final seen = await runWithListenerRemovedMidFlight(
+        container,
+        createRequestControllerProvider,
+        action: () => container
+            .read(createRequestControllerProvider.notifier)
+            .request(_meal),
+        release: gate.complete,
+      );
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last, isA<AsyncData<void>>());
+    });
+
+    test('CreateRequestController.request delivers a failure to a listener '
+        'that re-subscribed mid-flight', () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.createRequest(
+            mealId: any(named: 'mealId'),
+            guestId: any(named: 'guestId'),
+            hostId: any(named: 'hostId'),
+          )).thenAnswer((_) => gate.future);
+
+      final seen = await runWithListenerRemovedMidFlight(
+        container,
+        createRequestControllerProvider,
+        action: () => container
+            .read(createRequestControllerProvider.notifier)
+            .request(_meal),
+        release: () => gate.completeError(StateError('denied')),
+      );
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last.hasError, isTrue);
+    });
+
+    test('InboxActionController.approve lands AsyncData on the same '
+        'instance', () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.approve(any()))
+          .thenAnswer((_) => gate.future);
+
+      final seen = await runWithListenerRemovedMidFlight(
+        container,
+        inboxActionControllerProvider,
+        action: () => container
+            .read(inboxActionControllerProvider.notifier)
+            .approve(_request),
+        release: gate.complete,
+      );
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last, isA<AsyncData<void>>());
+    });
+
+    test('InboxActionController.approve delivers a failure mid-flight',
+        () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.approve(any()))
+          .thenAnswer((_) => gate.future);
+
+      final seen = await runWithListenerRemovedMidFlight(
+        container,
+        inboxActionControllerProvider,
+        action: () => container
+            .read(inboxActionControllerProvider.notifier)
+            .approve(_request),
+        release: () =>
+            gate.completeError(MealNoLongerOpenException('meal_1')),
+      );
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last.hasError, isTrue);
+    });
+
+    test('InboxActionController.deny lands AsyncData on the same instance',
+        () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.deny(any()))
+          .thenAnswer((_) => gate.future);
+
+      final seen = await runWithListenerRemovedMidFlight(
+        container,
+        inboxActionControllerProvider,
+        action: () => container
+            .read(inboxActionControllerProvider.notifier)
+            .deny(_request),
+        release: gate.complete,
+      );
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last, isA<AsyncData<void>>());
     });
   });
 }

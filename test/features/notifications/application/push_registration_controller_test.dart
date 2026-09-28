@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
 import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
 import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockPushRepository extends Mock implements PushRepository {}
 
@@ -73,5 +77,26 @@ void main() {
 
       verify(() => pushRepository.unregisterCurrentToken('uid_1')).called(1);
     });
+  });
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('PushRegistrationController.register survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(() => pushRepository.requestPermission())
+        .thenAnswer((_) => gate.future.then((_) => true));
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      pushRegistrationControllerProvider,
+      action: () => container
+          .read(pushRegistrationControllerProvider.notifier)
+          .register('uid_1'),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last, isA<AsyncData<void>>());
+    verify(() => pushRepository.registerToken('uid_1')).called(1);
   });
 }

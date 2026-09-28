@@ -21,18 +21,24 @@ class ReportController extends _$ReportController {
     required String targetId,
     String? reason,
   }) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      await ref
-          .read(reportRepositoryProvider)
-          .report(
-            reporterId: uid,
-            targetType: targetType,
-            targetId: targetId,
-            reason: reason,
-          );
-      await analytics.track(UserReported(targetType: targetType));
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        await ref
+            .read(reportRepositoryProvider)
+            .report(
+              reporterId: uid,
+              targetType: targetType,
+              targetId: targetId,
+              reason: reason,
+            );
+        await analytics.track(UserReported(targetType: targetType));
+      });
+    } finally {
+      link.close();
+    }
   }
 }
