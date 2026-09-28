@@ -105,3 +105,5 @@ codemagic-build-output/
 
 # FVM Version Cache
 .fvm/
+# graphify knowledge-graph output (local, regenerable)
+graphify-out/
