@@ -193,7 +193,9 @@ service cloud.firestore {
                     && request.resource.data.stars <= 5
                     && request.resource.data.showedUp is bool
                     && (!('comment' in request.resource.data)
-                        || request.resource.data.comment.size() <= 200)
+                        || request.resource.data.comment == null
+                        || (request.resource.data.comment is string
+                            && request.resource.data.comment.size() <= 200))
                     && ratingParticipantsValid(request.resource.data.matchId,
                                                request.resource.data.raterUid,
                                                request.resource.data.targetUid);

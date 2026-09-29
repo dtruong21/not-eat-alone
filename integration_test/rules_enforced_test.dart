@@ -231,4 +231,154 @@ void main() {
       );
     },
   );
+
+  // `ratings/{ratingId}` create rule's `comment` clause: only special-cases
+  // the KEY being absent, then requires a string `<= 200` chars once it IS
+  // present. A present `comment: null` value used to throw a rule-evaluation
+  // error on `.size()` and deny the whole create — the fix adds an explicit
+  // `== null` arm and an `is string` guard before `.size()`. Each case here
+  // seeds its own match (via a helper) as the host, then creates the rating
+  // as that same host rating the guest — the only thing under test is the
+  // `comment` clause, so every other field is a known-good baseline. Uses
+  // the REAL emulator-assigned uids (`host.uid`) throughout, not the string
+  // passed to `signInTestUser` — the Auth emulator mints its own random uid
+  // per identity, it does NOT echo the claimed `sub` back as the Firebase
+  // uid (confirmed via a REST probe in this task; see the task report).
+  Future<({String matchId, String hostUid, String guestUid})> seedRatingMatch(
+    WidgetTester tester,
+    String suffix,
+  ) async {
+    await _bootOnce(tester);
+    final host = await signInTestUser(uid: 'rules-rating-comment-host-$suffix');
+    final matchId = 'rules-rating-comment-match-$suffix';
+    const guestUid = 'rules-rating-comment-guest-not-a-real-uid';
+    await _db.collection('matches').doc(matchId).set({
+      'id': matchId,
+      'mealId': matchId,
+      'hostId': host.uid,
+      'guestId': guestUid,
+      'participants': [host.uid, guestUid],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return (matchId: matchId, hostUid: host.uid, guestUid: guestUid);
+  }
+
+  Future<void> createRating({
+    required String matchId,
+    required String raterUid,
+    required String targetUid,
+    Object? comment,
+    bool includeCommentKey = true,
+  }) {
+    final data = <String, Object?>{
+      'matchId': matchId,
+      'raterUid': raterUid,
+      'targetUid': targetUid,
+      'stars': 5,
+      'showedUp': true,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+    if (includeCommentKey) data['comment'] = comment;
+    return _db.collection('ratings').doc('${matchId}_$raterUid').set(data);
+  }
+
+  testWidgets(
+    'a valid participant rating with no comment key is allowed',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'no-key');
+      await createRating(
+        matchId: seed.matchId,
+        raterUid: seed.hostUid,
+        targetUid: seed.guestUid,
+        includeCommentKey: false,
+      );
+      final snap = await _db
+          .collection('ratings')
+          .doc('${seed.matchId}_${seed.hostUid}')
+          .get(const GetOptions(source: Source.server));
+      expect(snap.exists, isTrue);
+    },
+  );
+
+  testWidgets(
+    'a valid participant rating with comment: null is allowed',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'null');
+      // `comment` defaults to `null`; not passed explicitly (redundant-arg
+      // lint) — `includeCommentKey` (true by default) still writes the KEY
+      // with that null value, which is exactly the case under test.
+      await createRating(
+        matchId: seed.matchId,
+        raterUid: seed.hostUid,
+        targetUid: seed.guestUid,
+      );
+      final snap = await _db
+          .collection('ratings')
+          .doc('${seed.matchId}_${seed.hostUid}')
+          .get(const GetOptions(source: Source.server));
+      expect(snap.exists, isTrue);
+    },
+  );
+
+  testWidgets(
+    'a valid participant rating with a 200-char comment is allowed',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, '200');
+      await createRating(
+        matchId: seed.matchId,
+        raterUid: seed.hostUid,
+        targetUid: seed.guestUid,
+        comment: 'a' * 200,
+      );
+      final snap = await _db
+          .collection('ratings')
+          .doc('${seed.matchId}_${seed.hostUid}')
+          .get(const GetOptions(source: Source.server));
+      expect(snap.exists, isTrue);
+    },
+  );
+
+  testWidgets(
+    'a rating with a 201-char comment is permission-denied',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, '201');
+      await expectLater(
+        createRating(
+          matchId: seed.matchId,
+          raterUid: seed.hostUid,
+          targetUid: seed.guestUid,
+          comment: 'a' * 201,
+        ),
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  testWidgets(
+    'a rating with a non-string comment is permission-denied',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'non-string');
+      await expectLater(
+        createRating(
+          matchId: seed.matchId,
+          raterUid: seed.hostUid,
+          targetUid: seed.guestUid,
+          comment: <String>['x'],
+        ),
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
 }

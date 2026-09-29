@@ -14,4 +14,17 @@ void main() {
     expect(back.toEntity().comment, 'great');
     expect(back.toEntity().createdAt, isNull);
   });
+
+  test('toJson omits comment entirely when null (not written as null)', () {
+    const dto = RatingDto(
+      id: 'm1_u1', matchId: 'm1', raterUid: 'u1', targetUid: 'u2',
+      stars: 4, showedUp: true,
+    );
+    final json = dto.toJson();
+    // `firestore.rules`' `ratings` create rule only special-cases the
+    // `comment` KEY being absent — writing it with an explicit `null` value
+    // used to be denied (see the fix commit for the reproduction). Assert
+    // the key itself is gone, not just that its value is null.
+    expect(json.containsKey('comment'), isFalse);
+  });
 }
