@@ -1,12 +1,15 @@
 /// Scenario 4 — rating: both parties rate each other after a past-dated
 /// meal via the real Chats-tab -> chat -> post-meal card -> rating sheet UI,
 /// and `onRatingCreated` (`firebase/functions/src/triggers/rating_created.ts`)
-/// is exercised live: it aggregates the rating onto the TARGET user's
-/// `users/{uid}` doc (`ratingSum`/`ratingCount`/`ratingAvg`) and marks the
-/// rating doc `aggregated: true` (idempotency guard). A final negative case
-/// asserts a non-participant's direct-SDK rating create is denied by
-/// `ratingParticipantsValid` (`firebase/firestore.rules`). Run via `make e2e`
-/// (see `Makefile`).
+/// is exercised live on BOTH directions: it aggregates each rating onto the
+/// TARGET user's `users/{uid}` doc (`ratingSum`/`ratingCount`/`ratingAvg`)
+/// and marks each rating doc `aggregated: true` (idempotency guard). The
+/// host's rating includes a comment; the guest's does not (the sheet's own
+/// default), exercising the `ratings` create rule's `comment` clause fix
+/// (a present `comment: null` used to be denied — see the fix commit). A
+/// final negative case asserts a non-participant's direct-SDK rating create
+/// is denied by `ratingParticipantsValid` (`firebase/firestore.rules`). Run
+/// via `make e2e` (see `Makefile`).
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -228,16 +231,38 @@ void main() {
 
     await signOutTestUser();
 
-    // Only one direction is exercised through the UI here — see the task
-    // report for why the reverse direction (guest rates host, with NO
-    // comment typed, the sheet's default) is BLOCKED by a real, reproduced
-    // `firestore.rules` bug: `RatingDto.toJson()` always writes the
-    // `comment` key, even when `null` (not omitted), and the `ratings`
-    // create rule's `request.resource.data.comment.size() <= 200` check
-    // throws a "Null value error" once `'comment' in request.resource.data`
-    // is true for an explicit-null value, denying the write. This blocks
-    // every real rating submitted WITHOUT a comment (the sheet's own
-    // hint text calls it optional), not just this test.
+    // Act (guest): rate the host 4 stars, WITHOUT a comment (the sheet's own
+    // default) — exercises the fixed `ratings` create rule's `comment`
+    // clause on the path that used to be denied (`comment: null` written by
+    // `RatingRepositoryImpl.submit` is now omitted from the write entirely;
+    // see `rating_dto.dart`'s `@JsonKey(includeIfNull: false)`).
+    await signInTestUser(uid: guest.uid);
+    await _rateThroughUi(tester, matchId: matchId, stars: 4);
+
+    final guestRatingDoc = await pollUntil(() async {
+      final r = await _db
+          .collection('ratings')
+          .doc('${matchId}_${guest.uid}')
+          .get();
+      return r.exists ? r : null;
+    });
+    expect(guestRatingDoc.data()!['stars'], 4);
+    expect(guestRatingDoc.data()!['targetUid'], host.uid);
+    expect(
+      guestRatingDoc.data()!.containsKey('comment'),
+      isFalse,
+      reason: 'a no-comment rating should not write an explicit null field',
+    );
+
+    final updatedHost = await pollUntil(() async {
+      final u = await _db.collection('users').doc(host.uid).get();
+      final count = (u.data()?['ratingCount'] as num?)?.toInt() ?? 0;
+      return count == 1 ? u : null;
+    }, timeout: const Duration(seconds: 20));
+    expect((updatedHost.data()!['ratingAvg'] as num).toDouble(), 4.0);
+    expect(updatedHost.data()!['ratingCount'], 1);
+
+    await signOutTestUser();
 
     // Negative (cheap, SDK): a third user — not a participant of this match
     // — cannot create a rating for it. `ratingParticipantsValid`
