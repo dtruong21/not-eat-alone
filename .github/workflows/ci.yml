@@ -176,17 +176,24 @@ jobs:
         # runner image rolls its Xcode/runtime versions (hard-coded
         # runtime/device-type ids would).
         run: |
-          read -r runtime devtype < <(xcrun simctl list runtimes available -j | python3 -c '
+          sel=$(xcrun simctl list -j runtimes available | python3 -c '
           import json, re, sys
+          def iphones(rt):
+              return [d for d in rt.get("supportedDeviceTypes", []) if d["name"].startswith("iPhone")]
           rts = [r for r in json.load(sys.stdin)["runtimes"]
-                 if r.get("isAvailable") and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-")]
+                 if r.get("isAvailable")
+                 and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-")
+                 and iphones(r)]
+          if not rts:
+              sys.exit("error: no available iOS runtime with an iPhone device type (see: xcrun simctl list runtimes)")
           rts.sort(key=lambda r: [int(p) for p in r["version"].split(".")])
           rt = rts[-1]
-          iphones = [d for d in rt["supportedDeviceTypes"] if d["name"].startswith("iPhone")]
-          pro = [d for d in iphones if d["name"].endswith(" Pro")]
+          cands = iphones(rt)
+          pro = [d for d in cands if d["name"].endswith(" Pro")]
           gen = lambda d: int((re.search(r"iPhone (\d+)", d["name"]) or [0, 0])[1])
-          print(rt["identifier"], max(pro or iphones, key=gen)["identifier"])
+          print(rt["identifier"], max(pro or cands, key=gen)["identifier"])
           ')
+          read -r runtime devtype <<< "$sel"
           echo "runtime=$runtime devicetype=$devtype"
           xcrun simctl create "Convyve E2E" "$devtype" "$runtime"
           xcrun simctl list devices available | grep "Convyve E2E"
@@ -201,6 +208,7 @@ jobs:
         run: |
           max_attempts=2
           attempt_timeout=$((20 * 60))
+          last_status=1
           mkdir -p e2e-logs
           for attempt in $(seq 1 "$max_attempts"); do
             echo "::group::E2E attempt $attempt/$max_attempts"
@@ -209,6 +217,9 @@ jobs:
             perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' make e2e OPENJDK_PREFIX= &
             pid=$!
             (
+              # Explicit: this subshell must never abort before the TERM -> KILL
+              # escalation, whatever errexit the parent shell has.
+              set +e
               sleep "$attempt_timeout"
               echo "::warning::E2E attempt $attempt exceeded $((attempt_timeout / 60)) min — killing"
               kill -TERM -- "-$pid" 2>/dev/null
@@ -218,8 +229,12 @@ jobs:
             watchdog=$!
             status=0
             wait "$pid" || status=$?
+            # Stop the watchdog (and its sleep) first, then hard-kill whatever is
+            # left in the group (e.g. a JVM stuck in a shutdown hook after TERM
+            # still holds the emulator ports and would fail the next attempt).
             pkill -P "$watchdog" 2>/dev/null || true
             kill "$watchdog" 2>/dev/null || true
+            kill -KILL -- "-$pid" 2>/dev/null || true
             echo "::endgroup::"
             if [ "$status" -eq 0 ]; then
               if [ "$attempt" -gt 1 ]; then
@@ -228,22 +243,27 @@ jobs:
               fi
               exit 0
             fi
+            last_status=$status
             echo "::warning::E2E attempt $attempt failed (exit $status)"
             mkdir -p "e2e-logs/attempt-$attempt"
             cp ./*-debug.log "e2e-logs/attempt-$attempt/" 2>/dev/null || true
             echo "E2E_RETRIED=true" >> "$GITHUB_ENV"
-            # Clean slate for the next attempt: stray emulators/xcodebuild and
-            # a possibly wedged simulator (make boots it again).
-            pkill -f 'firebase' 2>/dev/null || true
-            pkill -f 'emulator' 2>/dev/null || true
-            pkill -f 'xcodebuild' 2>/dev/null || true
+            # Clean slate: stray emulators/xcodebuild and a possibly wedged
+            # simulator (make boots it again). Patterns are anchored to this
+            # job's processes.
+            pkill -9 -f 'firebase.*emulators:exec' 2>/dev/null || true
+            pkill -9 -f 'cloud-firestore-emulator' 2>/dev/null || true
+            pkill -9 -f 'emulator/functionsEmulatorRuntime' 2>/dev/null || true
+            pkill -9 -f 'xcodebuild' 2>/dev/null || true
             xcrun simctl shutdown all 2>/dev/null || true
-            sleep 5
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              sleep 5
+            fi
           done
-          echo "::error::E2E failed after $max_attempts attempts"
-          exit 1
+          echo "::error::E2E failed after $max_attempts attempts (last exit $last_status)"
+          exit "$last_status"
       - name: Upload emulator logs
-        if: failure() || env.E2E_RETRIED == 'true'
+        if: always() && (failure() || cancelled() || env.E2E_RETRIED == 'true')
         uses: actions/upload-artifact@v4
         with:
           name: e2e-emulator-logs
