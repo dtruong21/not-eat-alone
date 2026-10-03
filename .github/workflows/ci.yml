@@ -217,23 +217,27 @@ jobs:
             perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' make e2e OPENJDK_PREFIX= &
             pid=$!
             (
-              # Explicit: this subshell must never abort before the TERM -> KILL
-              # escalation, whatever errexit the parent shell has.
+              # Quiet when cancelled: the parent cancels us with a plain TERM,
+              # which must NOT fall through to the warning/kill below. `set +e`
+              # is explicit so errexit inheritance can't abort the escalation.
               set +e
-              sleep "$attempt_timeout"
+              sleep "$attempt_timeout" & sp=$!
+              trap 'kill "$sp" 2>/dev/null; exit 0' TERM
+              wait "$sp" || exit 0
               echo "::warning::E2E attempt $attempt exceeded $((attempt_timeout / 60)) min — killing"
               kill -TERM -- "-$pid" 2>/dev/null
-              sleep 10
+              sleep 10 & sp=$!
+              wait "$sp"
               kill -KILL -- "-$pid" 2>/dev/null
             ) &
             watchdog=$!
             status=0
             wait "$pid" || status=$?
-            # Stop the watchdog (and its sleep) first, then hard-kill whatever is
-            # left in the group (e.g. a JVM stuck in a shutdown hook after TERM
-            # still holds the emulator ports and would fail the next attempt).
-            pkill -P "$watchdog" 2>/dev/null || true
+            # Cancel the watchdog (silently, see above), then hard-kill whatever
+            # is left in the group (e.g. a JVM stuck in a shutdown hook after
+            # TERM still holds the emulator ports and would fail the next attempt).
             kill "$watchdog" 2>/dev/null || true
+            wait "$watchdog" 2>/dev/null || true
             kill -KILL -- "-$pid" 2>/dev/null || true
             echo "::endgroup::"
             if [ "$status" -eq 0 ]; then
