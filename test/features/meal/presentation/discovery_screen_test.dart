@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -236,4 +238,35 @@ void main() {
 
     expect(calls, contains('signout_completed'));
   });
+
+  testWidgets(
+    'sign out survives the screen unmounting while the token unregister is '
+    'in flight (no ref read after the await) and still signs out',
+    (tester) async {
+      final gate = Completer<void>();
+      final pushRepository = MockPushRepository();
+      when(() => pushRepository.unregisterCurrentToken(any()))
+          .thenAnswer((_) => gate.future);
+      when(() => authRepository.currentUser)
+          .thenReturn(const AuthUser(uid: 'viewer1'));
+
+      await pumpDiscovery(
+        tester,
+        meals: [_discoverableMeal],
+        pushRepository: pushRepository,
+      );
+
+      await tester.tap(find.byKey(const Key('discovery_sign_out_button')));
+      await tester.pump();
+
+      // Unmount the whole tree (disposing the screen's ref) mid-flight.
+      await tester.pumpWidget(const SizedBox());
+      gate.complete();
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      verify(() => authRepository.signOut()).called(1);
+    },
+  );
 }
