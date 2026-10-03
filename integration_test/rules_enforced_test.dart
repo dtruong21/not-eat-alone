@@ -18,6 +18,7 @@ import 'package:integration_test/integration_test.dart';
 import 'support/app_harness.dart';
 import 'support/auth.dart';
 import 'support/emulator_admin.dart';
+import 'support/seed.dart';
 
 FirebaseFirestore get _db => FirebaseFirestore.instance;
 
@@ -378,6 +379,171 @@ void main() {
             'permission-denied',
           ),
         ),
+      );
+    },
+  );
+
+  // ---- Doc-id pinning on create (`ratings` / `requests` / `blocks`) ----
+  // Each create rule requires the doc id to be the caller's canonical id
+  // (`{matchId}_{uid}`, `{mealId}_{uid}`, `{uid}_{blockedUid}`), the id the
+  // app writes. Every case below is signed in as a valid participant with a
+  // valid body; the ONLY varying thing is the doc id. All uids are the real
+  // emulator-minted `.uid`s, not the literals passed to `signInTestUser`.
+  Matcher permissionDenied() => throwsA(
+    isA<FirebaseException>().having((e) => e.code, 'code', 'permission-denied'),
+  );
+
+  Future<void> setRating(String docId, String matchId, String me, String to) =>
+      _db.collection('ratings').doc(docId).set({
+        'matchId': matchId,
+        'raterUid': me,
+        'targetUid': to,
+        'stars': 5,
+        'showedUp': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+  testWidgets('ratings create: canonical {matchId}_{uid} is allowed', (
+    tester,
+  ) async {
+    final seed = await seedRatingMatch(tester, 'pin-ok');
+    await setRating(
+      '${seed.matchId}_${seed.hostUid}',
+      seed.matchId,
+      seed.hostUid,
+      seed.guestUid,
+    );
+  });
+
+  testWidgets(
+    'ratings create: an arbitrary id (rating stuffing) is permission-denied',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'pin-stuff');
+      await expectLater(
+        setRating(
+          '${seed.matchId}_stuffing1',
+          seed.matchId,
+          seed.hostUid,
+          seed.guestUid,
+        ),
+        permissionDenied(),
+      );
+    },
+  );
+
+  testWidgets(
+    "ratings create: squatting another user's id is permission-denied",
+    (tester) async {
+      await _bootOnce(tester);
+      final victim = await signInTestUser(uid: 'rules-pin-rating-victim');
+      final seed = await seedRatingMatch(tester, 'pin-squat');
+      await expectLater(
+        setRating(
+          '${seed.matchId}_${victim.uid}',
+          seed.matchId,
+          seed.hostUid,
+          seed.guestUid,
+        ),
+        permissionDenied(),
+      );
+    },
+  );
+
+  // Signs in a host, seeds an OPEN meal as them, then signs in the guest.
+  // Returns the real uids and the meal id.
+  Future<({String mealId, String hostUid, String guestUid})> seedOpenMealFor(
+    WidgetTester tester,
+    String suffix,
+  ) async {
+    await _bootOnce(tester);
+    final host = await signInTestUser(uid: 'rules-pin-req-host-$suffix');
+    final mealId = await seedOpenMeal(hostId: host.uid);
+    final guest = await signInTestUser(uid: 'rules-pin-req-guest-$suffix');
+    return (mealId: mealId, hostUid: host.uid, guestUid: guest.uid);
+  }
+
+  Future<void> setRequest(
+    String docId,
+    String mealId,
+    String guestUid,
+    String hostUid,
+  ) => _db.collection('requests').doc(docId).set({
+    'id': docId,
+    'mealId': mealId,
+    'guestId': guestUid,
+    'hostId': hostUid,
+    'status': 'pending',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  testWidgets('requests create: canonical {mealId}_{uid} is allowed', (
+    tester,
+  ) async {
+    final s = await seedOpenMealFor(tester, 'ok');
+    await setRequest(
+      '${s.mealId}_${s.guestUid}',
+      s.mealId,
+      s.guestUid,
+      s.hostUid,
+    );
+  });
+
+  testWidgets('requests create: an arbitrary id is permission-denied', (
+    tester,
+  ) async {
+    final s = await seedOpenMealFor(tester, 'arb');
+    await expectLater(
+      setRequest('${s.mealId}_stuffing1', s.mealId, s.guestUid, s.hostUid),
+      permissionDenied(),
+    );
+  });
+
+  testWidgets(
+    "requests create: squatting another user's id is permission-denied",
+    (tester) async {
+      await _bootOnce(tester);
+      final victim = await signInTestUser(uid: 'rules-pin-req-victim');
+      final s = await seedOpenMealFor(tester, 'squat');
+      await expectLater(
+        setRequest(
+          '${s.mealId}_${victim.uid}',
+          s.mealId,
+          s.guestUid,
+          s.hostUid,
+        ),
+        permissionDenied(),
+      );
+    },
+  );
+
+  Future<void> setBlock(String docId, String me, String blocked) =>
+      _db.collection('blocks').doc(docId).set({
+        'id': docId,
+        'blockerUid': me,
+        'blockedUid': blocked,
+        'pair': [me, blocked],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+  testWidgets('blocks create: canonical {me}_{other} is allowed', (
+    tester,
+  ) async {
+    await _bootOnce(tester);
+    final me = await signInTestUser(uid: 'rules-pin-block-me');
+    await setBlock('${me.uid}_some-other-user', me.uid, 'some-other-user');
+  });
+
+  testWidgets(
+    'blocks create: a stranger-to-stranger id with blockerUid = me is '
+    'permission-denied',
+    (tester) async {
+      await _bootOnce(tester);
+      final stranger1 = await signInTestUser(uid: 'rules-pin-block-s1');
+      final stranger2 = await signInTestUser(uid: 'rules-pin-block-s2');
+      final me = await signInTestUser(uid: 'rules-pin-block-me2');
+      await expectLater(
+        setBlock('${stranger1.uid}_${stranger2.uid}', me.uid, stranger2.uid),
+        permissionDenied(),
       );
     },
   );

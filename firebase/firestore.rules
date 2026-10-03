@@ -98,7 +98,10 @@ service cloud.firestore {
       allow list: if isSignedIn()
                   && (resource.data.guestId == request.auth.uid
                       || resource.data.hostId == request.auth.uid);
+      // Doc id pinned to `{mealId}_{callerUid}` (the id the app writes) so a
+      // caller can't squat another user's request id and lock them out.
       allow create: if isSignedIn()
+                    && requestId == request.resource.data.mealId + '_' + request.auth.uid
                     && request.resource.data.guestId == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && request.resource.data.hostId != request.auth.uid
@@ -156,7 +159,10 @@ service cloud.firestore {
     // User blocks: one user blocks another to prevent meal interactions
     match /blocks/{blockId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.pair;
+      // Doc id pinned to `{callerUid}_{blockedUid}` (the id the app writes) so
+      // a caller can't create blocks between strangers' id space.
       allow create: if isSignedIn()
+                    && blockId == request.auth.uid + '_' + request.resource.data.blockedUid
                     && request.resource.data.blockerUid == request.auth.uid
                     && request.resource.data.blockerUid != request.resource.data.blockedUid
                     && request.resource.data.pair == [request.resource.data.blockerUid, request.resource.data.blockedUid];
@@ -185,7 +191,10 @@ service cloud.firestore {
                      || (resource != null && resource.data.raterUid == request.auth.uid));
       allow list: if isSignedIn()
                   && resource.data.raterUid == request.auth.uid;
+      // Doc id pinned to `{matchId}_{callerUid}` (the id the app writes): one
+      // rating per rater per match, and no squatting another rater's id.
       allow create: if isSignedIn()
+                    && ratingId == request.resource.data.matchId + '_' + request.auth.uid
                     && request.resource.data.raterUid == request.auth.uid
                     && request.resource.data.raterUid != request.resource.data.targetUid
                     && request.resource.data.stars is int
