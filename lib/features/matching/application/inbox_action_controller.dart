@@ -8,7 +8,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/matching/application/request_providers.dart';
-import 'package:not_eat_alone/features/matching/data/repositories/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
 
 part 'inbox_action_controller.g.dart';
@@ -18,7 +17,7 @@ class InboxActionController extends _$InboxActionController {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
-  /// Returns the resulting error (e.g. [MealNoLongerOpenException]), or
+  /// Returns the resulting error (e.g. `MealNoLongerOpenException`), or
   /// `null` on success — so callers (`RequestInboxTile`) can react to the
   /// outcome WITHOUT a second `ref.read` of this controller's state after
   /// the `await`, which is unsafe once the calling widget may have been

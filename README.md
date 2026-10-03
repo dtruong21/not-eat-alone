@@ -21,6 +21,8 @@ Prerequisites: Xcode + an iOS Simulator runtime, Node 20, Java 21+, [`firebase-t
 make e2e
 ```
 
+Note: `make e2e` copies the **prod** `GoogleService-Info.plist` into the gitignored `ios/Runner/` and leaves it there, so a later unflavored local `flutter run` would use the prod app registration; delete `ios/Runner/GoogleService-Info.plist` to undo it (prefer `--flavor` runs, which copy the right file).
+
 See [docs/TEST-PLAN.md](docs/TEST-PLAN.md#end-to-end-tests-emulator) for coverage, setup details and known flakes.
 
 ## Docs

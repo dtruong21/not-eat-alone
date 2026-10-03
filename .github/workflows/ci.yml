@@ -126,6 +126,8 @@ jobs:
   e2e:
     name: E2E (emulator, iOS sim)
     runs-on: macos-latest
+    permissions:
+      contents: read
     # Setup ~10 min + 2 attempts x 20 min (see the retry step) with headroom.
     timeout-minutes: 55
     steps:

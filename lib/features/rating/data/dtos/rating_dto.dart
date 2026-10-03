@@ -14,11 +14,12 @@ abstract class RatingDto with _$RatingDto {
     required String targetUid,
     required int stars,
     required bool showedUp,
-    // Omitted from the write entirely when null — NOT written as an
-    // explicit `comment: null` field. `firestore.rules`' `ratings` create
-    // rule only special-cases the key being ABSENT; a present `null` value
-    // used to throw a rule-evaluation error on `.size()` and deny every
-    // no-comment rating (see the fix commit for the reproduction).
+    // Omitted from the write entirely when null, rather than written as an
+    // explicit `comment: null`. Historical context: the `ratings` create rule
+    // once only handled the key being absent, so a present `null` threw on
+    // `.size()` and denied every no-comment rating. The rule now accepts
+    // absent, null, or a string of at most 200 chars; omitting the key is
+    // kept as defense in depth (and avoids storing a useless null field).
     @JsonKey(includeIfNull: false) String? comment,
     DateTime? createdAt,
   }) = _RatingDto;

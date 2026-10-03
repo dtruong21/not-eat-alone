@@ -29,8 +29,8 @@ void main() {
       stars: 4, showedUp: true,
     ));
     final snap = await db.collection('ratings').doc('m1_u2').get();
-    // Not just "comment is null" — the KEY must be absent, matching what
-    // `firestore.rules`' `ratings` create rule requires (see rating_dto.dart).
+    // Not just "comment is null" — the KEY must be absent (defense in depth;
+    // the rule also accepts null now, see rating_dto.dart).
     expect(snap.data()!.containsKey('comment'), isFalse);
   });
 }

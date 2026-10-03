@@ -21,10 +21,10 @@ void main() {
       stars: 4, showedUp: true,
     );
     final json = dto.toJson();
-    // `firestore.rules`' `ratings` create rule only special-cases the
-    // `comment` KEY being absent — writing it with an explicit `null` value
-    // used to be denied (see the fix commit for the reproduction). Assert
-    // the key itself is gone, not just that its value is null.
+    // Historical context: the `ratings` create rule once denied a present
+    // `comment: null`. The rule now accepts absent/null, but omission is kept
+    // as defense in depth. Assert the key itself is gone, not just that its
+    // value is null.
     expect(json.containsKey('comment'), isFalse);
   });
 }
