@@ -8,7 +8,7 @@ macOS runners). Branching model: `docs/GITFLOW.md`.
 ### `.github/workflows/ci.yml` — the quality gate
 
 Runs on every PR into `main` / `develop` / `release/**` / `hotfix/**`, and on
-the post-merge commit of `develop` / `main`. Four jobs, Flutter pinned to the
+the post-merge commit of `develop` / `main`. Five jobs, Flutter pinned to the
 `.fvmrc` version:
 
 | Job | Runner | What |
@@ -17,12 +17,23 @@ the post-merge commit of `develop` / `main`. Four jobs, Flutter pinned to the
 | `Build Android (stage, unsigned)` | ubuntu | `flutter build apk --flavor stage --debug` — compile/flavor verification |
 | `Build iOS (stage, no codesign)` | macOS | `flutter build ios --flavor stage --debug --no-codesign` — iOS + Pods compile, no certs |
 | `Functions build & test` | ubuntu | `firebase/functions`: `npm ci` → `npm run build` → `npm test` — TypeScript Cloud Functions gate (Plan 8) |
+| `E2E (emulator, iOS sim)` | macOS | **Non-blocking.** `make e2e`: the `integration_test/` suite on a freshly created iOS Simulator against the Firebase Emulator Suite (Node 20, Java 21, `firebase-tools@13`). 55 min job timeout; each attempt capped at 20 min and retried once on failure/hang; emulator logs uploaded as an artifact on failure or retry |
 
 Generated files (`*.freezed.dart`, `*.g.dart`) are git-ignored, so every Flutter
-job runs `build_runner`. The three Flutter jobs are the required status checks
+job runs `build_runner`. The three build/test Flutter jobs (not E2E) are the required status checks
 for branch protection today; **`Functions build & test` should be added as a
 fourth required check** (branch protection is configured outside this repo via
 `gh api`/GitHub UI — not something a workflow file controls).
+
+**`E2E (emulator, iOS sim)` is deliberately not a required check yet.** It runs
+a real Xcode build, simulator and emulators on a shared macOS runner, and the
+suite has a known occasional launch hang (see `docs/TEST-PLAN.md`, "End-to-end
+tests (emulator)"). Promote it to a required check once it has been green
+without a retry on a handful of consecutive PRs (a reasonable bar: ~5) and its
+typical runtime is stable. Until then a red run is a signal to investigate, not
+a merge blocker. As with the others, branch protection is configured outside
+this repo.
+
 
 ### `.github/workflows/deploy.yml` — backend CD + releases
 

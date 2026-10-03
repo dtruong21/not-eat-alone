@@ -11,6 +11,18 @@ fvm flutter run --flavor stage -t lib/main_stage.dart
 fvm flutter run --flavor prod  -t lib/main_prod.dart
 ```
 
+## End-to-end tests
+
+The `integration_test/` suite drives the real app on an iOS Simulator against the Firebase Emulator Suite (no real Firebase project needed).
+
+Prerequisites: Xcode + an iOS Simulator runtime, Node 20, Java 21+, [`firebase-tools`](https://firebase.google.com/docs/cli), FVM, and a dedicated simulator named `Convyve E2E`.
+
+```bash
+make e2e
+```
+
+See [docs/TEST-PLAN.md](docs/TEST-PLAN.md#end-to-end-tests-emulator) for coverage, setup details and known flakes.
+
 ## Docs
 
 - [Spec](docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md)
