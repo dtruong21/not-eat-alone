@@ -20,9 +20,9 @@ the post-merge commit of `develop` / `main`. Five jobs, Flutter pinned to the
 | `E2E (emulator, iOS sim)` | macOS | **Non-blocking.** `make e2e`: the `integration_test/` suite on a freshly created iOS Simulator against the Firebase Emulator Suite (Node 20, Java 21, `firebase-tools@13`). 55 min job timeout; each attempt capped at 20 min and retried once on failure/hang; emulator logs uploaded as an artifact on failure or retry |
 
 Generated files (`*.freezed.dart`, `*.g.dart`) are git-ignored, so every Flutter
-job runs `build_runner`. The three build/test Flutter jobs (not E2E) are the required status checks
-for branch protection today; **`Functions build & test` should be added as a
-fourth required check** (branch protection is configured outside this repo via
+job runs `build_runner`. The required status checks for branch protection today are `Analyze & test`,
+`Build Android` and `Build iOS` (not the E2E job); **`Functions build & test`
+should be added as a fourth required check** (branch protection is configured outside this repo via
 `gh api`/GitHub UI — not something a workflow file controls).
 
 **`E2E (emulator, iOS sim)` is deliberately not a required check yet.** It runs
@@ -33,7 +33,6 @@ without a retry on a handful of consecutive PRs (a reasonable bar: ~5) and its
 typical runtime is stable. Until then a red run is a signal to investigate, not
 a merge blocker. As with the others, branch protection is configured outside
 this repo.
-
 
 ### `.github/workflows/deploy.yml` — backend CD + releases
 
