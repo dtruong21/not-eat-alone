@@ -125,6 +125,10 @@ ios-privacy: ios-sim-boot
 # `(default)` and `stage` (verified against both firebase-tools 15.24 and
 # the CI-pinned firebase-tools@13 line: identical selection logic in
 # lib/firestore/fsConfig.js on both).
+# In short, for the `--only "auth,firestore:(default),functions,storage"` line
+# in the recipe below: `firestore:(default)` must match the
+# `"database": "(default)"` entry in firebase.json. An unqualified `firestore`
+# makes firebase-tools load OPEN rules (the multiple-databases case above).
 .PHONY: e2e
 e2e: ios-plist ios-sim-boot ios-privacy
 	cd firebase/functions && npm ci && npm run build
