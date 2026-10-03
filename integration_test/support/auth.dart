@@ -11,6 +11,7 @@
 /// TEST CODE ONLY — must never be imported from `lib/`.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -67,7 +68,30 @@ Future<User> signInTestUser({
   if (user == null) {
     throw StateError('signInWithCredential returned a null user for $uid');
   }
+  await _awaitTokenFor(user);
   return user;
+}
+
+/// Blocks until the SDK's `idTokenChanges()` has emitted [user] AND a fresh
+/// ID token is in hand, so a Firestore write issued right after sign-in can't
+/// go out with the PREVIOUS session's token (seen as a flaky
+/// `permission-denied` on `blockerUid == auth.uid` after a user switch).
+/// `idTokenChanges()` replays the current user on subscribe, so signing in the
+/// uid that is already current returns promptly. Bounded to 10s with a clear
+/// error on timeout.
+Future<void> _awaitTokenFor(User user) async {
+  try {
+    await FirebaseAuth.instance
+        .idTokenChanges()
+        .firstWhere((u) => u?.uid == user.uid)
+        .timeout(const Duration(seconds: 10));
+    await user.getIdToken();
+  } on TimeoutException {
+    throw StateError(
+      'signInTestUser: idTokenChanges() did not emit uid ${user.uid} '
+      'within 10s',
+    );
+  }
 }
 
 /// Signs the current Firebase Auth SDK session out.
