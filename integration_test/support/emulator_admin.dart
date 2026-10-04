@@ -55,8 +55,8 @@ Future<void> clearEmulators() async {
 /// Maximum attempts per emulator admin request (first try + retries).
 const int _kMaxAttempts = 5;
 
-/// Runs [send] (an idempotent emulator admin request: DELETE, or a PATCH that
-/// replaces a whole doc), retrying up to [_kMaxAttempts] times with
+/// Runs [send] (an idempotent emulator admin request: DELETE, or a PATCH of
+/// fixed values), retrying up to [_kMaxAttempts] times with
 /// exponential backoff (250ms doubling, capped at 2s) on transient failures
 /// only: HTTP 499 (emulator gRPC "call already cancelled"), any 5xx, and
 /// connection errors ([SocketException]/[http.ClientException]). Any other
@@ -145,6 +145,12 @@ Future<void> adminSetDoc(
 /// to `matched` without the approve transaction). Real flows must go through
 /// the SDK.
 ///
+/// The PATCH carries `currentDocument.exists=true`, so a missing doc fails
+/// loudly with a 404 instead of being created from just [fields] (an upsert
+/// would hide a seeding mistake). An empty [fields] is rejected with an
+/// [ArgumentError]: a PATCH with no `updateMask` would replace the whole doc
+/// with an empty one.
+///
 /// Retried on transient failures like [adminSetDoc] (a masked PATCH of the
 /// same values is idempotent). Values are encoded like [adminSetDoc]. Keys
 /// must be plain identifiers (letters, digits, `_`): keys with special
@@ -155,6 +161,14 @@ Future<void> adminUpdateDoc(
   String id,
   Map<String, Object?> fields,
 ) async {
+  if (fields.isEmpty) {
+    throw ArgumentError.value(
+      fields,
+      'fields',
+      'adminUpdateDoc($collection/$id): must not be empty (a PATCH with no '
+          'updateMask would replace the whole doc)',
+    );
+  }
   final plainKey = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
   for (final key in fields.keys) {
     if (!plainKey.hasMatch(key)) {
@@ -164,7 +178,8 @@ Future<void> adminUpdateDoc(
   final uri = Uri.parse(
     'http://$kEmulatorHost:8080/v1/projects/$kProjectId/'
     'databases/(default)/documents/$collection/$id'
-    '?${fields.keys.map((k) => 'updateMask.fieldPaths=$k').join('&')}',
+    '?${fields.keys.map((k) => 'updateMask.fieldPaths=$k').join('&')}'
+    '&currentDocument.exists=true',
   );
   final body = jsonEncode({'fields': _restFields(fields)});
   await _sendWithRetry(

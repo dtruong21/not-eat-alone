@@ -57,10 +57,11 @@ Future<void> seedUserProfile({
 }
 
 /// Seeds an open `meals/{mealId}` doc satisfying `firestore.rules`
-/// (`hostId == auth.uid`, `status`/`geohash` strings, `dateTime` timestamp)
-/// and `MealDto` (`restaurant` is a required nested `RestaurantDto` — `id`
-/// is NOT written here since `MealRepositoryImpl` injects it from the doc
-/// id on read). Returns the new document's id.
+/// (`hostId == auth.uid`, `status == 'open'`, no `guestId`, `geohash` string,
+/// future `dateTime` timestamp) and `MealDto` (`restaurant` is a required
+/// nested `RestaurantDto` — `id` is NOT written here since
+/// `MealRepositoryImpl` injects it from the doc id on read). Returns the new
+/// document's id.
 ///
 /// A future-dated meal (the default, now + 3h) is created through the SDK as
 /// [hostId] (rules enforced; must run while signed in as [hostId]). A
