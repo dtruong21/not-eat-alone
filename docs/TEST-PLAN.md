@@ -385,6 +385,24 @@ Storage). It needs no real Firebase project and touches no cloud data.
 
 - **Security rules enforced** — `firestore.rules` is loaded and enforced by the
   emulator; unauthorized reads/writes are denied (`rules_enforced_test.dart`).
+- **Match integrity (`matches` create rule)** — a `matches/{mealId}` doc can
+  only be created by the real approve transaction: the same transaction must
+  move the request `pending` to `approved` and the meal `open` to `matched`
+  with that guest (`matchApprovalValid`, via `getAfter`/`get`). This closes
+  fabricated matches that allowed unsolicited chat and ratings. In
+  `rules_enforced_test.dart`, group `matches create — approval integrity`:
+  the full approve transaction is allowed (case 1); denied are: no request
+  (2), request not approved in the same txn (3), meal left open or not
+  matched, or matched with another guest (3b, 3b2, 3c), request already
+  approved/denied (4a, 4b), meal already matched (5), another host's meal (6),
+  `guestId` not the requester (7), inconsistent `participants` or
+  `guestId == hostId` (8), doc id, body `mealId` or body `id` that is not the
+  meal id (9, 9b, 9c), and a block in either direction (10a, 10b). Each rule
+  clause was mutation-checked (delete the clause, the matching case fails).
+  Post-match E2E seeds (chat, rating, and the pre-existing rules cases that
+  need a match) write the `matches` doc through `adminSetDoc` (emulator admin
+  REST, rules bypass by design); the real approve path stays covered by
+  `request_match_test.dart` (UI) and the allowed-transaction case above.
 - **Cloud Functions** — triggers actually fire in the emulator, e.g. the rating
   aggregate written by `onRatingCreated`.
 - **Smoke** — a signed-in user boots to the Discover feed.

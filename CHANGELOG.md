@@ -27,6 +27,8 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Fixed
 
+- A match can no longer be created without a real, pending, approved request (closes fabricated matches that allowed unsolicited chat and ratings).
+
 ---
 
 ## [0.0.1] — 2026-09-18
