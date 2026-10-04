@@ -761,8 +761,9 @@ void main() {
 
     testWidgets('5. a meal that is already matched is denied', (tester) async {
       final w = await buildWorld(tester, 't5');
-      // Legal for the host (meals update rule): matched with another guest.
-      await _db.collection('meals').doc(w.mealId).update({
+      // Pre-state the meals update rule forbids a client to reach (matched
+      // without an approve transaction): seeded through the admin REST write.
+      await adminUpdateDoc('meals', w.mealId, {
         'status': 'matched',
         'guestId': w.otherUid,
       });

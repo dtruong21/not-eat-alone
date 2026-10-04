@@ -135,6 +135,54 @@ Future<void> adminSetDoc(
   );
 }
 
+/// Updates ONLY the given top-level [fields] of the existing `collection/id`
+/// in the Firestore emulator via the REST API, with the emulator's
+/// `Authorization: Bearer owner` override, which BYPASSES security rules. The
+/// rest of the doc is kept: the PATCH carries one `updateMask.fieldPaths=<key>`
+/// query parameter per top-level key, so unlisted fields are untouched (unlike
+/// [adminSetDoc], which replaces the whole doc). Use only to put a doc into a
+/// state the rules deliberately forbid a client to reach (e.g. a meal flipped
+/// to `matched` without the approve transaction). Real flows must go through
+/// the SDK.
+///
+/// Retried on transient failures like [adminSetDoc] (a masked PATCH of the
+/// same values is idempotent). Values are encoded like [adminSetDoc]. Keys
+/// must be plain identifiers (letters, digits, `_`): keys with special
+/// characters would need backtick-quoting in the field path, which isn't
+/// implemented, so they are rejected loudly.
+Future<void> adminUpdateDoc(
+  String collection,
+  String id,
+  Map<String, Object?> fields,
+) async {
+  final plainKey = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
+  for (final key in fields.keys) {
+    if (!plainKey.hasMatch(key)) {
+      throw ArgumentError('adminUpdateDoc: unsupported field key "$key"');
+    }
+  }
+  final uri = Uri.parse(
+    'http://$kEmulatorHost:8080/v1/projects/$kProjectId/'
+    'databases/(default)/documents/$collection/$id'
+    '?${fields.keys.map((k) => 'updateMask.fieldPaths=$k').join('&')}',
+  );
+  final body = jsonEncode({'fields': _restFields(fields)});
+  await _sendWithRetry(
+    // Same 30s timeout inside the retried closure as [adminSetDoc].
+    () => http
+        .patch(
+          uri,
+          headers: {
+            'Authorization': 'Bearer owner',
+            'Content-Type': 'application/json',
+          },
+          body: body,
+        )
+        .timeout(const Duration(seconds: 30)),
+    'adminUpdateDoc($collection/$id)',
+  );
+}
+
 Map<String, Object?> _restFields(Map<String, Object?> m) =>
     m.map((k, v) => MapEntry(k, _restValue(v)));
 

@@ -1,9 +1,11 @@
 /// Firestore preconditions for E2E scenarios, written via the Firestore
 /// SDK (not REST) so `firestore.rules` are enforced exactly as in prod —
-/// except the `matches` doc in [seedMatch] (see its doc).
+/// except the states the rules forbid a client to reach (a past-dated meal,
+/// a meal flipped to `matched`, a `matches` doc): see [seedOpenMeal] and
+/// [seedMatch], which write those through the emulator admin REST API.
 ///
-/// Both helpers write as the CURRENTLY SIGNED-IN user — `firestore.rules`
-/// requires `uid == auth.uid` on `users/{uid}` create and
+/// The SDK-written helpers write as the CURRENTLY SIGNED-IN user —
+/// `firestore.rules` requires `uid == auth.uid` on `users/{uid}` create and
 /// `hostId == auth.uid` on `meals/{mealId}` create, so callers must
 /// `signInTestUser(uid: ...)` (see `auth.dart`) for the owning uid *before*
 /// calling `seedUserProfile`/`seedOpenMeal` for that uid.
@@ -58,29 +60,47 @@ Future<void> seedUserProfile({
 /// (`hostId == auth.uid`, `status`/`geohash` strings, `dateTime` timestamp)
 /// and `MealDto` (`restaurant` is a required nested `RestaurantDto` — `id`
 /// is NOT written here since `MealRepositoryImpl` injects it from the doc
-/// id on read). Must run while signed in as [hostId]. Returns the new
-/// document's id.
+/// id on read). Returns the new document's id.
+///
+/// A future-dated meal (the default, now + 3h) is created through the SDK as
+/// [hostId] (rules enforced; must run while signed in as [hostId]). A
+/// past-dated [dateTime] is created through the emulator admin REST API
+/// ([adminSetDoc], rules bypassed, no sign-in needed) because the `meals`
+/// create rule forbids a client from creating a meal in the past; scenarios
+/// that need one (e.g. rating after the meal) have no legitimate client path
+/// to it. The field set is identical on both paths.
 Future<String> seedOpenMeal({
   required String hostId,
   bool womenOnly = false,
   DateTime? dateTime,
 }) async {
+  final when = dateTime ?? DateTime.now().add(const Duration(hours: 3));
   final ref = _db.collection('meals').doc();
+  const restaurant = {
+    'placeId': 'seed-place-id',
+    'name': 'Seed Restaurant',
+    'address': '1 Test Street',
+    'lat': 48.8566,
+    'lng': 2.3522,
+  };
+  if (when.isBefore(DateTime.now())) {
+    await adminSetDoc('meals', ref.id, {
+      'hostId': hostId,
+      'status': 'open',
+      'geohash': 'u09',
+      'dateTime': when,
+      'womenOnly': womenOnly,
+      'restaurant': restaurant,
+    });
+    return ref.id;
+  }
   await ref.set({
     'hostId': hostId,
     'status': 'open',
     'geohash': 'u09',
-    'dateTime': Timestamp.fromDate(
-      dateTime ?? DateTime.now().add(const Duration(hours: 3)),
-    ),
+    'dateTime': Timestamp.fromDate(when),
     'womenOnly': womenOnly,
-    'restaurant': {
-      'placeId': 'seed-place-id',
-      'name': 'Seed Restaurant',
-      'address': '1 Test Street',
-      'lat': 48.8566,
-      'lng': 2.3522,
-    },
+    'restaurant': restaurant,
   });
   return ref.id;
 }
@@ -110,11 +130,14 @@ Future<String> seedPendingRequest({
 
 /// Seeds a matched meal plus its `matches/{mealId}` hand-off doc — the end
 /// state `RequestRepositoryImpl.approve`'s transaction produces — for
-/// scenarios that start post-match (e.g. chat). Must run while signed in as
-/// [hostId]: the meal create and `matched` update go through the SDK (rules
-/// enforced, host only). The `matches` doc is written through the emulator
-/// admin REST API ([adminSetDoc], rules bypassed) because the `matches` create
-/// rule requires the approve transaction's other writes.
+/// scenarios that start post-match (e.g. chat, rating). The meal is created by
+/// [seedOpenMeal] (SDK as [hostId] when future-dated, so sign in as [hostId]
+/// first; admin REST when past-dated). The `matched`/`guestId` flip and the
+/// `matches` doc are written through the emulator admin REST API
+/// ([adminUpdateDoc] / [adminSetDoc], rules bypassed): the `meals` update rule
+/// forbids a client from flipping a meal to `matched` unless the same
+/// transaction approves a genuine pending request, and the `matches` create
+/// rule likewise requires the approve transaction's other writes.
 /// Returns the match id, which is the meal id (`matchId == mealId`
 /// throughout the app, e.g. router `/chats/:matchId`).
 Future<String> seedMatch({
@@ -123,14 +146,15 @@ Future<String> seedMatch({
   DateTime? dateTime,
 }) async {
   final mealId = await seedOpenMeal(hostId: hostId, dateTime: dateTime);
-  await _db.collection('meals').doc(mealId).update({
+  // Bypasses the `meals` update and `matches` create rules on purpose: a bare
+  // client flip to `matched` (or bare match write) is denied without the
+  // approve transaction. The real approve path is covered by
+  // request_match_test.dart (UI) and by the rules_enforced_test.dart
+  // match-integrity cases.
+  await adminUpdateDoc('meals', mealId, {
     'status': 'matched',
     'guestId': guestId,
   });
-  // Bypasses the `matches` create rule on purpose: since the rule requires the
-  // approve transaction's other writes, a bare seed write would be denied. The
-  // real approve path is covered by request_match_test.dart and by the
-  // rules_enforced_test.dart match-integrity cases.
   await adminSetDoc('matches', mealId, {
     'id': mealId,
     'mealId': mealId,
