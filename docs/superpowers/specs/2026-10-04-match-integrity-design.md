@@ -1,7 +1,7 @@
 # Convyve — Match Integrity (Plan 12)
 
 **Date:** 2026-10-04
-**Status:** Approved (design), pending implementation plan
+**Status:** Implemented
 **Feature:** Close the "fabricated match" hole. A `matches/{id}` doc may only be created by the real approve flow: for a request that exists and is pending, being set to `approved` in the same transaction, on a meal being set to `matched` with that guest.
 
 ---
@@ -59,6 +59,8 @@ function matchApprovalValid(mealId, guestId, hostId) {
 
 match /matches/{matchId} {
   allow create: if isSignedIn()
+                && request.resource.data.keys().hasOnly(['id', 'mealId', 'hostId', 'guestId', 'participants', 'createdAt'])
+                && request.resource.data.createdAt == request.time
                 && request.resource.data.hostId == request.auth.uid
                 && request.resource.data.mealId == matchId
                 && request.resource.data.id == matchId
@@ -75,6 +77,9 @@ What each clause buys:
 
 | Clause | Blocks |
 |---|---|
+| `keys().hasOnly([...six keys...])` | extra, unbounded keys on a match doc |
+| `createdAt == request.time` | a missing or malformed `createdAt` (a string, a forged time) that would break the guest's Chats list parse (`MatchRepositoryImpl._fromDoc`); `FieldValue.serverTimestamp()` equals `request.time`, which is what `RequestRepositoryImpl.approve` writes |
+| `hostId == auth.uid` | a body that names a third uid as host while the caller approves their own request |
 | `mealId == matchId`, `id == matchId` | a match under an arbitrary id (matchId == mealId throughout the app) |
 | `guestId != me`, `participants == [host, guest]` | self-match, and a participants list that disagrees with host/guest (the chat list query and message rules trust `participants`/host/guest) |
 | `noBlockBetween` | approving a request after one party blocked the other |

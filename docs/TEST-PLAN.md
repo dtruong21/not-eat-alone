@@ -397,8 +397,20 @@ Storage). It needs no real Firebase project and touches no cloud data.
   approved/denied (4a, 4b), meal already matched (5), another host's meal (6),
   `guestId` not the requester (7), inconsistent `participants` or
   `guestId == hostId` (8), doc id, body `mealId` or body `id` that is not the
-  meal id (9, 9b, 9c), and a block in either direction (10a, 10b). Each rule
-  clause was mutation-checked (delete the clause, the matching case fails).
+  meal id (9, 9b, 9c), a block in either direction (10a, 10b), a body
+  `hostId` that is not the caller (11), and a payload with a string, missing
+  or non-server `createdAt`, or an extra key (12a-12d). Mutation-checked
+  (delete the one clause, the matching case fails): `mealId == matchId` (9b),
+  `id == matchId` (9c), `mealAfter.status == 'matched'` (3b2),
+  `mealAfter.guestId == guestId` (3c), `hostId == request.auth.uid` (11),
+  `createdAt == request.time` (12a, 12b, 12d) and the `keys().hasOnly` payload
+  clause (12c). NOT given an isolated case, because the host-only
+  `requests`/`meals` update rules and the request-id pinning already deny the
+  same attacks, so deleting them would not change the outcome:
+  `reqBefore.hostId`, `reqBefore.guestId`, `mealBefore.hostId` and
+  `guestId != request.auth.uid`. The remaining clauses (pending/open
+  pre-states, `reqAfter.status`, `participants`, `noBlockBetween`) are covered
+  by cases 2-5, 7, 8 and 10 but were not individually mutation-checked.
   Post-match E2E seeds (chat, rating, and the pre-existing rules cases that
   need a match) write the `matches` doc through `adminSetDoc` (emulator admin
   REST, rules bypass by design); the real approve path stays covered by
