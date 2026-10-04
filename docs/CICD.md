@@ -89,6 +89,10 @@ backend CD:
    - Value: the JSON.
 4. The next push to `develop` / `main` will deploy.
 
+**Deploying rules without the secret.** While the secret is unset CI deploys
+nothing, so rule/index changes (e.g. the `matches` create rule) must be
+deployed manually: `firebase deploy --only firestore --project not-eat-alone`.
+
 This is the same kind of key as `scripts/seed/service-account.json` (seeding);
 keep both out of git — they already are.
 

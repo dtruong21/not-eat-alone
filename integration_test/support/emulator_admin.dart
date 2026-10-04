@@ -7,6 +7,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show SocketException;
 
 import 'package:http/http.dart' as http;
@@ -24,7 +25,7 @@ const String kEmulatorHost = '127.0.0.1';
 /// emulators for [kProjectId], via the emulators' admin REST endpoints.
 /// Call between tests (or in `setUp`) to start from a clean slate.
 ///
-/// Each DELETE is retried (see [_deleteWithRetry]) on transient emulator
+/// Each DELETE is retried (see [_sendWithRetry]) on transient emulator
 /// failures. Root cause of the one that motivated this: `firebase emulators:
 /// exec` keeps ONE Firestore emulator alive across every test file, but each
 /// file runs as its own app process that is killed at the end while still
@@ -34,38 +35,44 @@ const String kEmulatorHost = '127.0.0.1';
 /// "call already cancelled" and surfaces as HTTP 499. The dead stream is
 /// dropped by that failed attempt, so an immediate retry succeeds.
 Future<void> clearEmulators() async {
-  await _deleteWithRetry(
-    Uri.parse(
-      'http://$kEmulatorHost:8080/emulator/v1/projects/$kProjectId/'
-      'databases/(default)/documents',
-    ),
+  final firestoreUri = Uri.parse(
+    'http://$kEmulatorHost:8080/emulator/v1/projects/$kProjectId/'
+    'databases/(default)/documents',
+  );
+  await _sendWithRetry(
+    () => http.delete(firestoreUri),
     'clearEmulators (Firestore)',
   );
-  await _deleteWithRetry(
-    Uri.parse(
-      'http://$kEmulatorHost:9099/emulator/v1/projects/$kProjectId/accounts',
-    ),
+  final authUri = Uri.parse(
+    'http://$kEmulatorHost:9099/emulator/v1/projects/$kProjectId/accounts',
+  );
+  await _sendWithRetry(
+    () => http.delete(authUri),
     'clearEmulators (Auth)',
   );
 }
 
-/// Maximum attempts per emulator admin DELETE (first try + retries).
+/// Maximum attempts per emulator admin request (first try + retries).
 const int _kMaxAttempts = 5;
 
-/// Sends `DELETE [uri]`, retrying up to [_kMaxAttempts] times with
+/// Runs [send] (an idempotent emulator admin request: DELETE, or a PATCH that
+/// replaces a whole doc), retrying up to [_kMaxAttempts] times with
 /// exponential backoff (250ms doubling, capped at 2s) on transient failures
 /// only: HTTP 499 (emulator gRPC "call already cancelled"), any 5xx, and
 /// connection errors ([SocketException]/[http.ClientException]). Any other
 /// non-2xx (e.g. a 4xx from a wrong project id) is NOT retried. After the
 /// last attempt the failure is thrown loudly via [_checkOk] (or rethrown for
 /// connection errors) with the attempt count in the message.
-Future<void> _deleteWithRetry(Uri uri, String what) async {
+Future<void> _sendWithRetry(
+  Future<http.Response> Function() send,
+  String what,
+) async {
   var delay = const Duration(milliseconds: 250);
   for (var attempt = 1;; attempt++) {
     http.Response? res;
     Object? connectionError;
     try {
-      res = await http.delete(uri);
+      res = await send();
     } on SocketException catch (e) {
       connectionError = e;
     } on http.ClientException catch (e) {
@@ -90,6 +97,65 @@ Future<void> _deleteWithRetry(Uri uri, String what) async {
         ? const Duration(seconds: 2)
         : doubled;
   }
+}
+
+/// Writes (creates or replaces) `collection/id` in the Firestore emulator via
+/// the REST API with the emulator's `Authorization: Bearer owner` override,
+/// which BYPASSES security rules. Use only to seed preconditions the rules
+/// deliberately forbid a client from writing (e.g. a `matches` doc without
+/// the approve transaction). Real flows must go through the SDK.
+///
+/// Retried on transient failures like [clearEmulators] (a full-doc PATCH is
+/// idempotent). Supported values: null, bool, int, double, String, DateTime
+/// (sent as a timestamp), List and `Map<String, Object?>`.
+Future<void> adminSetDoc(
+  String collection,
+  String id,
+  Map<String, Object?> fields,
+) async {
+  final uri = Uri.parse(
+    'http://$kEmulatorHost:8080/v1/projects/$kProjectId/'
+    'databases/(default)/documents/$collection/$id',
+  );
+  final body = jsonEncode({'fields': _restFields(fields)});
+  await _sendWithRetry(
+    // A TimeoutException is not in `_sendWithRetry`'s transient set, so a hung
+    // emulator surfaces loudly instead of being retried forever.
+    () => http
+        .patch(
+          uri,
+          headers: {
+            'Authorization': 'Bearer owner',
+            'Content-Type': 'application/json',
+          },
+          body: body,
+        )
+        .timeout(const Duration(seconds: 30)),
+    'adminSetDoc($collection/$id)',
+  );
+}
+
+Map<String, Object?> _restFields(Map<String, Object?> m) =>
+    m.map((k, v) => MapEntry(k, _restValue(v)));
+
+Object _restValue(Object? v) {
+  if (v == null) return {'nullValue': null};
+  if (v is bool) return {'booleanValue': v};
+  if (v is int) return {'integerValue': '$v'};
+  if (v is double) return {'doubleValue': v};
+  if (v is String) return {'stringValue': v};
+  if (v is DateTime) return {'timestampValue': v.toUtc().toIso8601String()};
+  if (v is List) {
+    return {
+      'arrayValue': {'values': v.map(_restValue).toList()},
+    };
+  }
+  if (v is Map<String, Object?>) {
+    return {
+      'mapValue': {'fields': _restFields(v)},
+    };
+  }
+  throw ArgumentError('adminSetDoc: unsupported value ${v.runtimeType}');
 }
 
 /// Throws a clear [StateError] (status + truncated body + attempt count) when
