@@ -1,5 +1,6 @@
 /// Firestore preconditions for E2E scenarios, written via the Firestore
-/// SDK (not REST) so `firestore.rules` are enforced exactly as in prod.
+/// SDK (not REST) so `firestore.rules` are enforced exactly as in prod —
+/// except the `matches` doc in [seedMatch] (see its doc).
 ///
 /// Both helpers write as the CURRENTLY SIGNED-IN user — `firestore.rules`
 /// requires `uid == auth.uid` on `users/{uid}` create and
@@ -16,6 +17,8 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'emulator_admin.dart';
 
 FirebaseFirestore get _db => FirebaseFirestore.instance;
 
@@ -108,7 +111,10 @@ Future<String> seedPendingRequest({
 /// Seeds a matched meal plus its `matches/{mealId}` hand-off doc — the end
 /// state `RequestRepositoryImpl.approve`'s transaction produces — for
 /// scenarios that start post-match (e.g. chat). Must run while signed in as
-/// [hostId]: `meals` update and `matches` create both require the host.
+/// [hostId]: the meal create and `matched` update go through the SDK (rules
+/// enforced, host only). The `matches` doc is written through the emulator
+/// admin REST API ([adminSetDoc], rules bypassed) because the `matches` create
+/// rule requires the approve transaction's other writes.
 /// Returns the match id, which is the meal id (`matchId == mealId`
 /// throughout the app, e.g. router `/chats/:matchId`).
 Future<String> seedMatch({
@@ -121,13 +127,17 @@ Future<String> seedMatch({
     'status': 'matched',
     'guestId': guestId,
   });
-  await _db.collection('matches').doc(mealId).set({
+  // Bypasses the `matches` create rule on purpose: since the rule requires the
+  // approve transaction's other writes, a bare seed write would be denied. The
+  // real approve path is covered by request_match_test.dart and by the
+  // rules_enforced_test.dart match-integrity cases.
+  await adminSetDoc('matches', mealId, {
     'id': mealId,
     'mealId': mealId,
     'hostId': hostId,
     'guestId': guestId,
     'participants': [hostId, guestId],
-    'createdAt': FieldValue.serverTimestamp(),
+    'createdAt': DateTime.now(),
   });
   return mealId;
 }

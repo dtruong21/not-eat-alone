@@ -27,6 +27,30 @@ service cloud.firestore {
              && !exists(/databases/$(database)/documents/blocks/$(b + '_' + a));
     }
 
+    // The `matches` create rule's approve-transaction check. `get()` is the
+    // state BEFORE the write/transaction, `getAfter()` the state AFTER it, so
+    // this proves the request was pending and is being set to `approved`, and
+    // the meal was open and is being set to `matched` with this guest, all in
+    // the same transaction (RequestRepositoryImpl.approve). Request id is
+    // `{mealId}_{guestId}`. 4 distinct doc reads (+2 `exists` in noBlockBetween)
+    // stay well inside the 20-access transaction limit.
+    function matchApprovalValid(mealId, guestId, hostId) {
+      let reqPath  = /databases/$(database)/documents/requests/$(mealId + '_' + guestId);
+      let mealPath = /databases/$(database)/documents/meals/$(mealId);
+      let reqBefore  = get(reqPath).data;
+      let reqAfter   = getAfter(reqPath).data;
+      let mealBefore = get(mealPath).data;
+      let mealAfter  = getAfter(mealPath).data;
+      return reqBefore.status == 'pending'
+          && reqBefore.hostId == hostId
+          && reqBefore.guestId == guestId
+          && reqAfter.status == 'approved'
+          && mealBefore.status == 'open'
+          && mealBefore.hostId == hostId
+          && mealAfter.status == 'matched'
+          && mealAfter.guestId == guestId;
+    }
+
     function ratingParticipantsValid(matchId, rater, target) {
       let m = get(/databases/$(database)/documents/matches/$(matchId)).data;
       return (rater == m.hostId && target == m.guestId)
@@ -135,8 +159,22 @@ service cloud.firestore {
                          && request.auth.uid in resource.data.participants));
       allow list: if isSignedIn()
                   && request.auth.uid in resource.data.participants;
+      // Create only via the real approve transaction (see
+      // `matchApprovalValid`): doc id and `mealId`/`id` fields are the meal id,
+      // no self-match, `participants` is exactly `[host, guest]`, no block
+      // between them, and the same transaction sets the pending request to
+      // `approved` and the open meal to `matched` with this guest.
       allow create: if isSignedIn()
-                    && request.resource.data.hostId == request.auth.uid;
+                    && request.resource.data.keys().hasOnly(['id', 'mealId', 'hostId', 'guestId', 'participants', 'createdAt'])
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.hostId == request.auth.uid
+                    && request.resource.data.mealId == matchId
+                    && request.resource.data.id == matchId
+                    && request.resource.data.guestId != request.auth.uid
+                    && request.resource.data.participants
+                         == [request.resource.data.hostId, request.resource.data.guestId]
+                    && noBlockBetween(request.resource.data.hostId, request.resource.data.guestId)
+                    && matchApprovalValid(matchId, request.resource.data.guestId, request.auth.uid);
       allow update, delete: if false;
 
       match /messages/{messageId} {
