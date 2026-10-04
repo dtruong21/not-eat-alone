@@ -119,14 +119,18 @@ Future<void> adminSetDoc(
   );
   final body = jsonEncode({'fields': _restFields(fields)});
   await _sendWithRetry(
-    () => http.patch(
-      uri,
-      headers: {
-        'Authorization': 'Bearer owner',
-        'Content-Type': 'application/json',
-      },
-      body: body,
-    ),
+    // A TimeoutException is not in `_sendWithRetry`'s transient set, so a hung
+    // emulator surfaces loudly instead of being retried forever.
+    () => http
+        .patch(
+          uri,
+          headers: {
+            'Authorization': 'Bearer owner',
+            'Content-Type': 'application/json',
+          },
+          body: body,
+        )
+        .timeout(const Duration(seconds: 30)),
     'adminSetDoc($collection/$id)',
   );
 }

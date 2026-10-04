@@ -630,6 +630,7 @@ void main() {
       String mealStatus = 'matched',
       String? matchDocId,
       Map<String, Object?> matchOverrides = const {},
+      Set<String> matchOmit = const {},
     }) {
       return _db.runTransaction((txn) async {
         if (updateMeal) {
@@ -643,7 +644,7 @@ void main() {
             'status': 'approved',
           });
         }
-        txn.set(_db.collection('matches').doc(matchDocId ?? w.mealId), {
+        final body = <String, Object?>{
           'id': w.mealId,
           'mealId': w.mealId,
           'hostId': w.hostUid,
@@ -651,7 +652,8 @@ void main() {
           'participants': [w.hostUid, w.guestUid],
           'createdAt': FieldValue.serverTimestamp(),
           ...matchOverrides,
-        });
+        }..removeWhere((k, _) => matchOmit.contains(k));
+        txn.set(_db.collection('matches').doc(matchDocId ?? w.mealId), body);
       });
     }
 
@@ -879,6 +881,67 @@ void main() {
       final w = await buildWorld(tester, 't9c');
       await expectLater(
         approveTxn(w, matchOverrides: {'id': 'not-the-meal-id'}),
+        permissionDenied(),
+      );
+    });
+
+    // Case 11: the approving host (caller) is genuine, with a genuine pending
+    // request, but the match body names a third uid as host. Every other
+    // clause holds (matchApprovalValid keys off the caller), so ONLY
+    // `hostId == request.auth.uid` can deny.
+    testWidgets('11. a match whose hostId is not the caller is denied', (
+      tester,
+    ) async {
+      final w = await buildWorld(tester, 't11');
+      await expectLater(
+        approveTxn(
+          w,
+          matchOverrides: {
+            'hostId': w.otherUid,
+            'participants': [w.otherUid, w.guestUid],
+          },
+        ),
+        permissionDenied(),
+      );
+    });
+
+    // Cases 12a-12d: payload pinning. A hostile approving host must not be
+    // able to store a `createdAt` that breaks the guest's Chats list parse, or
+    // extra keys. Everything else is the valid approve world.
+    testWidgets('12a. a string createdAt is denied', (tester) async {
+      final w = await buildWorld(tester, 't12a');
+      await expectLater(
+        approveTxn(w, matchOverrides: {'createdAt': 'zzz'}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('12b. a missing createdAt is denied', (tester) async {
+      final w = await buildWorld(tester, 't12b');
+      await expectLater(
+        approveTxn(w, matchOmit: {'createdAt'}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('12c. an extra key on the match is denied', (tester) async {
+      final w = await buildWorld(tester, 't12c');
+      await expectLater(
+        approveTxn(w, matchOverrides: {'extra': 'junk'}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('12d. a client timestamp that is not the server time is denied',
+        (tester) async {
+      final w = await buildWorld(tester, 't12d');
+      await expectLater(
+        approveTxn(
+          w,
+          matchOverrides: {
+            'createdAt': Timestamp.fromDate(DateTime(2001)),
+          },
+        ),
         permissionDenied(),
       );
     });

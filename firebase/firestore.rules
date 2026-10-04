@@ -165,6 +165,8 @@ service cloud.firestore {
       // between them, and the same transaction sets the pending request to
       // `approved` and the open meal to `matched` with this guest.
       allow create: if isSignedIn()
+                    && request.resource.data.keys().hasOnly(['id', 'mealId', 'hostId', 'guestId', 'participants', 'createdAt'])
+                    && request.resource.data.createdAt == request.time
                     && request.resource.data.hostId == request.auth.uid
                     && request.resource.data.mealId == matchId
                     && request.resource.data.id == matchId
