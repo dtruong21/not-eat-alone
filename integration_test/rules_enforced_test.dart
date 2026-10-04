@@ -30,6 +30,19 @@ Future<void> _bootOnce(WidgetTester tester) async {
   if (Firebase.apps.isEmpty) await pumpApp(tester);
 }
 
+/// The host + guest + other-user + open-meal + pending-request fixture of the
+/// `matches create — approval integrity` group (see `buildWorld` there).
+typedef _MatchWorld = ({
+  String hostClaim,
+  String otherClaim,
+  String guestClaim,
+  String mealId,
+  String reqId,
+  String hostUid,
+  String guestUid,
+  String otherUid,
+});
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -563,19 +576,7 @@ void main() {
     // host: profile + open meal. guest: profile + pending request. `other`: a
     // third user (optionally with their own pending request on the same meal).
     // Returns signed in as the HOST again (uid equality asserted).
-    Future<
-      ({
-        String hostClaim,
-        String otherClaim,
-        String guestClaim,
-        String mealId,
-        String reqId,
-        String hostUid,
-        String guestUid,
-        String otherUid,
-      })
-    >
-    buildWorld(
+    Future<_MatchWorld> buildWorld(
       WidgetTester tester,
       String suffix, {
       bool guestRequests = true,
@@ -622,27 +623,19 @@ void main() {
 
     // The app's approve transaction shape, with one knob per denial case.
     Future<void> approveTxn(
-      ({
-        String hostClaim,
-        String otherClaim,
-        String guestClaim,
-        String mealId,
-        String reqId,
-        String hostUid,
-        String guestUid,
-        String otherUid,
-      })
-      w, {
+      _MatchWorld w, {
       bool updateMeal = true,
       bool updateRequest = true,
+      String? mealGuestId,
+      String mealStatus = 'matched',
       String? matchDocId,
       Map<String, Object?> matchOverrides = const {},
     }) {
       return _db.runTransaction((txn) async {
         if (updateMeal) {
           txn.update(_db.collection('meals').doc(w.mealId), {
-            'status': 'matched',
-            'guestId': w.guestUid,
+            'status': mealStatus,
+            'guestId': mealGuestId ?? w.guestUid,
           });
         }
         if (updateRequest) {
@@ -664,17 +657,7 @@ void main() {
 
     // A request doc in a pre-state the rules forbid a client to reach.
     Future<void> forceRequestStatus(
-      ({
-        String hostClaim,
-        String otherClaim,
-        String guestClaim,
-        String mealId,
-        String reqId,
-        String hostUid,
-        String guestUid,
-        String otherUid,
-      })
-      w,
+      _MatchWorld w,
       String status,
     ) => adminSetDoc('requests', w.reqId, {
       'id': w.reqId,
@@ -723,6 +706,45 @@ void main() {
       },
     );
 
+    // Cases 3b/3b2/3c isolate the `mealAfter` clauses: in each, the request goes
+    // pending -> approved, the match body is fully valid, and the meal was
+    // open and hosted by the caller, so ONLY the meal's after-state is wrong.
+    testWidgets(
+      '3b. a transaction that leaves the meal open (not matched) is denied',
+      (tester) async {
+        final w = await buildWorld(tester, 't3b');
+        await expectLater(approveTxn(w, updateMeal: false), permissionDenied());
+      },
+    );
+
+    testWidgets(
+      '3b2. a meal given the guest but left open (status not matched) is '
+      'denied',
+      (tester) async {
+        final w = await buildWorld(tester, 't3b2');
+        // Meal keeps status `open` but gets the right guestId, so ONLY
+        // `mealAfter.status == 'matched'` can deny.
+        await expectLater(
+          approveTxn(w, mealStatus: 'open'),
+          permissionDenied(),
+        );
+      },
+    );
+
+    testWidgets(
+      '3c. a meal matched with a different guest than the match names is '
+      'denied',
+      (tester) async {
+        final w = await buildWorld(tester, 't3c');
+        // Meal -> matched with `other` (legal for the host by the meals
+        // update rule); request -> approved and the match both name `guest`.
+        await expectLater(
+          approveTxn(w, mealGuestId: w.otherUid),
+          permissionDenied(),
+        );
+      },
+    );
+
     testWidgets('4a. an already-approved request is denied', (tester) async {
       final w = await buildWorld(tester, 't4a');
       await forceRequestStatus(w, 'approved');
@@ -750,8 +772,12 @@ void main() {
       (tester) async {
         final w = await buildWorld(tester, 't6');
         // Host B (`other`) forges a match on host A's meal for A's guest. B
-        // cannot even write A's meal/request, so this is the single match
-        // write; the denial must come from the match rule.
+        // cannot write A's meal/request (host-only update rules), so this is
+        // a single match write. It is denied, but ALSO by `reqAfter.status ==
+        // 'approved'` (the request stays pending), so this case does not
+        // isolate the `reqBefore.hostId` / `mealBefore.hostId` clauses: those
+        // are belt-and-braces alongside the host-only update rules on
+        // meals/requests.
         final b = await signInTestUser(uid: w.otherClaim);
         expect(b.uid, w.otherUid);
         await expectLater(
@@ -830,6 +856,29 @@ void main() {
       final w = await buildWorld(tester, 't9');
       await expectLater(
         approveTxn(w, matchDocId: 'arbitrary-match-id'),
+        permissionDenied(),
+      );
+    });
+
+    // Cases 9b/9c: the doc id IS the real meal id (genuine pending request,
+    // open meal, valid world), so `matchApprovalValid` passes; ONLY one body
+    // field disagrees with the doc id.
+    testWidgets('9b. a match body mealId that is not the doc id is denied', (
+      tester,
+    ) async {
+      final w = await buildWorld(tester, 't9b');
+      await expectLater(
+        approveTxn(w, matchOverrides: {'mealId': 'not-the-meal-id'}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('9c. a match body id that is not the doc id is denied', (
+      tester,
+    ) async {
+      final w = await buildWorld(tester, 't9c');
+      await expectLater(
+        approveTxn(w, matchOverrides: {'id': 'not-the-meal-id'}),
         permissionDenied(),
       );
     });
