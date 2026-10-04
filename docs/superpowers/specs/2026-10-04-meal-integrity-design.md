@@ -1,7 +1,7 @@
 # Convyve — Meal Integrity (Plan 13)
 
 **Date:** 2026-10-04
-**Status:** Draft, pending approval
+**Status:** Implemented
 **Feature:** Close the remaining rule gaps around meals and the request/rating lifecycle that the Plan 12 final review found. A meal's host can no longer be reassigned, a meal can only move to `matched` through a genuine approve, a request can only be decided once, and a rating can only be left after the meal has happened.
 
 ---
@@ -74,7 +74,7 @@ match /meals/{mealId} {
 
 Interaction with the `matches` create rule: that rule reads `mealAfter.status == 'matched'` and `mealAfter.guestId`, so it still holds. The two rules now both anchor on the same request transition.
 
-Access-call budget per approve transaction: the meals update reads the request twice (`get`, `getAfter`) and checks `existsAfter(matches)` once (3 accesses, under the 10 per operation); the matches create reads request and meal (4) plus `noBlockBetween` (2). Documents are distinct per call site; the worst single evaluation is well under the 20 allowed for a transaction.
+Access-call budget per approve transaction: the meals update evaluates `get(req)`, `getAfter(req)` and `existsAfter(matches)` (3 accesses); the matches create evaluates 4 reads (`get` and `getAfter` of the request and of the meal) plus 2 `exists` for `noBlockBetween` (6). The worst single operation is 6, under the 10 allowed per operation, and the whole approve transaction (meal update, request update, matches create) makes about 9 access calls (fewer distinct documents), under the 20 allowed per transaction.
 
 ### 2.2 `requests` update guard
 
