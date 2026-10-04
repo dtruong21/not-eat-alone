@@ -316,14 +316,39 @@ void main() {
   // passed to `signInTestUser` — the Auth emulator mints its own random uid
   // per identity, it does NOT echo the claimed `sub` back as the Firebase
   // uid (confirmed via a REST probe in this task; see the task report).
+  //
+  // The `ratings` create rule also requires the meal to have happened
+  // (`meals/{matchId}.dateTime <= request.time`), so the helper admin-seeds the
+  // match's meal too: dated two hours ago by default, [mealDateTime] overrides
+  // it, and [withMeal] false leaves the meal doc out entirely.
   Future<({String matchId, String hostUid, String guestUid})> seedRatingMatch(
     WidgetTester tester,
-    String suffix,
-  ) async {
+    String suffix, {
+    DateTime? mealDateTime,
+    bool withMeal = true,
+  }) async {
     await _bootOnce(tester);
     final host = await signInTestUser(uid: 'rules-rating-comment-host-$suffix');
     final matchId = 'rules-rating-comment-match-$suffix';
     const guestUid = 'rules-rating-comment-guest-not-a-real-uid';
+    if (withMeal) {
+      await adminSetDoc('meals', matchId, {
+        'hostId': host.uid,
+        'guestId': guestUid,
+        'status': 'matched',
+        'geohash': 'u09',
+        'dateTime':
+            mealDateTime ?? DateTime.now().subtract(const Duration(hours: 2)),
+        'womenOnly': false,
+        'restaurant': {
+          'placeId': 'seed-place-id',
+          'name': 'Seed Restaurant',
+          'address': '1 Test Street',
+          'lat': 48.8566,
+          'lng': 2.3522,
+        },
+      });
+    }
     await adminSetDoc('matches', matchId, {
       'id': matchId,
       'mealId': matchId,
@@ -1522,6 +1547,165 @@ void main() {
       final other = await signInTestUser(uid: w.otherClaim);
       expect(other.uid, w.otherUid);
       await expectLater(mealRef(w).delete(), permissionDenied());
+    });
+  });
+
+  // ---- `requests` update — a request is decided once ----
+  // The `requests` update rule is host-only, `status` only, to approved|denied,
+  // and only FROM `pending`: an approved request can't be flipped to denied
+  // (nor a denied one revived), so a decision is final. Every case is signed
+  // in as the host (what `_buildWorld` returns). Non-pending pre-states are
+  // admin-seeded (`adminUpdateDoc`), since no client path reaches them
+  // without going through the very rule under test.
+  group('requests update — decided once', () {
+    Future<_MatchWorld> world(
+      WidgetTester tester,
+      String suffix, {
+      bool otherRequests = false,
+    }) =>
+        _buildWorld(tester, suffix, otherRequests: otherRequests, prefix: 'rd');
+
+    DocumentReference<Map<String, dynamic>> reqRef(String id) =>
+        _db.collection('requests').doc(id);
+
+    Future<String> statusOf(String id) async {
+      final snap = await reqRef(
+        id,
+      ).get(const GetOptions(source: Source.server));
+      return snap.data()!['status'] as String;
+    }
+
+    testWidgets('R1. a host denies a pending request (the app deny) is '
+        'allowed', (tester) async {
+      final w = await world(tester, 'r1');
+      await reqRef(w.reqId).update({'status': 'denied'});
+      expect(await statusOf(w.reqId), 'denied');
+    });
+
+    testWidgets('R1b. a host approves a pending request is allowed', (
+      tester,
+    ) async {
+      final w = await world(tester, 'r1b');
+      await reqRef(w.reqId).update({'status': 'approved'});
+      expect(await statusOf(w.reqId), 'approved');
+    });
+
+    testWidgets(
+      'R1c. the post-commit sibling-deny batch (pending -> denied) is allowed',
+      (tester) async {
+        final w = await world(tester, 'r1c', otherRequests: true);
+        final siblingId = '${w.mealId}_${w.otherUid}';
+        final batch = _db.batch()
+          ..update(reqRef(w.reqId), {'status': 'denied'})
+          ..update(reqRef(siblingId), {'status': 'denied'});
+        await batch.commit();
+        expect(await statusOf(w.reqId), 'denied');
+        expect(await statusOf(siblingId), 'denied');
+      },
+    );
+
+    testWidgets('R2. re-deciding an approved request (-> denied) is denied', (
+      tester,
+    ) async {
+      final w = await world(tester, 'r2');
+      await adminUpdateDoc('requests', w.reqId, {'status': 'approved'});
+      await expectLater(
+        reqRef(w.reqId).update({'status': 'denied'}),
+        permissionDenied(),
+      );
+      expect(await statusOf(w.reqId), 'approved');
+    });
+
+    testWidgets('R3. reviving a denied request (-> approved) is denied', (
+      tester,
+    ) async {
+      final w = await world(tester, 'r3');
+      await adminUpdateDoc('requests', w.reqId, {'status': 'denied'});
+      await expectLater(
+        reqRef(w.reqId).update({'status': 'approved'}),
+        permissionDenied(),
+      );
+      expect(await statusOf(w.reqId), 'denied');
+    });
+
+    testWidgets(
+      'R4. re-writing an approved request as approved is denied (not only '
+      'a flip is final)',
+      (tester) async {
+        final w = await world(tester, 'r4');
+        await adminUpdateDoc('requests', w.reqId, {'status': 'approved'});
+        await expectLater(
+          reqRef(w.reqId).update({'status': 'approved'}),
+          permissionDenied(),
+        );
+      },
+    );
+
+    testWidgets('R5. re-writing a denied request as denied is denied', (
+      tester,
+    ) async {
+      final w = await world(tester, 'r5');
+      await adminUpdateDoc('requests', w.reqId, {'status': 'denied'});
+      await expectLater(
+        reqRef(w.reqId).update({'status': 'denied'}),
+        permissionDenied(),
+      );
+    });
+  });
+
+  // ---- `ratings` create — the meal has happened ----
+  // The `ratings` create rule requires `meals/{matchId}.dateTime <=
+  // request.time` (matchId == mealId). Everything else in each case is the
+  // valid baseline from `seedRatingMatch` (host rates the guest, no comment);
+  // the match's meal is admin-seeded with the date under test, since a client
+  // can't create a past meal.
+  group('ratings create — the meal has happened', () {
+    testWidgets('G1. rating a meal dated in the past is allowed', (
+      tester,
+    ) async {
+      final seed = await seedRatingMatch(tester, 'g1');
+      await createRating(
+        matchId: seed.matchId,
+        raterUid: seed.hostUid,
+        targetUid: seed.guestUid,
+      );
+      final snap = await _db
+          .collection('ratings')
+          .doc('${seed.matchId}_${seed.hostUid}')
+          .get(const GetOptions(source: Source.server));
+      expect(snap.exists, isTrue);
+    });
+
+    testWidgets('G2. rating a meal that is still in the future is denied', (
+      tester,
+    ) async {
+      final seed = await seedRatingMatch(
+        tester,
+        'g2',
+        mealDateTime: DateTime.now().add(const Duration(hours: 3)),
+      );
+      await expectLater(
+        createRating(
+          matchId: seed.matchId,
+          raterUid: seed.hostUid,
+          targetUid: seed.guestUid,
+        ),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('G3. rating a match with no meal doc is denied', (
+      tester,
+    ) async {
+      final seed = await seedRatingMatch(tester, 'g3', withMeal: false);
+      await expectLater(
+        createRating(
+          matchId: seed.matchId,
+          raterUid: seed.hostUid,
+          targetUid: seed.guestUid,
+        ),
+        permissionDenied(),
+      );
     });
   });
 }

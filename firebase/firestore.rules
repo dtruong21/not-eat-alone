@@ -172,8 +172,12 @@ service cloud.firestore {
                     && noBlockBetween(request.resource.data.guestId, request.resource.data.hostId)
                     && (get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.womenOnly == false
                         || get(/databases/$(database)/documents/users/$(request.resource.data.guestId)).data.gender == 'woman');
+      // A request is decided once: only a `pending` request can be approved
+      // or denied, so an approved request can't be flipped to denied (or a
+      // denied one revived).
       allow update: if isSignedIn()
                     && resource.data.hostId == request.auth.uid
+                    && resource.data.status == 'pending'
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
                     && request.resource.data.status in ['approved', 'denied'];
       allow delete: if false;
@@ -282,7 +286,10 @@ service cloud.firestore {
                             && request.resource.data.comment.size() <= 200))
                     && ratingParticipantsValid(request.resource.data.matchId,
                                                request.resource.data.raterUid,
-                                               request.resource.data.targetUid);
+                                               request.resource.data.targetUid)
+                    // The meal must have happened (matchId == mealId): no rating
+                    // before the meal's start time.
+                    && get(/databases/$(database)/documents/meals/$(request.resource.data.matchId)).data.dateTime <= request.time;
       allow update, delete: if false;
     }
 
