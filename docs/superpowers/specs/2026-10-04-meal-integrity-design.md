@@ -60,21 +60,21 @@ match /meals/{mealId} {
                 && resource.data.status == 'open'
                 && request.resource.data.status == 'matched'
                 && request.resource.data.guestId is string
-                && mealApprovalLink(mealId, request.resource.data.guestId, request.auth.uid);
-  allow delete: if isSignedIn()
-                && resource.data.hostId == request.auth.uid
-                && resource.data.status == 'open';
+                && mealApprovalLink(mealId, request.resource.data.guestId, request.auth.uid)
+                && existsAfter(/databases/$(database)/documents/matches/$(mealId));
+  allow delete: if false;
 }
 ```
 
 - `hostId`, `dateTime`, `restaurant`, `womenOnly`, `geohash` become immutable (only `status` and `guestId` may change).
 - `status` can only go `open → matched`, and only together with a genuine pending→approved request from that guest in the same transaction (the same `getAfter` technique as the `matches` create rule). A host can no longer mark a meal matched, or pick a guest, on their own.
 - Create requires `status == 'open'`, no `guestId` (absent **or null**: `MealRepositoryImpl.createMeal` writes `MealDto.toJson()`, which includes `guestId: null` and `note: null`), and a future `dateTime`.
-- Delete is allowed only while the meal is still `open` (a host can withdraw an unmatched listing). Matched and completed meals can't be deleted from a client, so the history that matches, chat and ratings depend on can't be erased; account deletion keeps working through the Admin SDK.
+- The meal flip also requires the `matches/{mealId}` doc to exist after the write (`existsAfter`), i.e. the same transaction creates it. Without that, a host could flip the meal and approve the request but skip the match create (and its `noBlockBetween` check), leaving the guest with an approved request and no chat. The `matches` create rule keeps enforcing the block check and the rest of the match shape.
+- No client delete (`allow delete: if false`). Why: delete + recreate at the same id would reopen the bait-and-switch. Create is allowed for a future, open, guest-less meal and requests are keyed `{mealId}_{guestId}`, so a host could delete an open meal and recreate it at the same id with a different restaurant/`dateTime`/`womenOnly` while pending requests stay attached; rules can't tombstone an id. Nothing in the app deletes meals; account deletion, `postMealReminder` and any future cancel function use the Admin SDK and bypass rules, so history that matches, chat and ratings depend on can't be erased from a client either.
 
 Interaction with the `matches` create rule: that rule reads `mealAfter.status == 'matched'` and `mealAfter.guestId`, so it still holds. The two rules now both anchor on the same request transition.
 
-Access-call budget per approve transaction: the meals update reads the request twice (`get`, `getAfter`); the matches create reads request and meal (4) plus `noBlockBetween` (2). Documents are distinct per call site; the worst single evaluation is well under the 20 allowed for a transaction.
+Access-call budget per approve transaction: the meals update reads the request twice (`get`, `getAfter`) and checks `existsAfter(matches)` once (3 accesses, under the 10 per operation); the matches create reads request and meal (4) plus `noBlockBetween` (2). Documents are distinct per call site; the worst single evaluation is well under the 20 allowed for a transaction.
 
 ### 2.2 `requests` update guard
 
@@ -110,8 +110,8 @@ Add `adminUpdateDoc(collection, id, fields)` next to `adminSetDoc` (REST `PATCH`
 Real emulator uids, valid bodies, only the property under test varying, denials pinned to `permission-denied`, and each clause mutation-checked (delete the clause, watch its case fail, restore).
 
 **meals**
-- Allowed: create an open future meal **with the exact payload `createMeal` writes** (including `guestId: null`, `note: null`, `seats`, `createdAt: serverTimestamp()`; a rule that rejected the app's own create would break the product); the real approve transaction (already covered, must stay green); delete an open meal.
-- Denied: update `hostId` to another uid; update `dateTime`/`restaurant`/`womenOnly`; `status: matched` with no request; `status: matched` for a request that is not pending; `guestId` that differs from the approved request's guest; `status` other than `matched`; changing any extra key alongside `status`/`guestId`; update by a non-host; create with `status: matched`, with a non-null `guestId`, with a past `dateTime`; delete a matched meal.
+- Allowed: create an open future meal **with the exact payload `createMeal` writes** (including `guestId: null`, `note: null`, `seats`, `createdAt: serverTimestamp()`; a rule that rejected the app's own create would break the product); the real approve transaction (meal + request + match; must stay green).
+- Denied: update `hostId` to another uid; update `dateTime`/`restaurant`/`womenOnly`; `status: matched` with no request; `status: matched` for a request that is not pending; `guestId` that differs from the approved request's guest; `status` other than `matched`; changing any extra key alongside `status`/`guestId`; update by a non-host; a forged host (a user approving their own forged request to flip someone else's meal); the meal + request flip without the `matches` doc created in the same transaction; create with `status: matched`, with a non-null `guestId`, with a past `dateTime`; delete an open meal (and delete + recreate at the same id) and delete a matched meal.
 
 **requests**
 - Denied: a host re-deciding an `approved` or `denied` request (approved→denied, denied→approved).

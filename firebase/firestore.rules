@@ -114,10 +114,14 @@ service cloud.firestore {
     // `guestId: null`), future-dated meal as yourself. Update: only `status`
     // and `guestId` may change, only `open -> matched`, only together with a
     // genuine pending -> approved request from that guest in the same
-    // transaction (`mealApprovalLink`); `hostId`/`dateTime`/`restaurant`/
-    // `womenOnly`/`geohash` are immutable. Delete: only while still `open`.
-    // The `postMealReminder` function (status -> `completed`) and account
-    // deletion use the Admin SDK and bypass rules.
+    // transaction (`mealApprovalLink`) that also creates the `matches` doc
+    // (`existsAfter`; the `matches` create rule then enforces the block check);
+    // `hostId`/`dateTime`/`restaurant`/`womenOnly`/`geohash` are immutable.
+    // Delete: never from a client — delete + recreate at the same id would
+    // keep the `{mealId}_{guestId}` requests attached to a different meal (the
+    // bait-and-switch the immutability clauses prevent). The
+    // `postMealReminder` function (status -> `completed`), account deletion
+    // and any future cancel function use the Admin SDK and bypass rules.
     match /meals/{mealId} {
       allow create: if isSignedIn()
                     && request.resource.data.hostId == request.auth.uid
@@ -134,10 +138,9 @@ service cloud.firestore {
                     && resource.data.status == 'open'
                     && request.resource.data.status == 'matched'
                     && request.resource.data.guestId is string
-                    && mealApprovalLink(mealId, request.resource.data.guestId, request.auth.uid);
-      allow delete: if isSignedIn()
-                    && resource.data.hostId == request.auth.uid
-                    && resource.data.status == 'open';
+                    && mealApprovalLink(mealId, request.resource.data.guestId, request.auth.uid)
+                    && existsAfter(/databases/$(database)/documents/matches/$(mealId));
+      allow delete: if false;
     }
 
     // Join requests: guest creates for an OPEN meal; host reviews.

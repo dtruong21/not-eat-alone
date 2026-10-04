@@ -720,9 +720,11 @@ void main() {
       },
     );
 
-    // Cases 3b/3b2/3c isolate the `mealAfter` clauses: in each, the request goes
+    // Cases 3b2/3c isolate the `mealAfter` clauses: in each, the request goes
     // pending -> approved, the match body is fully valid, and the meal was
     // open and hosted by the caller, so ONLY the meal's after-state is wrong.
+    // (3b leaves the meal without a guestId at all, so `mealAfter.guestId`
+    // errors too: it is a denial case, not an isolating one.)
     testWidgets(
       '3b. a transaction that leaves the meal open (not matched) is denied',
       (tester) async {
@@ -736,13 +738,12 @@ void main() {
       'denied',
       (tester) async {
         final w = await _buildWorld(tester, 't3b2');
-        // Meal keeps status `open` but gets the right guestId. Denied (the
-        // `meals` update rule also requires `matched`; the `matches` rule's
-        // own `mealAfter.status` clause is isolated by 3b above).
-        await expectLater(
-          approveTxn(w, mealStatus: 'open'),
-          permissionDenied(),
-        );
+        // Meal is admin-seeded `open` WITH the guest's id (so
+        // `mealAfter.guestId == guestId` holds) and the transaction leaves it
+        // alone (no `meals` write): ONLY `mealAfter.status == 'matched'` in
+        // the `matches` rule can deny.
+        await adminUpdateDoc('meals', w.mealId, {'guestId': w.guestUid});
+        await expectLater(approveTxn(w, updateMeal: false), permissionDenied());
       },
     );
 
@@ -1000,24 +1001,49 @@ void main() {
   // each denial varies ONE property of a valid body. Forbidden pre-states
   // (matched meal, decided request) are seeded through the admin REST writes.
   group('meals — integrity', () {
+    // By default a `matches/{mealId}` doc is admin-seeded: the meals update
+    // rule requires the match to exist after the write (`existsAfter`), so
+    // seeding it keeps that clause satisfied and lets each case isolate ONE
+    // other clause without writing a match (the `matches` create rule has its
+    // own group). Pass `withMatch: false` for the cases about the match itself.
     Future<_MatchWorld> world(
       WidgetTester tester,
       String suffix, {
       bool guestRequests = true,
-    }) =>
-        _buildWorld(tester, suffix, guestRequests: guestRequests, prefix: 'mv');
+      bool withMatch = true,
+    }) async {
+      final w = await _buildWorld(
+        tester,
+        suffix,
+        guestRequests: guestRequests,
+        prefix: 'mv',
+      );
+      if (withMatch) {
+        await adminSetDoc('matches', w.mealId, {
+          'id': w.mealId,
+          'mealId': w.mealId,
+          'hostId': w.hostUid,
+          'guestId': w.guestUid,
+          'participants': [w.hostUid, w.guestUid],
+          'createdAt': DateTime.now(),
+        });
+      }
+      return w;
+    }
 
     DocumentReference<Map<String, dynamic>> mealRef(_MatchWorld w) =>
         _db.collection('meals').doc(w.mealId);
 
     // One transaction: a meal update (defaults to the real approve's
-    // `status: matched` + `guestId: guest`; [meal] entries override/extend it)
-    // and, unless [approveRequest] is false, the request `approved` write.
+    // `status: matched` + `guestId: guest`; [meal] entries override/extend it),
+    // unless [approveRequest] is false the request `approved` write, and with
+    // [createMatch] the `matches/{mealId}` create (the full real approve).
     Future<void> mealTxn(
       _MatchWorld w, {
       Map<String, Object?> meal = const {},
       bool approveRequest = true,
       String? requestId,
+      bool createMatch = false,
     }) {
       return _db.runTransaction((txn) async {
         txn.update(mealRef(w), {
@@ -1028,6 +1054,16 @@ void main() {
         if (approveRequest) {
           txn.update(_db.collection('requests').doc(requestId ?? w.reqId), {
             'status': 'approved',
+          });
+        }
+        if (createMatch) {
+          txn.set(_db.collection('matches').doc(w.mealId), {
+            'id': w.mealId,
+            'mealId': w.mealId,
+            'hostId': w.hostUid,
+            'guestId': w.guestUid,
+            'participants': [w.hostUid, w.guestUid],
+            'createdAt': FieldValue.serverTimestamp(),
           });
         }
       });
@@ -1123,27 +1159,62 @@ void main() {
     });
 
     testWidgets(
-      'A2. a meal update + request approval in one transaction (no match '
-      'doc) is allowed',
+      'A2. the real approve (meal + request + match in one transaction) is '
+      'allowed',
       (tester) async {
-        final w = await world(tester, 'a2');
-        await mealTxn(w);
+        final w = await world(tester, 'a2', withMatch: false);
+        await mealTxn(w, createMatch: true);
         final meal = await mealRef(w).get();
         expect(meal.data()!['status'], 'matched');
         expect(meal.data()!['guestId'], w.guestUid);
+        final match = await _db
+            .collection('matches')
+            .doc(w.mealId)
+            .get(const GetOptions(source: Source.server));
+        expect(match.exists, isTrue);
       },
     );
 
-    testWidgets('A3. the host deleting an open meal is allowed', (
-      tester,
-    ) async {
-      final w = await world(tester, 'a3');
-      await mealRef(w).delete();
-      final snap = await mealRef(
-        w,
-      ).get(const GetOptions(source: Source.server));
-      expect(snap.exists, isFalse);
-    });
+    // The meals rule has no client delete: deleting an open meal and
+    // re-creating it at the same id would keep the `{mealId}_{guestId}`
+    // requests attached to a different restaurant/dateTime (bait and switch).
+    testWidgets(
+      'A3. the host deleting an open meal is denied, so delete + recreate at '
+      'the same id is closed',
+      (tester) async {
+        final w = await world(tester, 'a3');
+        await expectLater(mealRef(w).delete(), permissionDenied());
+        // The recreate step is also unreachable: a `set` over the existing
+        // id is an update, which may not change the restaurant.
+        await expectLater(
+          mealRef(w).set({
+            'hostId': w.hostUid,
+            'status': 'open',
+            'geohash': 'u09',
+            'dateTime': Timestamp.fromDate(
+              DateTime.now().add(const Duration(hours: 5)),
+            ),
+            'womenOnly': false,
+            'restaurant': {
+              'placeId': 'other-place',
+              'name': 'Elsewhere',
+              'address': '2 Rue Autre',
+              'lat': 1.0,
+              'lng': 2.0,
+            },
+          }),
+          permissionDenied(),
+        );
+        final snap = await mealRef(w).get(
+          const GetOptions(source: Source.server),
+        );
+        expect(snap.exists, isTrue);
+        expect(
+          (snap.data()!['restaurant'] as Map<String, dynamic>)['placeId'],
+          'seed-place-id',
+        );
+      },
+    );
 
     // ---- immutable fields ----
 
@@ -1340,6 +1411,8 @@ void main() {
       await expectLater(mealTxn(w), permissionDenied());
     });
 
+    // Plain denial case (denied by the missing request, not an isolating case
+    // for the meal-host clause: see D8b).
     testWidgets('D8. a non-host updating the meal is denied', (tester) async {
       final w = await world(tester, 'd8');
       final other = await signInTestUser(uid: w.otherClaim);
@@ -1349,6 +1422,49 @@ void main() {
         permissionDenied(),
       );
     });
+
+    // The meal + request flip without the match doc (skips the `matches` rule's
+    // block check; the guest would see an approved request with no chat): no
+    // match exists before or after, so ONLY `existsAfter(matches/{mealId})`
+    // can deny.
+    testWidgets(
+      'D9. a meal + request approval that does not create the match is denied',
+      (tester) async {
+        final w = await world(tester, 'd9', withMatch: false);
+        await expectLater(mealTxn(w), permissionDenied());
+      },
+    );
+
+    // Forged host: `other` is the (admin-seeded) host of their own pending
+    // request `{meal}_{other}` and approves it while flipping SOMEONE ELSE'S
+    // meal to matched with themselves as guest. The requests update rule
+    // passes (other is that request's host), the link passes
+    // (`get(req).hostId == auth.uid`, guestId == other) and `matches/{meal}`
+    // exists (seeded), so ONLY the meal's `resource.data.hostId ==
+    // request.auth.uid` can deny. (A real match create can't be added: the
+    // `matches` rule would deny it itself.)
+    testWidgets(
+      "D8b. approving one's own forged request to flip someone else's meal "
+      'is denied',
+      (tester) async {
+        final w = await world(tester, 'd8b');
+        final forgedId = '${w.mealId}_${w.otherUid}';
+        await adminSetDoc('requests', forgedId, {
+          'id': forgedId,
+          'mealId': w.mealId,
+          'hostId': w.otherUid,
+          'guestId': w.otherUid,
+          'status': 'pending',
+          'createdAt': DateTime.now(),
+        });
+        final other = await signInTestUser(uid: w.otherClaim);
+        expect(other.uid, w.otherUid);
+        await expectLater(
+          mealTxn(w, meal: {'guestId': w.otherUid}, requestId: forgedId),
+          permissionDenied(),
+        );
+      },
+    );
 
     // ---- create ----
 
