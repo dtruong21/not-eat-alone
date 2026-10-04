@@ -32,20 +32,26 @@ class RatingController extends _$RatingController {
   }) async {
     if (stars <= 0) return;
 
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      final rating = Rating(
-        id: '${matchId}_$uid',
-        matchId: matchId,
-        raterUid: uid,
-        targetUid: targetUid,
-        stars: stars,
-        showedUp: showedUp,
-        comment: comment,
-      );
-      await ref.read(ratingRepositoryProvider).submit(rating);
-      await analytics.track(MealRated(stars: stars, showedUp: showedUp));
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        final rating = Rating(
+          id: '${matchId}_$uid',
+          matchId: matchId,
+          raterUid: uid,
+          targetUid: targetUid,
+          stars: stars,
+          showedUp: showedUp,
+          comment: comment,
+        );
+        await ref.read(ratingRepositoryProvider).submit(rating);
+        await analytics.track(MealRated(stars: stars, showedUp: showedUp));
+      });
+    } finally {
+      link.close();
+    }
   }
 }

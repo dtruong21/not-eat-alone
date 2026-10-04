@@ -113,3 +113,167 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+
+  # End-to-end suite (integration_test/) against the Firebase Emulator Suite on
+  # a real iOS Simulator. NON-BLOCKING for now: deliberately NOT a required
+  # check in branch protection (see docs/CICD.md for the promotion criteria).
+  #
+  # Why macOS + a simulator: the headless `flutter-tester` has no Firebase
+  # native plugins (MissingPluginException), so these tests need a real
+  # device/simulator. The run itself goes through `make e2e` (ios-plist,
+  # ios-sim-boot, ios-privacy, emulators:exec, location-prompt watchdog) so CI
+  # and local dev exercise the exact same path.
+  e2e:
+    name: E2E (emulator, iOS sim)
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    # Setup ~10 min + 2 attempts x 20 min (see the retry step) with headroom.
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seed .env from example
+        run: cp .env.example .env
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # firebase-tools' emulators need Java 21+; the runner image's default is 17.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Provide `fvm` shim (Flutter pinned via FLUTTER_VERSION)
+        # The Makefile invokes `fvm flutter ...`. Installing real FVM would
+        # download a second copy of the same SDK, so shim it onto the
+        # flutter-action SDK instead — and guard against the two pins drifting.
+        run: |
+          pinned=$(sed -n 's/.*"flutter"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .fvmrc)
+          if [ "$pinned" != "$FLUTTER_VERSION" ]; then
+            echo "::error::.fvmrc pins Flutter $pinned but ci.yml FLUTTER_VERSION is $FLUTTER_VERSION — keep them in sync"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/shim"
+          printf '%s\n' '#!/bin/sh' \
+            'case "$1" in flutter|dart) cmd=$1; shift; exec "$cmd" "$@" ;; esac' \
+            'echo "fvm shim: unsupported invocation: $*" >&2; exit 2' \
+            > "$RUNNER_TEMP/shim/fvm"
+          chmod +x "$RUNNER_TEMP/shim/fvm"
+          echo "$RUNNER_TEMP/shim" >> "$GITHUB_PATH"
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Install firebase-tools
+        # Major pinned to match deploy.yml (firebase-tools@13).
+        run: npm install -g firebase-tools@13
+      - name: Create dedicated iOS simulator
+        # The Makefile defaults DEVICE to "Convyve E2E". Create it from the
+        # newest installed iOS runtime and an iPhone device type that runtime
+        # supports, discovered dynamically so this doesn't break when the
+        # runner image rolls its Xcode/runtime versions (hard-coded
+        # runtime/device-type ids would).
+        run: |
+          sel=$(xcrun simctl list -j runtimes available | python3 -c '
+          import json, re, sys
+          def iphones(rt):
+              return [d for d in rt.get("supportedDeviceTypes", []) if d["name"].startswith("iPhone")]
+          rts = [r for r in json.load(sys.stdin)["runtimes"]
+                 if r.get("isAvailable")
+                 and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-")
+                 and iphones(r)]
+          if not rts:
+              sys.exit("error: no available iOS runtime with an iPhone device type (see: xcrun simctl list runtimes)")
+          rts.sort(key=lambda r: [int(p) for p in r["version"].split(".")])
+          rt = rts[-1]
+          cands = iphones(rt)
+          pro = [d for d in cands if d["name"].endswith(" Pro")]
+          gen = lambda d: int((re.search(r"iPhone (\d+)", d["name"]) or [0, 0])[1])
+          print(rt["identifier"], max(pro or cands, key=gen)["identifier"])
+          ')
+          read -r runtime devtype <<< "$sel"
+          echo "runtime=$runtime devicetype=$devtype"
+          xcrun simctl create "Convyve E2E" "$devtype" "$runtime"
+          xcrun simctl list devices available | grep "Convyve E2E"
+      - name: Run E2E suite (make e2e, bounded retry)
+        # The suite occasionally hangs after the Xcode build (smoke_test.dart
+        # launch). Each attempt gets a hard wall-clock cap; on failure OR hang
+        # we clean up and retry once. Retries only happen on failure, and a
+        # retried-then-green run emits a warning so flakes stay visible.
+        # `OPENJDK_PREFIX=` stops the Makefile prepending a brew openjdk
+        # (possibly <21) ahead of setup-java's Java 21 on PATH.
+        shell: bash
+        run: |
+          max_attempts=2
+          attempt_timeout=$((20 * 60))
+          last_status=1
+          mkdir -p e2e-logs
+          for attempt in $(seq 1 "$max_attempts"); do
+            echo "::group::E2E attempt $attempt/$max_attempts"
+            # setsid so the whole tree (make, firebase, java, flutter,
+            # xcodebuild) is one process group we can kill on a hang.
+            perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' make e2e OPENJDK_PREFIX= &
+            pid=$!
+            (
+              # Quiet when cancelled: the parent cancels us with a plain TERM,
+              # which must NOT fall through to the warning/kill below. `set +e`
+              # is explicit so errexit inheritance can't abort the escalation.
+              set +e
+              sleep "$attempt_timeout" & sp=$!
+              trap 'kill "$sp" 2>/dev/null; exit 0' TERM
+              wait "$sp" || exit 0
+              echo "::warning::E2E attempt $attempt exceeded $((attempt_timeout / 60)) min — killing"
+              kill -TERM -- "-$pid" 2>/dev/null
+              sleep 10 & sp=$!
+              wait "$sp"
+              kill -KILL -- "-$pid" 2>/dev/null
+            ) &
+            watchdog=$!
+            status=0
+            wait "$pid" || status=$?
+            # Cancel the watchdog (silently, see above), then hard-kill whatever
+            # is left in the group (e.g. a JVM stuck in a shutdown hook after
+            # TERM still holds the emulator ports and would fail the next attempt).
+            kill "$watchdog" 2>/dev/null || true
+            wait "$watchdog" 2>/dev/null || true
+            kill -KILL -- "-$pid" 2>/dev/null || true
+            echo "::endgroup::"
+            if [ "$status" -eq 0 ]; then
+              if [ "$attempt" -gt 1 ]; then
+                echo "::warning::E2E passed only on attempt $attempt — flaky launch/hang; see e2e-logs artifact"
+                echo "E2E_RETRIED=true" >> "$GITHUB_ENV"
+              fi
+              exit 0
+            fi
+            last_status=$status
+            echo "::warning::E2E attempt $attempt failed (exit $status)"
+            mkdir -p "e2e-logs/attempt-$attempt"
+            cp ./*-debug.log "e2e-logs/attempt-$attempt/" 2>/dev/null || true
+            echo "E2E_RETRIED=true" >> "$GITHUB_ENV"
+            # Clean slate: stray emulators/xcodebuild and a possibly wedged
+            # simulator (make boots it again). Patterns are anchored to this
+            # job's processes.
+            pkill -9 -f 'firebase.*emulators:exec' 2>/dev/null || true
+            pkill -9 -f 'cloud-firestore-emulator' 2>/dev/null || true
+            pkill -9 -f 'emulator/functionsEmulatorRuntime' 2>/dev/null || true
+            pkill -9 -f 'xcodebuild' 2>/dev/null || true
+            xcrun simctl shutdown all 2>/dev/null || true
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              sleep 5
+            fi
+          done
+          echo "::error::E2E failed after $max_attempts attempts (last exit $last_status)"
+          exit "$last_status"
+      - name: Upload emulator logs
+        if: always() && (failure() || cancelled() || env.E2E_RETRIED == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-emulator-logs
+          path: |
+            *-debug.log
+            e2e-logs/
+          if-no-files-found: ignore

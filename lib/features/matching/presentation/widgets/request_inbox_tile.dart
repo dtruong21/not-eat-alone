@@ -37,10 +37,20 @@ class RequestInboxTile extends ConsumerWidget {
   final JoinRequest request;
 
   Future<void> _approve(BuildContext context, WidgetRef ref) async {
-    await ref.read(inboxActionControllerProvider.notifier).approve(request);
-    final error = ref.read(inboxActionControllerProvider).error;
-    if (error is MealNoLongerOpenException && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    // Captured BEFORE the await: `this` tile can be unmounted mid-flight
+    // (the request's own status flip, applied optimistically by the
+    // Firestore SDK, can rebuild the inbox list and remove this tile before
+    // `approve` resolves), so neither `context` nor `ref` is safe to touch
+    // afterward — but the screen's `ScaffoldMessenger` (an ANCESTOR of this
+    // tile) stays mounted, so a snackbar shown through this captured
+    // reference still surfaces correctly.
+    final messenger = ScaffoldMessenger.of(context);
+    final error =
+        await ref.read(inboxActionControllerProvider.notifier).approve(
+              request,
+            );
+    if (error is MealNoLongerOpenException) {
+      messenger.showSnackBar(
         const SnackBar(content: Text('This meal is no longer open.')),
       );
     }

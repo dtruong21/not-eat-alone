@@ -17,21 +17,42 @@ class InboxActionController extends _$InboxActionController {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
-  Future<void> approve(JoinRequest request) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(requestRepositoryProvider).approve(request);
-      await analytics.track(const RequestApproved());
-      // women_only not on the request; approve fires match_created without it.
-      await analytics.track(const MatchCreated(womenOnly: false));
-    });
+  /// Returns the resulting error (e.g. `MealNoLongerOpenException`), or
+  /// `null` on success — so callers (`RequestInboxTile`) can react to the
+  /// outcome WITHOUT a second `ref.read` of this controller's state after
+  /// the `await`, which is unsafe once the calling widget may have been
+  /// unmounted in the meantime (the request's own status flip, applied
+  /// optimistically by the Firestore SDK, can rebuild the inbox list and
+  /// remove the tile before this future even resolves).
+  Future<Object?> approve(JoinRequest request) async {
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        await ref.read(requestRepositoryProvider).approve(request);
+        await analytics.track(const RequestApproved());
+        // women_only not on the request; approve fires match_created
+        // without it.
+        await analytics.track(const MatchCreated(womenOnly: false));
+      });
+      return state.error;
+    } finally {
+      link.close();
+    }
   }
 
   Future<void> deny(JoinRequest request) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(requestRepositoryProvider).deny(request);
-      await analytics.track(const RequestDenied());
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        await ref.read(requestRepositoryProvider).deny(request);
+        await analytics.track(const RequestDenied());
+      });
+    } finally {
+      link.close();
+    }
   }
 }

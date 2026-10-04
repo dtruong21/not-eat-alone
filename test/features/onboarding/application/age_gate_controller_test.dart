@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -7,6 +9,8 @@ import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.
 import 'package:not_eat_alone/features/onboarding/application/age_gate_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -90,4 +94,48 @@ void main() {
       expect(state.value?.blocked, isTrue);
     },
   );
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('AgeGateController.submit (adult) survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(
+      () => userRepository.upsertAgeVerified(
+        uid: any(named: 'uid'),
+        dob: any(named: 'dob'),
+      ),
+    ).thenAnswer((_) => gate.future);
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      ageGateControllerProvider,
+      action: () => container
+          .read(ageGateControllerProvider.notifier)
+          .submit(DateTime.utc(2000)),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last.value?.blocked, isFalse);
+  });
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('AgeGateController.submit (under-18 sign-out) survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(() => authRepository.signOut())
+        .thenAnswer((_) => gate.future);
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      ageGateControllerProvider,
+      action: () => container
+          .read(ageGateControllerProvider.notifier)
+          .submit(DateTime.utc(2015)),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last.value?.blocked, isTrue);
+  });
 }

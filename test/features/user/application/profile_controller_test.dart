@@ -15,6 +15,8 @@ import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
+import '../../../helpers/in_flight_dispose.dart';
+
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class MockUserRepository extends Mock implements UserRepository {}
@@ -206,5 +208,34 @@ void main() {
       () => userRepository.updateProfile(uid: 'u1', photoUrls: ['v']),
     ).called(1);
     verify(() => photoStorage.deleteByUrl('u')).called(1);
+  });
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('ProfileController.save survives its listener unmounting mid-flight',
+      () async {
+    container = buildContainer();
+    final gate = Completer<void>();
+    when(
+      () => userRepository.updateProfile(
+        uid: any(named: 'uid'),
+        displayName: any(named: 'displayName'),
+        photoUrls: any(named: 'photoUrls'),
+        bio: any(named: 'bio'),
+        gender: any(named: 'gender'),
+      ),
+    ).thenAnswer((_) => gate.future);
+
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      profileControllerProvider,
+      action: () => container
+          .read(profileControllerProvider.notifier)
+          .save(displayName: 'New'),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last, isA<AsyncData<void>>());
   });
 }

@@ -39,20 +39,26 @@ class CreateMealController extends _$CreateMealController {
     String? note,
     required bool womenOnly,
   }) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      final meal = Meal(
-        id: '',
-        hostId: uid,
-        restaurant: restaurant,
-        dateTime: dateTime,
-        geohash: '',
-        note: note,
-        womenOnly: womenOnly,
-      );
-      await ref.read(mealRepositoryProvider).createMeal(meal);
-      await analytics.track(MealCreated(womenOnly: womenOnly));
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        final meal = Meal(
+          id: '',
+          hostId: uid,
+          restaurant: restaurant,
+          dateTime: dateTime,
+          geohash: '',
+          note: note,
+          womenOnly: womenOnly,
+        );
+        await ref.read(mealRepositoryProvider).createMeal(meal);
+        await analytics.track(MealCreated(womenOnly: womenOnly));
+      });
+    } finally {
+      link.close();
+    }
   }
 }

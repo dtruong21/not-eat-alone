@@ -20,4 +20,17 @@ void main() {
     final none = await repo.watchMyRating('m1', 'uX').first;
     expect(none, isNull);
   });
+
+  test('submit omits comment entirely from the write when null', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = RatingRepositoryImpl(firestore: db);
+    await repo.submit(const Rating(
+      id: 'm1_u2', matchId: 'm1', raterUid: 'u2', targetUid: 'u1',
+      stars: 4, showedUp: true,
+    ));
+    final snap = await db.collection('ratings').doc('m1_u2').get();
+    // Not just "comment is null" — the KEY must be absent (defense in depth;
+    // the rule also accepts null now, see rating_dto.dart).
+    expect(snap.data()!.containsKey('comment'), isFalse);
+  });
 }

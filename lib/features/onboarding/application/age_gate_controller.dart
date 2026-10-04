@@ -51,26 +51,34 @@ class AgeGateController extends _$AgeGateController {
     // CRITICAL: normalize to a UTC-midnight calendar date — see file header.
     final dobUtc = DateTime.utc(dob.year, dob.month, dob.day);
 
-    if (!isAdult(dobUtc)) {
-      await analytics.track(const AgeGateFailed());
+    // Keep alive until settled — see CreateRequestController.request. Both
+    // branches can unmount the screen mid-flight (sign-out / the router
+    // redirect reacting to the age-verified write).
+    final link = ref.keepAlive();
+    try {
+      if (!isAdult(dobUtc)) {
+        await analytics.track(const AgeGateFailed());
+        state = const AsyncValue.loading();
+        state = await AsyncValue.guard(() async {
+          await ref.read(authRepositoryProvider).signOut();
+          return const AgeGateState(blocked: true);
+        });
+        return;
+      }
+
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
-        await ref.read(authRepositoryProvider).signOut();
-        return const AgeGateState(blocked: true);
+        final uid = ref.read(authRepositoryProvider).currentUser!.uid;
+        await ref
+            .read(userRepositoryProvider)
+            .upsertAgeVerified(uid: uid, dob: dobUtc);
+        await analytics.track(const AgeGatePassed());
+        // No navigation here — the router's redirect reacts to the user doc
+        // once the write lands and moves us to `/`.
+        return const AgeGateState();
       });
-      return;
+    } finally {
+      link.close();
     }
-
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-      await ref
-          .read(userRepositoryProvider)
-          .upsertAgeVerified(uid: uid, dob: dobUtc);
-      await analytics.track(const AgeGatePassed());
-      // No navigation here — the router's redirect reacts to the user doc
-      // once the write lands and moves us to `/`.
-      return const AgeGateState();
-    });
   }
 }

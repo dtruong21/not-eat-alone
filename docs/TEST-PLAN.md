@@ -375,6 +375,83 @@ Related PRD entry: `docs/PRD.md § Ratings`
 
 ---
 
+## End-to-end tests (emulator)
+
+The `integration_test/` suite runs the real app, through the real UI, on an iOS
+Simulator against the **Firebase Emulator Suite** (Auth, Firestore, Functions,
+Storage). It needs no real Firebase project and touches no cloud data.
+
+**What it covers**
+
+- **Security rules enforced** — `firestore.rules` is loaded and enforced by the
+  emulator; unauthorized reads/writes are denied (`rules_enforced_test.dart`).
+- **Cloud Functions** — triggers actually fire in the emulator, e.g. the rating
+  aggregate written by `onRatingCreated`.
+- **Smoke** — a signed-in user boots to the Discover feed.
+- **Core flow through the real UI** — guest requests, host approves, match is
+  created; chat (host sends, guest reads); both parties rate, including a
+  rating with no comment.
+
+**How to run**
+
+```bash
+make e2e
+```
+
+Prerequisites: Xcode with an iOS Simulator runtime, Node 20, Java 21+ (the
+emulators need it), `firebase-tools`, FVM, and a **dedicated simulator** named
+`Convyve E2E` (don't share one with other projects running concurrently — that
+causes hangs). Create it once:
+
+```bash
+xcrun simctl create "Convyve E2E" <iPhone devicetype id> <iOS runtime id>
+# ids: xcrun simctl list devicetypes / xcrun simctl list runtimes
+```
+
+`make e2e` seeds the iOS plist, boots the simulator, pre-decides the location
+permission prompt, builds the Cloud Functions, then runs the whole suite inside
+`firebase emulators:exec`. Override the simulator with `make e2e DEVICE=<name or udid>`.
+
+**CI** — the `E2E (emulator, iOS sim)` job in `.github/workflows/ci.yml` runs
+the same `make e2e` on a macOS runner. It is **currently non-blocking** (not a
+required check); see `docs/CICD.md` for when it gets promoted.
+
+**Known flake notes**
+
+- Occasionally the run hangs after the Xcode build, at the start of
+  `smoke_test.dart` (the app launch never completes). CI caps each attempt at
+  20 minutes and retries once in place; a green-after-retry run prints a
+  warning and uploads the emulator logs. Locally: Ctrl-C and re-run.
+- A hang that persists across runs usually means another process is using the
+  simulator, or stray emulators hold the ports (`pkill -f firebase`).
+- If a test fails, check `firebase-debug.log` / `firestore-debug.log` in the repo
+  root (git-ignored) for rule denials and Function errors.
+
+---
+
+## Manual `stage` smoke checklist (user-run, pre-release)
+
+What the emulator suite cannot prove. Run against a real `stage` build before
+each release; each item is **user-run**.
+
+- [ ] **Real Google / Apple sign-in** — tap the actual "Continue with Google" and
+  "Continue with Apple" buttons (the emulator suite signs in programmatically,
+  so the native sign-in sheets and OAuth config are never exercised). Confirm
+  new-user and returning-user paths both land correctly.
+- [ ] **Push (FCM) delivery on a real device** — request, approve and message
+  pushes arrive on a physical device (emulators have no FCM/APNs); cold-start
+  tap deep-links correctly; foreground shows the in-app banner only.
+- [ ] **App Check enforcement** — with enforcement toggled on for the product
+  under test in the Firebase console, a registered build works and an
+  unregistered/tampered client is rejected; debug tokens are registered for
+  every dev device. The emulators never enforce App Check.
+- [ ] **Named `stage` database split** — the `stage` flavor reads and writes the
+  `stage` Firestore database, the `prod` flavor the `(default)` one; data
+  created in one never appears in the other; rules deployed to both
+  (`firebase deploy` covers both, the E2E run only loads `(default)`).
+
+---
+
 ## Manual-device checklist (pending — requires a signed build + real device)
 
 The 2026-09-23 QA sweep (Plan 11, Task 8) was a static/automated pass only —
@@ -438,7 +515,7 @@ Before `/release` cuts a build:
 
 - [ ] `flutter analyze` is clean (zero warnings)
 - [ ] `flutter test` is green
-- [ ] `flutter test integration_test` is green on iOS Simulator + Android Emulator
+- [ ] `make e2e` (emulator E2E suite) is green on the iOS Simulator; `flutter test integration_test` on an Android Emulator is not wired yet
 - [ ] Golden tests pass on the canonical host (no unintentional re-baselines)
 - [ ] All universal edge cases pass on iOS + Android simulator
 - [ ] All feature checklists for this release pass

@@ -1,0 +1,550 @@
+/// Regression lock for the emulator-open-rules gap: proves the Firestore
+/// emulator loads and ENFORCES `firebase/firestore.rules` for the `(default)`
+/// database rather than silently running open. If the emulator invocation
+/// regresses to unqualified `--only firestore` (see `Makefile`'s `e2e`
+/// target comment), firebase-tools' `getFirestoreConfig()` sees both
+/// `firebase.json` `firestore` array entries ((default) + stage), the
+/// Firestore emulator bails with "does not support multiple databases yet"
+/// and starts with OPEN rules, and the forbidden write below would silently
+/// SUCCEED instead of throwing — failing this test. Run via `make e2e` (see
+/// `Makefile`).
+library;
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+
+import 'support/app_harness.dart';
+import 'support/auth.dart';
+import 'support/emulator_admin.dart';
+import 'support/seed.dart';
+
+FirebaseFirestore get _db => FirebaseFirestore.instance;
+
+/// Boots the app (which initializes Firebase + wires the emulators) only if
+/// no earlier test in this file already did: a second `bootstrap` would
+/// re-call `useFirestoreEmulator` on an already-started Firestore instance,
+/// which throws. Keeps each test runnable on its own (`--plain-name`) too.
+Future<void> _bootOnce(WidgetTester tester) async {
+  if (Firebase.apps.isEmpty) await pumpApp(tester);
+}
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(clearEmulators);
+
+  testWidgets(
+    'firestore.rules denies a meals/ create with a forged hostId',
+    (tester) async {
+      // Act: boot the app against the emulators (wires the Firestore SDK to
+      // the emulator — see `pumpApp`) and sign in a test user, same
+      // preconditions as `smoke_test.dart`.
+      await _bootOnce(tester);
+      final user = await signInTestUser(uid: 'rules-deny-1');
+
+      // `firebase/firestore.rules` `match /meals/{mealId}` create requires
+      // `request.resource.data.hostId == request.auth.uid`. `hostId` below
+      // is deliberately a DIFFERENT uid than the signed-in user, so this
+      // write is unambiguously denied under enforced rules regardless of
+      // any other field — and would silently succeed if the emulator were
+      // running open.
+      Future<void> forbiddenWrite() => _db.collection('meals').doc().set({
+            'hostId': '${user.uid}-not-me',
+            'status': 'open',
+            'geohash': 'u09',
+            'dateTime': Timestamp.fromDate(
+              DateTime.now().add(const Duration(hours: 3)),
+            ),
+          });
+
+      // Assert: the write is rejected with `permission-denied` — proof the
+      // emulator is enforcing `firebase/firestore.rules`, not running open.
+      await expectLater(
+        forbiddenWrite,
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  // `requests/{requestId}` get rule (firebase/firestore.rules): a guest may
+  // read their OWN not-yet-created request (id `{mealId}_{guestId}` — see
+  // `RequestRepositoryImpl._requestId`) so the meal-detail "Request to join"
+  // listener resolves to "no request yet" instead of hanging on
+  // PERMISSION_DENIED; the null case is scoped to the caller's own id so it
+  // is not an existence oracle for anyone else's request.
+  testWidgets(
+    'a guest can get their own not-yet-created request (resolves '
+    'not-exists, no error)',
+    (tester) async {
+      await _bootOnce(tester);
+      final guest = await signInTestUser(uid: 'rules-own-request-1');
+
+      final snap = await _db
+          .collection('requests')
+          .doc('some-meal_${guest.uid}')
+          .get(const GetOptions(source: Source.server));
+
+      expect(snap.exists, isFalse);
+    },
+  );
+
+  testWidgets(
+    "getting someone else's not-yet-created request is permission-denied "
+    '(no existence oracle)',
+    (tester) async {
+      await _bootOnce(tester);
+      final user = await signInTestUser(uid: 'rules-other-request-1');
+
+      Future<void> probeOther() => _db
+          .collection('requests')
+          .doc('some-meal_${user.uid}-not-me')
+          .get(const GetOptions(source: Source.server));
+
+      await expectLater(
+        probeOther,
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  // `matches/{matchId}` read rule (`firebase/firestore.rules`): split into
+  // `get`/`list` so the Chats tab's `arrayContains('participants', uid)` +
+  // `orderBy('createdAt')` query — which only the `list` rule's
+  // `participants`-pinned condition can prove — succeeds, while a `get` by
+  // a non-participant still denies.
+  testWidgets(
+    "a match participant's list query "
+    '(participants array-contains + orderBy createdAt) succeeds',
+    (tester) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'rules-match-list-host');
+      const matchId = 'rules-match-list-match-1';
+      const otherUid = 'rules-match-list-guest';
+      await _db.collection('matches').doc(matchId).set({
+        'id': matchId,
+        'mealId': matchId,
+        'hostId': host.uid,
+        'guestId': otherUid,
+        'participants': [host.uid, otherUid],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      final snap = await _db
+          .collection('matches')
+          .where('participants', arrayContains: host.uid)
+          .orderBy('createdAt', descending: true)
+          .get(const GetOptions(source: Source.server));
+
+      expect(snap.docs.map((d) => d.id), contains(matchId));
+    },
+  );
+
+  testWidgets(
+    "a non-participant's get on someone else's match is permission-denied",
+    (tester) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'rules-match-get-host');
+      const matchId = 'rules-match-get-match-1';
+      await _db.collection('matches').doc(matchId).set({
+        'id': matchId,
+        'mealId': matchId,
+        'hostId': host.uid,
+        'guestId': 'rules-match-get-guest',
+        'participants': [host.uid, 'rules-match-get-guest'],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await signInTestUser(uid: 'rules-match-get-outsider');
+      Future<void> probeOther() => _db
+          .collection('matches')
+          .doc(matchId)
+          .get(const GetOptions(source: Source.server));
+
+      await expectLater(
+        probeOther,
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  // `ratings/{ratingId}` read rule: same get/list split shape as `requests`
+  // (`c133e20`) and `matches` above — id is `{matchId}_{raterUid}`
+  // (`RatingRepositoryImpl`), so a rater's own not-yet-created rating
+  // resolves to "not rated yet" instead of hanging a listener on
+  // PERMISSION_DENIED, narrowed to the caller's own id suffix.
+  testWidgets(
+    'a user can get their own not-yet-created rating (resolves '
+    'not-exists, no error)',
+    (tester) async {
+      await _bootOnce(tester);
+      final user = await signInTestUser(uid: 'rules-own-rating-1');
+
+      final snap = await _db
+          .collection('ratings')
+          .doc('some-match_${user.uid}')
+          .get(const GetOptions(source: Source.server));
+
+      expect(snap.exists, isFalse);
+    },
+  );
+
+  testWidgets(
+    "getting someone else's not-yet-created rating is permission-denied "
+    '(no existence oracle)',
+    (tester) async {
+      await _bootOnce(tester);
+      final user = await signInTestUser(uid: 'rules-other-rating-1');
+
+      Future<void> probeOther() => _db
+          .collection('ratings')
+          .doc('some-match_${user.uid}-not-me')
+          .get(const GetOptions(source: Source.server));
+
+      await expectLater(
+        probeOther,
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  // `ratings/{ratingId}` create rule's `comment` clause: only special-cases
+  // the KEY being absent, then requires a string `<= 200` chars once it IS
+  // present. A present `comment: null` value used to throw a rule-evaluation
+  // error on `.size()` and deny the whole create — the fix adds an explicit
+  // `== null` arm and an `is string` guard before `.size()`. Each case here
+  // seeds its own match (via a helper) as the host, then creates the rating
+  // as that same host rating the guest — the only thing under test is the
+  // `comment` clause, so every other field is a known-good baseline. Uses
+  // the REAL emulator-assigned uids (`host.uid`) throughout, not the string
+  // passed to `signInTestUser` — the Auth emulator mints its own random uid
+  // per identity, it does NOT echo the claimed `sub` back as the Firebase
+  // uid (confirmed via a REST probe in this task; see the task report).
+  Future<({String matchId, String hostUid, String guestUid})> seedRatingMatch(
+    WidgetTester tester,
+    String suffix,
+  ) async {
+    await _bootOnce(tester);
+    final host = await signInTestUser(uid: 'rules-rating-comment-host-$suffix');
+    final matchId = 'rules-rating-comment-match-$suffix';
+    const guestUid = 'rules-rating-comment-guest-not-a-real-uid';
+    await _db.collection('matches').doc(matchId).set({
+      'id': matchId,
+      'mealId': matchId,
+      'hostId': host.uid,
+      'guestId': guestUid,
+      'participants': [host.uid, guestUid],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return (matchId: matchId, hostUid: host.uid, guestUid: guestUid);
+  }
+
+  Future<void> createRating({
+    required String matchId,
+    required String raterUid,
+    required String targetUid,
+    Object? comment,
+    bool includeCommentKey = true,
+  }) {
+    final data = <String, Object?>{
+      'matchId': matchId,
+      'raterUid': raterUid,
+      'targetUid': targetUid,
+      'stars': 5,
+      'showedUp': true,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+    if (includeCommentKey) data['comment'] = comment;
+    return _db.collection('ratings').doc('${matchId}_$raterUid').set(data);
+  }
+
+  testWidgets(
+    'a valid participant rating with no comment key is allowed',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'no-key');
+      await createRating(
+        matchId: seed.matchId,
+        raterUid: seed.hostUid,
+        targetUid: seed.guestUid,
+        includeCommentKey: false,
+      );
+      final snap = await _db
+          .collection('ratings')
+          .doc('${seed.matchId}_${seed.hostUid}')
+          .get(const GetOptions(source: Source.server));
+      expect(snap.exists, isTrue);
+    },
+  );
+
+  testWidgets(
+    'a valid participant rating with comment: null is allowed',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'null');
+      // `comment` defaults to `null`; not passed explicitly (redundant-arg
+      // lint) — `includeCommentKey` (true by default) still writes the KEY
+      // with that null value, which is exactly the case under test.
+      await createRating(
+        matchId: seed.matchId,
+        raterUid: seed.hostUid,
+        targetUid: seed.guestUid,
+      );
+      final snap = await _db
+          .collection('ratings')
+          .doc('${seed.matchId}_${seed.hostUid}')
+          .get(const GetOptions(source: Source.server));
+      expect(snap.exists, isTrue);
+    },
+  );
+
+  testWidgets(
+    'a valid participant rating with a 200-char comment is allowed',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, '200');
+      await createRating(
+        matchId: seed.matchId,
+        raterUid: seed.hostUid,
+        targetUid: seed.guestUid,
+        comment: 'a' * 200,
+      );
+      final snap = await _db
+          .collection('ratings')
+          .doc('${seed.matchId}_${seed.hostUid}')
+          .get(const GetOptions(source: Source.server));
+      expect(snap.exists, isTrue);
+    },
+  );
+
+  testWidgets(
+    'a rating with a 201-char comment is permission-denied',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, '201');
+      await expectLater(
+        createRating(
+          matchId: seed.matchId,
+          raterUid: seed.hostUid,
+          targetUid: seed.guestUid,
+          comment: 'a' * 201,
+        ),
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  testWidgets(
+    'a rating with a non-string comment is permission-denied',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'non-string');
+      await expectLater(
+        createRating(
+          matchId: seed.matchId,
+          raterUid: seed.hostUid,
+          targetUid: seed.guestUid,
+          comment: <String>['x'],
+        ),
+        throwsA(
+          isA<FirebaseException>().having(
+            (e) => e.code,
+            'code',
+            'permission-denied',
+          ),
+        ),
+      );
+    },
+  );
+
+  // ---- Doc-id pinning on create (`ratings` / `requests` / `blocks`) ----
+  // Each create rule requires the doc id to be the caller's canonical id
+  // (`{matchId}_{uid}`, `{mealId}_{uid}`, `{uid}_{blockedUid}`), the id the
+  // app writes. Every case below is signed in as a valid participant with a
+  // valid body; the ONLY varying thing is the doc id. All uids are the real
+  // emulator-minted `.uid`s, not the literals passed to `signInTestUser`.
+  Matcher permissionDenied() => throwsA(
+    isA<FirebaseException>().having((e) => e.code, 'code', 'permission-denied'),
+  );
+
+  Future<void> setRating(String docId, String matchId, String me, String to) =>
+      _db.collection('ratings').doc(docId).set({
+        'matchId': matchId,
+        'raterUid': me,
+        'targetUid': to,
+        'stars': 5,
+        'showedUp': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+  testWidgets('ratings create: canonical {matchId}_{uid} is allowed', (
+    tester,
+  ) async {
+    final seed = await seedRatingMatch(tester, 'pin-ok');
+    await setRating(
+      '${seed.matchId}_${seed.hostUid}',
+      seed.matchId,
+      seed.hostUid,
+      seed.guestUid,
+    );
+  });
+
+  testWidgets(
+    'ratings create: an arbitrary id (rating stuffing) is permission-denied',
+    (tester) async {
+      final seed = await seedRatingMatch(tester, 'pin-stuff');
+      await expectLater(
+        setRating(
+          '${seed.matchId}_stuffing1',
+          seed.matchId,
+          seed.hostUid,
+          seed.guestUid,
+        ),
+        permissionDenied(),
+      );
+    },
+  );
+
+  testWidgets(
+    "ratings create: squatting another user's id is permission-denied",
+    (tester) async {
+      await _bootOnce(tester);
+      final victim = await signInTestUser(uid: 'rules-pin-rating-victim');
+      final seed = await seedRatingMatch(tester, 'pin-squat');
+      await expectLater(
+        setRating(
+          '${seed.matchId}_${victim.uid}',
+          seed.matchId,
+          seed.hostUid,
+          seed.guestUid,
+        ),
+        permissionDenied(),
+      );
+    },
+  );
+
+  // Signs in a host, seeds an OPEN meal as them, then signs in the guest.
+  // Returns the real uids and the meal id.
+  Future<({String mealId, String hostUid, String guestUid})> seedOpenMealFor(
+    WidgetTester tester,
+    String suffix,
+  ) async {
+    await _bootOnce(tester);
+    final host = await signInTestUser(uid: 'rules-pin-req-host-$suffix');
+    final mealId = await seedOpenMeal(hostId: host.uid);
+    final guest = await signInTestUser(uid: 'rules-pin-req-guest-$suffix');
+    return (mealId: mealId, hostUid: host.uid, guestUid: guest.uid);
+  }
+
+  Future<void> setRequest(
+    String docId,
+    String mealId,
+    String guestUid,
+    String hostUid,
+  ) => _db.collection('requests').doc(docId).set({
+    'id': docId,
+    'mealId': mealId,
+    'guestId': guestUid,
+    'hostId': hostUid,
+    'status': 'pending',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  testWidgets('requests create: canonical {mealId}_{uid} is allowed', (
+    tester,
+  ) async {
+    final s = await seedOpenMealFor(tester, 'ok');
+    await setRequest(
+      '${s.mealId}_${s.guestUid}',
+      s.mealId,
+      s.guestUid,
+      s.hostUid,
+    );
+  });
+
+  testWidgets('requests create: an arbitrary id is permission-denied', (
+    tester,
+  ) async {
+    final s = await seedOpenMealFor(tester, 'arb');
+    await expectLater(
+      setRequest('${s.mealId}_stuffing1', s.mealId, s.guestUid, s.hostUid),
+      permissionDenied(),
+    );
+  });
+
+  testWidgets(
+    "requests create: squatting another user's id is permission-denied",
+    (tester) async {
+      await _bootOnce(tester);
+      final victim = await signInTestUser(uid: 'rules-pin-req-victim');
+      final s = await seedOpenMealFor(tester, 'squat');
+      await expectLater(
+        setRequest(
+          '${s.mealId}_${victim.uid}',
+          s.mealId,
+          s.guestUid,
+          s.hostUid,
+        ),
+        permissionDenied(),
+      );
+    },
+  );
+
+  Future<void> setBlock(String docId, String me, String blocked) =>
+      _db.collection('blocks').doc(docId).set({
+        'id': docId,
+        'blockerUid': me,
+        'blockedUid': blocked,
+        'pair': [me, blocked],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+  testWidgets('blocks create: canonical {me}_{other} is allowed', (
+    tester,
+  ) async {
+    await _bootOnce(tester);
+    final me = await signInTestUser(uid: 'rules-pin-block-me');
+    await setBlock('${me.uid}_some-other-user', me.uid, 'some-other-user');
+  });
+
+  testWidgets(
+    'blocks create: a stranger-to-stranger id with blockerUid = me is '
+    'permission-denied',
+    (tester) async {
+      await _bootOnce(tester);
+      final stranger1 = await signInTestUser(uid: 'rules-pin-block-s1');
+      final stranger2 = await signInTestUser(uid: 'rules-pin-block-s2');
+      final me = await signInTestUser(uid: 'rules-pin-block-me2');
+      await expectLater(
+        setBlock('${stranger1.uid}_${stranger2.uid}', me.uid, stranger2.uid),
+        permissionDenied(),
+      );
+    },
+  );
+}

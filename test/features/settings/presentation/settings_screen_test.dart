@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
+import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
+import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
 import 'package:not_eat_alone/features/safety/application/account_providers.dart';
 import 'package:not_eat_alone/features/safety/domain/repositories/account_repository.dart';
 import 'package:not_eat_alone/features/settings/presentation/settings_screen.dart';
@@ -12,6 +17,8 @@ import 'package:not_eat_alone/features/settings/presentation/settings_screen.dar
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class MockAccountRepository extends Mock implements AccountRepository {}
+
+class MockPushRepository extends Mock implements PushRepository {}
 
 void main() {
   late MockAuthRepository authRepository;
@@ -28,7 +35,10 @@ void main() {
     when(() => accountRepository.deleteAccount()).thenAnswer((_) async {});
   });
 
-  Future<void> pumpSettings(WidgetTester tester) async {
+  Future<void> pumpSettings(
+    WidgetTester tester, {
+    PushRepository? pushRepository,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -37,6 +47,8 @@ void main() {
           ),
           authRepositoryProvider.overrideWithValue(authRepository),
           accountRepositoryProvider.overrideWithValue(accountRepository),
+          if (pushRepository != null)
+            pushRepositoryProvider.overrideWithValue(pushRepository),
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
@@ -84,6 +96,33 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Delete account?'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'sign out survives the screen unmounting while the token unregister is '
+    'in flight (no ref read after the await) and still signs out',
+    (tester) async {
+      final gate = Completer<void>();
+      final pushRepository = MockPushRepository();
+      when(() => pushRepository.unregisterCurrentToken(any()))
+          .thenAnswer((_) => gate.future);
+      when(() => authRepository.currentUser)
+          .thenReturn(const AuthUser(uid: 'u1'));
+
+      await pumpSettings(tester, pushRepository: pushRepository);
+
+      await tester.tap(find.byKey(const Key('settings_sign_out')));
+      await tester.pump();
+
+      // Unmount the whole tree (disposing the screen's ref) mid-flight.
+      await tester.pumpWidget(const SizedBox());
+      gate.complete();
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      verify(() => authRepository.signOut()).called(1);
     },
   );
 }

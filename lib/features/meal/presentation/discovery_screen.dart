@@ -89,18 +89,23 @@ class DiscoveryScreen extends ConsumerWidget {
     // `authStateProvider.value` — the latter is a `StreamProvider` that may
     // still be `AsyncLoading` (uid `null`) at the moment of the tap if
     // nothing else has watched it yet to prime the stream subscription.
-    final uid = ref.read(authRepositoryProvider).currentUser?.uid;
+    // Everything is read from `ref` BEFORE the first await: this is a
+    // `ConsumerWidget`, so `ref` is bound to the element and reading it after
+    // an await throws if the widget unmounted meanwhile (e.g. the unregister
+    // call below changing what the screen shows). The captured repository /
+    // notifier stay usable for the rest of the flow.
+    final auth = ref.read(authRepositoryProvider);
+    final push = ref.read(pushRegistrationControllerProvider.notifier);
+    final uid = auth.currentUser?.uid;
     if (uid != null) {
       try {
-        await ref
-            .read(pushRegistrationControllerProvider.notifier)
-            .unregister(uid);
+        await push.unregister(uid);
       } on Exception {
         // Ignored — see doc comment above.
       }
     }
     await analytics.track(const SignoutCompleted());
-    await ref.read(authRepositoryProvider).signOut();
+    await auth.signOut();
   }
 
   Future<void> _onTapMeal(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -8,6 +10,8 @@ import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.
 import 'package:not_eat_alone/features/safety/application/report_controller.dart';
 import 'package:not_eat_alone/features/safety/application/report_providers.dart';
 import 'package:not_eat_alone/features/safety/domain/repositories/report_repository.dart';
+
+import '../../../helpers/in_flight_dispose.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -86,5 +90,31 @@ void main() {
       final state = container.read(reportControllerProvider);
       expect(state.hasError, isTrue);
     });
+  });
+
+  // Regression: the controller's only watcher unmounting mid-action used
+  // to dispose it, so the trailing `state =` threw UnmountedRefException.
+  test('ReportController.submit survives its listener '
+      'unmounting mid-flight', () async {
+    final gate = Completer<void>();
+    when(
+      () => reportRepository.report(
+        reporterId: any(named: 'reporterId'),
+        targetType: any(named: 'targetType'),
+        targetId: any(named: 'targetId'),
+        reason: any(named: 'reason'),
+      ),
+    ).thenAnswer((_) => gate.future);
+    final seen = await runWithListenerRemovedMidFlight(
+      container,
+      reportControllerProvider,
+      action: () => container
+          .read(reportControllerProvider.notifier)
+          .submit(targetType: 'user', targetId: 'x'),
+      release: gate.complete,
+    );
+
+    expect(seen.first.isLoading, isTrue);
+    expect(seen.last, isA<AsyncData<void>>());
   });
 }

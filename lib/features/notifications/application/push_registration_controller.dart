@@ -14,15 +14,21 @@ class PushRegistrationController extends _$PushRegistrationController {
   /// Request permission then register the device token for [uid]. Safe to call
   /// on every app start for a signed-in, onboarded user.
   Future<void> register(String uid) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final repo = ref.read(pushRepositoryProvider);
-      final granted = await repo.requestPermission();
-      await analytics.track(PushPermissionGranted(granted: granted));
-      if (granted) {
-        await repo.registerToken(uid);
-      }
-    });
+    // Keep alive until settled — see CreateRequestController.request.
+    final link = ref.keepAlive();
+    try {
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() async {
+        final repo = ref.read(pushRepositoryProvider);
+        final granted = await repo.requestPermission();
+        await analytics.track(PushPermissionGranted(granted: granted));
+        if (granted) {
+          await repo.registerToken(uid);
+        }
+      });
+    } finally {
+      link.close();
+    }
   }
 
   Future<void> unregister(String uid) async {

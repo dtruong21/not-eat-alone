@@ -84,10 +84,24 @@ service cloud.firestore {
 
     // Join requests: guest creates for an OPEN meal; host reviews.
     match /requests/{requestId} {
-      allow read: if isSignedIn()
+      // get: a party to an existing request, OR the guest reading their OWN
+      // not-yet-created request (id is `{mealId}_{guestId}` — see
+      // RequestRepositoryImpl._requestId) so the meal-detail listener resolves
+      // to "no request yet". Scoping the null case to the caller's own id
+      // avoids an existence oracle on other users' requests.
+      allow get: if isSignedIn()
+                 && ((resource == null
+                      && requestId.matches('.*_' + request.auth.uid))
+                     || (resource != null
+                         && (resource.data.guestId == request.auth.uid
+                             || resource.data.hostId == request.auth.uid)));
+      allow list: if isSignedIn()
                   && (resource.data.guestId == request.auth.uid
                       || resource.data.hostId == request.auth.uid);
+      // Doc id pinned to `{mealId}_{callerUid}` (the id the app writes) so a
+      // caller can't squat another user's request id and lock them out.
       allow create: if isSignedIn()
+                    && requestId == request.resource.data.mealId + '_' + request.auth.uid
                     && request.resource.data.guestId == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && request.resource.data.hostId != request.auth.uid
@@ -107,11 +121,20 @@ service cloud.firestore {
     // Matches: readable by the two parties; created by the host (in the
     // approve transaction); immutable in v1.
     match /matches/{matchId} {
-      allow read: if isSignedIn()
-                  && (resource.data.hostId == request.auth.uid
-                      || resource.data.guestId == request.auth.uid
-                      || (resource.data.participants is list
-                          && request.auth.uid in resource.data.participants));
+      // Split get/list: a `get` can freely dereference `resource.data` (a
+      // single, already-fetched doc), but a `list` query must be provable
+      // from the QUERY's own constraints alone — only the `participants`
+      // `array-contains` branch is (the documented `array-contains` ->
+      // `in` pattern); the `hostId`/`guestId` OR-branches aren't, so a
+      // combined `read` denies every `list` (see the Chats tab's
+      // `arrayContains('participants', uid)` query, which needs `list`).
+      allow get: if isSignedIn()
+                 && (resource.data.hostId == request.auth.uid
+                     || resource.data.guestId == request.auth.uid
+                     || (resource.data.participants is list
+                         && request.auth.uid in resource.data.participants));
+      allow list: if isSignedIn()
+                  && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn()
                     && request.resource.data.hostId == request.auth.uid;
       allow update, delete: if false;
@@ -136,7 +159,10 @@ service cloud.firestore {
     // User blocks: one user blocks another to prevent meal interactions
     match /blocks/{blockId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.pair;
+      // Doc id pinned to `{callerUid}_{blockedUid}` (the id the app writes) so
+      // a caller can't create blocks between strangers' id space.
       allow create: if isSignedIn()
+                    && blockId == request.auth.uid + '_' + request.resource.data.blockedUid
                     && request.resource.data.blockerUid == request.auth.uid
                     && request.resource.data.blockerUid != request.resource.data.blockedUid
                     && request.resource.data.pair == [request.resource.data.blockerUid, request.resource.data.blockedUid];
@@ -152,8 +178,23 @@ service cloud.firestore {
     }
 
     match /ratings/{ratingId} {
-      allow read: if isSignedIn() && resource.data.raterUid == request.auth.uid;
+      // Same get/list split as `matches` (and the same shape as `requests`'
+      // c133e20 fix): a `get` on a doc id ending in the caller's own uid
+      // resolves "not yet rated" (not-exists, no error) instead of hanging
+      // a listener on PERMISSION_DENIED — narrowed to the caller's own id
+      // suffix so it isn't an existence oracle for anyone else's rating.
+      // `list` can't dereference an as-yet-unfetched `resource.data`, so it
+      // stays pinned to `raterUid` (provable only once the caller's own
+      // `where('raterUid', ...)`-shaped query is used).
+      allow get: if isSignedIn()
+                 && ((resource == null && ratingId.matches('.*_' + request.auth.uid))
+                     || (resource != null && resource.data.raterUid == request.auth.uid));
+      allow list: if isSignedIn()
+                  && resource.data.raterUid == request.auth.uid;
+      // Doc id pinned to `{matchId}_{callerUid}` (the id the app writes): one
+      // rating per rater per match, and no squatting another rater's id.
       allow create: if isSignedIn()
+                    && ratingId == request.resource.data.matchId + '_' + request.auth.uid
                     && request.resource.data.raterUid == request.auth.uid
                     && request.resource.data.raterUid != request.resource.data.targetUid
                     && request.resource.data.stars is int
@@ -161,7 +202,9 @@ service cloud.firestore {
                     && request.resource.data.stars <= 5
                     && request.resource.data.showedUp is bool
                     && (!('comment' in request.resource.data)
-                        || request.resource.data.comment.size() <= 200)
+                        || request.resource.data.comment == null
+                        || (request.resource.data.comment is string
+                            && request.resource.data.comment.size() <= 200))
                     && ratingParticipantsValid(request.resource.data.matchId,
                                                request.resource.data.raterUid,
                                                request.resource.data.targetUid);
