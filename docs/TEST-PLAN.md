@@ -516,7 +516,7 @@ required check); see `docs/CICD.md` for when it gets promoted.
 
 - Occasionally the run hangs after the Xcode build, at the start of
   `smoke_test.dart` (the app launch never completes). CI caps each attempt at
-  20 minutes and retries once in place; a green-after-retry run prints a
+  40 minutes and retries once in place; a green-after-retry run prints a
   warning and uploads the emulator logs. Locally: Ctrl-C and re-run.
 - A hang that persists across runs usually means another process is using the
   simulator, or stray emulators hold the ports (`pkill -f firebase`).
