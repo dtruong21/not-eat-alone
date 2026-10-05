@@ -1,7 +1,8 @@
 # Convyve — Inbox Feedback (Plan 14)
 
 **Date:** 2026-10-05
-**Status:** Draft, pending approval
+**Status:** Implemented
+**Implementation notes:** `MealNoLongerOpenException` moved to `lib/features/matching/domain/` (it was in `data/`, which presentation must not import), and the shared `formatMealDateTime` was added in `lib/core/util/date_format.dart`.
 **Feature:** Make the host's request inbox honest. The host sees which meal each request is for, can tell when its meal time has passed (Approve is disabled, Deny stays), and always gets feedback when an Approve or Deny succeeds or fails.
 
 ---
@@ -28,17 +29,17 @@ final requestMealProvider = FutureProvider.family<Meal?, String>(
 );
 ```
 
-The tile watches `requestMealProvider(request.mealId)` and, when it has data, shows a second line under the guest's label: the restaurant name and the meal's date and time. Loading and error render nothing extra (the tile works exactly as today; the server rules remain the source of truth). The date/time formatting reuses the existing helper used by Discover/meal detail if it can be shared without a layering violation; otherwise a small shared formatter in `core/util/`.
+The tile watches `requestMealProvider(request.mealId)` and, when it has data, shows a second line under the guest's label: the restaurant name and the meal's date and time. Loading and error render nothing extra (the tile works exactly as today; the server rules remain the source of truth). The meal line reads "Restaurant · date/time". The date/time uses a new shared pure formatter, `formatMealDateTime` in `lib/core/util/date_format.dart` (output identical to the private copies in Discover, meal detail and create-meal, which were not migrated in this change).
 
 ### 2.2 Past meals
 
 When the loaded meal's `dateTime` is before now:
 
-- a chip "Meal time has passed" replaces the meal line's emphasis;
+- a chip "Meal time has passed" appears under the meal line (the line stays);
 - **Approve is disabled** (the rules reject it anyway);
 - **Deny stays enabled** so the host can clear the request.
 
-The check uses the device clock; the server clock is authoritative, so a request right at the boundary can still fail with the generic message below. No hiding: marked and clearable is simpler and keeps the badge count (`pendingRequestCountProvider`) truthful about what is actually in the inbox.
+The check uses the device clock at build time (the chip appears on the next rebuild if the meal time passes while the inbox is open); the server clock is authoritative, so a request right at the boundary can still fail with the generic message below. No hiding: marked and clearable is simpler and keeps the badge count (`pendingRequestCountProvider`) truthful about what is actually in the inbox.
 
 ### 2.3 Outcome feedback
 

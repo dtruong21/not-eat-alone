@@ -225,7 +225,7 @@ Related PRD entry: `docs/PRD.md § Matching`
 
 **Golden path:**
 - [ ] From meal detail, a signed-in non-host guest taps "Request to join" → a `requests/{mealId_guestId}` doc is written (`status: pending`) → button becomes disabled "Requested" with a "Waiting for the host" hint.
-- [ ] The host opens the discovery app-bar inbox (`/requests`) → sees the pending request as a tile (guest photo/name/derived age) with **Approve** and **Deny** actions.
+- [ ] The host opens the discovery app-bar inbox (`/requests`) → sees the pending request as a tile (guest photo/name/derived age) with **Approve** and **Deny** actions, and a second line under the guest's label with the meal the request is for ("Restaurant · date/time"). While the meal is loading, errored or missing the line is simply absent and the tile works as before. (Meal line: widget-tested in `request_inbox_tile_test.dart` groups "meal line"; E2E in `inbox_feedback_test.dart`.)
 - [ ] Host taps **Approve** → a client transaction locks the meal (`status` leaves `open`), creates a `matches/{mealId}` doc, marks this request `approved`, and denies every other pending request on the same meal ("sibling" denials) → the approved guest's meal-detail button flips to a "Matched!" banner; denied guests see "Not selected".
 - [ ] A second guest who requests the now-locked meal is rejected (request creation blocked once the meal is no longer `open`).
 - [ ] `matches/{mealId}` is the hand-off doc Plan 7 (chat) reads from.
@@ -234,7 +234,16 @@ Related PRD entry: `docs/PRD.md § Matching`
 - [ ] A host cannot request their own meal — meal-detail shows a "Your meal" chip instead of a request button, no request stream touched.
 - [ ] Requesting a non-`open` meal (already matched/cancelled/completed) is rejected client + rules side.
 - [ ] Denied requests are terminal — no re-request, no state flip back to pending.
-- [ ] Approving a request whose meal raced shut (approved by a concurrent transaction first) throws `MealNoLongerOpenException`; the inbox surfaces a SnackBar ("This meal is no longer open.") instead of crashing, and does not deny/approve anything.
+- [ ] Approving a request whose meal raced shut (approved by a concurrent transaction first) throws `MealNoLongerOpenException`; the inbox surfaces a SnackBar ("This meal is no longer open.") instead of crashing, and does not deny/approve anything. (Widget-tested, both with the tile still mounted and removed mid-flight; not E2E.)
+- [ ] Past meal: when the meal's time is before now, the tile shows a "Meal time has passed" chip under the meal line, **Approve is disabled** and **Deny stays enabled** so the host can clear the request; the request is marked, not hidden. A future meal shows no chip and Approve is enabled. (Widget-tested in the "past meal" group; E2E scenario "past-meal request is marked, Approve disabled, Deny clears it". The check uses the device clock at build time: the chip appears only on the next rebuild if the meal time passes while the inbox is open, and a request right at the server/device clock boundary can still fail with the generic message below.)
+- [ ] Every Approve/Deny outcome gives SnackBar feedback (texts from `inbox_action_message.dart`; the mapping is unit-tested in `inbox_action_message_test.dart`, the tile wiring is widget-tested in the "outcome feedback" group):
+  - Approve success: "Approved. You can chat now." with a **Chat** action that opens `/chats/{mealId}` (widget test checks the navigation; E2E scenario "approve shows feedback and its Chat action opens the chat" taps it and sees the chat composer).
+  - Approve, `MealNoLongerOpenException`: "This meal is no longer open." (widget-tested, see above).
+  - Approve, any other error: "Couldn't approve this request. It may already have been handled." (widget-tested only; not E2E).
+  - Deny success: "Request denied." (widget-tested; E2E in the past-meal scenario, which also checks the request becomes `denied` and the tile disappears).
+  - Deny, any error: "Couldn't deny this request. It may already have been handled." (widget-tested only; not E2E).
+  - The generic wording is deliberate: the app layer cannot tell already-decided, past-meal and offline failures apart without leaking Firebase types, and all mean nothing changed.
+  - Unmounting the tile mid-flight (approve or deny) neither throws nor loses the snackbar (widget-tested).
 - [ ] Discovery app-bar inbox badge (`pendingRequestCountProvider`) shows the live pending count and hides itself at 0 (unit-tested in `discovery_inbox_badge_test.dart`).
 - [ ] Women-only meals are unaffected by the request/match flow — the existing discovery-time gender filter is untouched; requests/matches carry no gender logic of their own.
 - [ ] `join_requested` / `request_approved` / `request_denied` / `match_created` all fire from the controller layer (`create_request_controller.dart`, `inbox_action_controller.dart`), never inline in widgets.
@@ -502,21 +511,28 @@ Storage). It needs no real Firebase project and touches no cloud data.
     least 5 minutes ahead and shows "Pick a time at least 5 minutes from now."
     otherwise (it matches the server-side future check). Try a time 2 minutes
     out and one 10 minutes out.
-  - Known gaps (deferred, not covered by tests): (a) the inbox shows no
-    feedback when a stale tile approves/denies an already-decided request
-    (error swallowed): `request_inbox_tile.dart` only snackbars
-    `MealNoLongerOpenException`, `_deny` ignores the result, and the tile reads
-    `inboxActionControllerProvider` only for `.isLoading`; add an error
-    snackbar. (b) Clock skew: the rate button uses the client clock while the
+  - Known gaps (deferred, not covered by tests): (a) FIXED
+    by the inbox-feedback change (Plan 14): the inbox now shows a snackbar for
+    every Approve/Deny outcome, including a stale tile acting on an
+    already-decided request (generic "Couldn't approve/deny this request. It may
+    already have been handled."). Still open from it: at the server/device
+    clock boundary the user sees that same generic message, not a specific
+    one. (b) Clock skew: the rate button uses the client clock while the
     rule uses the server clock, so inside the skew window the user sees the
     generic "Couldn't submit your rating" snackbar. (c) The create-meal submit
     path does not re-validate the 5-minute lead, so a pick that ages below the
     server's `request.time` between picking and submitting fails with a generic
     error; the picker's `_submit` should re-check `isMealTimeFarEnough` and
     derive its message from `mealMinLead`.
-  - Follow-ups (not done): hide or mark inbox requests whose meal has passed
-    (the rules now deny approving one, but the inbox does not filter by date);
-    Discover should skip an unparseable meal instead of erroring the whole
+  - Follow-ups: inbox requests whose meal has passed are now MARKED
+    (Plan 14: "Meal time has passed" chip, Approve disabled, Deny enabled), not
+    hidden. Still open: hiding them or expiring them server-side (a scheduled
+    function that denies stale requests); excluding past requests from the
+    app-bar badge count (`pendingRequestCountProvider` still counts them);
+    four copies of the date/time formatter exist (the shared
+    `formatMealDateTime` in `lib/core/util/date_format.dart`, used by the
+    inbox tile, plus private copies in Discover, meal detail and create-meal:
+    migrate those three). Other follow-ups (not done): Discover should skip an unparseable meal instead of erroring the whole
     stream; a cancel-meal Cloud Function (clients can no longer withdraw an
     open meal, since the meals rule has no client delete); the rule's
     `note.size() <= 200` may count Unicode code points while the UI `maxLength`

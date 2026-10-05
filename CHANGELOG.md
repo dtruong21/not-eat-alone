@@ -23,12 +23,15 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Added
 
+- The request inbox now shows which meal each request is for (restaurant and time), marks requests whose meal time has passed (Approve is disabled, Deny still works), and confirms every Approve or Deny with a message, with a Chat shortcut after approving.
+
 ### Changed
 
 - Creating a meal now needs a time at least 5 minutes ahead; an earlier pick shows a message instead of being accepted.
 
 ### Fixed
 
+- Approving or denying a request in the inbox no longer fails silently: you now see a message when it couldn't be done (for example, the request was already handled).
 - A match can no longer be created without a real, pending, approved request (closes fabricated matches that allowed unsolicited chat and ratings).
 - A meal's host, time and restaurant can no longer be changed (or the meal deleted and re-posted under the same requests) after it is posted, and a meal can only become matched through a genuine approve of a guest's request.
 - A request can only be decided once; an approved or denied request can no longer be flipped (which re-notified the guest each time).
