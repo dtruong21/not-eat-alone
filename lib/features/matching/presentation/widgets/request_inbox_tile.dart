@@ -5,18 +5,26 @@
 /// derived age (own loading/error tolerated — falls back to a placeholder
 /// row rather than blocking the whole tile), and drives Approve/Deny through
 /// `inboxActionControllerProvider`. Both buttons disable while that
-/// controller is submitting; a `MealNoLongerOpenException` from approve
-/// surfaces as a SnackBar rather than an inline error, since the request
-/// itself is still valid — only this particular meal raced shut.
+/// controller is submitting. Also watches `requestMealProvider` to show which
+/// meal the request is for (restaurant + date/time) and, once that meal's
+/// time has passed, a chip plus a disabled Approve. While the meal is
+/// loading, errored or missing the tile behaves as if it did not know about
+/// the meal at all (the server rules remain the source of truth).
+///
+/// Every Approve/Deny outcome is surfaced as a SnackBar via
+/// `inboxActionMessage`; a successful approve adds a **Chat** action.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/matching/application/inbox_action_controller.dart';
+import 'package:not_eat_alone/features/matching/application/request_meal_provider.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
-import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
+import 'package:not_eat_alone/features/matching/presentation/widgets/inbox_action_message.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 /// Age in whole years for someone born on [dob], as of [now] (defaults to
@@ -25,7 +33,8 @@ import 'package:not_eat_alone/features/user/application/user_providers.dart';
 int _ageFromDob(DateTime dob, {DateTime? now}) {
   final today = now ?? DateTime.now();
   var age = today.year - dob.year;
-  final hadBirthday = (today.month > dob.month) ||
+  final hadBirthday =
+      (today.month > dob.month) ||
       (today.month == dob.month && today.day >= dob.day);
   if (!hadBirthday) age -= 1;
   return age;
@@ -36,28 +45,42 @@ class RequestInboxTile extends ConsumerWidget {
 
   final JoinRequest request;
 
-  Future<void> _approve(BuildContext context, WidgetRef ref) async {
-    // Captured BEFORE the await: `this` tile can be unmounted mid-flight
-    // (the request's own status flip, applied optimistically by the
-    // Firestore SDK, can rebuild the inbox list and remove this tile before
-    // `approve` resolves), so neither `context` nor `ref` is safe to touch
-    // afterward — but the screen's `ScaffoldMessenger` (an ANCESTOR of this
-    // tile) stays mounted, so a snackbar shown through this captured
-    // reference still surfaces correctly.
-    final messenger = ScaffoldMessenger.of(context);
-    final error =
-        await ref.read(inboxActionControllerProvider.notifier).approve(
-              request,
-            );
-    if (error is MealNoLongerOpenException) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('This meal is no longer open.')),
-      );
-    }
-  }
+  Future<void> _approve(BuildContext context, WidgetRef ref) =>
+      _run(context, ref, InboxAction.approve);
 
-  Future<void> _deny(WidgetRef ref) async {
-    await ref.read(inboxActionControllerProvider.notifier).deny(request);
+  Future<void> _deny(BuildContext context, WidgetRef ref) =>
+      _run(context, ref, InboxAction.deny);
+
+  Future<void> _run(
+    BuildContext context,
+    WidgetRef ref,
+    InboxAction action,
+  ) async {
+    // Captured BEFORE the await: this tile can be unmounted mid-flight (the
+    // request's own status flip, applied optimistically by the Firestore
+    // SDK, can rebuild the inbox list and remove this tile before the action
+    // resolves), so neither `context` nor `ref` is safe to touch afterward.
+    // The screen's `ScaffoldMessenger` and the router are ANCESTORS that stay
+    // mounted, so the captured references still work.
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.maybeOf(context);
+    final controller = ref.read(inboxActionControllerProvider.notifier);
+    final error = switch (action) {
+      InboxAction.approve => await controller.approve(request),
+      InboxAction.deny => await controller.deny(request),
+    };
+    final hasChat = inboxActionHasChatAction(action, error);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(inboxActionMessage(action, error)),
+        action: hasChat
+            ? SnackBarAction(
+                label: 'Chat',
+                onPressed: () => router?.push('/chats/${request.mealId}'),
+              )
+            : null,
+      ),
+    );
   }
 
   @override
@@ -68,15 +91,19 @@ class RequestInboxTile extends ConsumerWidget {
 
     final guest = ref.watch(userDocProvider(request.guestId)).value;
 
-    final photoUrl =
-        (guest != null && guest.photoUrls.isNotEmpty)
-            ? guest.photoUrls.first
-            : null;
+    final photoUrl = (guest != null && guest.photoUrls.isNotEmpty)
+        ? guest.photoUrls.first
+        : null;
     final label = guest == null
         ? 'Guest'
         : '${guest.displayName ?? 'Guest'}, ${_ageFromDob(guest.dob)}';
 
     final isSubmitting = ref.watch(inboxActionControllerProvider).isLoading;
+
+    // Loading / error / missing meal all collapse to `null`: the tile just
+    // omits the meal line and leaves Approve enabled.
+    final meal = ref.watch(requestMealProvider(request.mealId)).value;
+    final isPast = meal != null && meal.dateTime.isBefore(DateTime.now());
 
     return Container(
       key: Key('request_inbox_tile_${request.id}'),
@@ -90,8 +117,7 @@ class RequestInboxTile extends ConsumerWidget {
           CircleAvatar(
             radius: WarmPlayfulSpacing.s5,
             backgroundColor: colors.surfaceContainerHighest,
-            backgroundImage:
-                photoUrl != null ? NetworkImage(photoUrl) : null,
+            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
             child: photoUrl == null
                 ? Icon(
                     Icons.person_rounded,
@@ -102,18 +128,58 @@ class RequestInboxTile extends ConsumerWidget {
           ),
           const SizedBox(width: WarmPlayfulSpacing.s3),
           Expanded(
-            child: Text(
-              label,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.onSurface,
-                fontWeight: WarmPlayfulType.h2Weight,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: WarmPlayfulType.h2Weight,
+                  ),
+                ),
+                if (meal != null) ...[
+                  const SizedBox(height: WarmPlayfulSpacing.s1),
+                  Text(
+                    '${meal.restaurant.name} · '
+                    '${formatMealDateTime(meal.dateTime)}',
+                    key: Key('request_inbox_meal_line_${request.id}'),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.outline,
+                      fontWeight: WarmPlayfulType.captionWeight,
+                    ),
+                  ),
+                ],
+                if (isPast) ...[
+                  const SizedBox(height: WarmPlayfulSpacing.s2),
+                  Container(
+                    key: Key('request_inbox_past_chip_${request.id}'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: WarmPlayfulSpacing.s3,
+                      vertical: WarmPlayfulSpacing.s1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.errorContainer,
+                      borderRadius: BorderRadius.circular(
+                        WarmPlayfulRadius.pill,
+                      ),
+                    ),
+                    child: Text(
+                      'Meal time has passed',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colors.onErrorContainer,
+                        fontWeight: WarmPlayfulType.captionWeight,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(width: WarmPlayfulSpacing.s2),
           OutlinedButton(
             key: Key('request_inbox_deny_button_${request.id}'),
-            onPressed: isSubmitting ? null : () => _deny(ref),
+            onPressed: isSubmitting ? null : () => _deny(context, ref),
             style: OutlinedButton.styleFrom(
               foregroundColor: colors.error,
               side: BorderSide(color: colors.error),
@@ -126,7 +192,9 @@ class RequestInboxTile extends ConsumerWidget {
           const SizedBox(width: WarmPlayfulSpacing.s2),
           FilledButton(
             key: Key('request_inbox_approve_button_${request.id}'),
-            onPressed: isSubmitting ? null : () => _approve(context, ref),
+            onPressed: isSubmitting || isPast
+                ? null
+                : () => _approve(context, ref),
             style: FilledButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
