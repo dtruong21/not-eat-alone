@@ -128,8 +128,8 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: read
-    # Setup ~10 min + 2 attempts x 20 min (see the retry step) with headroom.
-    timeout-minutes: 55
+    # Setup ~10 min + 2 attempts x 40 min (see the retry step) with headroom.
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
       - name: Seed .env from example
@@ -209,7 +209,7 @@ jobs:
         shell: bash
         run: |
           max_attempts=2
-          attempt_timeout=$((20 * 60))
+          attempt_timeout=$((40 * 60))
           last_status=1
           mkdir -p e2e-logs
           for attempt in $(seq 1 "$max_attempts"); do

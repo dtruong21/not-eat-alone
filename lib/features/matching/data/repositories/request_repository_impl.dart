@@ -3,6 +3,7 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:not_eat_alone/core/firebase/firebase_client.dart';
 import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/matching/data/dtos/join_request_dto.dart';
@@ -107,28 +108,43 @@ class RequestRepositoryImpl implements RequestRepository {
     }
 
     // Post-commit: deny the losing pending requests. Firestore transactions
-    // cannot run queries, so this is a follow-up batch. The meal is already
+    // cannot run queries, so this is a follow-up step. The meal is already
     // `matched`, so rules block any new pending request from appearing.
     // `hostId` is redundant for correctness (every request on this meal has
     // the meal's host) but required by firestore.rules: a `list` query must
     // be constrained so every possible result satisfies the rule's
     // `hostId == auth.uid` branch — without it the query is PERMISSION_DENIED
     // after the transaction has already committed.
-    final siblings = await _firestore
-        .collection('requests')
-        .where('mealId', isEqualTo: request.mealId)
-        .where('status', isEqualTo: 'pending')
-        .where('hostId', isEqualTo: request.hostId)
-        .get();
-    if (siblings.docs.isEmpty) return;
-    final batch = _firestore.batch();
-    for (final doc in siblings.docs) {
-      batch.update(doc.reference, {'status': 'denied'});
-    }
+    //
+    // Best effort: the approval itself has already succeeded, so nothing in
+    // here may make `approve` throw. Each sibling is denied on its own (not
+    // in one batch) so a sibling that was decided in the meantime — the rules
+    // only let a `pending` request be decided — rejects only itself instead of
+    // aborting the rest. A sibling left pending stays harmless: its meal is
+    // matched, so the host can't approve it (the meals rule needs `open`).
+    await _denySiblings(request);
+  }
+
+  Future<void> _denySiblings(JoinRequest approved) async {
     try {
-      await batch.commit();
-    } catch (e, st) {
-      throw RepositoryWriteException('requests', e, st);
+      final siblings = await _firestore
+          .collection('requests')
+          .where('mealId', isEqualTo: approved.mealId)
+          .where('status', isEqualTo: 'pending')
+          .where('hostId', isEqualTo: approved.hostId)
+          .get();
+      await Future.wait(
+        siblings.docs.map((doc) async {
+          try {
+            await doc.reference.update({'status': 'denied'});
+          } on Object catch (e) {
+            // No ids/PII: the exception type only.
+            debugPrint('[requests] sibling deny failed: ${e.runtimeType}');
+          }
+        }),
+      );
+    } on Object catch (e) {
+      debugPrint('[requests] sibling query failed: ${e.runtimeType}');
     }
   }
 

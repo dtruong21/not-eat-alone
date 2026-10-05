@@ -140,4 +140,31 @@ void main() {
       expect(controller.calledWomenOnly, isFalse);
     },
   );
+
+  group('isMealTimeFarEnough', () {
+    final now = DateTime(2027, 1, 5, 12);
+
+    test('accepts a time exactly at the minimum lead and later', () {
+      expect(isMealTimeFarEnough(now.add(mealMinLead), now: now), isTrue);
+      expect(
+        isMealTimeFarEnough(now.add(const Duration(hours: 2)), now: now),
+        isTrue,
+      );
+    });
+
+    test('rejects a time inside the lead, now, and the past', () {
+      expect(
+        isMealTimeFarEnough(
+          now.add(mealMinLead - const Duration(seconds: 1)),
+          now: now,
+        ),
+        isFalse,
+      );
+      expect(isMealTimeFarEnough(now, now: now), isFalse);
+      expect(
+        isMealTimeFarEnough(now.subtract(const Duration(minutes: 1)), now: now),
+        isFalse,
+      );
+    });
+  });
 }

@@ -25,9 +25,16 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Changed
 
+- Creating a meal now needs a time at least 5 minutes ahead; an earlier pick shows a message instead of being accepted.
+
 ### Fixed
 
 - A match can no longer be created without a real, pending, approved request (closes fabricated matches that allowed unsolicited chat and ratings).
+- A meal's host, time and restaurant can no longer be changed (or the meal deleted and re-posted under the same requests) after it is posted, and a meal can only become matched through a genuine approve of a guest's request.
+- A request can only be decided once; an approved or denied request can no longer be flipped (which re-notified the guest each time).
+- A rating can only be left once the meal has happened.
+- A meal that has already passed can no longer be requested or approved, and an approval only counts once the meal is matched and the match exists (no "approved" with no chat).
+- A meal can only be posted with the fields and types the app sends, so a malformed post can no longer break the Discover feed.
 
 ---
 

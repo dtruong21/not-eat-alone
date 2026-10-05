@@ -55,8 +55,8 @@ Future<void> clearEmulators() async {
 /// Maximum attempts per emulator admin request (first try + retries).
 const int _kMaxAttempts = 5;
 
-/// Runs [send] (an idempotent emulator admin request: DELETE, or a PATCH that
-/// replaces a whole doc), retrying up to [_kMaxAttempts] times with
+/// Runs [send] (an idempotent emulator admin request: DELETE, or a PATCH of
+/// fixed values), retrying up to [_kMaxAttempts] times with
 /// exponential backoff (250ms doubling, capped at 2s) on transient failures
 /// only: HTTP 499 (emulator gRPC "call already cancelled"), any 5xx, and
 /// connection errors ([SocketException]/[http.ClientException]). Any other
@@ -132,6 +132,69 @@ Future<void> adminSetDoc(
         )
         .timeout(const Duration(seconds: 30)),
     'adminSetDoc($collection/$id)',
+  );
+}
+
+/// Updates ONLY the given top-level [fields] of the existing `collection/id`
+/// in the Firestore emulator via the REST API, with the emulator's
+/// `Authorization: Bearer owner` override, which BYPASSES security rules. The
+/// rest of the doc is kept: the PATCH carries one `updateMask.fieldPaths=<key>`
+/// query parameter per top-level key, so unlisted fields are untouched (unlike
+/// [adminSetDoc], which replaces the whole doc). Use only to put a doc into a
+/// state the rules deliberately forbid a client to reach (e.g. a meal flipped
+/// to `matched` without the approve transaction). Real flows must go through
+/// the SDK.
+///
+/// The PATCH carries `currentDocument.exists=true`, so a missing doc fails
+/// loudly with a 404 instead of being created from just [fields] (an upsert
+/// would hide a seeding mistake). An empty [fields] is rejected with an
+/// [ArgumentError]: a PATCH with no `updateMask` would replace the whole doc
+/// with an empty one.
+///
+/// Retried on transient failures like [adminSetDoc] (a masked PATCH of the
+/// same values is idempotent). Values are encoded like [adminSetDoc]. Keys
+/// must be plain identifiers (letters, digits, `_`): keys with special
+/// characters would need backtick-quoting in the field path, which isn't
+/// implemented, so they are rejected loudly.
+Future<void> adminUpdateDoc(
+  String collection,
+  String id,
+  Map<String, Object?> fields,
+) async {
+  if (fields.isEmpty) {
+    throw ArgumentError.value(
+      fields,
+      'fields',
+      'adminUpdateDoc($collection/$id): must not be empty (a PATCH with no '
+          'updateMask would replace the whole doc)',
+    );
+  }
+  final plainKey = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
+  for (final key in fields.keys) {
+    if (!plainKey.hasMatch(key)) {
+      throw ArgumentError('adminUpdateDoc: unsupported field key "$key"');
+    }
+  }
+  final uri = Uri.parse(
+    'http://$kEmulatorHost:8080/v1/projects/$kProjectId/'
+    'databases/(default)/documents/$collection/$id'
+    '?${fields.keys.map((k) => 'updateMask.fieldPaths=$k').join('&')}'
+    '&currentDocument.exists=true',
+  );
+  final body = jsonEncode({'fields': _restFields(fields)});
+  await _sendWithRetry(
+    // Same 30s timeout inside the retried closure as [adminSetDoc].
+    () => http
+        .patch(
+          uri,
+          headers: {
+            'Authorization': 'Bearer owner',
+            'Content-Type': 'application/json',
+          },
+          body: body,
+        )
+        .timeout(const Duration(seconds: 30)),
+    'adminUpdateDoc($collection/$id)',
   );
 }
 

@@ -20,6 +20,17 @@ import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 
 const _maxNoteLength = 200;
 
+/// Minimum lead between "now" and a picked meal time. The `meals` create rule
+/// requires `dateTime > request.time` on the SERVER, so a near-term pick, a
+/// slow submit or a device clock slightly behind the server would otherwise
+/// fail the create with a generic error.
+const mealMinLead = Duration(minutes: 5);
+
+/// Whether [picked] is at least [mealMinLead] after [now] (defaults to the
+/// current time).
+bool isMealTimeFarEnough(DateTime picked, {DateTime? now}) =>
+    !picked.isBefore((now ?? DateTime.now()).add(mealMinLead));
+
 const _monthNames = [
   'January',
   'February',
@@ -101,8 +112,16 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
       pickedTime.hour,
       pickedTime.minute,
     );
-    // Future only — silently ignore a same-day pick that lands in the past.
-    if (!combined.isAfter(DateTime.now())) return;
+    // Needs a lead (see [mealMinLead]): reject a same-day pick that is in the
+    // past or too soon, and say why.
+    if (!isMealTimeFarEnough(combined)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pick a time at least 5 minutes from now.'),
+        ),
+      );
+      return;
+    }
     setState(() => _dateTime = combined);
   }
 

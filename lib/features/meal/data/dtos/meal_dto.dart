@@ -19,6 +19,9 @@ abstract class RestaurantDto with _$RestaurantDto {
 
 @freezed
 abstract class MealDto with _$MealDto {
+  /// Adding or renaming a field here also requires updating the `meals` create whitelist
+  /// (`keys().hasOnly([...])`) in firebase/firestore.rules, otherwise every meal creation
+  /// is denied. The integration_test `meals — integrity` A1 case (real `createMeal`) catches this.
   const factory MealDto({
     required String id,
     required String hostId,
