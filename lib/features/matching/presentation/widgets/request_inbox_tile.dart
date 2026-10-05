@@ -40,6 +40,10 @@ int _ageFromDob(DateTime dob, {DateTime? now}) {
   return age;
 }
 
+const _pastMealLabel = 'Meal time has passed';
+const _snackBarDuration = Duration(seconds: 6);
+const _a11ySnackBarDuration = Duration(seconds: 8);
+
 class RequestInboxTile extends ConsumerWidget {
   const RequestInboxTile({required this.request, super.key});
 
@@ -64,23 +68,36 @@ class RequestInboxTile extends ConsumerWidget {
     // mounted, so the captured references still work.
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.maybeOf(context);
+    final accessibleNavigation = MediaQuery.accessibleNavigationOf(context);
     final controller = ref.read(inboxActionControllerProvider.notifier);
     final error = switch (action) {
       InboxAction.approve => await controller.approve(request),
       InboxAction.deny => await controller.deny(request),
     };
-    final hasChat = inboxActionHasChatAction(action, error);
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(inboxActionMessage(action, error)),
-        action: hasChat
-            ? SnackBarAction(
-                label: 'Chat',
-                onPressed: () => router?.push('/chats/${request.mealId}'),
-              )
-            : null,
-      ),
-    );
+    // The Chat action is only useful when there is a router to push on.
+    final hasChat = inboxActionHasChatAction(action, error) && router != null;
+    // A SnackBar with an action persists until dismissed by default, and this
+    // one lives on the root messenger (it would follow the host across tabs
+    // and block every later snackbar), so force a timeout, offer a close
+    // icon, and REPLACE any snackbar still showing from a previous outcome.
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(inboxActionMessage(action, error)),
+          persist: false,
+          showCloseIcon: hasChat,
+          duration: accessibleNavigation
+              ? _a11ySnackBarDuration
+              : _snackBarDuration,
+          action: hasChat
+              ? SnackBarAction(
+                  label: 'Chat',
+                  onPressed: () => router.push('/chats/${request.mealId}'),
+                )
+              : null,
+        ),
+      );
   }
 
   @override
@@ -105,6 +122,27 @@ class RequestInboxTile extends ConsumerWidget {
     final meal = ref.watch(requestMealProvider(request.mealId)).value;
     final isPast = meal != null && meal.dateTime.isBefore(DateTime.now());
 
+    final mealLineStyle = textTheme.bodySmall?.copyWith(
+      color: colors.onSurface,
+      fontWeight: WarmPlayfulType.captionWeight,
+    );
+
+    final approveButton = FilledButton(
+      key: Key('request_inbox_approve_button_${request.id}'),
+      onPressed: isSubmitting || isPast ? null : () => _approve(context, ref),
+      style: FilledButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+        ),
+      ),
+      // The hint lives INSIDE the button so it merges into the button's own
+      // semantics node (a Semantics wrapper outside it would be a separate
+      // node) and screen readers say why Approve is disabled.
+      child: isPast
+          ? Semantics(hint: _pastMealLabel, child: const Text('Approve'))
+          : const Text('Approve'),
+    );
+
     return Container(
       key: Key('request_inbox_tile_${request.id}'),
       padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
@@ -112,95 +150,107 @@ class RequestInboxTile extends ConsumerWidget {
         color: colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CircleAvatar(
-            radius: WarmPlayfulSpacing.s5,
-            backgroundColor: colors.surfaceContainerHighest,
-            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-            child: photoUrl == null
-                ? Icon(
-                    Icons.person_rounded,
-                    size: WarmPlayfulSpacing.s5,
-                    color: colors.outline,
-                  )
-                : null,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: WarmPlayfulSpacing.s5,
+                backgroundColor: colors.surfaceContainerHighest,
+                backgroundImage: photoUrl != null
+                    ? NetworkImage(photoUrl)
+                    : null,
+                child: photoUrl == null
+                    ? Icon(
+                        Icons.person_rounded,
+                        size: WarmPlayfulSpacing.s5,
+                        color: colors.outline,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: WarmPlayfulSpacing.s3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurface,
+                        fontWeight: WarmPlayfulType.h2Weight,
+                      ),
+                    ),
+                    if (meal != null) ...[
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      Column(
+                        key: Key('request_inbox_meal_line_${request.id}'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            meal.restaurant.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: mealLineStyle,
+                          ),
+                          Text(
+                            formatMealDateTime(meal.dateTime),
+                            style: mealLineStyle,
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (isPast) ...[
+                      const SizedBox(height: WarmPlayfulSpacing.s2),
+                      Container(
+                        key: Key('request_inbox_past_chip_${request.id}'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: WarmPlayfulSpacing.s3,
+                          vertical: WarmPlayfulSpacing.s1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.errorContainer,
+                          borderRadius: BorderRadius.circular(
+                            WarmPlayfulRadius.pill,
+                          ),
+                        ),
+                        child: Text(
+                          _pastMealLabel,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.onErrorContainer,
+                            fontWeight: WarmPlayfulType.captionWeight,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: WarmPlayfulSpacing.s3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurface,
-                    fontWeight: WarmPlayfulType.h2Weight,
+          const SizedBox(height: WarmPlayfulSpacing.s3),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                key: Key('request_inbox_deny_button_${request.id}'),
+                onPressed: isSubmitting ? null : () => _deny(context, ref),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.error,
+                  side: BorderSide(color: colors.error),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
                   ),
                 ),
-                if (meal != null) ...[
-                  const SizedBox(height: WarmPlayfulSpacing.s1),
-                  Text(
-                    '${meal.restaurant.name} · '
-                    '${formatMealDateTime(meal.dateTime)}',
-                    key: Key('request_inbox_meal_line_${request.id}'),
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colors.outline,
-                      fontWeight: WarmPlayfulType.captionWeight,
-                    ),
-                  ),
-                ],
-                if (isPast) ...[
-                  const SizedBox(height: WarmPlayfulSpacing.s2),
-                  Container(
-                    key: Key('request_inbox_past_chip_${request.id}'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: WarmPlayfulSpacing.s3,
-                      vertical: WarmPlayfulSpacing.s1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.errorContainer,
-                      borderRadius: BorderRadius.circular(
-                        WarmPlayfulRadius.pill,
-                      ),
-                    ),
-                    child: Text(
-                      'Meal time has passed',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colors.onErrorContainer,
-                        fontWeight: WarmPlayfulType.captionWeight,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: WarmPlayfulSpacing.s2),
-          OutlinedButton(
-            key: Key('request_inbox_deny_button_${request.id}'),
-            onPressed: isSubmitting ? null : () => _deny(context, ref),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: colors.error,
-              side: BorderSide(color: colors.error),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+                child: const Text('Deny'),
               ),
-            ),
-            child: const Text('Deny'),
-          ),
-          const SizedBox(width: WarmPlayfulSpacing.s2),
-          FilledButton(
-            key: Key('request_inbox_approve_button_${request.id}'),
-            onPressed: isSubmitting || isPast
-                ? null
-                : () => _approve(context, ref),
-            style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-              ),
-            ),
-            child: const Text('Approve'),
+              const SizedBox(width: WarmPlayfulSpacing.s2),
+              if (isPast)
+                Tooltip(message: _pastMealLabel, child: approveButton)
+              else
+                approveButton,
+            ],
           ),
         ],
       ),
