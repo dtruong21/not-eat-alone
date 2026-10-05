@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 // fake call throw); not worth a direct pubspec entry for this one test.
 // ignore: depend_on_referenced_packages
 import 'package:mock_exceptions/mock_exceptions.dart';
-import 'package:not_eat_alone/features/matching/data/repositories/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/data/repositories/request_repository_impl.dart';
+import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 
 void main() {
   late FakeFirebaseFirestore db;

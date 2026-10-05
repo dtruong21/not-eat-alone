@@ -15,8 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/matching/application/inbox_action_controller.dart';
-import 'package:not_eat_alone/features/matching/data/repositories/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
+import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 /// Age in whole years for someone born on [dob], as of [now] (defaults to
