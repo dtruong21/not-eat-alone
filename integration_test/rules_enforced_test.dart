@@ -1460,6 +1460,57 @@ void main() {
       },
     );
 
+    // The meal has already passed (admin-seeded: a client can't create a past
+    // meal) and is still `open` (postMealReminder only completes `matched`
+    // ones), with a pending request. The full real approve (meal + request +
+    // match) satisfies every other clause (the requests and matches rules only
+    // need the meal flipped to matched), so ONLY the meals update rule's
+    // `resource.data.dateTime > request.time` can deny.
+    testWidgets(
+      'D10. approving a request on a meal that has already passed is denied',
+      (tester) async {
+        final w = await world(tester, 'd10', withMatch: false);
+        await adminUpdateDoc('meals', w.mealId, {
+          'dateTime': DateTime.now().subtract(const Duration(hours: 2)),
+        });
+        await expectLater(
+          mealTxn(w, createMatch: true),
+          permissionDenied(),
+        );
+        final meal = await mealRef(w).get(
+          const GetOptions(source: Source.server),
+        );
+        expect(meal.data()!['status'], 'open');
+        final req = await _db
+            .collection('requests')
+            .doc(w.reqId)
+            .get(const GetOptions(source: Source.server));
+        expect(req.data()!['status'], 'pending');
+      },
+    );
+
+    // Requesting a meal that has already passed (admin-seeded past meal, still
+    // open). Everything else is the valid create (the same request shape the
+    // world's guest wrote against the future meal), so ONLY the requests
+    // create rule's `meal.dateTime > request.time` can deny.
+    testWidgets('D11. a request on a meal that has already passed is denied', (
+      tester,
+    ) async {
+      final w = await world(tester, 'd11', guestRequests: false);
+      await adminUpdateDoc('meals', w.mealId, {
+        'dateTime': DateTime.now().subtract(const Duration(hours: 2)),
+      });
+      await signInTestUser(uid: w.guestClaim);
+      await expectLater(
+        seedPendingRequest(
+          mealId: w.mealId,
+          guestId: w.guestUid,
+          hostId: w.hostUid,
+        ),
+        permissionDenied(),
+      );
+    });
+
     // Forged host: `other` is the (admin-seeded) host of their own pending
     // request `{meal}_{other}` and approves it while flipping SOMEONE ELSE'S
     // meal to matched with themselves as guest. The requests update rule
@@ -1529,6 +1580,86 @@ void main() {
       );
     });
 
+    // Key whitelist and types: the real payload (A1/A1b) is the allowed
+    // baseline; each case varies ONE property of it.
+    testWidgets('C4. a create with an extra key is denied', (tester) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'mv-create-extra');
+      await expectLater(
+        createRaw(host.uid, overrides: {'postMealNotified': true}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('C5. a create with a non-map restaurant is denied', (
+      tester,
+    ) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'mv-create-rest');
+      await expectLater(
+        createRaw(host.uid, overrides: {'restaurant': 1}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('C6. a create with a non-bool womenOnly is denied', (
+      tester,
+    ) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'mv-create-women');
+      await expectLater(
+        createRaw(host.uid, overrides: {'womenOnly': 'x'}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('C7. a create with a non-int seats is denied', (tester) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'mv-create-seats');
+      await expectLater(
+        createRaw(host.uid, overrides: {'seats': 'x'}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('C8. a create with a note over 200 characters is denied', (
+      tester,
+    ) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'mv-create-note');
+      await expectLater(
+        createRaw(host.uid, overrides: {'note': 'x' * 201}),
+        permissionDenied(),
+      );
+      // Boundary: exactly 200 (the create screen's limit) is allowed.
+      await createRaw(host.uid, overrides: {'note': 'x' * 200});
+    });
+
+    testWidgets('C8b. a create with a non-string note is denied', (
+      tester,
+    ) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'mv-create-note2');
+      await expectLater(
+        createRaw(host.uid, overrides: {'note': 5}),
+        permissionDenied(),
+      );
+    });
+
+    testWidgets('C9. a create with a client-set createdAt is denied', (
+      tester,
+    ) async {
+      await _bootOnce(tester);
+      final host = await signInTestUser(uid: 'mv-create-created');
+      await expectLater(
+        createRaw(
+          host.uid,
+          overrides: {'createdAt': Timestamp.fromDate(DateTime(2020))},
+        ),
+        permissionDenied(),
+      );
+    });
+
     // ---- delete ----
 
     testWidgets('X1. deleting a matched meal is denied', (tester) async {
@@ -1553,7 +1684,9 @@ void main() {
   // ---- `requests` update — a request is decided once ----
   // The `requests` update rule is host-only, `status` only, to approved|denied,
   // and only FROM `pending`: an approved request can't be flipped to denied
-  // (nor a denied one revived), so a decision is final. Every case is signed
+  // (nor a denied one revived), so a decision is final. `approved` is further
+  // only admitted when the meal is matched with that guest and the match exists
+  // (`requestApprovalLinked`); `denied` is a bare write. Every case is signed
   // in as the host (what `_buildWorld` returns). Non-pending pre-states are
   // admin-seeded (`adminUpdateDoc`), since no client path reaches them
   // without going through the very rule under test.
@@ -1582,13 +1715,98 @@ void main() {
       expect(await statusOf(w.reqId), 'denied');
     });
 
-    testWidgets('R1b. a host approves a pending request is allowed', (
-      tester,
-    ) async {
-      final w = await world(tester, 'r1b');
-      await reqRef(w.reqId).update({'status': 'approved'});
-      expect(await statusOf(w.reqId), 'approved');
-    });
+    // The approve must be the real transaction: a bare `approved` write (no
+    // meal flip, no match) would push the guest an approval for a chat that
+    // doesn't exist, and with decide-once it could never be redone.
+    testWidgets(
+      'R1b. a bare approve with no meal flip and no match is denied',
+      (tester) async {
+        final w = await world(tester, 'r1b');
+        await expectLater(
+          reqRef(w.reqId).update({'status': 'approved'}),
+          permissionDenied(),
+        );
+        expect(await statusOf(w.reqId), 'pending');
+      },
+    );
+
+    // The next four vary the meal/match state AFTER the (request-only) write,
+    // via admin-seeded pre-state, so each isolates one conjunct of the
+    // `requestApprovalLinked` helper (a transaction that also flips the meal
+    // would be denied by the meals rule too). R1d is the positive control:
+    // meal matched with this guest and the match present => allowed.
+    Future<void> seedMatchDoc(_MatchWorld w) =>
+        adminSetDoc('matches', w.mealId, {
+          'id': w.mealId,
+          'mealId': w.mealId,
+          'hostId': w.hostUid,
+          'guestId': w.guestUid,
+          'participants': [w.hostUid, w.guestUid],
+          'createdAt': DateTime.now(),
+        });
+
+    testWidgets(
+      'R1d. an approve is allowed once the meal is matched with this guest '
+      'and the match exists (the state the real approve transaction leaves)',
+      (tester) async {
+        final w = await world(tester, 'r1d');
+        await adminUpdateDoc('meals', w.mealId, {
+          'status': 'matched',
+          'guestId': w.guestUid,
+        });
+        await seedMatchDoc(w);
+        await reqRef(w.reqId).update({'status': 'approved'});
+        expect(await statusOf(w.reqId), 'approved');
+      },
+    );
+
+    testWidgets(
+      'R1e. an approve while the meal is still open (match present, guest '
+      'named) is denied',
+      (tester) async {
+        final w = await world(tester, 'r1e');
+        // Open but already naming this guest, so the meal's guest and the
+        // match are right and ONLY `mealAfter.status == 'matched'` can deny.
+        await adminUpdateDoc('meals', w.mealId, {'guestId': w.guestUid});
+        await seedMatchDoc(w);
+        await expectLater(
+          reqRef(w.reqId).update({'status': 'approved'}),
+          permissionDenied(),
+        );
+      },
+    );
+
+    testWidgets(
+      'R1f. an approve while the meal is matched with someone else is denied',
+      (tester) async {
+        final w = await world(tester, 'r1f');
+        await adminUpdateDoc('meals', w.mealId, {
+          'status': 'matched',
+          'guestId': w.otherUid,
+        });
+        await seedMatchDoc(w);
+        await expectLater(
+          reqRef(w.reqId).update({'status': 'approved'}),
+          permissionDenied(),
+        );
+      },
+    );
+
+    testWidgets(
+      'R1g. an approve while the meal is matched with this guest but no '
+      'match exists is denied',
+      (tester) async {
+        final w = await world(tester, 'r1g');
+        await adminUpdateDoc('meals', w.mealId, {
+          'status': 'matched',
+          'guestId': w.guestUid,
+        });
+        await expectLater(
+          reqRef(w.reqId).update({'status': 'approved'}),
+          permissionDenied(),
+        );
+      },
+    );
 
     testWidgets(
       'R1c. the post-commit sibling-deny batch (pending -> denied) is allowed',
@@ -1620,6 +1838,13 @@ void main() {
       tester,
     ) async {
       final w = await world(tester, 'r3');
+      // Meal matched with this guest and the match present, so the approve
+      // linkage holds and ONLY the pending pre-state can deny.
+      await adminUpdateDoc('meals', w.mealId, {
+        'status': 'matched',
+        'guestId': w.guestUid,
+      });
+      await seedMatchDoc(w);
       await adminUpdateDoc('requests', w.reqId, {'status': 'denied'});
       await expectLater(
         reqRef(w.reqId).update({'status': 'approved'}),
@@ -1633,6 +1858,12 @@ void main() {
       'a flip is final)',
       (tester) async {
         final w = await world(tester, 'r4');
+        // Linked state (see R3): only the pending pre-state can deny.
+        await adminUpdateDoc('meals', w.mealId, {
+          'status': 'matched',
+          'guestId': w.guestUid,
+        });
+        await seedMatchDoc(w);
         await adminUpdateDoc('requests', w.reqId, {'status': 'approved'});
         await expectLater(
           reqRef(w.reqId).update({'status': 'approved'}),

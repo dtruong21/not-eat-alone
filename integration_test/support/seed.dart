@@ -58,10 +58,10 @@ Future<void> seedUserProfile({
 
 /// Seeds an open `meals/{mealId}` doc satisfying `firestore.rules`
 /// (`hostId == auth.uid`, `status == 'open'`, no `guestId`, `geohash` string,
-/// future `dateTime` timestamp) and `MealDto` (`restaurant` is a required
-/// nested `RestaurantDto` — `id` is NOT written here since
-/// `MealRepositoryImpl` injects it from the doc id on read). Returns the new
-/// document's id.
+/// future `dateTime` timestamp, the whitelisted key set with `seats` int and
+/// `createdAt` the server time) and `MealDto` (`restaurant` is a required
+/// nested `RestaurantDto`; `id` is written like `createMeal` does).
+/// Returns the new document's id.
 ///
 /// A future-dated meal (the default, now + 3h) is created through the SDK as
 /// [hostId] (rules enforced; must run while signed in as [hostId]). A
@@ -95,13 +95,21 @@ Future<String> seedOpenMeal({
     });
     return ref.id;
   }
+  // The key set the `meals` create rule whitelists (`hasOnly`) and types
+  // (`seats` int, `note` null, `createdAt` the server time), i.e. what
+  // `MealRepositoryImpl.createMeal` writes.
   await ref.set({
+    'id': ref.id,
     'hostId': hostId,
     'status': 'open',
     'geohash': 'u09',
     'dateTime': Timestamp.fromDate(when),
+    'note': null,
     'womenOnly': womenOnly,
+    'seats': 1,
+    'guestId': null,
     'restaurant': restaurant,
+    'createdAt': FieldValue.serverTimestamp(),
   });
   return ref.id;
 }

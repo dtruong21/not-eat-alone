@@ -98,24 +98,46 @@ service cloud.firestore {
     // The request being approved in the same transaction as a meal update:
     // `get()` is the state BEFORE the write, `getAfter()` the state AFTER, so
     // this proves a genuine pending -> approved transition for this guest
-    // (request id is `{mealId}_{guestId}`). Two distinct reads of the request
-    // doc, well inside the 20-access transaction limit alongside the `matches`
-    // create rule's own reads.
+    // (request id is `{mealId}_{guestId}`). The request doc is read once
+    // (`let`): at most 3 accesses (get, getAfter, and the caller's
+    // `existsAfter`), well inside the 20-access transaction limit alongside
+    // the `requests` update and `matches` create rules' own reads.
     function mealApprovalLink(mealId, guestId, hostId) {
       let reqPath = /databases/$(database)/documents/requests/$(mealId + '_' + guestId);
-      return get(reqPath).data.status == 'pending'
-          && get(reqPath).data.hostId == hostId
-          && get(reqPath).data.guestId == guestId
+      let req = get(reqPath).data;
+      return req.status == 'pending'
+          && req.hostId == hostId
+          && req.guestId == guestId
           && getAfter(reqPath).data.status == 'approved';
+    }
+
+    // The `requests` update rule's approve check: a request may only become
+    // `approved` inside the approve transaction, i.e. when the same
+    // transaction leaves the meal `matched` with THIS guest and creates the
+    // `matches/{mealId}` doc. Otherwise a bare `approved` write would push
+    // the guest an approval for a chat that doesn't exist (and, since a
+    // request is decided once, could never be genuinely approved afterwards).
+    // `mealId`/`guestId` come from the existing request doc, whose id the
+    // create rule pins to `{mealId}_{guestId}`. The meal doc is read once
+    // (`let`); with `existsAfter` that is 2 accesses.
+    function requestApprovalLinked(mealId, guestId) {
+      let mealAfter = getAfter(/databases/$(database)/documents/meals/$(mealId)).data;
+      return mealAfter.status == 'matched'
+          && mealAfter.guestId == guestId
+          && existsAfter(/databases/$(database)/documents/matches/$(mealId));
     }
 
     // Meal listings created by a host. Create: an `open`, guest-less
     // (`guestId` absent or null — `MealRepositoryImpl.createMeal` writes
-    // `guestId: null`), future-dated meal as yourself. Update: only `status`
-    // and `guestId` may change, only `open -> matched`, only together with a
-    // genuine pending -> approved request from that guest in the same
-    // transaction (`mealApprovalLink`) that also creates the `matches` doc
-    // (`existsAfter`; the `matches` create rule then enforces the block check);
+    // `guestId: null`), future-dated meal as yourself, with exactly the keys
+    // and types the app writes (one malformed doc would break Discover for
+    // everyone in its geohash cell, and a client can't delete it).
+    // Update: only `status` and `guestId` may change, only `open -> matched`,
+    // only while the meal is still in the future (a past meal can't be
+    // matched), only together with a genuine pending -> approved request from
+    // that guest in the same transaction (`mealApprovalLink`) that also
+    // creates the `matches` doc (`existsAfter`; the `matches` create rule then
+    // enforces the block check);
     // `hostId`/`dateTime`/`restaurant`/`womenOnly`/`geohash` are immutable.
     // Delete: never from a client — delete + recreate at the same id would
     // keep the `{mealId}_{guestId}` requests attached to a different meal (the
@@ -128,6 +150,15 @@ service cloud.firestore {
                     && request.resource.data.status == 'open'
                     && (!('guestId' in request.resource.data)
                         || request.resource.data.guestId == null)
+                    && request.resource.data.keys().hasOnly(['id', 'hostId', 'restaurant', 'dateTime', 'geohash', 'note', 'womenOnly', 'seats', 'status', 'guestId', 'createdAt'])
+                    && request.resource.data.restaurant is map
+                    && request.resource.data.womenOnly is bool
+                    && request.resource.data.seats is int
+                    && (!('note' in request.resource.data)
+                        || request.resource.data.note == null
+                        || (request.resource.data.note is string
+                            && request.resource.data.note.size() <= 200))
+                    && request.resource.data.createdAt == request.time
                     && request.resource.data.geohash is string
                     && request.resource.data.dateTime is timestamp
                     && request.resource.data.dateTime > request.time;
@@ -136,6 +167,7 @@ service cloud.firestore {
                     && resource.data.hostId == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'guestId'])
                     && resource.data.status == 'open'
+                    && resource.data.dateTime > request.time
                     && request.resource.data.status == 'matched'
                     && request.resource.data.guestId is string
                     && mealApprovalLink(mealId, request.resource.data.guestId, request.auth.uid)
@@ -168,18 +200,23 @@ service cloud.firestore {
                     && request.resource.data.hostId != request.auth.uid
                     && exists(/databases/$(database)/documents/meals/$(request.resource.data.mealId))
                     && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.status == 'open'
+                    && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.dateTime > request.time
                     && get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.hostId == request.resource.data.hostId
                     && noBlockBetween(request.resource.data.guestId, request.resource.data.hostId)
                     && (get(/databases/$(database)/documents/meals/$(request.resource.data.mealId)).data.womenOnly == false
                         || get(/databases/$(database)/documents/users/$(request.resource.data.guestId)).data.gender == 'woman');
       // A request is decided once: only a `pending` request can be approved
       // or denied, so an approved request can't be flipped to denied (or a
-      // denied one revived).
+      // denied one revived). `denied` is a bare write (no access calls: the
+      // deny and the sibling-deny batch); `approved` is only admitted inside
+      // the approve transaction (`requestApprovalLinked`).
       allow update: if isSignedIn()
                     && resource.data.hostId == request.auth.uid
                     && resource.data.status == 'pending'
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-                    && request.resource.data.status in ['approved', 'denied'];
+                    && (request.resource.data.status == 'denied'
+                        || (request.resource.data.status == 'approved'
+                            && requestApprovalLinked(resource.data.mealId, resource.data.guestId)));
       allow delete: if false;
     }
 
