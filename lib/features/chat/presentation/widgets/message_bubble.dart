@@ -6,16 +6,8 @@ library;
 import 'package:flutter/material.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
-
-/// "7:30 PM" — a small, presentation-only helper, kept private to this file.
-String _formatTime(DateTime dateTime) {
-  final hour24 = dateTime.hour;
-  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-  final minute = dateTime.minute.toString().padLeft(2, '0');
-  final period = hour24 < 12 ? 'AM' : 'PM';
-  return '$hour12:$minute $period';
-}
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
@@ -65,7 +57,7 @@ class MessageBubble extends StatelessWidget {
           const SizedBox(height: WarmPlayfulSpacing.s1),
           if (message.createdAt != null)
             Text(
-              _formatTime(message.createdAt!),
+              formatClockTime(message.createdAt!),
               style: textTheme.bodySmall?.copyWith(color: colors.outline),
             ),
           if (showSeen)

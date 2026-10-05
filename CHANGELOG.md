@@ -31,6 +31,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Fixed
 
+- Chat message times now show in your local time instead of UTC.
 - Meal times now show in your local time instead of UTC (a 7:30 PM meal in Paris no longer reads 5:30 PM).
 - Approving or denying a request in the inbox no longer fails silently: you now see a message when it couldn't be done (for example, the request was already handled).
 - A match can no longer be created without a real, pending, approved request (closes fabricated matches that allowed unsolicited chat and ratings).

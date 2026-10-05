@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
 import 'package:not_eat_alone/features/chat/application/chat_messages_provider.dart';
@@ -23,7 +24,7 @@ String _relativeTime(DateTime dateTime, {DateTime? now}) {
   if (diff.inHours < 1) return '${diff.inMinutes}m';
   if (diff.inDays < 1) return '${diff.inHours}h';
   if (diff.inDays < 7) return '${diff.inDays}d';
-  return '${dateTime.month}/${dateTime.day}';
+  return formatMonthDay(dateTime);
 }
 
 /// A single chat row. Watches [userDocProvider] for the other participant's

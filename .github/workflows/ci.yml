@@ -50,6 +50,15 @@ jobs:
         run: flutter analyze --no-fatal-infos
       - name: Test
         run: flutter test
+      # The runner is UTC, so the local-time display tests would otherwise pass
+      # vacuously (UTC fields == local fields). Re-run them in a +14h zone,
+      # where the local day differs from the UTC day for a 23:30Z input.
+      - name: Test (non-UTC timezone, local-time display)
+        run: >-
+          TZ=Pacific/Kiritimati flutter test
+          test/core/util/date_format_test.dart
+          test/features/chat/presentation/widgets/
+          test/features/matching/presentation/widgets/request_inbox_tile_test.dart
 
   build-android:
     name: Build Android (stage, unsigned)
