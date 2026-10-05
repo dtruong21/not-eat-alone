@@ -31,3 +31,22 @@ String formatMealDateTime(DateTime value) {
   return '${_monthNames[dateTime.month - 1]} ${dateTime.day}, '
       '${dateTime.year} at $hour12:$minute $period';
 }
+
+/// Formats [value] as a 12-hour clock time, e.g. "7:30 PM", in the viewer's
+/// local time (chat timestamps come out of the data layer as UTC
+/// `DateTime`s; a local value's `toLocal()` is itself).
+String formatClockTime(DateTime value) {
+  final dateTime = value.toLocal();
+  final hour24 = dateTime.hour;
+  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+  final minute = dateTime.minute.toString().padLeft(2, '0');
+  final period = hour24 < 12 ? 'AM' : 'PM';
+  return '$hour12:$minute $period';
+}
+
+/// Formats [value] as a short "M/D" date, e.g. "1/5", in the viewer's local
+/// time.
+String formatMonthDay(DateTime value) {
+  final dateTime = value.toLocal();
+  return '${dateTime.month}/${dateTime.day}';
+}
