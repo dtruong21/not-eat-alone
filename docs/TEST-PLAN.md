@@ -225,7 +225,7 @@ Related PRD entry: `docs/PRD.md § Matching`
 
 **Golden path:**
 - [ ] From meal detail, a signed-in non-host guest taps "Request to join" → a `requests/{mealId_guestId}` doc is written (`status: pending`) → button becomes disabled "Requested" with a "Waiting for the host" hint.
-- [ ] The host opens the discovery app-bar inbox (`/requests`) → sees the pending request as a tile (guest photo/name/derived age) with **Approve** and **Deny** actions, and a second line under the guest's label with the meal the request is for ("Restaurant · date/time"). While the meal is loading, errored or missing the line is simply absent and the tile works as before. (Meal line: widget-tested in `request_inbox_tile_test.dart` groups "meal line"; E2E in `inbox_feedback_test.dart`.)
+- [ ] The host opens the discovery app-bar inbox (`/requests`) → sees the pending request as a tile (guest photo/name/derived age) with **Approve** and **Deny** actions, and under the guest's label the meal the request is for (restaurant on its own line, ellipsized; date/time on the next, in the viewer's local time), with Deny/Approve on a second row. While the meal is loading, errored or missing the line is simply absent and the tile works as before. (Meal line: widget-tested in `request_inbox_tile_test.dart` groups "meal line"; E2E in `inbox_feedback_test.dart`.)
 - [ ] Host taps **Approve** → a client transaction locks the meal (`status` leaves `open`), creates a `matches/{mealId}` doc, marks this request `approved`, and denies every other pending request on the same meal ("sibling" denials) → the approved guest's meal-detail button flips to a "Matched!" banner; denied guests see "Not selected".
 - [ ] A second guest who requests the now-locked meal is rejected (request creation blocked once the meal is no longer `open`).
 - [ ] `matches/{mealId}` is the hand-off doc Plan 7 (chat) reads from.
@@ -242,7 +242,9 @@ Related PRD entry: `docs/PRD.md § Matching`
   - Approve, any other error: "Couldn't approve this request. It may already have been handled." (widget-tested only; not E2E).
   - Deny success: "Request denied." (widget-tested; E2E in the past-meal scenario, which also checks the request becomes `denied` and the tile disappears).
   - Deny, any error: "Couldn't deny this request. It may already have been handled." (widget-tested only; not E2E).
-  - The generic wording is deliberate: the app layer cannot tell already-decided, past-meal and offline failures apart without leaking Firebase types, and all mean nothing changed.
+  - The generic wording is deliberate: the app layer cannot tell already-decided and past-meal failures (or a failed offline approve) apart without leaking Firebase types, and all mean nothing changed. Offline differs per action: Approve is a transaction and errors (generic message); Deny is a queued write that never errors, the tile vanishes optimistically and "Request denied." appears only after reconnect.
+  - The Approve snackbar (it has a Chat action) is non-persistent: it auto-dismisses after ~6 s (~8 s with accessible navigation), has a close icon, and a new outcome replaces it (widget-tested).
+  - A disabled Approve on a past meal carries a tooltip and a semantics hint ("Meal time has passed").
   - Unmounting the tile mid-flight (approve or deny) neither throws nor loses the snackbar (widget-tested).
 - [ ] Discovery app-bar inbox badge (`pendingRequestCountProvider`) shows the live pending count and hides itself at 0 (unit-tested in `discovery_inbox_badge_test.dart`).
 - [ ] Women-only meals are unaffected by the request/match flow — the existing discovery-time gender filter is untouched; requests/matches carry no gender logic of their own.
@@ -529,10 +531,18 @@ Storage). It needs no real Firebase project and touches no cloud data.
     hidden. Still open: hiding them or expiring them server-side (a scheduled
     function that denies stale requests); excluding past requests from the
     app-bar badge count (`pendingRequestCountProvider` still counts them);
-    four copies of the date/time formatter exist (the shared
-    `formatMealDateTime` in `lib/core/util/date_format.dart`, used by the
-    inbox tile, plus private copies in Discover, meal detail and create-meal:
-    migrate those three). Other follow-ups (not done): Discover should skip an unparseable meal instead of erroring the whole
+    the date/time formatter is now the shared
+    `formatMealDateTime` (`lib/core/util/date_format.dart`, renders in the
+    viewer's local time) everywhere. Inbox-feedback follow-ups (not done):
+    (1) app-wide `outline`-as-text contrast: `outline` is the border token here
+    (~1.15:1 on the tile surface) and is used as text colour in ~39 places;
+    (2) the past-meal state does not tick while the screen stays open (a Timer
+    scheduled to `meal.dateTime` would); (3) the shared `isSubmitting` disables
+    every tile's buttons while one request is in flight, including offline,
+    where the deny write can stay pending; (4) `requestMealProvider` is not
+    autoDispose, so its entries live for the process, including across
+    sign-out; (5) in this theme the enabled FilledButton background equals the
+    tile's surface, so Approve looks unfilled. Other follow-ups (not done): Discover should skip an unparseable meal instead of erroring the whole
     stream; a cancel-meal Cloud Function (clients can no longer withdraw an
     open meal, since the meals rule has no client delete); the rule's
     `note.size() <= 200` may count Unicode code points while the UI `maxLength`

@@ -11,7 +11,7 @@
 
 Found while closing the meal-lifecycle rules (Plan 13), all in `RequestInboxTile` / `InboxActionController`:
 
-1. **Failures are swallowed.** `_approve` shows a snackbar only for `MealNoLongerOpenException`; every other error (a stale tile, the new "decided once" rule, a past meal, offline) is dropped. `_deny` ignores the result entirely. The tile just does nothing.
+1. **Failures are swallowed.** `_approve` shows a snackbar only for `MealNoLongerOpenException`; every other error (a stale tile, the new "decided once" rule, a past meal, an offline approve) is dropped. `_deny` ignores the result entirely. The tile just does nothing.
 2. **No success feedback.** After Approve the tile silently disappears; the host isn't told a chat now exists or how to reach it.
 3. **No meal context.** A tile shows only the guest's name and age. A host with several meals can't tell which one a request is for.
 4. **Requests on a meal that has already started** are still shown as actionable. The rules now reject approving them (and creating them), so the host taps Approve and gets nothing (problem 1).
@@ -55,7 +55,9 @@ A pure function maps an outcome to a message, with unit tests:
 | Deny | success | "Request denied." |
 | Deny | any error | "Couldn't deny this request. It may already have been handled." |
 
-One generic wording for "other error" is deliberate: the app layer can't distinguish permission-denied reasons (already decided, past meal, offline) without leaking Firebase types upward, and all of them mean "nothing changed; the list will refresh". No new repository exception types.
+One generic wording for "other error" is deliberate: the app layer can't distinguish permission-denied reasons (already decided, past meal) or a failed offline approve without leaking Firebase types upward, and all of them mean "nothing changed; the list will refresh". No new repository exception types.
+
+Offline behaves differently for the two actions. Approve is a transaction, so offline it errors and gets the generic message. Deny is a plain write: offline it never errors, the write stays queued, the tile disappears optimistically, and "Request denied." is shown only after the write resolves (on reconnect).
 
 ### 2.4 Out of scope
 
