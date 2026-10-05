@@ -120,8 +120,10 @@ void _logFontDiagnostics(WidgetTester tester) {
   for (final e in styles.entries) {
     // Run-log diagnostic for the audit; there is no logger in dev tooling.
     // ignore: avoid_print
-    print('UXFONT ${e.key} family=${e.value?.fontFamily} '
-        'weight=${e.value?.fontWeight}');
+    print(
+      'UXFONT ${e.key} family=${e.value?.fontFamily} '
+      'weight=${e.value?.fontWeight}',
+    );
   }
   // Same diagnostic as above.
   // ignore: avoid_print
@@ -131,67 +133,63 @@ void _logFontDiagnostics(WidgetTester tester) {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets(
-    'capture the proof screens',
-    (tester) async {
-      // No red DEBUG ribbon in the photographs.
-      WidgetsApp.debugAllowBannerOverride = false;
-      _suppressExpectedImageErrors();
-      _answerPushPermissionPrompt(tester);
+  testWidgets('capture the proof screens', (tester) async {
+    // No red DEBUG ribbon in the photographs.
+    WidgetsApp.debugAllowBannerOverride = false;
+    _suppressExpectedImageErrors();
+    _answerPushPermissionPrompt(tester);
 
-      await pumpApp(tester);
-      // A previous run's session can survive in the simulator keychain even
-      // though the emulator was reset: always start from signed out.
-      await signOutTestUser();
+    await pumpApp(tester);
+    // A previous run's session can survive in the simulator keychain even
+    // though the emulator was reset: always start from signed out.
+    await signOutTestUser();
 
-      // 01: sign-in, signed out.
-      final signInField = find.byKey(const Key('signin_phone_field'));
-      await _pumpUntilFound(tester, signInField);
-      await _awaitAssets(tester);
-      _logFontDiagnostics(tester);
-      await shot('01_signin');
+    // 01: sign-in, signed out.
+    final signInField = find.byKey(const Key('signin_phone_field'));
+    await _pumpUntilFound(tester, signInField);
+    await _awaitAssets(tester);
+    _logFontDiagnostics(tester);
+    await shot('01_signin');
 
-      // Seed the world; the session ends signed in as the viewer.
-      final world = await seedWorld();
+    // Seed the world; the session ends signed in as the viewer.
+    final world = await seedWorld();
 
-      // 02: Discover with data.
-      final discoverMarker = find.byKey(
-        const Key('discovery_create_meal_button'),
-      );
-      await _pumpUntilFound(tester, discoverMarker);
-      final card = find.byKey(
-        Key('discovery_meal_card_${world.openMealByOtherId}'),
-      );
-      await _pumpUntilFound(tester, card);
-      await _awaitAssets(tester);
-      await shot('02_discover');
+    // 02: Discover with data.
+    final discoverMarker = find.byKey(
+      const Key('discovery_create_meal_button'),
+    );
+    await _pumpUntilFound(tester, discoverMarker);
+    final card = find.byKey(
+      Key('discovery_meal_card_${world.openMealByOtherId}'),
+    );
+    await _pumpUntilFound(tester, card);
+    await _awaitAssets(tester);
+    await shot('02_discover');
 
-      // 03: meal detail of an open meal by another host.
-      await tester.ensureVisible(card);
-      await _settle(tester);
-      await tester.tap(card);
-      final requestButton = find.byKey(
-        const Key('meal_detail_request_to_join_button'),
-      );
-      await _pumpUntilFound(tester, requestButton);
-      await _awaitAssets(tester);
-      await shot('03_meal_detail');
+    // 03: meal detail of an open meal by another host.
+    await tester.ensureVisible(card);
+    await _settle(tester);
+    await tester.tap(card);
+    final requestButton = find.byKey(
+      const Key('meal_detail_request_to_join_button'),
+    );
+    await _pumpUntilFound(tester, requestButton);
+    await _awaitAssets(tester);
+    await shot('03_meal_detail');
 
-      // 04: the seeded match's chat.
-      await tester.pageBack();
-      await _pumpUntilFound(tester, discoverMarker);
-      final chatsTab = find.text('Chats');
-      expect(chatsTab, findsOneWidget);
-      await tester.tap(chatsTab);
-      await _settle(tester);
-      final tile = find.byKey(Key('chat_list_tile_${world.matchMealId}'));
-      await _pumpUntilFound(tester, tile);
-      await tester.tap(tile);
-      final list = find.byKey(const Key('chat_messages_list'));
-      await _pumpUntilFound(tester, list);
-      await _awaitAssets(tester);
-      await shot('04_chat');
-    },
-    timeout: const Timeout(Duration(minutes: 10)),
-  );
+    // 04: the seeded match's chat.
+    await tester.pageBack();
+    await _pumpUntilFound(tester, discoverMarker);
+    final chatsTab = find.text('Chats');
+    expect(chatsTab, findsOneWidget);
+    await tester.tap(chatsTab);
+    await _settle(tester);
+    final tile = find.byKey(Key('chat_list_tile_${world.matchMealId}'));
+    await _pumpUntilFound(tester, tile);
+    await tester.tap(tile);
+    final list = find.byKey(const Key('chat_messages_list'));
+    await _pumpUntilFound(tester, list);
+    await _awaitAssets(tester);
+    await shot('04_chat');
+  }, timeout: const Timeout(Duration(minutes: 10)));
 }

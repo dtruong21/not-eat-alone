@@ -4,8 +4,11 @@
 Generates 512x512 PNG portraits (a diagonal two-colour gradient with the
 person's initials) into ux_audit/out/avatars/ and serves that directory on
 http://127.0.0.1:8765/ (iOS ATS exempts IP-address hosts, so plain http is OK
-for the simulator). Run with no arguments to generate (idempotent) and serve;
-`--generate-only` stops after generating.
+for the simulator). Run with no arguments to serve (the port is bound first)
+while generating any missing avatar (idempotent; each file is written to a
+temp name and renamed, so a partial file is never served or kept);
+`--generate-only` stops after generating. Callers that need every avatar
+wait until the LAST key of AVATARS answers (tool/ux_capture.sh does).
 
 Files: <key>.png where <key> is one of AVATARS below, e.g.
 http://127.0.0.1:8765/amelie.png
@@ -18,6 +21,7 @@ import http.server
 import socketserver
 import struct
 import sys
+import threading
 import zlib
 from pathlib import Path
 
@@ -118,7 +122,9 @@ def generate() -> None:
     for key, (initials, hue) in AVATARS.items():
         path = OUT / f"{key}.png"
         if not path.exists():
-            path.write_bytes(_png(_render(initials, hue)))
+            tmp = OUT / f".{key}.png.tmp"
+            tmp.write_bytes(_png(_render(initials, hue)))
+            tmp.replace(path)  # atomic on the same filesystem
             print(f"generated {path}", flush=True)
 
 
@@ -132,14 +138,18 @@ class _Server(socketserver.ThreadingTCPServer):
     daemon_threads = True
 
 
-def serve() -> None:
+def main() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    if "--generate-only" in sys.argv:
+        generate()
+        return
     handler = functools.partial(_Quiet, directory=str(OUT))
-    with _Server((HOST, PORT), handler) as httpd:
+    with _Server((HOST, PORT), handler) as httpd:  # binds now
         print(f"serving {OUT} on http://{HOST}:{PORT}/", flush=True)
-        httpd.serve_forever()
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        generate()
+        threading.Event().wait()  # serve until killed
 
 
 if __name__ == "__main__":
-    generate()
-    if "--generate-only" not in sys.argv:
-        serve()
+    main()

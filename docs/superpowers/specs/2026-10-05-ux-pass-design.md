@@ -23,7 +23,7 @@ A dedicated capture test boots the real app on the iOS Simulator against the Fir
 - **Handoff:** the test writes `/tmp/convyve-ux/<name>.ready` (the simulator shares the host filesystem), a host script runs `xcrun simctl io <device> screenshot` and writes `<name>.ack`, the test continues. Bounded waits throughout.
 - **Matrix:** device sizes (the existing "Convyve E2E" iPhone 17 Pro plus a small-phone simulator such as iPhone SE) × light/dark (`xcrun simctl ui <device> appearance`) × text size (default and a large accessibility size via `xcrun simctl ui <device> content_size`).
 - **Screens and states** (13 screens): sign-in; phone verify; age gate (incl. under-18); profile setup and edit; Discover (data, empty, loading, location-denied banner, Paris notice); create meal; restaurant search; meal detail (open, requested, not selected, matched, own meal, women-only disabled); requests inbox (data, empty, past-meal chip); chats list (data, empty); chat (messages, composer, safety tips, seen marker); rating sheet and the post-meal card; report sheet; settings; error and offline-ish states where reachable.
-- Output goes to `ux_audit/out/` (gitignored). The harness is not part of CI and not under `integration_test/` (so `make e2e` does not run it); run it with `make ux-capture`.
+- Output goes to `ux_audit/out/` (gitignored). The harness is not part of CI and not under `integration_test/` (so `make e2e` does not run it); run it with `make ux-capture`, which uses `flutter drive --driver ux_audit/driver.dart --target ux_audit/capture_test.dart` (not `flutter test`, which only runs on a device for files under `integration_test/`).
 
 ### 2.2 The audit
 

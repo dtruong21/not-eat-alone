@@ -277,12 +277,12 @@ DateTime _at(int daysAhead, int hour, [int minute = 0]) {
 }
 
 Map<String, Object?> _restaurant(_Place p) => {
-      'placeId': p.id,
-      'name': p.name,
-      'address': p.address,
-      'lat': p.lat,
-      'lng': p.lng,
-    };
+  'placeId': p.id,
+  'name': p.name,
+  'address': p.address,
+  'lat': p.lat,
+  'lng': p.lng,
+};
 
 /// Writes a `meals/{id}` doc through the admin REST API and returns its id.
 Future<String> _meal({
@@ -444,17 +444,13 @@ Future<UxWorld> seedWorld() async {
     emilia,
     'chartier',
     _at(1, 19, 30),
-    note: 'Classic French on a budget. Expect a queue, bring patience and an '
+    note:
+        'Classic French on a budget. Expect a queue, bring patience and an '
         'appetite. I will save us a spot on the right side of the room, '
         'under the big mirror, and I would love to hear what everyone '
         'does for a living.',
   );
-  await open(
-    'cambodge',
-    farid,
-    'cambodge',
-    _at(1, 12, 30),
-  );
+  await open('cambodge', farid, 'cambodge', _at(1, 12, 30));
   await open(
     'flore',
     giulia,
@@ -492,13 +488,7 @@ Future<UxWorld> seedWorld() async {
     _at(6, 21),
     note: 'No reservations, so be on time!',
   );
-  await open(
-    'bao',
-    dario,
-    'bao',
-    _at(7, 13),
-    note: 'Lunch.',
-  );
+  await open('bao', dario, 'bao', _at(7, 13), note: 'Lunch.');
 
   // The viewer's own upcoming meal, with two pending requests.
   final ownMeal = await open(
@@ -567,51 +557,59 @@ Future<UxWorld> seedWorld() async {
     (
       minutesAgo: 4285,
       mine: true,
-      text: 'Hi Bastien! Thanks for accepting. I have wanted to try this '
+      text:
+          'Hi Bastien! Thanks for accepting. I have wanted to try this '
           'place for ages.',
     ),
     (
       minutesAgo: 4270,
       mine: false,
-      text: 'Same! Have you been in the area before? It is right by Odéon, '
+      text:
+          'Same! Have you been in the area before? It is right by Odéon, '
           'a short walk from the metro.',
     ),
     (
       minutesAgo: 4100,
       mine: true,
-      text: 'Not for dinner. Is it okay if I am 5 minutes late? I am coming '
+      text:
+          'Not for dinner. Is it okay if I am 5 minutes late? I am coming '
           'straight from work.',
     ),
     (
       minutesAgo: 4090,
       mine: false,
-      text: 'No problem at all. I will grab the table and give the name '
+      text:
+          'No problem at all. I will grab the table and give the name '
           'Marchetti.',
     ),
     (minutesAgo: 2900, mine: true, text: 'Perfect.'),
     (
       minutesAgo: 2895,
       mine: true,
-      text: 'Any allergies I should know about? I am vegetarian but I eat '
+      text:
+          'Any allergies I should know about? I am vegetarian but I eat '
           'fish.',
     ),
     (
       minutesAgo: 2850,
       mine: false,
-      text: 'Good to know, the menu has a great fish dish. I eat '
+      text:
+          'Good to know, the menu has a great fish dish. I eat '
           'everything, so no worries on my side.',
     ),
     (
       minutesAgo: 2848,
       mine: false,
-      text: 'Quick plan:\n- 20:00 at the door\n- we split a starter\n'
+      text:
+          'Quick plan:\n- 20:00 at the door\n- we split a starter\n'
           '- no phones at the table 😄',
     ),
     (minutesAgo: 2800, mine: true, text: 'Deal!'),
     (
       minutesAgo: 1500,
       mine: true,
-      text: 'By the way, I might bring a friend along for the aperitif only. '
+      text:
+          'By the way, I might bring a friend along for the aperitif only. '
           'She lives around the corner and wants to say hi before dinner. '
           'Would that be okay with you, or would you rather keep it just '
           'the two of us? Totally fine either way!',
@@ -624,7 +622,8 @@ Future<UxWorld> seedWorld() async {
     (
       minutesAgo: 190,
       mine: false,
-      text: 'Reminder: tomorrow 20:00, Le Comptoir du Relais. Looking '
+      text:
+          'Reminder: tomorrow 20:00, Le Comptoir du Relais. Looking '
           'forward to it!',
     ),
     (minutesAgo: 120, mine: true, text: 'See you there! 🍷'),
