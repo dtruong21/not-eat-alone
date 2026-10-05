@@ -1809,7 +1809,7 @@ void main() {
     );
 
     testWidgets(
-      'R1c. the post-commit sibling-deny batch (pending -> denied) is allowed',
+      'R1c. the post-commit per-sibling denies (pending -> denied) is allowed',
       (tester) async {
         final w = await world(tester, 'r1c', otherRequests: true);
         final siblingId = '${w.mealId}_${w.otherUid}';

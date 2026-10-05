@@ -437,7 +437,8 @@ Storage). It needs no real Firebase project and touches no cloud data.
   `meals — integrity`, `requests update — decided once` and
   `ratings create — the meal has happened`:
   - Allowed: `createMeal` (the real repository call, plus the same key set by
-    hand, a create with no `guestId` key and a 200-character note), the real
+    hand, a create with no `guestId` key and a 200-character note; new `MealDto`
+    field ⇒ update the meals create whitelist, A1 is the guard), the real
     approve transaction (meal + request + match), a request decided `pending`
     to `denied` (the app deny and the post-commit sibling denies), a request
     `approved` once the meal is matched with that guest and the match exists
@@ -517,7 +518,11 @@ Storage). It needs no real Firebase project and touches no cloud data.
     (the rules now deny approving one, but the inbox does not filter by date);
     Discover should skip an unparseable meal instead of erroring the whole
     stream; a cancel-meal Cloud Function (clients can no longer withdraw an
-    open meal, since the meals rule has no client delete).
+    open meal, since the meals rule has no client delete); the rule's
+    `note.size() <= 200` may count Unicode code points while the UI `maxLength`
+    counts grapheme clusters: a note of ≤200 graphemes made of multi-code-point
+    emoji could be denied with a generic error (rare; same shape as the rating
+    comment rule).
 - **Cloud Functions** — triggers actually fire in the emulator, e.g. the rating
   aggregate written by `onRatingCreated`.
 - **Smoke** — a signed-in user boots to the Discover feed.
