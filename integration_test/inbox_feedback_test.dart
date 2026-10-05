@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/main_common.dart';
 
 import 'support/app_harness.dart';
@@ -28,31 +29,9 @@ import 'support/seed.dart';
 
 FirebaseFirestore get _db => FirebaseFirestore.instance;
 
-/// Installs a `FlutterError.onError` filter that SWALLOWS the expected
-/// avatar-image 404 noise, and restores the previous handler at teardown.
-///
-/// `seedUserProfile` (`support/seed.dart`) writes a non-empty but
-/// non-existent `photoUrls` entry (`https://example.com/avatar.png`) purely
-/// to satisfy `AppUser.profileComplete`'s non-empty check
-/// (`lib/features/user/domain/entities/app_user.dart`) — every real screen
-/// this scenario visits (`discovery_screen.dart`'s `_HostInfo`,
-/// `meal_detail_screen.dart`'s `_HostBlock`, `request_inbox_tile.dart`)
-/// renders a `CircleAvatar(backgroundImage: NetworkImage(photoUrl))` off
-/// that URL, so a 404 `NetworkImageLoadException` is EXPECTED noise here
-/// (confirmed live — see task-4-report.md), not a real app defect.
-///
-/// Filtering it at the source (`FlutterError.onError`) — rather than draining
-/// the binding's recorded exceptions after every pump — is robust to MULTIPLE
-/// avatars failing within a single pumped frame (which happens on the
-/// Discover -> meal-detail transition, when both screens' host avatars are in
-/// the tree). Once 2+ exceptions have accumulated in the binding since the
-/// last check, `tester.takeException()` throws a synthetic "Multiple
-/// exceptions (N) were detected... at least one was unexpected" `TestFailure`
-/// that discards the individual exceptions, so a post-pump drain can no
-/// longer tell expected `NetworkImageLoadException`s from a real regression.
-/// Swallowing at `onError` keeps those image errors from ever being recorded,
-/// while every OTHER error still chains through to the binding's own handler
-/// and fails the test loudly — so a genuine regression is never masked.
+/// Swallows the expected avatar-image 404 noise (`NetworkImageLoadException`)
+/// and restores the previous `FlutterError.onError` at teardown. See
+/// `request_match_test.dart`'s copy of this helper for the full rationale.
 void _suppressExpectedImageErrors() {
   final previous = FlutterError.onError;
   FlutterError.onError = (details) {
@@ -62,11 +41,8 @@ void _suppressExpectedImageErrors() {
   addTearDown(() => FlutterError.onError = previous);
 }
 
-/// A hand-rolled, bounded `pumpAndSettle` (same loop shape — pump on [step]
-/// while `binding.hasScheduledFrame`, bounded by [timeout]). Must never use
-/// `pumpAndSettle()`'s unbounded 10-minute default: an actively-animating
-/// widget (e.g. a `CircularProgressIndicator` shown while an upstream
-/// provider is still `AsyncLoading`) would hang it (see task-3-report.md).
+/// A hand-rolled, bounded `pumpAndSettle` — see `request_match_test.dart`'s
+/// copy for the rationale (never the unbounded 10-minute default).
 Future<void> _settle(
   WidgetTester tester, {
   Duration step = const Duration(milliseconds: 100),
@@ -79,12 +55,8 @@ Future<void> _settle(
       DateTime.now().isBefore(deadline));
 }
 
-/// Bounded pump loop that waits for [finder] to appear, up to [timeout],
-/// then does a short, best-effort [_settle]. Used at every async auth/
-/// Firestore-stream boundary in this scenario (sign-in -> router redirect,
-/// meal-list stream picking up a just-seeded doc, request-state stream
-/// picking up the just-created request, host-inbox stream picking up the
-/// just-created request) instead of a fixed `Future.delayed`.
+/// Bounded pump loop that waits for [finder] to appear, then a short
+/// best-effort [_settle]. See `request_match_test.dart`.
 Future<void> _pumpUntilFound(
   WidgetTester tester,
   Finder finder, {
@@ -110,10 +82,8 @@ Future<void> _pumpUntilGone(
   await _settle(tester);
 }
 
-/// Boots the app for this test. `bootstrap` (via `pumpApp`) may run only ONCE
-/// per process (a second call would re-call `useFirestoreEmulator` on a
-/// started instance and throw), so later tests in this file reuse the
-/// already-initialized Firebase and just mount a fresh `ProviderScope` app.
+/// Boots the app for this test; same single-boot pattern as
+/// `request_match_test.dart` (`bootstrap` may run once per process).
 Future<void> _boot(WidgetTester tester) async {
   _suppressExpectedImageErrors();
   if (Firebase.apps.isEmpty) {
@@ -160,10 +130,8 @@ void main() {
 
     // Past OPEN meal + pending request, both via admin REST (rules reject
     // both a past-dated meal create and a request on a past meal).
-    final mealId = await seedOpenMeal(
-      hostId: host.uid,
-      dateTime: DateTime.now().subtract(const Duration(hours: 2)),
-    );
+    final when = DateTime.now().subtract(const Duration(hours: 2));
+    final mealId = await seedOpenMeal(hostId: host.uid, dateTime: when);
     final requestId = '${mealId}_${guest.uid}';
     await adminSetDoc('requests', requestId, {
       'id': requestId,
@@ -185,7 +153,19 @@ void main() {
     final mealLine = find.byKey(Key('request_inbox_meal_line_$requestId'));
     await _pumpUntilFound(tester, mealLine);
     expect(mealLine, findsOneWidget);
-    expect(tester.widget<Text>(mealLine).data, contains('Seed Restaurant'));
+    expect(
+      find.descendant(of: mealLine, matching: find.text('Seed Restaurant')),
+      findsOneWidget,
+    );
+    // The app renders the instant in the viewer's local time, as does the
+    // test process (same simulator timezone).
+    expect(
+      find.descendant(
+        of: mealLine,
+        matching: find.text(formatMealDateTime(when)),
+      ),
+      findsOneWidget,
+    );
 
     final pastChip = find.byKey(Key('request_inbox_past_chip_$requestId'));
     expect(pastChip, findsOneWidget);
@@ -220,7 +200,8 @@ void main() {
 
     final host = await signInTestUser(uid: 'host-1');
     await seedUserProfile(uid: host.uid);
-    final mealId = await seedOpenMeal(hostId: host.uid);
+    final when = DateTime.now().add(const Duration(hours: 3));
+    final mealId = await seedOpenMeal(hostId: host.uid, dateTime: when);
     await signOutTestUser();
 
     final guest = await signInTestUser(uid: 'guest-1');
@@ -242,7 +223,19 @@ void main() {
     final mealLine = find.byKey(Key('request_inbox_meal_line_$requestId'));
     await _pumpUntilFound(tester, mealLine);
     expect(mealLine, findsOneWidget);
-    expect(tester.widget<Text>(mealLine).data, contains('Seed Restaurant'));
+    expect(
+      find.descendant(of: mealLine, matching: find.text('Seed Restaurant')),
+      findsOneWidget,
+    );
+    // The app renders the instant in the viewer's local time, as does the
+    // test process (same simulator timezone).
+    expect(
+      find.descendant(
+        of: mealLine,
+        matching: find.text(formatMealDateTime(when)),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(Key('request_inbox_past_chip_$requestId')), findsNothing);
 
     final approve = find.byKey(Key('request_inbox_approve_button_$requestId'));
@@ -257,15 +250,6 @@ void main() {
     final chatAction = find.widgetWithText(SnackBarAction, 'Chat');
     expect(chatAction, findsOneWidget);
 
-    final match = await pollUntil(() async {
-      final m = await _db.collection('matches').doc(mealId).get();
-      return m.exists ? m : null;
-    });
-    expect(
-      match.data()!['participants'] as List<Object?>,
-      containsAll([host.uid, guest.uid]),
-    );
-
     await tester.tap(chatAction);
     await _settle(tester);
 
@@ -275,6 +259,16 @@ void main() {
       composer,
       findsOneWidget,
       reason: "the snackbar's Chat action did not open the chat screen",
+    );
+
+    // Match doc is polled AFTER the UI path (tap first, then verify).
+    final match = await pollUntil(() async {
+      final m = await _db.collection('matches').doc(mealId).get();
+      return m.exists ? m : null;
+    });
+    expect(
+      match.data()!['participants'] as List<Object?>,
+      containsAll([host.uid, guest.uid]),
     );
 
     expect(tester.takeException(), isNull);
