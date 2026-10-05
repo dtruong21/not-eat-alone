@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/matching/application/request_meal_provider.dart';
 import 'package:not_eat_alone/features/matching/application/request_providers.dart';
@@ -138,11 +139,16 @@ void main() {
       ),
     ];
     final tileBody = Scaffold(
-      body: ValueListenableBuilder<bool>(
-        valueListenable: showTile,
-        builder: (context, show, _) => show
-            ? const RequestInboxTile(request: _request)
-            : const SizedBox.shrink(),
+      // The real screen lays tiles out inside a padded ListView, so the
+      // usable width is the screen width minus this padding.
+      body: Padding(
+        padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: showTile,
+          builder: (context, show, _) => show
+              ? const RequestInboxTile(request: _request)
+              : const SizedBox.shrink(),
+        ),
       ),
     );
     if (withRouter) {
@@ -176,18 +182,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: overrides,
-        child: MaterialApp(
-          theme: theme,
-          builder: scaled,
-          home: Scaffold(
-            body: ValueListenableBuilder<bool>(
-              valueListenable: showTile,
-              builder: (context, show, _) => show
-                  ? const RequestInboxTile(request: _request)
-                  : const SizedBox.shrink(),
-            ),
-          ),
-        ),
+        child: MaterialApp(theme: theme, builder: scaled, home: tileBody),
       ),
     );
     await tester.pump();

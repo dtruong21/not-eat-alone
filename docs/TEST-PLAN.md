@@ -542,7 +542,12 @@ Storage). It needs no real Firebase project and touches no cloud data.
     where the deny write can stay pending; (4) `requestMealProvider` is not
     autoDispose, so its entries live for the process, including across
     sign-out; (5) in this theme the enabled FilledButton background equals the
-    tile's surface, so Approve looks unfilled. Other follow-ups (not done): Discover should skip an unparseable meal instead of erroring the whole
+    tile's surface, so Approve looks unfilled. (6) chat message times
+    (`message_bubble._formatTime`) and the chat list's relative times
+    (`chat_list_tile._relativeTime`) use `createdAt.hour`/day without
+    `toLocal()`; chat timestamps are probably parsed as UTC, so they likely
+    display UTC (same bug class as the meal-time fix; verify and fix in a
+    follow-up). Other follow-ups (not done): Discover should skip an unparseable meal instead of erroring the whole
     stream; a cancel-meal Cloud Function (clients can no longer withdraw an
     open meal, since the meals rule has no client delete); the rule's
     `note.size() <= 200` may count Unicode code points while the UI `maxLength`
