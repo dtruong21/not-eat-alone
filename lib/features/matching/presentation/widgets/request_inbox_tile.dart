@@ -217,6 +217,12 @@ class RequestInboxTile extends ConsumerWidget {
                         ),
                         child: Text(
                           _pastMealLabel,
+                          // One line always: at 320 px and large text scales
+                          // the label may ellipsize; the meaning is also
+                          // carried by the disabled Approve's tooltip and
+                          // semantics hint.
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: textTheme.bodySmall?.copyWith(
                             color: colors.onErrorContainer,
                             fontWeight: WarmPlayfulType.captionWeight,
