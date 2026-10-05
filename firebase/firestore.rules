@@ -208,7 +208,7 @@ service cloud.firestore {
       // A request is decided once: only a `pending` request can be approved
       // or denied, so an approved request can't be flipped to denied (or a
       // denied one revived). `denied` is a bare write (no access calls: the
-      // deny and the sibling-deny batch); `approved` is only admitted inside
+      // deny and the per-sibling denies); `approved` is only admitted inside
       // the approve transaction (`requestApprovalLinked`).
       allow update: if isSignedIn()
                     && resource.data.hostId == request.auth.uid
