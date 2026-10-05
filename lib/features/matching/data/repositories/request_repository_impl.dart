@@ -8,8 +8,8 @@ import 'package:not_eat_alone/core/firebase/firebase_client.dart';
 import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/matching/data/dtos/join_request_dto.dart';
 import 'package:not_eat_alone/features/matching/data/mappers/join_request_mapper.dart';
-import 'package:not_eat_alone/features/matching/data/repositories/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
+import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/repositories/request_repository.dart';
 
 class RequestRepositoryImpl implements RequestRepository {

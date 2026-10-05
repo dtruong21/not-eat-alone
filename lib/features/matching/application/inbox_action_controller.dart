@@ -42,7 +42,9 @@ class InboxActionController extends _$InboxActionController {
     }
   }
 
-  Future<void> deny(JoinRequest request) async {
+  /// Returns the resulting error, or `null` on success — same contract as
+  /// [approve], for the same unmount-after-await reason.
+  Future<Object?> deny(JoinRequest request) async {
     // Keep alive until settled — see CreateRequestController.request.
     final link = ref.keepAlive();
     try {
@@ -51,6 +53,7 @@ class InboxActionController extends _$InboxActionController {
         await ref.read(requestRepositoryProvider).deny(request);
         await analytics.track(const RequestDenied());
       });
+      return state.error;
     } finally {
       link.close();
     }

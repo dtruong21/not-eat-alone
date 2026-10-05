@@ -9,8 +9,8 @@ import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.
 import 'package:not_eat_alone/features/matching/application/create_request_controller.dart';
 import 'package:not_eat_alone/features/matching/application/inbox_action_controller.dart';
 import 'package:not_eat_alone/features/matching/application/request_providers.dart';
-import 'package:not_eat_alone/features/matching/data/repositories/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
+import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/repositories/request_repository.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
@@ -138,8 +138,9 @@ void main() {
       },
     );
 
-    test('deny() calls repo.deny', () async {
-      await container
+    test('deny() calls repo.deny, leaves state AsyncData, and returns null',
+        () async {
+      final result = await container
           .read(inboxActionControllerProvider.notifier)
           .deny(_request);
 
@@ -147,6 +148,62 @@ void main() {
 
       final state = container.read(inboxActionControllerProvider);
       expect(state.hasError, isFalse);
+      expect(state, isA<AsyncData<void>>());
+      expect(result, isNull);
+    });
+
+    test('deny() leaves state.hasError true and RETURNS the error on failure',
+        () async {
+      final failure = StateError('permission-denied');
+      when(() => requestRepository.deny(any())).thenThrow(failure);
+
+      final result = await container
+          .read(inboxActionControllerProvider.notifier)
+          .deny(_request);
+
+      final state = container.read(inboxActionControllerProvider);
+      expect(state.hasError, isTrue);
+      expect(result, same(failure));
+    });
+
+    test('deny() goes loading, then data', () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.deny(any()))
+          .thenAnswer((_) => gate.future);
+      final seen = <AsyncValue<void>>[];
+      container.listen(
+        inboxActionControllerProvider,
+        (_, next) => seen.add(next),
+      );
+
+      final inFlight = container
+          .read(inboxActionControllerProvider.notifier)
+          .deny(_request);
+      gate.complete();
+      await inFlight;
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last, isA<AsyncData<void>>());
+    });
+
+    test('deny() goes loading, then error', () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.deny(any()))
+          .thenAnswer((_) => gate.future);
+      final seen = <AsyncValue<void>>[];
+      container.listen(
+        inboxActionControllerProvider,
+        (_, next) => seen.add(next),
+      );
+
+      final inFlight = container
+          .read(inboxActionControllerProvider.notifier)
+          .deny(_request);
+      gate.completeError(StateError('denied'));
+      await inFlight;
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last.hasError, isTrue);
     });
   });
 
@@ -233,6 +290,25 @@ void main() {
             .approve(_request),
         release: () =>
             gate.completeError(MealNoLongerOpenException('meal_1')),
+      );
+
+      expect(seen.first.isLoading, isTrue);
+      expect(seen.last.hasError, isTrue);
+    });
+
+    test('InboxActionController.deny delivers a failure mid-flight',
+        () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.deny(any()))
+          .thenAnswer((_) => gate.future);
+
+      final seen = await runWithListenerRemovedMidFlight(
+        container,
+        inboxActionControllerProvider,
+        action: () => container
+            .read(inboxActionControllerProvider.notifier)
+            .deny(_request),
+        release: () => gate.completeError(StateError('denied')),
       );
 
       expect(seen.first.isLoading, isTrue);

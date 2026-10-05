@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
+import 'package:not_eat_alone/features/matching/application/request_meal_provider.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
 import 'package:not_eat_alone/features/matching/presentation/request_inbox_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -30,8 +31,9 @@ void main() {
 
   setUp(() {
     userRepository = MockUserRepository();
-    when(() => userRepository.watch('guest1'))
-        .thenAnswer((_) => Stream.value(_guest));
+    when(
+      () => userRepository.watch('guest1'),
+    ).thenAnswer((_) => Stream.value(_guest));
   });
 
   Future<void> pumpInbox(
@@ -42,6 +44,7 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(userRepository),
+          requestMealProvider.overrideWith((ref, mealId) async => null),
           hostInboxProvider.overrideWith(
             (ref) => switch (hostInboxState) {
               AsyncData(:final value) => Stream.value(value),
@@ -61,10 +64,7 @@ void main() {
   }
 
   testWidgets('empty inbox shows the empty state', (tester) async {
-    await pumpInbox(
-      tester,
-      hostInboxState: const AsyncData([]),
-    );
+    await pumpInbox(tester, hostInboxState: const AsyncData([]));
 
     expect(find.text('No pending requests'), findsOneWidget);
   });
@@ -72,10 +72,7 @@ void main() {
   testWidgets('one pending request shows the guest name + Approve + Deny', (
     tester,
   ) async {
-    await pumpInbox(
-      tester,
-      hostInboxState: const AsyncData([_request]),
-    );
+    await pumpInbox(tester, hostInboxState: const AsyncData([_request]));
 
     expect(find.textContaining('Amélie'), findsOneWidget);
     expect(find.text('Approve'), findsOneWidget);

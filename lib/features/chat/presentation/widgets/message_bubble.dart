@@ -8,8 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 
-/// "7:30 PM" — same shape as `meal_detail_screen.dart`'s `_formatDateTime`,
-/// duplicated (not shared) since it's a small, presentation-only helper.
+/// "7:30 PM" — a small, presentation-only helper, kept private to this file.
 String _formatTime(DateTime dateTime) {
   final hour24 = dateTime.hour;
   final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;

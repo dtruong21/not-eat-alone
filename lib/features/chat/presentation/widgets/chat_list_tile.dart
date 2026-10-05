@@ -14,8 +14,7 @@ import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 /// "1m" / "2h" / "3d" / falls back to a short date beyond a week — kept as a
-/// small private helper (same pattern as `meal_detail_screen.dart`'s
-/// `_formatDateTime`) rather than a shared util, since this is the only
+/// small private helper rather than a shared util, since this is the only
 /// place that needs it.
 String _relativeTime(DateTime dateTime, {DateTime? now}) {
   final reference = now ?? DateTime.now();

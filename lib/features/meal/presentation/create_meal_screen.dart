@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/meal/application/create_meal_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 
@@ -30,32 +31,6 @@ const mealMinLead = Duration(minutes: 5);
 /// current time).
 bool isMealTimeFarEnough(DateTime picked, {DateTime? now}) =>
     !picked.isBefore((now ?? DateTime.now()).add(mealMinLead));
-
-const _monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-/// Formats [dateTime] as e.g. "January 5, 2027 at 7:30 PM" without pulling
-/// in `intl` (not a direct dependency of this package).
-String _formatDateTime(DateTime dateTime) {
-  final hour24 = dateTime.hour;
-  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-  final minute = dateTime.minute.toString().padLeft(2, '0');
-  final period = hour24 < 12 ? 'AM' : 'PM';
-  return '${_monthNames[dateTime.month - 1]} ${dateTime.day}, '
-      '${dateTime.year} at $hour12:$minute $period';
-}
 
 class CreateMealScreen extends ConsumerStatefulWidget {
   const CreateMealScreen({required this.restaurant, super.key});
@@ -130,7 +105,9 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
     if (dateTime == null) return;
 
     final note = _noteController.text.trim();
-    await ref.read(createMealControllerProvider.notifier).create(
+    await ref
+        .read(createMealControllerProvider.notifier)
+        .create(
           restaurant: widget.restaurant,
           dateTime: dateTime,
           note: note.isEmpty ? null : note,
@@ -149,9 +126,9 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
     ) {
       if (previous?.isLoading == true && next.hasValue && !next.hasError) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Meal created!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Meal created!')));
         context.go('/discover');
       }
     });
@@ -214,7 +191,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                 child: Text(
                   _dateTime == null
                       ? 'Pick date & time'
-                      : _formatDateTime(_dateTime!),
+                      : formatMealDateTime(_dateTime!),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
@@ -265,9 +242,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
               ],
               FilledButton(
                 key: const Key('create_meal_submit_button'),
-                onPressed: (_dateTime == null || isSubmitting)
-                    ? null
-                    : _submit,
+                onPressed: (_dateTime == null || isSubmitting) ? null : _submit,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     vertical: WarmPlayfulSpacing.s4,
