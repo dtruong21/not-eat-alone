@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/matching/application/create_request_controller.dart';
 import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
@@ -29,33 +30,6 @@ import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
-const _monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-/// Formats [dateTime] as e.g. "January 5, 2027 at 7:30 PM" — same shape as
-/// `discovery_screen.dart`'s formatter, duplicated (not shared) since both
-/// are small, presentation-only, private helpers.
-String _formatDateTime(DateTime dateTime) {
-  final hour24 = dateTime.hour;
-  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-  final minute = dateTime.minute.toString().padLeft(2, '0');
-  final period = hour24 < 12 ? 'AM' : 'PM';
-  return '${_monthNames[dateTime.month - 1]} ${dateTime.day}, '
-      '${dateTime.year} at $hour12:$minute $period';
-}
-
 /// Age in whole years for someone born on [dob], as of [now] (defaults to
 /// `DateTime.now()`). Same birthday-not-yet-happened-this-year logic as
 /// `core/util/age.dart`'s `isAdult`, but returns the age itself rather than
@@ -63,7 +37,8 @@ String _formatDateTime(DateTime dateTime) {
 int _ageFromDob(DateTime dob, {DateTime? now}) {
   final today = now ?? DateTime.now();
   var age = today.year - dob.year;
-  final hadBirthday = (today.month > dob.month) ||
+  final hadBirthday =
+      (today.month > dob.month) ||
       (today.month == dob.month && today.day >= dob.day);
   if (!hadBirthday) age -= 1;
   return age;
@@ -130,7 +105,7 @@ class MealDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
               Text(
-                _formatDateTime(meal.dateTime),
+                formatMealDateTime(meal.dateTime),
                 style: textTheme.bodyMedium?.copyWith(
                   color: colors.onSurface,
                   fontWeight: WarmPlayfulType.h2Weight,
@@ -259,8 +234,9 @@ class _HostBlock extends ConsumerWidget {
           );
         }
 
-        final photoUrl =
-            host.photoUrls.isNotEmpty ? host.photoUrls.first : null;
+        final photoUrl = host.photoUrls.isNotEmpty
+            ? host.photoUrls.first
+            : null;
         final age = _ageFromDob(host.dob);
 
         return Row(
@@ -269,8 +245,7 @@ class _HostBlock extends ConsumerWidget {
             CircleAvatar(
               radius: WarmPlayfulSpacing.s5,
               backgroundColor: colors.surfaceContainerHighest,
-              backgroundImage:
-                  photoUrl != null ? NetworkImage(photoUrl) : null,
+              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
               child: photoUrl == null
                   ? Icon(
                       Icons.person_rounded,
@@ -354,8 +329,7 @@ class _RequestAction extends ConsumerWidget {
           const SizedBox(height: WarmPlayfulSpacing.s2),
           TextButton(
             key: const Key('meal_detail_request_retry_button'),
-            onPressed: () =>
-                ref.invalidate(mealRequestStateProvider(meal.id)),
+            onPressed: () => ref.invalidate(mealRequestStateProvider(meal.id)),
             child: const Text('Retry'),
           ),
         ],
@@ -365,18 +339,22 @@ class _RequestAction extends ConsumerWidget {
           return _RequestToJoinButton(meal: meal);
         }
         return switch (request.status) {
-          RequestStatus.pending =>
-            _RequestedState(colors: colors, textTheme: textTheme),
+          RequestStatus.pending => _RequestedState(
+            colors: colors,
+            textTheme: textTheme,
+          ),
           RequestStatus.approved => _MatchedBanner(
-              colors: colors,
-              textTheme: textTheme,
-              // matchId == mealId: `matches/{mealId}` is the hand-off doc
-              // Plan 6's approve transaction writes (see `docs/PRD.md §
-              // Matching`), so the meal's own id is the chat route param.
-              mealId: meal.id,
-            ),
-          RequestStatus.denied =>
-            _NotSelectedState(colors: colors, textTheme: textTheme),
+            colors: colors,
+            textTheme: textTheme,
+            // matchId == mealId: `matches/{mealId}` is the hand-off doc
+            // Plan 6's approve transaction writes (see `docs/PRD.md §
+            // Matching`), so the meal's own id is the chat route param.
+            mealId: meal.id,
+          ),
+          RequestStatus.denied => _NotSelectedState(
+            colors: colors,
+            textTheme: textTheme,
+          ),
         };
       },
     );
@@ -417,8 +395,9 @@ class _RequestToJoinButton extends ConsumerWidget {
       key: const Key('meal_detail_request_to_join_button'),
       onPressed: isSubmitting
           ? null
-          : () =>
-              ref.read(createRequestControllerProvider.notifier).request(meal),
+          : () => ref
+                .read(createRequestControllerProvider.notifier)
+                .request(meal),
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
         shape: RoundedRectangleBorder(
@@ -455,8 +434,9 @@ class _RequestedState extends StatelessWidget {
           key: const Key('meal_detail_requested_button'),
           onPressed: null,
           style: FilledButton.styleFrom(
-            padding:
-                const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
+            padding: const EdgeInsets.symmetric(
+              vertical: WarmPlayfulSpacing.s4,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
             ),
@@ -566,8 +546,9 @@ class _WomenOnlyGuard extends StatelessWidget {
           key: const Key('meal_detail_women_only_disabled_button'),
           onPressed: null,
           style: FilledButton.styleFrom(
-            padding:
-                const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
+            padding: const EdgeInsets.symmetric(
+              vertical: WarmPlayfulSpacing.s4,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
             ),

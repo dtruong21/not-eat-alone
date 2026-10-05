@@ -25,6 +25,7 @@ import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
@@ -33,33 +34,6 @@ import 'package:not_eat_alone/features/notifications/application/push_registrati
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
-
-const _monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-/// Formats [dateTime] as e.g. "January 5, 2027 at 7:30 PM" — same shape as
-/// `create_meal_screen.dart`'s formatter, duplicated (not shared) since both
-/// are small, presentation-only, private helpers.
-String _formatDateTime(DateTime dateTime) {
-  final hour24 = dateTime.hour;
-  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-  final minute = dateTime.minute.toString().padLeft(2, '0');
-  final period = hour24 < 12 ? 'AM' : 'PM';
-  return '${_monthNames[dateTime.month - 1]} ${dateTime.day}, '
-      '${dateTime.year} at $hour12:$minute $period';
-}
 
 String _formatDistance(double distanceMeters) =>
     '${(distanceMeters / 1000).toStringAsFixed(1)} km';
@@ -108,10 +82,7 @@ class DiscoveryScreen extends ConsumerWidget {
     await auth.signOut();
   }
 
-  Future<void> _onTapMeal(
-    BuildContext context,
-    DiscoverableMeal item,
-  ) async {
+  Future<void> _onTapMeal(BuildContext context, DiscoverableMeal item) async {
     await analytics.track(MealOpened(womenOnly: item.meal.womenOnly));
     if (!context.mounted) return;
     await context.push('/meals/detail', extra: item.meal);
@@ -155,10 +126,7 @@ class DiscoveryScreen extends ConsumerWidget {
         color: colors.error,
       ),
       data: (meals) => meals.isEmpty
-          ? _scrollableMessage(
-              'No meals near you yet',
-              color: colors.outline,
-            )
+          ? _scrollableMessage('No meals near you yet', color: colors.outline)
           : ListView.separated(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
               physics: const AlwaysScrollableScrollPhysics(),
@@ -181,9 +149,7 @@ class DiscoveryScreen extends ConsumerWidget {
     final body = Column(
       children: [
         const ParisNotice(),
-        Expanded(
-          child: contentBody,
-        ),
+        Expanded(child: contentBody),
       ],
     );
 
@@ -200,10 +166,7 @@ class DiscoveryScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () => _onRefresh(ref),
-          child: body,
-        ),
+        child: RefreshIndicator(onRefresh: () => _onRefresh(ref), child: body),
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('discovery_create_meal_button'),
@@ -264,7 +227,7 @@ class _MealCard extends StatelessWidget {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
-                _formatDateTime(meal.dateTime),
+                formatMealDateTime(meal.dateTime),
                 style: textTheme.bodyMedium?.copyWith(color: colors.outline),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s1),
@@ -333,18 +296,16 @@ class _HostInfo extends ConsumerWidget {
       stream: repository.watch(hostId),
       builder: (context, snapshot) {
         final host = snapshot.data;
-        final photoUrl =
-            (host != null && host.photoUrls.isNotEmpty)
-                ? host.photoUrls.first
-                : null;
+        final photoUrl = (host != null && host.photoUrls.isNotEmpty)
+            ? host.photoUrls.first
+            : null;
 
         return Row(
           children: [
             CircleAvatar(
               radius: WarmPlayfulSpacing.s4,
               backgroundColor: colors.surfaceContainerHighest,
-              backgroundImage:
-                  photoUrl != null ? NetworkImage(photoUrl) : null,
+              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
               child: photoUrl == null
                   ? Icon(
                       Icons.person_rounded,

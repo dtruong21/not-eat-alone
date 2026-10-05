@@ -20,4 +20,17 @@ void main() {
       'June 1, 2027 at 12:00 PM',
     );
   });
+
+  test('a UTC instant is rendered in local time, not UTC', () {
+    final utc = DateTime.utc(2027, 1, 5, 18, 30);
+    final local = utc.toLocal();
+    final hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final period = local.hour < 12 ? 'AM' : 'PM';
+    final minute = local.minute.toString().padLeft(2, '0');
+    final formatted = formatMealDateTime(utc);
+    expect(formatted, contains('${local.day}, ${local.year} at '));
+    expect(formatted, endsWith('$hour12:$minute $period'));
+    // And identical to formatting the already-local value.
+    expect(formatted, formatMealDateTime(local));
+  });
 }
