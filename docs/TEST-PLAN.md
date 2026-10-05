@@ -418,33 +418,49 @@ Storage). It needs no real Firebase project and touches no cloud data.
 - **Meal, request and rating integrity** — three rule areas in
   `firestore.rules`. `meals`: `hostId`, `dateTime`, `restaurant`, `womenOnly`
   and `geohash` are immutable; a create must be `open`, guest-less (absent or
-  `null`, which is what `createMeal` writes) and in the future; the only
-  update is `open` to `matched` with a guest, tied in the same transaction to
+  `null`, which is what `createMeal` writes), in the future, and carry exactly
+  the keys and types `createMeal` writes (key whitelist, `restaurant` map,
+  `womenOnly` bool, `seats` int, `note` null/string up to 200 characters,
+  `createdAt == request.time`); the only
+  update is `open` to `matched` with a guest while the meal is still in the
+  future, tied in the same transaction to
   a genuine `pending` to `approved` request from that guest (`get`/`getAfter`)
   and to the `matches/{mealId}` doc being created (`existsAfter`); no client
   delete (delete + recreate at the same id would keep requests attached to a
   swapped meal; Admin SDK paths such as account deletion bypass rules).
   `requests`: an update requires the stored status to be `pending`, so a
-  request is decided once. `ratings`: the create requires the meal's
+  request is decided once; `approved` is only admitted when the same
+  transaction leaves the meal `matched` with that guest and creates the match
+  (`requestApprovalLinked`), while `denied` stays a bare write; a create
+  requires the meal to be still in the future. `ratings`: the create requires the meal's
   `dateTime <= request.time`. In `rules_enforced_test.dart`, groups
   `meals — integrity`, `requests update — decided once` and
   `ratings create — the meal has happened`:
   - Allowed: `createMeal` (the real repository call, plus the same key set by
-    hand and a create with no `guestId` key), the real approve transaction
-    (meal + request + match), a request decided `pending` to `approved` or
-    `denied` (including the post-commit sibling-deny batch), a rating on a
-    meal in the past.
+    hand, a create with no `guestId` key and a 200-character note), the real
+    approve transaction (meal + request + match), a request decided `pending`
+    to `denied` (the app deny and the post-commit sibling denies), a request
+    `approved` once the meal is matched with that guest and the match exists
+    (R1d), a rating on a meal in the past.
   - Denied (meals): update of `hostId`, `dateTime`, `restaurant` or
     `womenOnly`, bare or alongside a valid approve; `matched` with the
     request left pending, with no request doc, with an already approved or
     denied request, or with a request of another guest; a `status` other than
     `matched`; a null `guestId`; an already matched meal; a non-host; a forged
     host approving his own forged request to flip someone else's meal; the
-    flip without the `matches` doc; create already `matched`, with a
-    `guestId`, or in the past; delete of an open meal (and delete + recreate)
-    or a matched meal.
+    flip without the `matches` doc; approving a request on a meal that has
+    already passed (D10, admin-seeded past `open` meal); create already
+    `matched`, with a `guestId`, or in the past; create with an extra key
+    (C4), a non-map `restaurant` (C5), a non-bool `womenOnly` (C6), a non-int
+    `seats` (C7), a note over 200 characters (C8) or a non-string note (C8b),
+    or a client-set `createdAt` (C9); delete of an open meal (and delete +
+    recreate) or a matched meal.
   - Denied (requests): approved to denied, denied to approved, and a
-    same-status rewrite of a decided request.
+    same-status rewrite of a decided request; a bare `approved` write with no
+    meal flip and no match (R1b); `approved` while the meal is still open
+    (R1e), matched with someone else (R1f) or matched with no match doc (R1g),
+    each admin-seeded so it isolates one conjunct; a request on a meal that
+    has already passed (D11).
   - Denied (ratings): a rating on a future meal, and on a match with no meal
     doc.
   - Mutation-checked (delete the one clause, an isolating case fails): the
@@ -453,13 +469,25 @@ Storage). It needs no real Firebase project and touches no cloud data.
     (forged-host case) and `existsAfter(matches)`; the link's request
     `pending` (D4a), request `guestId` and `getAfter` `approved` clauses; the
     create `open`, guest-less and future clauses; delete `false` (against
-    `host && open` and `host only`); the `requests` `pending` guard; the
-    ratings meal-date gate. NOT given an isolating case (deleting the clause
-    changes no outcome, so the clause stays as defense in depth):
+    `host && open` and `host only`); the `requests` `pending` guard (R2-R5:
+    R3/R4 start from a linked meal state so the `approved` linkage cannot deny
+    them); the ratings meal-date gate; the meals update's
+    `resource.data.dateTime > request.time` (D10); the requests create's meal
+    `dateTime > request.time` (D11); each `requestApprovalLinked` conjunct
+    (`mealAfter.status` R1e, `mealAfter.guestId` R1f, `existsAfter(matches)`
+    R1g) and the whole `approved` branch (R1b, R1e-R1g all fail without it);
+    the create `keys().hasOnly` whitelist (C4), `restaurant is map` (C5),
+    `womenOnly is bool` (C6), `seats is int` (C7), `note.size() <= 200` (C8)
+    and `createdAt == request.time` (C9). NOT given an isolating case (deleting
+    the clause changes no outcome, so the clause stays as defense in depth):
     `request.resource.data.guestId is string` (a non-string guest makes the
-    link's `mealId + '_' + guestId` a rule evaluation error, which denies) and
-    the link's `get(req).hostId == hostId` (the `requests` update rule already
-    pins the request's `hostId` to the caller, who is what the link is passed).
+    link's `mealId + '_' + guestId` a rule evaluation error, which denies), the
+    link's `get(req).hostId == hostId` (the `requests` update rule already
+    pins the request's `hostId` to the caller, who is what the link is passed)
+    and the create's `note is string` (a non-string note makes `note.size()` a
+    rule evaluation error, which denies; C8b still passes without it). The
+    `requests` create's meal-date conjunct is a single clause on a document the
+    create rule already reads, so it adds no new access count.
     D4b (request already denied) is now also denied by the `requests` guard,
     so D4a is the case that isolates the link's `pending` clause. The ratings
     gate's missing-meal case (G3) is denied by the rule evaluation error on
@@ -473,14 +501,23 @@ Storage). It needs no real Firebase project and touches no cloud data.
     least 5 minutes ahead and shows "Pick a time at least 5 minutes from now."
     otherwise (it matches the server-side future check). Try a time 2 minutes
     out and one 10 minutes out.
-  - Known gaps (deferred, not covered by tests): (a) the inbox shows a generic
-    error when a stale UI double-taps approve/deny on an already decided
-    request (the rules now reject it); confirm and improve that error state.
-    (b) Clock skew: the rate button uses the client clock while the rule uses
-    the server clock, so inside the skew window the user sees the generic
-    "Couldn't submit your rating" snackbar. (c) The create-meal submit path does
-    not re-validate the 5-minute lead, so a pick that ages below the server's
-    `request.time` between picking and submitting fails with a generic error.
+  - Known gaps (deferred, not covered by tests): (a) the inbox shows no
+    feedback when a stale tile approves/denies an already-decided request
+    (error swallowed): `request_inbox_tile.dart` only snackbars
+    `MealNoLongerOpenException`, `_deny` ignores the result, and the tile reads
+    `inboxActionControllerProvider` only for `.isLoading`; add an error
+    snackbar. (b) Clock skew: the rate button uses the client clock while the
+    rule uses the server clock, so inside the skew window the user sees the
+    generic "Couldn't submit your rating" snackbar. (c) The create-meal submit
+    path does not re-validate the 5-minute lead, so a pick that ages below the
+    server's `request.time` between picking and submitting fails with a generic
+    error; the picker's `_submit` should re-check `isMealTimeFarEnough` and
+    derive its message from `mealMinLead`.
+  - Follow-ups (not done): hide or mark inbox requests whose meal has passed
+    (the rules now deny approving one, but the inbox does not filter by date);
+    Discover should skip an unparseable meal instead of erroring the whole
+    stream; a cancel-meal Cloud Function (clients can no longer withdraw an
+    open meal, since the meals rule has no client delete).
 - **Cloud Functions** — triggers actually fire in the emulator, e.g. the rating
   aggregate written by `onRatingCreated`.
 - **Smoke** — a signed-in user boots to the Discover feed.
