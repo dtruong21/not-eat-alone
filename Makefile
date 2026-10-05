@@ -141,3 +141,33 @@ e2e: ios-plist ios-sim-boot ios-privacy
 	status=$$?; \
 	kill $$watchdog >/dev/null 2>&1; \
 	exit $$status
+
+# Screenshot capture harness for the UX pass (dev tooling — NOT part of `make e2e`,
+# CI, or `flutter test`). Photographs the REAL app on the simulator against the
+# emulators with a seeded world (ux_audit/support/world.dart). Usage:
+#   make ux-capture DEVICE='Convyve E2E' OUT=iphone17-light-default
+# Screenshots land in ux_audit/out/$(OUT)/. Same emulator flags as `e2e`.
+#
+# Uses `flutter drive`, not `flutter test`: flutter_tools only runs a test on a
+# device when it sits under integration_test/ (a directory-prefix match), and
+# this harness lives in ux_audit/ so `make e2e` can never pick it up.
+#
+# tool/ux_capture.sh runs alongside (avatar server + simctl screenshot loop);
+# the test hands each screen over via /tmp/convyve-ux/<name>.ready. When the
+# test ends this target touches .done so the script exits, then sweeps any
+# strays (image server on :8765, the script itself).
+OUT ?= default
+.PHONY: ux-capture
+ux-capture: ios-plist ios-sim-boot ios-privacy
+	cd firebase/functions && npm ci && npm run build
+	@mkdir -p /tmp/convyve-ux && rm -f /tmp/convyve-ux/.done
+	@tool/ux_capture.sh "$(DEVICE)" "$(OUT)" & host=$$!; \
+	sleep 2; \
+	firebase emulators:exec --only "auth,firestore:(default),functions,storage" \
+		--project not-eat-alone \
+		"fvm flutter drive --driver ux_audit/driver.dart --target ux_audit/capture_test.dart -d '$(DEVICE)'"; \
+	status=$$?; \
+	touch /tmp/convyve-ux/.done; \
+	wait $$host; \
+	pkill -f tool/ux_images.py >/dev/null 2>&1; \
+	exit $$status
