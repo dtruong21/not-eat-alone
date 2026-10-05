@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
-import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
@@ -84,13 +83,16 @@ void main() {
     expect(find.text('2d'), findsOneWidget);
   });
 
-  testWidgets('a week or older falls back to the local M/D date',
-      (tester) async {
+  testWidgets('a week or older falls back to the local M/D date', (
+    tester,
+  ) async {
     final createdAt = ago(const Duration(days: 10));
     await pumpTile(tester, createdAt);
 
-    expect(find.text(formatMonthDay(createdAt)), findsOneWidget);
-    final local = createdAt.toLocal();
-    expect(find.text('${local.month}/${local.day}'), findsOneWidget);
+    // Independent derivation (no toLocal on the instant under test). On a UTC
+    // machine this degenerates to UTC; CI also runs this file under
+    // TZ=Pacific/Kiritimati (UTC+14) so it cannot pass vacuously.
+    final shifted = createdAt.add(createdAt.toLocal().timeZoneOffset);
+    expect(find.text('${shifted.month}/${shifted.day}'), findsOneWidget);
   });
 }

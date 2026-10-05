@@ -15,8 +15,9 @@ void main() {
     );
   }
 
-  testWidgets("shows a UTC createdAt in the viewer's local time",
-      (tester) async {
+  testWidgets("shows a UTC createdAt in the viewer's local time", (
+    tester,
+  ) async {
     final createdAt = DateTime.utc(2027, 1, 5, 18, 30);
     await pumpBubble(
       tester,
@@ -29,13 +30,15 @@ void main() {
       ),
     );
 
-    expect(find.text(formatClockTime(createdAt)), findsOneWidget);
-    // Explicit local derivation (degenerates to UTC on a UTC machine).
-    final local = createdAt.toLocal();
-    final hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = local.hour < 12 ? 'AM' : 'PM';
+    // Independent derivation (no toLocal on the instant under test). On a
+    // UTC machine this degenerates to UTC; CI also runs this file under
+    // TZ=Pacific/Kiritimati (UTC+14) so it cannot pass vacuously.
+    final shifted = createdAt.add(createdAt.toLocal().timeZoneOffset);
+    final hour12 = shifted.hour % 12 == 0 ? 12 : shifted.hour % 12;
+    final minute = shifted.minute.toString().padLeft(2, '0');
+    final period = shifted.hour < 12 ? 'AM' : 'PM';
     expect(find.text('$hour12:$minute $period'), findsOneWidget);
+    expect(find.text(formatClockTime(createdAt)), findsOneWidget);
   });
 
   testWidgets('shows no time when createdAt is not yet set', (tester) async {
