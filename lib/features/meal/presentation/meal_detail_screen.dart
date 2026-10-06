@@ -90,7 +90,7 @@ class MealDetailScreen extends ConsumerWidget {
                         ),
                         if (meal.womenOnly) ...[
                           const SizedBox(width: WarmPlayfulSpacing.s2),
-                          _WomenOnlyBadge(colors: colors, textTheme: textTheme),
+                          _WomenOnlyBadge(textTheme: textTheme),
                         ],
                       ],
                     ),
@@ -170,9 +170,8 @@ class _MealSafetyActions extends ConsumerWidget {
 }
 
 class _WomenOnlyBadge extends StatelessWidget {
-  const _WomenOnlyBadge({required this.colors, required this.textTheme});
+  const _WomenOnlyBadge({required this.textTheme});
 
-  final ColorScheme colors;
   final TextTheme textTheme;
 
   @override

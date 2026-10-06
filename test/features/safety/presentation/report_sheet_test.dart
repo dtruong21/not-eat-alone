@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,7 +37,10 @@ void main() {
     ).thenAnswer((_) async {});
   });
 
-  Future<void> pumpSheet(WidgetTester tester) async {
+  Future<void> pumpSheet(
+    WidgetTester tester, {
+    Brightness brightness = Brightness.light,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -43,7 +48,7 @@ void main() {
           reportRepositoryProvider.overrideWithValue(reportRepository),
         ],
         child: MaterialApp(
-          theme: buildTheme(Brightness.light),
+          theme: buildTheme(brightness),
           home: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
@@ -101,4 +106,51 @@ void main() {
       expect(find.text("Thanks — we'll review this."), findsOneWidget);
     },
   );
+
+  for (final b in Brightness.values) {
+    testWidgets('in-flight spinner stays visible on the button fill ($b)', (
+      tester,
+    ) async {
+      final inFlight = Completer<void>();
+      when(
+        () => reportRepository.report(
+          reporterId: any(named: 'reporterId'),
+          targetType: any(named: 'targetType'),
+          targetId: any(named: 'targetId'),
+          reason: any(named: 'reason'),
+        ),
+      ).thenAnswer((_) => inFlight.future);
+      await pumpSheet(tester, brightness: b);
+
+      await tester.tap(find.byKey(const Key('report_reason_chip_spam')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('report_submit_button')));
+      await tester.pump();
+
+      final button = find.byKey(const Key('report_submit_button'));
+      final fill = tester
+          .widget<Material>(
+            find
+                .descendant(of: button, matching: find.byType(Material))
+                .first,
+          )
+          .color!;
+      final spinner = tester.widget<CircularProgressIndicator>(
+        find.descendant(
+          of: button,
+          matching: find.byType(CircularProgressIndicator),
+        ),
+      );
+      final la = spinner.color!.computeLuminance();
+      final lb = fill.computeLuminance();
+      final ratio = (la > lb ? la + 0.05 : lb + 0.05) /
+          (la > lb ? lb + 0.05 : la + 0.05);
+      expect(ratio, greaterThanOrEqualTo(3));
+      // Still disabled: no tap-through while sending.
+      expect(tester.widget<FilledButton>(button).onPressed, isNull);
+
+      inFlight.complete();
+      await tester.pumpAndSettle();
+    });
+  }
 }

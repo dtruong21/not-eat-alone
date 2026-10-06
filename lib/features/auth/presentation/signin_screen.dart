@@ -243,7 +243,7 @@ class _AuthButton extends StatelessWidget {
             width: WarmPlayfulSpacing.s4,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: filled ? colors.onPrimary : colors.primary,
+              color: filled ? colors.onPrimary : colors.onSurface,
             ),
           )
         : Row(

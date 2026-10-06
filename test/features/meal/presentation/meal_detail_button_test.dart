@@ -90,6 +90,7 @@ void main() {
     required JoinRequest? request,
     Meal? meal,
     Gender? viewerGender,
+    Brightness brightness = Brightness.light,
   }) async {
     final effectiveMeal = meal ?? _meal;
     await tester.pumpWidget(
@@ -109,13 +110,41 @@ void main() {
               .overrideWith((ref) => Stream.value(request)),
         ],
         child: MaterialApp(
-          theme: buildTheme(Brightness.light),
+          theme: buildTheme(brightness),
           home: MealDetailScreen(meal: effectiveMeal),
         ),
       ),
     );
     await tester.pump();
     await tester.pump();
+  }
+
+  for (final b in Brightness.values) {
+    testWidgets('"Women only" badge is peach with onAccent text ($b)', (
+      tester,
+    ) async {
+      await pumpWith(
+        tester,
+        viewerUid: 'guest1',
+        request: null,
+        meal: _womenOnlyMeal,
+        viewerGender: Gender.woman,
+        brightness: b,
+      );
+
+      final wp = buildTheme(b).extension<WarmPlayfulExtensions>()!;
+      final badge = tester.widget<Container>(
+        find.byKey(const Key('women_only_badge')),
+      );
+      expect((badge.decoration! as BoxDecoration).color, wp.peach);
+      final text = tester.widget<Text>(find.text('Women only'));
+      expect(text.style!.color, wp.onAccent);
+      final la = wp.onAccent.computeLuminance();
+      final lb = wp.peach.computeLuminance();
+      final ratio = (la > lb ? la + 0.05 : lb + 0.05) /
+          (la > lb ? lb + 0.05 : la + 0.05);
+      expect(ratio, greaterThanOrEqualTo(4.5));
+    });
   }
 
   testWidgets('no request yet -> enabled "Request to join" button',
