@@ -1,7 +1,7 @@
 # Convyve — Front-end & UX Pass (Plan 15)
 
 **Date:** 2026-10-05
-**Status:** Draft. Part A (capture + audit) is planned in detail; Part B (fixes) is planned after the audit.
+**Status:** Part A (capture + audit) done: `docs/ux/AUDIT.md`. Part B (fixes) decided 2026-10-06 and split into plans 16a-20 (§6).
 **Goal:** The app is functionally complete but has never been looked at as a whole. Photograph every screen in realistic states on a real simulator, audit it against `docs/DESIGN.md` and basic accessibility, then fix what the audit finds. The same screenshots feed the store listing.
 
 ---
@@ -46,3 +46,23 @@ Grouped to keep reviews small: (1) theme/token fixes that touch everything (text
 ## 5. Delivery
 
 Branch `feature/ux-pass` off `develop`, subagent-driven. Part A is its own plan; Part B's plan is written from the audit and approved before execution.
+
+## 6. Part B decisions and plan split (2026-10-06, after the audit)
+
+Owner decisions on the audit's open questions:
+
+- **Language:** French + English, informal "tu" in French. The UI plans (16-18) keep strings in English and in place; plan 19 then extracts all strings once and adds French plus an in-app language switch (Settings), so no string is extracted twice.
+- **Settings scope:** the recommended core (edit-profile row, read-only phone, sign-out confirm, safety-tips page, contact `mailto:`, licences) plus the Blocked-people screen, an "Open iOS notification settings" row, and the language switch (plan 19). Per-type notification toggles and change-phone stay CUT.
+- **Colour:** deeper card colour (`surface` `#FBE8D8` in light) plus a soft shadow where cards are built; the coral fill stays; labels on coral become brown (`onPrimary` `#3D2E1F`).
+- **"My meals" list for hosts:** CUT for v1.
+
+Plan split (each plan: own branch off `develop`, PR to `develop`, subagent-driven; later plans are written when the previous one has landed):
+
+| Plan | Scope (audit backlog ids) |
+|---|---|
+| 16a | Tokens, colours, buttons, font, contrast tests (B1-1, 2, 3, 4, 6, 7, 8) |
+| 16b | Shared widgets (`AppButton`, `ErrorState`, `EmptyState`, `SkeletonCard`), router stability, `intl` date formatting (B1-5, 9, 10) |
+| 17 | Onboarding/auth and Discover/meal flows (B2, B3) |
+| 18 | Requests, chat, ratings, safety, profile and Settings incl. Blocked people (B4, B5) |
+| 19 | French localisation + language switch (B1-11) |
+| 20 | Fresh capture, before/after check, store screenshots (`docs/store/screenshots/`) |
