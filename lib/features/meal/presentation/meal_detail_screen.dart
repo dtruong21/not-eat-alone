@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -183,13 +184,13 @@ class _WomenOnlyBadge extends StatelessWidget {
         vertical: WarmPlayfulSpacing.s1,
       ),
       decoration: BoxDecoration(
-        color: colors.secondaryContainer,
+        color: context.wp.peach,
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
       ),
       child: Text(
         'Women only',
         style: textTheme.bodySmall?.copyWith(
-          color: colors.onSecondaryContainer,
+          color: context.wp.onAccent,
           fontWeight: WarmPlayfulType.captionWeight,
         ),
       ),
@@ -398,12 +399,7 @@ class _RequestToJoinButton extends ConsumerWidget {
           : () => ref
                 .read(createRequestControllerProvider.notifier)
                 .request(meal),
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-        ),
-      ),
+      style: loadingFilledStyle(context, isLoading: isSubmitting),
       child: isSubmitting
           ? SizedBox(
               height: WarmPlayfulSpacing.s4,
@@ -433,14 +429,6 @@ class _RequestedState extends StatelessWidget {
         FilledButton(
           key: const Key('meal_detail_requested_button'),
           onPressed: null,
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              vertical: WarmPlayfulSpacing.s4,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-            ),
-          ),
           child: const Text('Requested'),
         ),
         const SizedBox(height: WarmPlayfulSpacing.s1),
@@ -517,12 +505,6 @@ class _NotSelectedState extends StatelessWidget {
     return FilledButton(
       key: const Key('meal_detail_not_selected_button'),
       onPressed: null,
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-        ),
-      ),
       child: const Text('Not selected'),
     );
   }
@@ -545,14 +527,6 @@ class _WomenOnlyGuard extends StatelessWidget {
         FilledButton(
           key: const Key('meal_detail_women_only_disabled_button'),
           onPressed: null,
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              vertical: WarmPlayfulSpacing.s4,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-            ),
-          ),
           child: const Text('Request to join'),
         ),
         const SizedBox(height: WarmPlayfulSpacing.s1),

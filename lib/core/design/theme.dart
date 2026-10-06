@@ -40,6 +40,9 @@ ThemeData buildTheme(Brightness brightness) {
   final muted = isLight
       ? WarmPlayfulColorsLight.muted
       : WarmPlayfulColorsDark.muted;
+  final subtle = isLight
+      ? WarmPlayfulColorsLight.subtle
+      : WarmPlayfulColorsDark.subtle;
   final accent = isLight
       ? WarmPlayfulColorsLight.accent
       : WarmPlayfulColorsDark.accent;
@@ -72,6 +75,8 @@ ThemeData buildTheme(Brightness brightness) {
         primary: accent,
         onPrimary: onAccent,
         onSurfaceVariant: muted,
+        secondaryContainer: surface,
+        onSecondaryContainer: text,
         surface: surface,
         onSurface: text,
         surfaceContainerLowest: bg,
@@ -166,6 +171,14 @@ ThemeData buildTheme(Brightness brightness) {
     ),
   );
 
+  const buttonPadding = EdgeInsets.symmetric(
+    horizontal: WarmPlayfulSpacing.s5,
+    vertical: WarmPlayfulSpacing.s3,
+  );
+  final buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
+  );
+
   return base.copyWith(
     textTheme: textTheme,
     primaryTextTheme: textTheme,
@@ -188,35 +201,64 @@ ThemeData buildTheme(Brightness brightness) {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: accent,
-        foregroundColor: WarmPlayfulColorsLight.bg,
+        foregroundColor: onAccent,
         elevation: 0,
-        minimumSize: const Size(0, 48),
-        padding: const EdgeInsets.symmetric(
-          horizontal: WarmPlayfulSpacing.s5,
-          vertical: WarmPlayfulSpacing.s3,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
-        ),
-        textStyle: textTheme.labelLarge?.copyWith(
-          color: WarmPlayfulColorsLight.bg,
+        minimumSize: const Size(0, WarmPlayfulSize.minTap),
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: textTheme.labelLarge?.copyWith(color: onAccent),
+      ),
+    ),
+    // FilledButton.tonal shares this theme in Flutter, so fills/labels are left
+    // to the scheme: primary/onPrimary (coral/brown) and
+    // secondaryContainer/onSecondaryContainer (surface/text).
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        disabledBackgroundColor: border,
+        disabledForegroundColor: subtle,
+        minimumSize: const Size(0, WarmPlayfulSize.minTap),
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: textTheme.labelLarge,
+      ),
+    ),
+    // secondaryContainer is surface-coloured (tonal buttons), so the
+    // components that selected with it use the accent explicitly.
+    navigationBarTheme: NavigationBarThemeData(
+      indicatorColor: accent,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 24,
+          color: states.contains(WidgetState.selected) ? onAccent : muted,
         ),
       ),
     ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: surface,
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? accent
+              : Colors.transparent,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? onAccent : text,
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
         foregroundColor: text,
-        minimumSize: const Size(0, 48),
-        padding: const EdgeInsets.symmetric(
-          horizontal: WarmPlayfulSpacing.s5,
-          vertical: WarmPlayfulSpacing.s3,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
-        ),
+        disabledForegroundColor: subtle,
+        side: BorderSide(color: muted, width: 1.5),
+        minimumSize: const Size(0, WarmPlayfulSize.minTap),
+        padding: buttonPadding,
+        shape: buttonShape,
         textStyle: textTheme.labelLarge,
       ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: accent,
+      foregroundColor: onAccent,
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
@@ -258,9 +300,7 @@ ThemeData buildTheme(Brightness brightness) {
       backgroundColor: surface,
       selectedColor: accent,
       labelStyle: textTheme.bodySmall?.copyWith(color: text),
-      secondaryLabelStyle: textTheme.bodySmall?.copyWith(
-        color: WarmPlayfulColorsLight.bg,
-      ),
+      secondaryLabelStyle: textTheme.bodySmall?.copyWith(color: onAccent),
       side: BorderSide(color: border),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
@@ -326,9 +366,7 @@ ThemeData buildTheme(Brightness brightness) {
         shadow: shadow,
         // Surfaces + text shades not cleanly mapped to ColorScheme
         muted: muted,
-        subtle: isLight
-            ? WarmPlayfulColorsLight.subtle
-            : WarmPlayfulColorsDark.subtle,
+        subtle: subtle,
         border: border,
         divider: divider,
       ),
@@ -470,4 +508,20 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
 extension WarmPlayfulContext on BuildContext {
   WarmPlayfulExtensions get wp =>
       Theme.of(this).extension<WarmPlayfulExtensions>()!;
+}
+
+/// Style for a [FilledButton] whose label is swapped for a spinner while
+/// [isLoading]: keeps the enabled coral fill (the button is disabled, so
+/// taps are ignored) so the spinner stays visible.
+// ponytail: stop-gap until the shared AppButton (UX plan 16b) owns loading.
+ButtonStyle? loadingFilledStyle(
+  BuildContext context, {
+  required bool isLoading,
+}) {
+  if (!isLoading) return null;
+  final scheme = Theme.of(context).colorScheme;
+  return FilledButton.styleFrom(
+    disabledBackgroundColor: scheme.primary,
+    disabledForegroundColor: scheme.onPrimary,
+  );
 }

@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/rating/application/rating_controller.dart';
 
@@ -53,7 +54,9 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
 
     final comment = _commentController.text.trim();
 
-    await ref.read(ratingControllerProvider.notifier).submit(
+    await ref
+        .read(ratingControllerProvider.notifier)
+        .submit(
           matchId: widget.matchId,
           targetUid: widget.targetUid,
           stars: _stars,
@@ -73,9 +76,9 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
     }
 
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thanks for the feedback!')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Thanks for the feedback!')));
   }
 
   @override
@@ -90,8 +93,8 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
         left: WarmPlayfulSpacing.s5,
         right: WarmPlayfulSpacing.s5,
         top: WarmPlayfulSpacing.s5,
-        bottom: MediaQuery.of(context).viewInsets.bottom +
-            WarmPlayfulSpacing.s5,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom + WarmPlayfulSpacing.s5,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -152,14 +155,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
           FilledButton(
             key: const Key('rating_submit_button'),
             onPressed: (_stars <= 0 || isSubmitting) ? null : _submit,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                vertical: WarmPlayfulSpacing.s4,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-              ),
-            ),
+            style: loadingFilledStyle(context, isLoading: isSubmitting),
             child: isSubmitting
                 ? SizedBox(
                     height: WarmPlayfulSpacing.s4,

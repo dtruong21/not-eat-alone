@@ -26,6 +26,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 
@@ -97,7 +98,9 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
     });
     await analytics.track(const SigninStarted(method: SigninMethod.phone));
     try {
-      await ref.read(authRepositoryProvider).verifyPhone(
+      await ref
+          .read(authRepositoryProvider)
+          .verifyPhone(
             phoneE164: phoneE164,
             codeSent: (verificationId) {
               if (!mounted) return;
@@ -187,9 +190,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                   labelText: 'Phone number',
                   hintText: '+33 6 12 34 56 78',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      WarmPlayfulRadius.sm,
-                    ),
+                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
                   ),
                 ),
               ),
@@ -236,13 +237,6 @@ class _AuthButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-    );
-    final padding = const EdgeInsets.symmetric(
-      vertical: WarmPlayfulSpacing.s4,
-    );
-
     final child = isLoading
         ? SizedBox(
             height: WarmPlayfulSpacing.s4,
@@ -266,13 +260,12 @@ class _AuthButton extends StatelessWidget {
     if (filled) {
       return FilledButton(
         onPressed: onPressed,
-        style: FilledButton.styleFrom(padding: padding, shape: shape),
+        style: loadingFilledStyle(context, isLoading: isLoading),
         child: child,
       );
     }
     return OutlinedButton(
       onPressed: onPressed,
-      style: OutlinedButton.styleFrom(padding: padding, shape: shape),
       child: child,
     );
   }

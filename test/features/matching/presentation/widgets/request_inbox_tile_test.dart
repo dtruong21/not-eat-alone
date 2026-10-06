@@ -170,7 +170,7 @@ void main() {
           overrides: overrides,
           child: MaterialApp.router(
             routerConfig: router,
-            theme: theme,
+            theme: theme ?? buildTheme(Brightness.light),
             builder: scaled,
           ),
         ),
@@ -182,7 +182,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: overrides,
-        child: MaterialApp(theme: theme, builder: scaled, home: tileBody),
+        child: MaterialApp(
+          theme: theme ?? buildTheme(Brightness.light),
+          builder: scaled,
+          home: tileBody,
+        ),
       ),
     );
     await tester.pump();

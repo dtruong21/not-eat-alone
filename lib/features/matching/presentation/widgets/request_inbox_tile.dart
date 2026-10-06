@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/matching/application/inbox_action_controller.dart';
@@ -130,11 +131,6 @@ class RequestInboxTile extends ConsumerWidget {
     final approveButton = FilledButton(
       key: Key('request_inbox_approve_button_${request.id}'),
       onPressed: isSubmitting || isPast ? null : () => _approve(context, ref),
-      style: FilledButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-        ),
-      ),
       // The hint lives INSIDE the button so it merges into the button's own
       // semantics node (a Semantics wrapper outside it would be a separate
       // node) and screen readers say why Approve is disabled.
@@ -236,22 +232,22 @@ class RequestInboxTile extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: WarmPlayfulSpacing.s3),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          // Wrap: at narrow widths / large text the buttons stack, not overflow.
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: WarmPlayfulSpacing.s2,
+            runSpacing: WarmPlayfulSpacing.s2,
             children: [
               OutlinedButton(
                 key: Key('request_inbox_deny_button_${request.id}'),
                 onPressed: isSubmitting ? null : () => _deny(context, ref),
+                // Deliberate: danger-coloured secondary action.
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: colors.error,
-                  side: BorderSide(color: colors.error),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
+                  foregroundColor: context.wp.dangerText,
+                  side: BorderSide(color: context.wp.dangerText),
                 ),
                 child: const Text('Deny'),
               ),
-              const SizedBox(width: WarmPlayfulSpacing.s2),
               if (isPast)
                 Tooltip(message: _pastMealLabel, child: approveButton)
               else

@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/meal/application/create_meal_controller.dart';
@@ -180,14 +181,6 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
               OutlinedButton(
                 key: const Key('create_meal_datetime_button'),
                 onPressed: isSubmitting ? null : _pickDateTime,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
                 child: Text(
                   _dateTime == null
                       ? 'Pick date & time'
@@ -243,14 +236,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
               FilledButton(
                 key: const Key('create_meal_submit_button'),
                 onPressed: (_dateTime == null || isSubmitting) ? null : _submit,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
+                style: loadingFilledStyle(context, isLoading: isSubmitting),
                 child: isSubmitting
                     ? SizedBox(
                         height: WarmPlayfulSpacing.s4,
