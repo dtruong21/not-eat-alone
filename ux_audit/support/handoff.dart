@@ -42,3 +42,36 @@ Future<void> shot(String name, {Duration timeout = kAckTimeout}) async {
     if (ack.existsSync()) ack.deleteSync();
   }
 }
+
+int _commandCounter = 0;
+
+/// Sends [command] to the host script and waits (bounded) for it to be done.
+///
+/// Supported by `tool/ux_capture.sh`: `freeze-firestore` / `thaw-firestore`
+/// (SIGSTOP / SIGCONT of the Firestore emulator) and `freeze-auth` /
+/// `thaw-auth` (the firebase-tools process that hosts the Auth emulator).
+/// A frozen emulator never answers, so an action that waits on it stays "in
+/// flight" (spinner showing) for as long as the host photographs the screen.
+/// The host thaws on its own after 25 s and on exit.
+Future<void> hostCommand(
+  String command, {
+  Duration timeout = const Duration(seconds: 20),
+}) async {
+  final dir = Directory(kHandoffDir)..createSync(recursive: true);
+  final id = '${DateTime.now().millisecondsSinceEpoch}-${_commandCounter++}';
+  final req = File('${dir.path}/cmd.$id.req');
+  final ack = File('${dir.path}/cmd.$id.ack');
+  req.writeAsStringSync(command);
+  final deadline = DateTime.now().add(timeout);
+  try {
+    while (!ack.existsSync()) {
+      if (DateTime.now().isAfter(deadline)) {
+        throw TimeoutException('no host ack for command "$command"');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+  } finally {
+    if (req.existsSync()) req.deleteSync();
+    if (ack.existsSync()) ack.deleteSync();
+  }
+}

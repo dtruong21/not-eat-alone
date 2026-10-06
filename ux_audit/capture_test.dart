@@ -196,6 +196,77 @@ Future<void> _tap(
   await _settle(tester);
 }
 
+/// Runs [body] while the [target] emulator (`firestore` or `auth`) is frozen
+/// by the host (SIGSTOP), and thaws it afterwards, whatever happens.
+Future<void> _frozen(String target, Future<void> Function() body) async {
+  await hostCommand('freeze-$target');
+  try {
+    await body();
+  } finally {
+    await hostCommand('thaw-$target');
+  }
+}
+
+/// Taps [target] with the emulator [freeze] (`firestore` or `auth`) frozen and
+/// photographs the screen as [name]: the "in flight" state (spinner on the
+/// button, disabled controls) held for as long as the host needs, because the
+/// server never answers while it is frozen. Afterwards the emulator thaws,
+/// the action completes and the run carries on. Without the freeze the
+/// round trip to a local emulator finishes within a frame or two (the live
+/// binding renders frames between pumps), too fast to photograph.
+Future<void> _tapInFlight(
+  WidgetTester tester,
+  Finder target,
+  String name, {
+  required String freeze,
+  Finder? mustShow,
+}) async {
+  await _reveal(tester, target);
+  await _frozen(freeze, () async {
+    await tester.tap(target.first);
+    await tester.pump(const Duration(milliseconds: 100));
+    if (mustShow != null) {
+      // The frame that shows the indicator may take a few pumps to appear.
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (mustShow.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+    // Photograph first, so a missing indicator can be looked at; then fail.
+    await _snap(tester, name, assets: false);
+    if (mustShow != null) {
+      expect(
+        mustShow,
+        findsWidgets,
+        reason: 'no in-flight indicator for $name',
+      );
+    }
+  });
+}
+
+/// Spinners currently built.
+Finder get _spinner => find.byType(CircularProgressIndicator);
+
+/// Closes any snackbar left over by a submitted action.
+Future<void> _clearSnackBars(WidgetTester tester) async {
+  ScaffoldMessenger.of(_context(tester)).clearSnackBars();
+  await _settle(tester);
+}
+
+/// Pumps until [finder] no longer matches (bounded; a leftover is reported by
+/// the next step failing, not here).
+Future<void> _pumpWhileFound(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (finder.evaluate().isNotEmpty && DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  await _settle(tester);
+}
+
 /// Lets the screen settle, then photographs it as [name].
 Future<void> _snap(
   WidgetTester tester,
@@ -297,6 +368,7 @@ void main() {
     await _captureRequests(tester);
     await _captureChats(tester, world);
     await _captureProfileAndSettings(tester);
+    await _captureInboxInFlight(tester, world);
     await _captureWomenOnlyAsMan(tester, world);
 
     // ---- Onboarding screens need a user without a profile: last.
@@ -343,36 +415,50 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
 
   // Real UI: a valid number; the emulator accepts it (no real SMS) and the
   // app moves on to the code screen.
-  await _step(tester, '03_phone_verify', () async {
+  await _step(tester, '04_phone_verify', () async {
     await tester.enterText(
       find.byKey(const Key('signin_phone_field')),
       '+33612345678',
     );
     await _settle(tester);
-    await _tap(tester, find.text('Send code'));
+    // `verifyPhoneNumber` returns as soon as the request is dispatched, so the
+    // button's spinner is gone again before the code arrives: this is what the
+    // user sees while waiting (no indicator).
+    await _tapInFlight(
+      tester,
+      find.text('Send code'),
+      '03_signin_phone_waiting',
+      freeze: 'auth',
+    );
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('phone_verify_code_field')),
       timeout: const Duration(seconds: 20),
     );
-    await _snap(tester, '03_phone_verify');
+    await _snap(tester, '04_phone_verify');
   });
 
   // Real UI: a wrong code against the placeholder id fails in the Auth
   // emulator and the screen shows its error line.
-  await _step(tester, '04_phone_verify_error', () async {
+  await _step(tester, '06_phone_verify_error', () async {
     await tester.enterText(
       find.byKey(const Key('phone_verify_code_field')),
       '123456',
     );
     await _settle(tester);
-    await _tap(tester, find.text('Verify'));
+    await _tapInFlight(
+      tester,
+      find.text('Verify'),
+      '05_phone_verify_in_flight',
+      freeze: 'auth',
+      mustShow: _spinner,
+    );
     await _pumpUntilFound(
       tester,
       find.text('Something went wrong — please try again.'),
       timeout: const Duration(seconds: 20),
     );
-    await _snap(tester, '04_phone_verify_error');
+    await _snap(tester, '06_phone_verify_error');
   });
 }
 
@@ -405,19 +491,29 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
     await _snap(tester, '21_discover_empty');
   });
 
-  await _step(tester, '55_chats_empty', () async {
-    await _tap(tester, _tab('Chats'));
+  await _step(tester, '60_chats_loading', () async {
+    await _frozen('firestore', () async {
+      await tester.tap(_tab('Chats'));
+      await tester.pump(const Duration(milliseconds: 100));
+      await _snap(tester, '60_chats_loading', assets: false);
+      expect(_spinner, findsWidgets, reason: 'chat list already loaded');
+    });
+  });
+
+  await _step(tester, '61_chats_empty', () async {
     await _pumpUntilFound(
       tester,
       find.text('No chats yet — match on a meal to start talking'),
     );
-    await _snap(tester, '55_chats_empty');
+    await _snap(tester, '61_chats_empty');
   });
 
-  await _step(tester, '50_requests_empty', () async {
+  // (No requests-loading shot: the shell's badge already watches the inbox, so
+  // it is loaded before the tab is first opened.)
+  await _step(tester, '51_requests_empty', () async {
     await _tap(tester, _tab('Requests'));
     await _pumpUntilFound(tester, find.text('No pending requests'));
-    await _snap(tester, '50_requests_empty');
+    await _snap(tester, '51_requests_empty');
   });
 
   await _step(tester, 'back_to_discover', () => _tap(tester, _tab('Discover')));
@@ -450,6 +546,14 @@ Future<void> _captureDiscover(WidgetTester tester, UxWorld world) async {
   await _step(tester, '24_discover_notice_dismissed', () async {
     await _tap(tester, find.byKey(const Key('paris_notice_close_button')));
     await _snap(tester, '24_discover_notice_dismissed');
+  });
+
+  // Pull to refresh: the refresh spinner at the top of the feed.
+  await _step(tester, '25_discover_refreshing', () async {
+    await tester.drag(feed.first, const Offset(0, 400));
+    await tester.pump(const Duration(milliseconds: 300));
+    await _snap(tester, '25_discover_refreshing', assets: false);
+    await _settle(tester);
   });
 }
 
@@ -488,7 +592,9 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
     await _snap(tester, '40_meal_detail_open');
   });
 
-  await _step(tester, '41_meal_detail_requested', () async {
+  // Settled as "Requested". (The in-flight spinner of the button is replaced
+  // by the optimistic local write within a frame, so it cannot be held.)
+  await _step(tester, '42_meal_detail_requested', () async {
     await _tap(
       tester,
       find.byKey(const Key('meal_detail_request_to_join_button')),
@@ -497,67 +603,67 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
       tester,
       find.byKey(const Key('meal_detail_requested_button')),
     );
-    await _snap(tester, '41_meal_detail_requested');
+    await _snap(tester, '42_meal_detail_requested');
   });
 
-  await _step(tester, '42_meal_detail_matched', () async {
+  await _step(tester, '43_meal_detail_matched', () async {
     await adminUpdateDoc('requests', requestsDocId, {'status': 'approved'});
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('meal_detail_matched_banner')),
     );
-    await _snap(tester, '42_meal_detail_matched');
+    await _snap(tester, '43_meal_detail_matched');
   });
   await _back(tester);
 
   // Seeded: Farid declined the viewer's request on his Kunitoraya dinner.
-  await _step(tester, '43_meal_detail_not_selected', () async {
+  await _step(tester, '44_meal_detail_not_selected', () async {
     await _openFromDiscover(tester, world.mealIds['kunitoraya']!);
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('meal_detail_not_selected_button')),
     );
-    await _snap(tester, '43_meal_detail_not_selected');
+    await _snap(tester, '44_meal_detail_not_selected');
   });
   await _back(tester);
 
   // Women-only meal as a woman, then (admin flips the viewer's gender while
   // the screen is open; no UI shows a women-only meal to a non-woman) as a
   // non-woman: the disabled button and its note.
-  await _step(tester, '44_meal_detail_women_only', () async {
+  await _step(tester, '45_meal_detail_women_only', () async {
     await _openFromDiscover(tester, world.mealIds['flore']!);
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('meal_detail_request_to_join_button')),
     );
-    await _snap(tester, '44_meal_detail_women_only');
+    await _snap(tester, '45_meal_detail_women_only');
   });
-  await _step(tester, '46_meal_detail_menu', () async {
+  await _step(tester, '47_meal_detail_menu', () async {
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('meal_detail_request_to_join_button')),
     );
     await _tap(tester, find.byKey(const Key('safety_actions_menu')));
-    await _snap(tester, '46_meal_detail_menu');
+    await _snap(tester, '47_meal_detail_menu');
     await _tapBarrier(tester);
   });
   await _back(tester);
 
   // No UI path to your own meal's detail (Discover hides own meals and there
   // is no "my meals" list): push the route with the seeded meal.
-  await _step(tester, '47_meal_detail_own', () async {
+  await _step(tester, '48_meal_detail_own', () async {
     unawaited(_router(tester).push('/meals/detail', extra: world.ownMeal));
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('meal_detail_your_meal_chip')),
     );
-    await _snap(tester, '47_meal_detail_own');
+    await _snap(tester, '48_meal_detail_own');
   });
   await _back(tester);
 
   // Rejected request: the meal is flipped to matched (admin) after the detail
   // screen loaded it, so the server rules reject the request.
-  await _step(tester, '48_meal_detail_request_rejected', () async {
+  await _step(tester, '49_meal_detail_request_rejected', () async {
     await _openFromDiscover(tester, world.mealIds['chartier']!);
     await _pumpUntilFound(
       tester,
@@ -578,7 +684,7 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
       await tester.pump(const Duration(milliseconds: 100));
     }
     await _settle(tester);
-    await _snap(tester, '48_meal_detail_request_rejected');
+    await _snap(tester, '49_meal_detail_request_rejected');
   });
   await _recover(tester);
 }
@@ -647,40 +753,45 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
 
   // Real submit: the new meal is the viewer's own, so it is not listed in
   // Discover; the confirmation snackbar is the state worth photographing.
-  await _step(tester, '25_discover_meal_created', () async {
-    await _tap(tester, find.byKey(const Key('create_meal_submit_button')));
-    final started = DateTime.now();
+  await _step(tester, '37_create_meal_in_flight', () async {
+    await _tapInFlight(
+      tester,
+      find.byKey(const Key('create_meal_submit_button')),
+      '37_create_meal_in_flight',
+      freeze: 'firestore',
+      mustShow: _spinner,
+    );
+  });
+
+  await _step(tester, '26_discover_meal_created', () async {
     await _pumpUntilFound(
       tester,
       find.text('Meal created!'),
-      timeout: const Duration(seconds: 90),
+      timeout: const Duration(seconds: 60),
     );
-    // Run-log diagnostic for the audit; there is no logger in dev tooling.
-    // ignore: avoid_print
-    print('UXDIAG meal created after ${DateTime.now().difference(started)}');
-    await _snap(tester, '25_discover_meal_created');
+    await _snap(tester, '26_discover_meal_created');
   });
 }
 
 // ---- Requests inbox -------------------------------------------------------
 
 Future<void> _captureRequests(WidgetTester tester) async {
-  await _step(tester, '51_requests_data', () async {
+  await _step(tester, '52_requests_data', () async {
     await _tap(tester, _tab('Requests'));
     await _pumpUntilFound(tester, find.text('Approve'));
     // Let the per-row meal lookups (restaurant line, past-meal chip) land.
     await _awaitAssets(tester);
-    await _snap(tester, '51_requests_data');
+    await _snap(tester, '52_requests_data');
   });
 
-  await _step(tester, '52_requests_scrolled', () async {
+  await _step(tester, '53_requests_scrolled', () async {
     final list = find.descendant(
       of: find.byType(Scaffold).last,
       matching: find.byType(Scrollable),
     );
     await tester.drag(list.first, const Offset(0, -600));
     await _settle(tester);
-    await _snap(tester, '52_requests_scrolled');
+    await _snap(tester, '53_requests_scrolled');
   });
 }
 
@@ -690,97 +801,138 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
   final matchTile = find.byKey(Key('chat_list_tile_${world.matchMealId}'));
   final messages = find.byKey(const Key('chat_messages_list'));
 
-  await _step(tester, '56_chats_data', () async {
+  await _step(tester, '62_chats_data', () async {
     await _tap(tester, _tab('Chats'));
     await _pumpUntilFound(tester, matchTile);
-    await _snap(tester, '56_chats_data');
+    await _snap(tester, '62_chats_data');
   });
 
-  await _step(tester, '57_chat_messages', () async {
+  await _step(tester, '63_chat_messages', () async {
     await _tap(tester, matchTile);
     await _pumpUntilFound(tester, messages);
-    await _snap(tester, '57_chat_messages');
+    await _snap(tester, '63_chat_messages');
   });
 
-  await _step(tester, '58_chat_messages_older', () async {
+  await _step(tester, '64_chat_messages_older', () async {
     await tester.drag(messages, const Offset(0, 900));
     await _settle(tester);
-    await _snap(tester, '58_chat_messages_older');
+    await _snap(tester, '64_chat_messages_older');
     await tester.drag(messages, const Offset(0, -2000));
     await _settle(tester);
   });
 
-  await _step(tester, '60_chat_menu', () async {
+  await _step(tester, '67_chat_menu', () async {
     await _tap(tester, find.byKey(const Key('safety_actions_menu')));
-    await _snap(tester, '60_chat_menu');
+    await _snap(tester, '67_chat_menu');
   });
 
-  await _step(tester, '61_chat_report_sheet', () async {
+  await _step(tester, '68_chat_report_sheet', () async {
     await _tap(tester, find.byKey(const Key('safety_actions_report_item')));
     await _pumpUntilFound(tester, find.byKey(const Key('report_note_field')));
-    await _snap(tester, '61_chat_report_sheet');
+    await _snap(tester, '68_chat_report_sheet');
   });
 
-  await _step(tester, '62_chat_report_filled', () async {
+  await _step(tester, '69_chat_report_filled', () async {
     await _tap(tester, find.byKey(const Key('report_reason_chip_harassment')));
     await tester.enterText(
       find.byKey(const Key('report_note_field')),
       'Keeps messaging after I asked to stop.',
     );
     await _settle(tester);
-    await _snap(tester, '62_chat_report_filled');
-    // Close without submitting.
-    await _tapBarrier(tester);
+    await _snap(tester, '69_chat_report_filled');
   });
 
-  await _step(tester, '63_chat_block_dialog', () async {
+  // Real submit: the report is written, the sheet closes with a snackbar.
+  await _step(tester, '70_chat_report_in_flight', () async {
+    await _tapInFlight(
+      tester,
+      find.byKey(const Key('report_submit_button')),
+      '70_chat_report_in_flight',
+      freeze: 'firestore',
+      mustShow: _spinner,
+    );
+    await _pumpWhileFound(tester, find.byKey(const Key('report_note_field')));
+    await _clearSnackBars(tester);
+  });
+
+  await _step(tester, '71_chat_block_dialog', () async {
     await _tap(tester, find.byKey(const Key('safety_actions_menu')));
     await _tap(tester, find.byKey(const Key('safety_actions_block_item')));
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('safety_actions_block_cancel')),
     );
-    await _snap(tester, '63_chat_block_dialog');
+    await _snap(tester, '71_chat_block_dialog');
     await _tap(tester, find.byKey(const Key('safety_actions_block_cancel')));
   });
   await _back(tester);
 
-  await _step(tester, '59_chat_empty', () async {
+  await _step(tester, '65_chat_empty', () async {
     await _tap(
       tester,
       find.byKey(Key('chat_list_tile_${world.mealIds['emptyChat']}')),
     );
     await _pumpUntilFound(tester, find.text('Say hi \u{1F44B}'));
-    await _snap(tester, '59_chat_empty');
+    await _snap(tester, '65_chat_empty');
+  });
+
+  // Real send: the message is on its way (spinner in the send button).
+  await _step(tester, '66_chat_send_pending', () async {
+    await tester.enterText(
+      find.byKey(const Key('message_composer_field')),
+      'Hi Inès! Looking forward to the dumplings.',
+    );
+    await _settle(tester);
+    await _tapInFlight(
+      tester,
+      find.byKey(const Key('message_composer_send_button')),
+      '66_chat_send_pending',
+      freeze: 'firestore',
+      mustShow: _spinner,
+    );
+    await _settle(tester);
   });
   await _back(tester);
 
   // The past meal the viewer hosted: the "How was your meal?" card, then the
   // rating sheet (closed without submitting).
-  await _step(tester, '64_chat_post_meal_card', () async {
+  await _step(tester, '72_chat_post_meal_card', () async {
     await _tap(
       tester,
       find.byKey(Key('chat_list_tile_${world.pastMatchMealId}')),
     );
     await _pumpUntilFound(tester, find.byKey(const Key('post_meal_card')));
-    await _snap(tester, '64_chat_post_meal_card');
+    await _snap(tester, '72_chat_post_meal_card');
   });
 
-  await _step(tester, '65_rating_sheet', () async {
+  await _step(tester, '73_rating_sheet', () async {
     await _tap(tester, find.byKey(const Key('post_meal_card_rate_button')));
     await _pumpUntilFound(tester, find.byKey(const Key('rating_star_5')));
-    await _snap(tester, '65_rating_sheet');
+    await _snap(tester, '73_rating_sheet');
   });
 
-  await _step(tester, '66_rating_sheet_filled', () async {
+  await _step(tester, '74_rating_sheet_filled', () async {
     await _tap(tester, find.byKey(const Key('rating_star_4')));
     await tester.enterText(
       find.byKey(const Key('rating_comment_field')),
       'Great company, we talked for hours.',
     );
     await _settle(tester);
-    await _snap(tester, '66_rating_sheet_filled');
-    await _tapBarrier(tester);
+    await _snap(tester, '74_rating_sheet_filled');
+  });
+
+  // Real submit: the rating is written (Giulia's aggregate is updated by the
+  // emulated Cloud Function), the sheet closes with a snackbar.
+  await _step(tester, '75_rating_sheet_in_flight', () async {
+    await _tapInFlight(
+      tester,
+      find.byKey(const Key('rating_submit_button')),
+      '75_rating_sheet_in_flight',
+      freeze: 'firestore',
+      mustShow: _spinner,
+    );
+    await _pumpWhileFound(tester, find.byKey(const Key('rating_star_5')));
+    await _clearSnackBars(tester);
   });
   await _recover(tester);
 }
@@ -788,41 +940,97 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
 // ---- Profile and settings -------------------------------------------------
 
 Future<void> _captureProfileAndSettings(WidgetTester tester) async {
-  await _step(tester, '70_profile_edit', () async {
+  await _step(tester, '80_profile_edit', () async {
     await _tap(tester, _tab('Profile'));
     await _pumpUntilFound(tester, find.byKey(const Key('profile_name_field')));
-    await _snap(tester, '70_profile_edit');
+    await _snap(tester, '80_profile_edit');
   });
 
-  await _step(tester, '71_profile_edit_scrolled', () async {
+  await _step(tester, '81_profile_edit_scrolled', () async {
     final form = find.descendant(
       of: find.byType(Scaffold).last,
       matching: find.byType(Scrollable),
     );
     await tester.drag(form.first, const Offset(0, -800));
     await _settle(tester);
-    await _snap(tester, '71_profile_edit_scrolled');
+    await _snap(tester, '81_profile_edit_scrolled');
     await tester.drag(form.first, const Offset(0, 2000));
     await _settle(tester);
   });
 
-  await _step(tester, '72_settings', () async {
+  await _step(tester, '83_settings', () async {
     await _tap(tester, find.byKey(const Key('profile_settings_button')));
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('settings_app_version')),
     );
-    await _snap(tester, '72_settings');
+    await _snap(tester, '83_settings');
   });
 
-  await _step(tester, '73_settings_delete_dialog', () async {
+  await _step(tester, '84_settings_bottom', () async {
+    final list = find.descendant(
+      of: find.byType(Scaffold).last,
+      matching: find.byType(Scrollable),
+    );
+    await tester.drag(list.first, const Offset(0, -800));
+    await _settle(tester);
+    await _snap(tester, '84_settings_bottom');
+    await tester.drag(list.first, const Offset(0, 2000));
+    await _settle(tester);
+  });
+
+  await _step(tester, '85_settings_delete_dialog', () async {
     await _tap(tester, find.byKey(const Key('settings_delete_account')));
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('settings_delete_account_cancel')),
     );
-    await _snap(tester, '73_settings_delete_dialog');
+    await _snap(tester, '85_settings_delete_dialog');
     await _tap(tester, find.byKey(const Key('settings_delete_account_cancel')));
+  });
+  await _back(tester);
+
+  await _recover(tester);
+}
+
+// ---- Approve / deny in flight ---------------------------------------------
+
+/// Real taps on the inbox buttons, photographed while the write is in flight.
+/// After the screens above, because approving creates a match (a third chat)
+/// and a decided request leaves the inbox.
+Future<void> _captureInboxInFlight(WidgetTester tester, UxWorld world) async {
+  final darioRequest = '${world.ownMealId}_${world.uids['dario']}';
+  final faridPastRequest =
+      '${world.mealIds['pastOpen']}_${world.uids['farid']}';
+  final inbox = find.descendant(
+    of: find.byType(Scaffold).last,
+    matching: find.byType(Scrollable),
+  );
+
+  await _step(tester, '54_requests_approve_in_flight', () async {
+    await _tap(tester, _tab('Requests'));
+    await _pumpUntilFound(tester, find.text('Approve'));
+    await tester.drag(inbox.first, const Offset(0, 2000));
+    await _settle(tester);
+    await _tapInFlight(
+      tester,
+      find.byKey(Key('request_inbox_approve_button_$darioRequest')),
+      '54_requests_approve_in_flight',
+      freeze: 'firestore',
+    );
+    await _settle(tester);
+    await _clearSnackBars(tester);
+  });
+
+  await _step(tester, '55_requests_deny_in_flight', () async {
+    await _tapInFlight(
+      tester,
+      find.byKey(Key('request_inbox_deny_button_$faridPastRequest')),
+      '55_requests_deny_in_flight',
+      freeze: 'firestore',
+    );
+    await _settle(tester);
+    await _clearSnackBars(tester);
   });
   await _recover(tester);
 }
@@ -864,22 +1072,25 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
     await _snap(tester, '12_age_gate_under18_selected');
   });
 
-  // Submitting signs the user out and the router sends them straight back to
-  // sign-in. The "blocked" screen (13_age_gate_under18_blocked) is never on
-  // screen for a frame the harness can photograph; see ux_audit/README.md.
+  // Submitting signs the user out locally and the router sends them straight
+  // back to sign-in: the "blocked" screen is never on screen for a frame the
+  // harness can photograph, and there is no server round trip to hold (see
+  // ux_audit/README.md).
   await _step(tester, 'under18_submit', () async {
     await _tap(tester, find.text('Continue'));
     await _pumpUntilFound(tester, find.byKey(const Key('signin_phone_field')));
   });
 
-  // The adult path: the picker's default date is exactly 18 years ago.
+  // The adult path: the picker's default date is exactly 18 years ago. The
+  // Continue tap is photographed in flight (spinner in the button).
   await _step(tester, 'adult_path', () async {
-    await _pumpUntilFound(tester, find.byKey(const Key('signin_phone_field')));
     await signInTestUser(uid: 'ux-newbie');
     await _pumpUntilFound(tester, selectDob);
     await _tap(tester, selectDob);
     await _pumpUntilFound(tester, find.text('OK'));
     await _tap(tester, find.text('OK'));
+    // (The age write is applied locally at once, so the router leaves the
+    // age gate before any spinner could be photographed: no in-flight shot.)
     await _tap(tester, find.text('Continue'));
   });
 
@@ -929,7 +1140,7 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
 /// navigation stack to Discover.) Sign in as Dario and push the route with
 /// the seeded meal.
 Future<void> _captureWomenOnlyAsMan(WidgetTester tester, UxWorld world) async {
-  await _step(tester, '45_meal_detail_women_only_disabled', () async {
+  await _step(tester, '46_meal_detail_women_only_disabled', () async {
     await signInTestUser(uid: 'ux-dario');
     await _pumpUntilFound(
       tester,
@@ -942,6 +1153,6 @@ Future<void> _captureWomenOnlyAsMan(WidgetTester tester, UxWorld world) async {
       tester,
       find.byKey(const Key('meal_detail_women_only_disabled_button')),
     );
-    await _snap(tester, '45_meal_detail_women_only_disabled');
+    await _snap(tester, '46_meal_detail_women_only_disabled');
   });
 }

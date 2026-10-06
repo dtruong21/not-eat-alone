@@ -10,6 +10,12 @@
 # `xcrun simctl io <udid> screenshot ux_audit/out/<out-subdir>/<name>.png`,
 # then writes <name>.ack so the test carries on. It also
 #   - serves the placeholder avatars (tool/ux_images.py) on 127.0.0.1:8765, and
+#   - executes host commands from the test (`cmd.*.req` files): freeze/thaw
+#     (SIGSTOP/SIGCONT) of this project's Firestore emulator or of the
+#     firebase-tools process hosting the Auth emulator, so an action that
+#     waits on a server stays "in flight" while the screen is photographed
+#     (auto-thaw after 25 s and on exit; only processes of project
+#     not-eat-alone are touched), and
 #   - re-applies `simctl privacy ... revoke location` every 2 s (same
 #     belt-and-suspenders as `make e2e`: a native location alert would block
 #     the app, and nothing taps it in an unattended run).
@@ -45,11 +51,16 @@ if [[ -z "$UDID" ]]; then
 fi
 
 mkdir -p "$OUT_DIR" "$HANDOFF_DIR"
-rm -f "$HANDOFF_DIR"/*.ready "$HANDOFF_DIR"/*.ack "$HANDOFF_DIR"/.done "$HANDOFF_DIR"/.host-up
+rm -f "$HANDOFF_DIR"/*.ready "$HANDOFF_DIR"/*.ack "$HANDOFF_DIR"/cmd.*.req "$HANDOFF_DIR"/.done "$HANDOFF_DIR"/.host-up
 
 FAILED=0
+FROZEN_FS=0
+FROZEN_AUTH=0
 pids=()
 cleanup() {
+  # Never leave an emulator stopped (SIGCONT on a running process is a no-op).
+  pkill -CONT -f 'cloud-firestore-emulator.*project_id not-eat-alone' >/dev/null 2>&1
+  pkill -CONT -f 'bin/firebase emulators:exec.*project not-eat-alone' >/dev/null 2>&1
   for p in "${pids[@]:-}"; do
     [[ -n "$p" ]] && kill "$p" >/dev/null 2>&1
   done
@@ -95,6 +106,27 @@ while [[ ! -f "$HANDOFF_DIR/.done" ]]; do
   if (( SECONDS > MAX_SECONDS )); then
     echo "[ux-capture] max lifetime ${MAX_SECONDS}s exceeded; exiting" >&2
     exit 1
+  fi
+  # Host commands from the test (see hostCommand in support/handoff.dart).
+  for req in "$HANDOFF_DIR"/cmd.*.req; do
+    [[ -e "$req" ]] || continue
+    ack="${req%.req}.ack"
+    [[ -e "$ack" ]] && continue
+    case "$(cat "$req" 2>/dev/null)" in
+      freeze-firestore) pkill -STOP -f 'cloud-firestore-emulator.*project_id not-eat-alone' ; FROZEN_FS=$SECONDS ;;
+      thaw-firestore)   pkill -CONT -f 'cloud-firestore-emulator.*project_id not-eat-alone' ; FROZEN_FS=0 ;;
+      freeze-auth)      pkill -STOP -f 'bin/firebase emulators:exec.*project not-eat-alone' ; FROZEN_AUTH=$SECONDS ;;
+      thaw-auth)        pkill -CONT -f 'bin/firebase emulators:exec.*project not-eat-alone' ; FROZEN_AUTH=0 ;;
+      *) echo "[ux-capture] unknown command in $req" >&2 ;;
+    esac
+    : >"$ack"
+  done
+  # Safety net: never leave an emulator frozen for long.
+  if (( FROZEN_FS > 0 && SECONDS - FROZEN_FS > 25 )); then
+    pkill -CONT -f 'cloud-firestore-emulator.*project_id not-eat-alone'; FROZEN_FS=0
+  fi
+  if (( FROZEN_AUTH > 0 && SECONDS - FROZEN_AUTH > 25 )); then
+    pkill -CONT -f 'bin/firebase emulators:exec.*project not-eat-alone'; FROZEN_AUTH=0
   fi
   for ready in "$HANDOFF_DIR"/*.ready; do
     [[ -e "$ready" ]] || continue
