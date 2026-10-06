@@ -196,6 +196,10 @@ void main() {
 
     // Assert: opening the chat wrote a read receipt (`ChatScreen.initState`
     // -> `ChatController.markRead` -> `matches/{matchId}/reads/{uid}`).
+    // `lastReadAt` is a `FieldValue.serverTimestamp()`, and the app and this
+    // test share one Firestore SDK instance, so a `get` can return the local
+    // view of the still-pending write, where the unresolved server timestamp
+    // reads as null. Wait for it to resolve, not just for the doc to exist.
     final readDoc = await pollUntil(() async {
       final r = await _db
           .collection('matches')
@@ -203,7 +207,7 @@ void main() {
           .collection('reads')
           .doc(guest.uid)
           .get();
-      return r.exists ? r : null;
+      return r.exists && r.data()?['lastReadAt'] != null ? r : null;
     });
     expect(readDoc.data()!['uid'], guest.uid);
     expect(readDoc.data()!['lastReadAt'], isNotNull);
