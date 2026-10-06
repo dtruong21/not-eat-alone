@@ -28,6 +28,9 @@ class MessageBubble extends StatelessWidget {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
+    // Bubbles stay flat on purpose (no card shadow): the surface step plus the
+    // left/right alignment and the peach own-bubble separate them in the
+    // capture, and a shadow on every bubble would make the thread noisy.
     final bubbleColor = mine ? colors.primaryContainer : colors.surface;
     final textColor = mine ? colors.onPrimaryContainer : colors.onSurface;
 

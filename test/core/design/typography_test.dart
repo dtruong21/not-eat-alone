@@ -65,12 +65,31 @@ void main() {
         expect(pubspec, contains('asset: $path'));
         expect(File(path).existsSync(), isTrue, reason: path);
       }
-      for (final weight in [400, 500, 700, 800]) {
-        expect(pubspec, contains('weight: $weight'));
-      }
+      // Each file is mapped to ITS weight, not just "the numbers appear".
+      final entries = RegExp(
+        r'asset: assets/fonts/Nunito-(\w+)\.ttf\s+weight: (\d+)',
+      ).allMatches(pubspec).map((m) => '${m[1]}=${m[2]}').toList();
+      expect(entries, [
+        'Regular=400',
+        'Medium=500',
+        'Bold=700',
+        'ExtraBold=800',
+      ]);
       expect(File('assets/fonts/OFL.txt').existsSync(), isTrue);
       expect(pubspec, contains('- assets/fonts/OFL.txt'));
     });
+  });
+
+  // bootstrap() itself needs Firebase, so it is not run here: the behaviour is
+  // covered by the unit test below, and this guards the call site.
+  test('bootstrap registers the font licence before anything else', () {
+    final src = File('lib/main_common.dart').readAsStringSync();
+    final boot = src.substring(src.indexOf('Future<void> bootstrap('));
+    expect(boot, contains('registerFontLicense();'));
+    expect(
+      boot.indexOf('registerFontLicense();'),
+      lessThan(boot.indexOf('Firebase.initializeApp')),
+    );
   });
 
   test('registerFontLicense lists Nunito under the OFL', () async {

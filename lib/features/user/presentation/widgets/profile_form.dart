@@ -369,7 +369,9 @@ class _AddPhotoTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: colors.outlineVariant),
+            // Enabled control: the outline must reach 3:1 on the surface
+            // (outlineVariant is the divider token, ~1:1 there).
+            border: Border.all(color: context.wp.muted),
             borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
           ),
           child: Center(
