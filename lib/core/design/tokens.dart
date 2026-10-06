@@ -37,7 +37,7 @@ abstract final class WarmPlayfulColorsLight {
   static const Color surface = Color(
     0xFFFBE8D8,
   ); // deeper peach so cards read against bg
-  static const Color border = Color(0xFFF0E2D2);
+  static const Color border = Color(0xFFE8D5C0);
   static const Color divider = Color(0xFFF7EBDD);
   static const Color text = Color(0xFF3D2E1F); // warm dark brown, not black
   static const Color muted = Color(0xFF7A6352); // >= 4.5:1 on bg and surface

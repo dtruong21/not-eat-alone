@@ -155,6 +155,9 @@ class _RestaurantRow extends StatelessWidget {
 
     return Material(
       color: colors.surface,
+      elevation: WarmPlayfulElevation.card,
+      shadowColor: context.wp.shadow,
+      surfaceTintColor: Colors.transparent,
       borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
       child: InkWell(
         onTap: onTap,

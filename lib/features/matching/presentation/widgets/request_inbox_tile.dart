@@ -139,122 +139,125 @@ class RequestInboxTile extends ConsumerWidget {
           : const Text('Approve'),
     );
 
-    return Container(
+    return Material(
       key: Key('request_inbox_tile_${request.id}'),
-      padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: WarmPlayfulSpacing.s5,
-                backgroundColor: colors.surfaceContainerHighest,
-                backgroundImage: photoUrl != null
-                    ? NetworkImage(photoUrl)
-                    : null,
-                child: photoUrl == null
-                    ? Icon(
-                        Icons.person_rounded,
-                        size: WarmPlayfulSpacing.s5,
-                        color: context.wp.muted,
-                      )
-                    : null,
-              ),
-              const SizedBox(width: WarmPlayfulSpacing.s3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: WarmPlayfulType.h2Weight,
+      color: colors.surfaceContainerHighest,
+      elevation: WarmPlayfulElevation.card,
+      shadowColor: context.wp.shadow,
+      surfaceTintColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
+      child: Padding(
+        padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: WarmPlayfulSpacing.s5,
+                  backgroundColor: colors.surfaceContainerHighest,
+                  backgroundImage: photoUrl != null
+                      ? NetworkImage(photoUrl)
+                      : null,
+                  child: photoUrl == null
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: WarmPlayfulSpacing.s5,
+                          color: context.wp.muted,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: WarmPlayfulSpacing.s3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.onSurface,
+                          fontWeight: WarmPlayfulType.h2Weight,
+                        ),
                       ),
-                    ),
-                    if (meal != null) ...[
-                      const SizedBox(height: WarmPlayfulSpacing.s1),
-                      Column(
-                        key: Key('request_inbox_meal_line_${request.id}'),
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            meal.restaurant.name,
+                      if (meal != null) ...[
+                        const SizedBox(height: WarmPlayfulSpacing.s1),
+                        Column(
+                          key: Key('request_inbox_meal_line_${request.id}'),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              meal.restaurant.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: mealLineStyle,
+                            ),
+                            Text(
+                              formatMealDateTime(meal.dateTime),
+                              style: mealLineStyle,
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (isPast) ...[
+                        const SizedBox(height: WarmPlayfulSpacing.s2),
+                        Container(
+                          key: Key('request_inbox_past_chip_${request.id}'),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: WarmPlayfulSpacing.s3,
+                            vertical: WarmPlayfulSpacing.s1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.errorContainer,
+                            borderRadius: BorderRadius.circular(
+                              WarmPlayfulRadius.pill,
+                            ),
+                          ),
+                          child: Text(
+                            _pastMealLabel,
+                            // One line always: at 320 px and large text scales
+                            // the label may ellipsize; the meaning is also
+                            // carried by the disabled Approve's tooltip and
+                            // semantics hint.
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: mealLineStyle,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colors.onErrorContainer,
+                              fontWeight: WarmPlayfulType.captionWeight,
+                            ),
                           ),
-                          Text(
-                            formatMealDateTime(meal.dateTime),
-                            style: mealLineStyle,
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ],
-                    if (isPast) ...[
-                      const SizedBox(height: WarmPlayfulSpacing.s2),
-                      Container(
-                        key: Key('request_inbox_past_chip_${request.id}'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: WarmPlayfulSpacing.s3,
-                          vertical: WarmPlayfulSpacing.s1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.errorContainer,
-                          borderRadius: BorderRadius.circular(
-                            WarmPlayfulRadius.pill,
-                          ),
-                        ),
-                        child: Text(
-                          _pastMealLabel,
-                          // One line always: at 320 px and large text scales
-                          // the label may ellipsize; the meaning is also
-                          // carried by the disabled Approve's tooltip and
-                          // semantics hint.
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colors.onErrorContainer,
-                            fontWeight: WarmPlayfulType.captionWeight,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: WarmPlayfulSpacing.s3),
-          // Wrap: at narrow widths / large text the buttons stack, not overflow.
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: WarmPlayfulSpacing.s2,
-            runSpacing: WarmPlayfulSpacing.s2,
-            children: [
-              OutlinedButton(
-                key: Key('request_inbox_deny_button_${request.id}'),
-                onPressed: isSubmitting ? null : () => _deny(context, ref),
-                // Deliberate: danger-coloured secondary action.
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: context.wp.dangerText,
-                  side: BorderSide(color: context.wp.dangerText),
+              ],
+            ),
+            const SizedBox(height: WarmPlayfulSpacing.s3),
+            // Wrap: at narrow widths / large text the buttons stack, not overflow.
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: WarmPlayfulSpacing.s2,
+              runSpacing: WarmPlayfulSpacing.s2,
+              children: [
+                OutlinedButton(
+                  key: Key('request_inbox_deny_button_${request.id}'),
+                  onPressed: isSubmitting ? null : () => _deny(context, ref),
+                  // Deliberate: danger-coloured secondary action.
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: context.wp.dangerText,
+                    side: BorderSide(color: context.wp.dangerText),
+                  ),
+                  child: const Text('Deny'),
                 ),
-                child: const Text('Deny'),
-              ),
-              if (isPast)
-                Tooltip(message: _pastMealLabel, child: approveButton)
-              else
-                approveButton,
-            ],
-          ),
-        ],
+                if (isPast)
+                  Tooltip(message: _pastMealLabel, child: approveButton)
+                else
+                  approveButton,
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

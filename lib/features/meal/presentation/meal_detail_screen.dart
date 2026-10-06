@@ -67,41 +67,44 @@ class MealDetailScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
+              Material(
                 key: const Key('meal_detail_restaurant_card'),
-                padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-                decoration: BoxDecoration(
-                  color: colors.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            meal.restaurant.name,
-                            style: textTheme.titleMedium?.copyWith(
-                              color: colors.onSurface,
-                              fontWeight: WarmPlayfulType.h2Weight,
+                color: colors.surfaceContainerHighest,
+                elevation: WarmPlayfulElevation.card,
+                shadowColor: context.wp.shadow,
+                surfaceTintColor: Colors.transparent,
+                borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
+                child: Padding(
+                  padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              meal.restaurant.name,
+                              style: textTheme.titleMedium?.copyWith(
+                                color: colors.onSurface,
+                                fontWeight: WarmPlayfulType.h2Weight,
+                              ),
                             ),
                           ),
-                        ),
-                        if (meal.womenOnly) ...[
-                          const SizedBox(width: WarmPlayfulSpacing.s2),
-                          _WomenOnlyBadge(textTheme: textTheme),
+                          if (meal.womenOnly) ...[
+                            const SizedBox(width: WarmPlayfulSpacing.s2),
+                            _WomenOnlyBadge(textTheme: textTheme),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: WarmPlayfulSpacing.s1),
-                    Text(
-                      meal.restaurant.address,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: context.wp.muted,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      Text(
+                        meal.restaurant.address,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: context.wp.muted,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),

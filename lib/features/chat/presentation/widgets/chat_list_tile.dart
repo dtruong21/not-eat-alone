@@ -65,6 +65,9 @@ class ChatListTile extends ConsumerWidget {
 
     return Material(
       color: colors.surface,
+      elevation: WarmPlayfulElevation.card,
+      shadowColor: context.wp.shadow,
+      surfaceTintColor: Colors.transparent,
       borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
       child: InkWell(
         key: Key('chat_list_tile_${item.match.id}'),

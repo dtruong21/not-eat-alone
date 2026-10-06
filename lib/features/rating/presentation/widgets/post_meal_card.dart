@@ -68,7 +68,6 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
 
     return Card(
       key: const Key('post_meal_card'),
-      elevation: 0,
       color: colors.surfaceContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),

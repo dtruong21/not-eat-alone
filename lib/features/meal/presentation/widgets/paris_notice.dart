@@ -35,7 +35,6 @@ class _ParisNoticeState extends State<ParisNotice> {
       padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
       child: Card(
         key: const Key('paris_notice_card'),
-        elevation: 0,
         color: colors.surfaceContainer,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),

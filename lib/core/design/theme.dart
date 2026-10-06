@@ -237,7 +237,9 @@ ThemeData buildTheme(Brightness brightness) {
     ),
     cardTheme: CardThemeData(
       color: surface,
-      elevation: 0,
+      elevation: WarmPlayfulElevation.card,
+      shadowColor: shadow,
+      surfaceTintColor: Colors.transparent,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),

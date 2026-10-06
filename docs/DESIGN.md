@@ -32,7 +32,7 @@ Text('caption', style: TextStyle(color: wp.muted)); // warm-brown muted text
 |---|---|---|
 | `bg` (`scaffoldBackgroundColor`) | `#FFFAF3` (cream) | `#231811` (warm dark) |
 | `surface` (`colorScheme.surface`) | `#FFF1E6` (warm peach) | `#2E211A` |
-| `border` (`wp.border`) | `#F0E2D2` | `#3F2F25` |
+| `border` (`wp.border`) | `#E8D5C0` | `#3F2F25` |
 | `divider` (`wp.divider`) | `#F7EBDD` | `#352720` |
 
 ### Color — text (warm browns, not grays)

@@ -150,31 +150,34 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
+              Material(
                 key: const Key('create_meal_restaurant_card'),
-                padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-                decoration: BoxDecoration(
-                  color: colors.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.restaurant.name,
-                      style: textTheme.titleMedium?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: WarmPlayfulType.h2Weight,
+                color: colors.surfaceContainerHighest,
+                elevation: WarmPlayfulElevation.card,
+                shadowColor: context.wp.shadow,
+                surfaceTintColor: Colors.transparent,
+                borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
+                child: Padding(
+                  padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.restaurant.name,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: colors.onSurface,
+                          fontWeight: WarmPlayfulType.h2Weight,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: WarmPlayfulSpacing.s1),
-                    Text(
-                      widget.restaurant.address,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: context.wp.muted,
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      Text(
+                        widget.restaurant.address,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: context.wp.muted,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),

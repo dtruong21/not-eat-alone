@@ -200,6 +200,9 @@ class _MealCard extends StatelessWidget {
 
     return Material(
       color: colors.surface,
+      elevation: WarmPlayfulElevation.card,
+      shadowColor: context.wp.shadow,
+      surfaceTintColor: Colors.transparent,
       borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
       child: InkWell(
         onTap: onTap,
