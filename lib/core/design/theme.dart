@@ -65,6 +65,25 @@ ThemeData buildTheme(Brightness brightness) {
       ? WarmPlayfulColorsLight.shadow
       : WarmPlayfulColorsDark.shadow;
 
+  final palettePeach = isLight
+      ? WarmPlayfulColorsLight.palettePeach
+      : WarmPlayfulColorsDark.palettePeach;
+  final paletteSage = isLight
+      ? WarmPlayfulColorsLight.paletteSage
+      : WarmPlayfulColorsDark.paletteSage;
+  const lightText = WarmPlayfulColorsLight.text;
+  // Snackbars invert the page: brown on light, cream on dark.
+  final inverse = isLight
+      ? WarmPlayfulColorsLight.text
+      : WarmPlayfulColorsDark.text;
+  final onInverse = isLight
+      ? WarmPlayfulColorsDark.text
+      : WarmPlayfulColorsLight.text;
+
+  // Dark-mode snackbar is cream, where the coral accent is only ~1.9:1; use
+  // the AA-checked error-text terracotta instead.
+  const snackActionDark = WarmPlayfulColorsLight.dangerText;
+
   final scheme =
       ColorScheme.fromSeed(
         seedColor: WarmPlayfulTokens.seed,
@@ -75,8 +94,21 @@ ThemeData buildTheme(Brightness brightness) {
         primary: accent,
         onPrimary: onAccent,
         onSurfaceVariant: muted,
+        // Container roles: pastel mid-tones take the light brown label in both
+        // modes (>= 4.5:1, see container_roles_test). secondaryContainer is
+        // surface so FilledButton.tonal reads as a quiet card-coloured button.
+        primaryContainer: palettePeach,
+        onPrimaryContainer: lightText,
         secondaryContainer: surface,
         onSecondaryContainer: text,
+        tertiaryContainer: paletteSage,
+        onTertiaryContainer: lightText,
+        errorContainer: isLight
+            ? const Color(0xFFF9D9CF)
+            : const Color(0xFF5A2E24),
+        onErrorContainer: text,
+        inverseSurface: inverse,
+        onInverseSurface: onInverse,
         surface: surface,
         onSurface: text,
         surfaceContainerLowest: bg,
@@ -309,6 +341,16 @@ ThemeData buildTheme(Brightness brightness) {
         horizontal: WarmPlayfulSpacing.s3,
         vertical: WarmPlayfulSpacing.s1,
       ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: scheme.inverseSurface,
+      contentTextStyle: textTheme.bodyMedium?.copyWith(
+        color: scheme.onInverseSurface,
+      ),
+      actionTextColor: isLight ? palettePeach : snackActionDark,
+      closeIconColor: scheme.onInverseSurface,
+      shape: buttonShape,
     ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: surface,
