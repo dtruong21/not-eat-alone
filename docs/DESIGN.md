@@ -34,14 +34,25 @@ Text('caption', style: TextStyle(color: wp.muted)); // warm-brown muted text
 | `surface` (`colorScheme.surface`) | `#FFF1E6` (warm peach) | `#2E211A` |
 | `border` (`wp.border`) | `#E8D5C0` | `#3F2F25` |
 | `divider` (`wp.divider`) | `#F7EBDD` | `#352720` |
+| `shadow` (`wp.shadow`) | `#3D2E1F` @ 25% | `#000000` @ 60% |
+
+Light `surface` is a deeper peach so cards read against the cream `bg` (about 1.15:1: too close to separate on its own, so cards also carry a soft shadow, see `Card`). `border` and `divider` are **decorative**: they are not text or icon colours (a test fails if `colorScheme.outline`/`outlineVariant` is used as one).
 
 ### Color — text (warm browns, not grays)
 
 | Token | Light | Dark |
 |---|---|---|
 | `text` (`colorScheme.onSurface`) | `#3D2E1F` | `#FAEBD7` |
-| `muted` (`wp.muted`) | `#8C7563` | `#B5A18C` |
+| `muted` (`wp.muted`, also `colorScheme.onSurfaceVariant`) | `#7A6352` | `#B5A18C` |
 | `subtle` (`wp.subtle`) | `#B5A18C` | `#8C7563` |
+| `onAccent` (`colorScheme.onPrimary`) | `#3D2E1F` | `#3D2E1F` |
+| `dangerText` (`colorScheme.error`, `wp.dangerText`) | `#A84A35` | `#F09781` |
+
+- `muted` is the secondary-text and meaningful-icon colour: at least 4.5:1 on `bg` and on `surface` in both modes.
+- `subtle` is for **disabled** foregrounds and decoration only (below 4.5:1).
+- `onAccent` is the label colour on coral (`accent`) fills (brown, not cream).
+- `dangerText` is the error-text colour (at least 4.5:1 on `bg` and `surface`); `danger` stays terracotta for fills only.
+- All of the above are pinned by `test/core/design/contrast_test.dart`.
 
 ### Color — accent + semantic
 
@@ -49,7 +60,7 @@ Text('caption', style: TextStyle(color: wp.muted)); // warm-brown muted text
 |---|---|---|
 | `accent` (`colorScheme.primary`) | `#FF8C7A` / `#FF9F8C` | Primary action — warm coral |
 | `success` (`wp.success`) | `#7DBA8A` / `#9ED1A8` | Positive — sage green |
-| `danger` (`colorScheme.error`, `wp.danger`) | `#E07A5F` / `#F09781` | Destructive — terracotta |
+| `danger` (`wp.danger`) | `#E07A5F` / `#F09781` | Destructive fills — terracotta (text uses `dangerText`) |
 | `warning` (`wp.warning`) | `#F2CC8F` / `#F2D9A1` | Caution — butter yellow |
 
 ### Color — category palette (for category/tag/illustration variety)
@@ -63,6 +74,8 @@ Exposed on `WarmPlayfulExtensions`. Access via `Theme.of(context).extension<Warm
 | `wp.butter` | `#FFE7A0` | `#E0C880` | Energy / warmth |
 | `wp.lavender` | `#D6CDEA` | `#B5ABD0` | Reflection / journal |
 | `wp.sky` | `#B8DCE5` | `#92BCC7` | Cool / clarity |
+
+Container roles (`test/core/design/container_roles_test.dart`): `primaryContainer` = peach (own chat bubble), `tertiaryContainer` = sage, `errorContainer` `#F9D9CF` / `#5A2E24`, `secondaryContainer` = `surface` (tonal button). Snackbars are floating, `md` radius, on `inverseSurface` (brown on light, cream on dark). The default `Badge` is `error`/`onError` (brick `#A84A35` in light, so the Requests-tab badge is a deeper brick than terracotta).
 
 `wp.categoryPalette` is a `List<Color>` for index-based assignment (e.g. `palette[habit.colorIndex % 5]`).
 
@@ -84,6 +97,8 @@ Use these for: habit category colors, tag chips, empty-state illustrations, onbo
 | `button` | `labelLarge` | 16 / 26 | 700 |
 
 Body is `w500` (not `w400`). Nunito at 400 reads slightly anemic at body size; 500 sits perfectly.
+
+Guarded by `test/core/design/typography_test.dart`: every text style carries Nunito, each pubspec entry maps its file to its weight, `google_fonts` is gone, the OFL is registered in `bootstrap()`.
 
 ## Spacing
 
@@ -144,7 +159,7 @@ Each example uses tokens from `tokens.dart` and the theme extension.
 
 ### `Card`
 
-Soft container, radius `lg` (24), surface bg, no border (the radius does the work), optional soft shadow. The default `CardThemeData` (set in `theme.dart`) already configures this; for one-offs use a `Container`:
+Soft container, radius `lg` (24), `surface` bg, no border. It is separated from the page by a soft shadow (`WarmPlayfulElevation.card` = 2, `wp.shadow`, transparent surface tint), not by the colour step alone. `CardThemeData` in `theme.dart` configures this for `Card`; a `Material` card (list rows, restaurant cards, inbox tiles) sets `elevation: WarmPlayfulElevation.card`, `shadowColor: wp.shadow`, `surfaceTintColor: Colors.transparent` itself. Chat bubbles and the add-photo tile are deliberately flat. `card_separation_test.dart` guards the theme and the card files. The `Container` recipe below is the older equivalent (do not use it for new cards):
 
 ```dart
 Container(
@@ -193,11 +208,16 @@ For a non-interactive label, a plain `Container` with `BorderRadius.circular(War
 
 ### `Button`
 
-- **Primary** — `ElevatedButton` (theme: accent bg, cream text, radius 16, height 48). On press: scale 0.96 via `flutter_animate` with spring easing.
-- **Secondary** — `FilledButton` (theme: surface bg, text color, same shape).
-- **Ghost** — `TextButton` (theme: transparent bg, text color).
+Hierarchy (all share min height 48 = `WarmPlayfulSize.minTap`, radius `md` = 16, horizontal padding `s5`, label `labelLarge` 700):
 
-All three share the same height (48), radius (`md` = 16), and label weight (700) via the theme.
+- **Primary** — `FilledButton`: coral `accent` fill, `onAccent` (brown) label; disabled = `border` fill, `subtle` label. A button that spins while a request is in flight keeps its coral fill via `loadingFilledStyle(context, isLoading:)`.
+- **Secondary (tonal)** — `FilledButton.tonal`: `surface` fill (`secondaryContainer`), `text` label.
+- **Outlined** — `OutlinedButton`: `text` label, 1.5px `muted` outline (3:1 against the page).
+- **Ghost** — `TextButton`: transparent, `text` label.
+- `ElevatedButton`, FAB, the selected nav-bar icon, the selected segmented button and the selected choice chip all use coral + `onAccent`.
+- Destructive text ("Deny", delete) uses `wp.dangerText`.
+
+Contrast and states are pinned by `test/core/design/button_theme_test.dart`. (The earlier "scale 0.96 on press" spring is not implemented.)
 
 ### `ListRow`
 
