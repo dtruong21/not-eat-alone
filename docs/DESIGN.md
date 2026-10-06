@@ -31,12 +31,12 @@ Text('caption', style: TextStyle(color: wp.muted)); // warm-brown muted text
 | Token | Light | Dark |
 |---|---|---|
 | `bg` (`scaffoldBackgroundColor`) | `#FFFAF3` (cream) | `#231811` (warm dark) |
-| `surface` (`colorScheme.surface`) | `#FFF1E6` (warm peach) | `#2E211A` |
+| `surface` (`colorScheme.surface`) | `#FBE8D8` (warm peach) | `#2E211A` |
 | `border` (`wp.border`) | `#E8D5C0` | `#3F2F25` |
 | `divider` (`wp.divider`) | `#F7EBDD` | `#352720` |
 | `shadow` (`wp.shadow`) | `#3D2E1F` @ 25% | `#000000` @ 60% |
 
-Light `surface` is a deeper peach so cards read against the cream `bg` (about 1.15:1: too close to separate on its own, so cards also carry a soft shadow, see `Card`). `border` and `divider` are **decorative**: they are not text or icon colours (a test fails if `colorScheme.outline`/`outlineVariant` is used as one).
+Light `surface` is a deeper peach so cards read against the cream `bg` (about 1.15:1: too close to separate on its own, so cards also carry a soft shadow, see `Card`). `border` and `divider` are **decorative**: they are not text or icon colours (a test fails if `colorScheme.outline` is used as one under `lib/features`; `outlineVariant`, the divider token, is not guarded and only the two sign-in `Divider`s use it).
 
 ### Color — text (warm browns, not grays)
 
@@ -211,10 +211,11 @@ For a non-interactive label, a plain `Container` with `BorderRadius.circular(War
 Hierarchy (all share min height 48 = `WarmPlayfulSize.minTap`, radius `md` = 16, horizontal padding `s5`, label `labelLarge` 700):
 
 - **Primary** — `FilledButton`: coral `accent` fill, `onAccent` (brown) label; disabled = `border` fill, `subtle` label. A button that spins while a request is in flight keeps its coral fill via `loadingFilledStyle(context, isLoading:)`.
-- **Secondary (tonal)** — `FilledButton.tonal`: `surface` fill (`secondaryContainer`), `text` label.
+- **Secondary (tonal)** — `FilledButton.tonal`: `surface` fill (`secondaryContainer`), `text` label (defined by the theme but unused in the app today; the shipped secondary actions are outlined).
 - **Outlined** — `OutlinedButton`: `text` label, 1.5px `muted` outline (3:1 against the page).
 - **Ghost** — `TextButton`: transparent, `text` label.
 - `ElevatedButton`, FAB, the selected nav-bar icon, the selected segmented button and the selected choice chip all use coral + `onAccent`.
+- Switch: off = `muted` thumb and outline on the surface track; on = `onAccent` thumb on the coral track. Unselected SegmentedButton segments have a `muted` outline; the selected choice-chip checkmark is `onAccent`.
 - Destructive text ("Deny", delete) uses `wp.dangerText`.
 
 Contrast and states are pinned by `test/core/design/button_theme_test.dart`. (The earlier "scale 0.96 on press" spring is not implemented.)

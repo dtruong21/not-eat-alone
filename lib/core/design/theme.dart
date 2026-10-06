@@ -103,8 +103,8 @@ ThemeData buildTheme(Brightness brightness) {
         tertiaryContainer: paletteSage,
         onTertiaryContainer: lightText,
         errorContainer: isLight
-            ? const Color(0xFFF9D9CF)
-            : const Color(0xFF5A2E24),
+            ? WarmPlayfulColorsLight.errorContainer
+            : WarmPlayfulColorsDark.errorContainer,
         onErrorContainer: text,
         inverseSurface: inverse,
         onInverseSurface: onInverse,
@@ -280,8 +280,28 @@ ThemeData buildTheme(Brightness brightness) {
         ),
       ),
     ),
+    // Off state: muted thumb and outline (>= 3:1 on the surface track) instead
+    // of the border colour; selected: onAccent thumb on the coral track.
+    // Disabled falls back to the Material defaults (null).
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) return null;
+        return states.contains(WidgetState.selected) ? onAccent : muted;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) return null;
+        return states.contains(WidgetState.selected) ? accent : surface;
+      }),
+      trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) return null;
+        return states.contains(WidgetState.selected)
+            ? Colors.transparent
+            : muted;
+      }),
+    ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
+        side: WidgetStatePropertyAll(BorderSide(color: muted)),
         backgroundColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? accent
@@ -310,7 +330,7 @@ ThemeData buildTheme(Brightness brightness) {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: text,
-        minimumSize: const Size(0, 48),
+        minimumSize: const Size(0, WarmPlayfulSize.minTap),
         padding: const EdgeInsets.symmetric(
           horizontal: WarmPlayfulSpacing.s4,
           vertical: WarmPlayfulSpacing.s3,
@@ -348,6 +368,7 @@ ThemeData buildTheme(Brightness brightness) {
       selectedColor: accent,
       labelStyle: textTheme.bodySmall?.copyWith(color: text),
       secondaryLabelStyle: textTheme.bodySmall?.copyWith(color: onAccent),
+      checkmarkColor: onAccent,
       side: BorderSide(color: border),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),

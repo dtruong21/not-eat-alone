@@ -86,9 +86,10 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Design system (UX plan 16a) — automated, `test/core/design/`
 
-- [x] `contrast_test.dart` — text/background pairs (muted, onAccent, dangerText, buttons, nav, chips) reach WCAG AA in light and dark.
-- [x] `button_theme_test.dart` — filled/tonal/outlined/text/elevated/FAB/chip colours, min height 48, disabled states, in-flight spinner contrast (>= 3:1) in both modes.
-- [x] `no_border_colour_as_text_test.dart` — no `colorScheme.outline`/`outlineVariant` (border/divider tokens) used as a text or icon colour under `lib/features`.
+- [x] `contrast_test.dart` — text/background token pairs (muted, onAccent, dangerText, error, snackbar action) reach WCAG AA in light and dark.
+- [x] `button_theme_test.dart` — filled/tonal/outlined/elevated/FAB/nav-bar/segmented/chip colours, min height 48 on filled/elevated/outlined, disabled states, in-flight spinner contrast (>= 3:1) in both modes.
+- [x] `switch_theme_test.dart` — Switch on/off thumb, track and outline (>= 3:1), SegmentedButton off outline, chip checkmark (>= 4.5:1), TextButton >= 48 high.
+- [x] `no_border_colour_as_text_test.dart` — no `colorScheme.outline` (the border token) used as a text or icon colour under `lib/features` (`outlineVariant` is not guarded; only two sign-in dividers use it).
 - [x] `container_roles_test.dart` — primary/tertiary/error/inverse container roles, snackbar and chip colours.
 - [x] `typography_test.dart` — every text style is Nunito; each pubspec font entry maps its file to its weight (400/500/700/800); `google_fonts` is gone; `bootstrap()` registers the OFL (call-site guard; `registerFontLicense` itself is unit-tested).
 - [x] `card_separation_test.dart` — card theme and card files carry elevation + shadow + transparent tint; border token >= 1.1:1 on surface.

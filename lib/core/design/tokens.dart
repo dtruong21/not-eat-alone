@@ -50,6 +50,8 @@ abstract final class WarmPlayfulColorsLight {
   /// Error text colour, readable on bg and surface.
   static const Color dangerText = Color(0xFFA84A35); // error text, >= 4.5:1
   static const Color warning = Color(0xFFF2CC8F); // butter yellow
+  /// Past-meal / error chip fill.
+  static const Color errorContainer = Color(0xFFF9D9CF);
   /// Card shadow colour.
   static const Color shadow = Color(0x403D2E1F);
 
@@ -80,6 +82,8 @@ abstract final class WarmPlayfulColorsDark {
   /// Error text colour, readable on bg and surface.
   static const Color dangerText = Color(0xFFF09781);
   static const Color warning = Color(0xFFF2D9A1);
+  /// Past-meal / error chip fill.
+  static const Color errorContainer = Color(0xFF5A2E24);
 
   /// Card shadow colour.
   static const Color shadow = Color(0x99000000);

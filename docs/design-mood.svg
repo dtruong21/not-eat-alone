@@ -3,7 +3,7 @@
 
   <!-- Title -->
   <text x="40" y="68" font-family="Nunito, system-ui, sans-serif" font-size="32" font-weight="800" fill="#3D2E1F">Warm · Playful</text>
-  <text x="40" y="98" font-family="Nunito, system-ui, sans-serif" font-size="15" font-weight="500" fill="#8C7563">Soft pastels · rounded · gentle motion</text>
+  <text x="40" y="98" font-family="Nunito, system-ui, sans-serif" font-size="15" font-weight="500" fill="#7A6352">Soft pastels · rounded · gentle motion</text>
 
   <!-- Category palette (the signature 5) -->
   <g transform="translate(40, 140)">
@@ -13,33 +13,33 @@
     <circle cx="136" cy="24" r="24" fill="#FFE7A0"/>
     <circle cx="192" cy="24" r="24" fill="#D6CDEA"/>
     <circle cx="248" cy="24" r="24" fill="#B8DCE5"/>
-    <text x="24" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#8C7563">peach</text>
-    <text x="80" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#8C7563">sage</text>
-    <text x="136" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#8C7563">butter</text>
-    <text x="192" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#8C7563">lavender</text>
-    <text x="248" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#8C7563">sky</text>
+    <text x="24" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#7A6352">peach</text>
+    <text x="80" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#7A6352">sage</text>
+    <text x="136" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#7A6352">butter</text>
+    <text x="192" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#7A6352">lavender</text>
+    <text x="248" y="74" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="11" font-weight="500" fill="#7A6352">sky</text>
   </g>
 
   <!-- Primary button + pill -->
   <g transform="translate(40, 250)">
     <rect width="160" height="48" rx="16" fill="#FF8C7A"/>
-    <text x="80" y="31" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="16" font-weight="700" fill="#FFFAF3">Start a habit</text>
+    <text x="80" y="31" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="16" font-weight="700" fill="#3D2E1F">Start a habit</text>
 
-    <rect x="180" y="12" width="80" height="24" rx="999" fill="#FFF1E6" stroke="#E8D5C0"/>
+    <rect x="180" y="12" width="80" height="24" rx="999" fill="#FBE8D8" stroke="#E8D5C0"/>
     <text x="220" y="28" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="12" font-weight="500" fill="#3D2E1F">🌱 health</text>
   </g>
 
   <!-- Card with content -->
   <g transform="translate(440, 130)">
-    <rect width="320" height="220" rx="24" fill="#FFF1E6"/>
+    <rect width="320" height="220" rx="24" fill="#FBE8D8"/>
     <circle cx="44" cy="44" r="20" fill="#B5C9A1"/>
     <text x="44" y="51" text-anchor="middle" font-family="Nunito, system-ui, sans-serif" font-size="20">🧘</text>
 
     <text x="76" y="42" font-family="Nunito, system-ui, sans-serif" font-size="18" font-weight="700" fill="#3D2E1F">Meditate</text>
-    <text x="76" y="62" font-family="Nunito, system-ui, sans-serif" font-size="13" font-weight="500" fill="#8C7563">Daily · 10 min</text>
+    <text x="76" y="62" font-family="Nunito, system-ui, sans-serif" font-size="13" font-weight="500" fill="#7A6352">Daily · 10 min</text>
 
     <text x="20" y="120" font-family="Nunito, system-ui, sans-serif" font-size="40" font-weight="800" fill="#3D2E1F">23</text>
-    <text x="20" y="142" font-family="Nunito, system-ui, sans-serif" font-size="13" font-weight="500" fill="#8C7563">day streak</text>
+    <text x="20" y="142" font-family="Nunito, system-ui, sans-serif" font-size="13" font-weight="500" fill="#7A6352">day streak</text>
 
     <!-- progress chips -->
     <g transform="translate(20, 170)">
