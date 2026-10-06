@@ -107,3 +107,6 @@ codemagic-build-output/
 .fvm/
 # graphify knowledge-graph output (local, regenerable)
 graphify-out/
+
+# UX capture harness output (screenshots + generated avatars; regenerable)
+ux_audit/out/

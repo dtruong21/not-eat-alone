@@ -141,3 +141,53 @@ e2e: ios-plist ios-sim-boot ios-privacy
 	status=$$?; \
 	kill $$watchdog >/dev/null 2>&1; \
 	exit $$status
+
+# Screenshot capture harness for the UX pass (dev tooling — NOT part of `make e2e`,
+# CI, or `flutter test`). Photographs the REAL app on the simulator against the
+# emulators with a seeded world (ux_audit/support/world.dart). Usage:
+#   make ux-capture DEVICE='Convyve E2E' OUT=iphone17-light-default
+# Screenshots land in ux_audit/out/$(OUT)/. Same emulator flags as `e2e`.
+#
+# Uses `flutter drive`, not `flutter test`: flutter_tools only runs a test on a
+# device when it sits under integration_test/ (a directory-prefix match), and
+# this harness lives in ux_audit/ so `make e2e` can never pick it up.
+#
+# tool/ux_capture.sh runs alongside (avatar server + simctl screenshot loop);
+# the test hands each screen over via /tmp/convyve-ux/<name>.ready. When the
+# test ends this target touches .done so the script exits, then sweeps any
+# strays (image server on :8765, the script itself). The recipe traps
+# EXIT/INT/TERM to do the same sweep, and the script also exits on its own
+# when this shell dies or after UX_MAX_SECONDS, because a background job of a
+# non-interactive sh starts with SIGINT ignored. Exit status is non-zero if
+# the test failed or any screenshot was missing/empty.
+OUT ?= default
+.PHONY: ux-capture
+ux-capture: ios-plist ios-sim-boot ios-privacy
+	cd firebase/functions && npm ci && npm run build
+	@mkdir -p /tmp/convyve-ux && rm -f /tmp/convyve-ux/.done /tmp/convyve-ux/.host-up
+	@cleanup() { \
+		touch /tmp/convyve-ux/.done; \
+		[ -n "$$host" ] && kill $$host >/dev/null 2>&1; \
+		pkill -f '[t]ool/ux_images.py' >/dev/null 2>&1; \
+		return 0; \
+	}; \
+	host=""; \
+	trap cleanup EXIT; \
+	trap 'exit 130' INT TERM; \
+	UX_PARENT_PID=$$$$ tool/ux_capture.sh "$(DEVICE)" "$(OUT)" & host=$$!; \
+	up=0; \
+	for i in $$(seq 1 150); do \
+		if [ -f /tmp/convyve-ux/.host-up ]; then up=1; break; fi; \
+		kill -0 $$host >/dev/null 2>&1 || break; \
+		sleep 1; \
+	done; \
+	if [ $$up -ne 1 ]; then echo "[ux-capture] host script did not come up"; exit 1; fi; \
+	firebase emulators:exec --only "auth,firestore:(default),functions,storage" \
+		--project not-eat-alone \
+		"fvm flutter drive --driver ux_audit/driver.dart --target ux_audit/capture_test.dart -d '$(DEVICE)'"; \
+	status=$$?; \
+	touch /tmp/convyve-ux/.done; \
+	wait $$host; hoststatus=$$?; \
+	host=""; \
+	if [ $$status -ne 0 ]; then exit $$status; fi; \
+	exit $$hoststatus

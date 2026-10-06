@@ -1,0 +1,39 @@
+# Measured WCAG contrast from lib/core/design/tokens.dart (text needs 4.5, UI 3.0)
+
+## LIGHT
+text     on bg      : 12.57
+text     on surface : 11.79
+muted    on bg      :  4.18
+muted    on surface :  3.92
+subtle   on bg      :  2.40
+subtle   on surface :  2.25
+border   on bg      :  1.22
+border   on surface :  1.15
+accent   on bg      :  2.18
+accent   on surface :  2.04
+danger   on bg      :  2.84
+danger   on surface :  2.67
+success  on bg      :  2.18
+success  on surface :  2.05
+onPrimary(light bg cream FFFAF3) on accent:  2.18
+text on accent (button label brown):  5.77
+accent button fill vs surface (UI 3.0):  2.04
+
+## DARK
+text     on bg      : 14.82
+text     on surface : 13.29
+muted    on bg      :  6.98
+muted    on surface :  6.26
+subtle   on bg      :  4.00
+subtle   on surface :  3.59
+border   on bg      :  1.36
+border   on surface :  1.22
+accent   on bg      :  8.75
+accent   on surface :  7.85
+danger   on bg      :  7.81
+danger   on surface :  7.01
+success  on bg      : 10.03
+success  on surface :  9.00
+onPrimary(light bg cream FFFAF3) on accent:  1.91
+text on accent (button label brown):  1.69
+accent button fill vs surface (UI 3.0):  7.85
