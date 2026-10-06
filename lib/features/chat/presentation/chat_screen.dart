@@ -18,6 +18,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/chat/application/chat_controller.dart';
@@ -172,7 +173,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       child: Text(
                         'Say hi \u{1F44B}',
                         style: textTheme.bodyMedium?.copyWith(
-                          color: colors.outline,
+                          color: context.wp.muted,
                         ),
                       ),
                     );
@@ -238,7 +239,7 @@ class _ChatAppBarTitle extends ConsumerWidget {
               ? Icon(
                   Icons.person_rounded,
                   size: WarmPlayfulSpacing.s4,
-                  color: colors.outline,
+                  color: context.wp.muted,
                 )
               : null,
         ),

@@ -171,7 +171,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                     Text(
                       widget.restaurant.address,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
+                        color: context.wp.muted,
                       ),
                     ),
                   ],

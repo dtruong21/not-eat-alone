@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
@@ -36,7 +37,7 @@ class RatingBadge extends ConsumerWidget {
         'New',
         key: const Key('rating_badge_new'),
         style: textTheme.bodySmall?.copyWith(
-          color: colors.outline,
+          color: context.wp.muted,
           fontWeight: WarmPlayfulType.captionWeight,
         ),
       );

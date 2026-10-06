@@ -162,7 +162,7 @@ class RequestInboxTile extends ConsumerWidget {
                     ? Icon(
                         Icons.person_rounded,
                         size: WarmPlayfulSpacing.s5,
-                        color: colors.outline,
+                        color: context.wp.muted,
                       )
                     : null,
               ),

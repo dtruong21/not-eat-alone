@@ -85,7 +85,9 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 Text(
                   'Add a name, a photo, and tell us how you identify — this '
                   'helps us match you.',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: context.wp.muted,
+                  ),
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s6),
                 ProfileForm(onChanged: _onFormChanged),

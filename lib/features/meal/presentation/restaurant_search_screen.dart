@@ -21,6 +21,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_search_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
@@ -87,7 +88,7 @@ class _RestaurantSearchScreenState
           ? Center(
               child: Text(
                 'No matches',
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
             )
           : ListView.separated(
@@ -176,7 +177,7 @@ class _RestaurantRow extends StatelessWidget {
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
                 restaurant.address,
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
             ],
           ),

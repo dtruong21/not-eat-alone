@@ -98,7 +98,7 @@ class MealDetailScreen extends ConsumerWidget {
                     Text(
                       meal.restaurant.address,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
+                        color: context.wp.muted,
                       ),
                     ),
                   ],
@@ -230,7 +230,7 @@ class _HostBlock extends ConsumerWidget {
         if (host == null) {
           return Text(
             'Host unavailable',
-            style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+            style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
           );
         }
 
@@ -250,7 +250,7 @@ class _HostBlock extends ConsumerWidget {
                   ? Icon(
                       Icons.person_rounded,
                       size: WarmPlayfulSpacing.s5,
-                      color: colors.outline,
+                      color: context.wp.muted,
                     )
                   : null,
             ),
@@ -273,7 +273,7 @@ class _HostBlock extends ConsumerWidget {
                     Text(
                       host.bio!,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
+                        color: context.wp.muted,
                       ),
                     ),
                   ],
@@ -434,7 +434,7 @@ class _RequestedState extends StatelessWidget {
         Text(
           'Waiting for the host',
           textAlign: TextAlign.center,
-          style: textTheme.bodySmall?.copyWith(color: colors.outline),
+          style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
         ),
       ],
     );
@@ -518,7 +518,6 @@ class _WomenOnlyGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
     return Column(
@@ -533,7 +532,7 @@ class _WomenOnlyGuard extends StatelessWidget {
           'This meal is women-only.',
           key: const Key('meal_detail_women_only_note'),
           textAlign: TextAlign.center,
-          style: textTheme.bodySmall?.copyWith(color: colors.outline),
+          style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
         ),
       ],
     );
@@ -564,7 +563,7 @@ class _YourMealChip extends StatelessWidget {
         child: Text(
           'Your meal',
           style: textTheme.bodySmall?.copyWith(
-            color: colors.outline,
+            color: context.wp.muted,
             fontWeight: WarmPlayfulType.captionWeight,
           ),
         ),

@@ -127,7 +127,7 @@ class DiscoveryScreen extends ConsumerWidget {
         color: colors.error,
       ),
       data: (meals) => meals.isEmpty
-          ? _scrollableMessage('No meals near you yet', color: colors.outline)
+          ? _scrollableMessage('No meals near you yet', color: context.wp.muted)
           : ListView.separated(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
               physics: const AlwaysScrollableScrollPhysics(),
@@ -229,12 +229,12 @@ class _MealCard extends StatelessWidget {
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
                 formatMealDateTime(meal.dateTime),
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
                 _formatDistance(item.distanceMeters),
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s3),
               _HostInfo(hostId: meal.hostId),
@@ -310,7 +310,7 @@ class _HostInfo extends ConsumerWidget {
                   ? Icon(
                       Icons.person_rounded,
                       size: WarmPlayfulSpacing.s4,
-                      color: colors.outline,
+                      color: context.wp.muted,
                     )
                   : null,
             ),

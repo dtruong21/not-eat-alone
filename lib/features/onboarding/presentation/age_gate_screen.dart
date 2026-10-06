@@ -157,7 +157,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
               Text(
                 'You must be 18 or older to use Convyve.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s6),
               OutlinedButton(

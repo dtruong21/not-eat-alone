@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
@@ -58,12 +59,12 @@ class MessageBubble extends StatelessWidget {
           if (message.createdAt != null)
             Text(
               formatClockTime(message.createdAt!),
-              style: textTheme.bodySmall?.copyWith(color: colors.outline),
+              style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
             ),
           if (showSeen)
             Text(
               'Seen',
-              style: textTheme.bodySmall?.copyWith(color: colors.outline),
+              style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
             ),
         ],
       ),

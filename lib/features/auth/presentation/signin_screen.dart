@@ -146,7 +146,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               Text(
                 'Sign in to get started.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s6),
               _AuthButton(
@@ -173,7 +173,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                     child: Text(
                       'or',
                       style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
+                        color: context.wp.muted,
                       ),
                     ),
                   ),

@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
 import 'package:not_eat_alone/features/rating/application/my_rating_provider.dart';
@@ -92,7 +93,7 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
                         ? 'Rate $targetName'
                         : 'Rate the other person',
                     style: textTheme.bodySmall?.copyWith(
-                      color: colors.outline,
+                      color: context.wp.muted,
                     ),
                   ),
                 ],

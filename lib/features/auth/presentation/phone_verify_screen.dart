@@ -94,7 +94,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
               Text(
                 'We texted you a 6-digit code.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s6),
               TextField(
