@@ -34,16 +34,24 @@ abstract final class WarmPlayfulTokens {
 /// Light palette — cream surfaces, warm brown text, never pure white/black.
 abstract final class WarmPlayfulColorsLight {
   static const Color bg = Color(0xFFFFFAF3); // cream — never pure white
-  static const Color surface = Color(0xFFFFF1E6); // warm peach surface
+  static const Color surface = Color(
+    0xFFFBE8D8,
+  ); // deeper peach so cards read against bg
   static const Color border = Color(0xFFF0E2D2);
   static const Color divider = Color(0xFFF7EBDD);
   static const Color text = Color(0xFF3D2E1F); // warm dark brown, not black
-  static const Color muted = Color(0xFF8C7563);
+  static const Color muted = Color(0xFF7A6352); // >= 4.5:1 on bg and surface
   static const Color subtle = Color(0xFFB5A18C);
   static const Color accent = Color(0xFFFF8C7A); // warm coral
+  /// Label colour on coral accent fills.
+  static const Color onAccent = Color(0xFF3D2E1F); // brown label on coral
   static const Color success = Color(0xFF7DBA8A); // sage green
-  static const Color danger = Color(0xFFE07A5F); // terracotta
+  static const Color danger = Color(0xFFE07A5F); // terracotta (fills only)
+  /// Error text colour, readable on bg and surface.
+  static const Color dangerText = Color(0xFFA84A35); // error text, >= 4.5:1
   static const Color warning = Color(0xFFF2CC8F); // butter yellow
+  /// Card shadow colour.
+  static const Color shadow = Color(0x403D2E1F);
 
   // 5-color category palette — peach, sage, butter, lavender, sky.
   static const Color palettePeach = Color(0xFFFBC4AB);
@@ -63,9 +71,18 @@ abstract final class WarmPlayfulColorsDark {
   static const Color muted = Color(0xFFB5A18C);
   static const Color subtle = Color(0xFF8C7563);
   static const Color accent = Color(0xFFFF9F8C);
+
+  /// Label colour on coral accent fills.
+  static const Color onAccent = Color(0xFF3D2E1F);
   static const Color success = Color(0xFF9ED1A8);
   static const Color danger = Color(0xFFF09781);
+
+  /// Error text colour, readable on bg and surface.
+  static const Color dangerText = Color(0xFFF09781);
   static const Color warning = Color(0xFFF2D9A1);
+
+  /// Card shadow colour.
+  static const Color shadow = Color(0x99000000);
 
   // 5-color category palette — darker, desaturated for dark mode.
   static const Color palettePeach = Color(0xFFE89E84);
@@ -73,6 +90,24 @@ abstract final class WarmPlayfulColorsDark {
   static const Color paletteButter = Color(0xFFE0C880);
   static const Color paletteLavender = Color(0xFFB5ABD0);
   static const Color paletteSky = Color(0xFF92BCC7);
+}
+
+// ---------------------------------------------------------------------------
+// SIZE + ELEVATION
+// ---------------------------------------------------------------------------
+
+/// Interactive-control sizes.
+abstract final class WarmPlayfulSize {
+  /// Height of primary/secondary action buttons.
+  static const double actionHeight = 56; // primary/secondary action buttons
+  /// Minimum tap target.
+  static const double minTap = 48; // minimum tap target
+}
+
+/// Elevation levels.
+abstract final class WarmPlayfulElevation {
+  /// Resting card elevation.
+  static const double card = 2;
 }
 
 // ---------------------------------------------------------------------------

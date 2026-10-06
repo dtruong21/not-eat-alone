@@ -25,46 +25,66 @@ ThemeData buildTheme(Brightness brightness) {
   final isLight = brightness == Brightness.light;
 
   final bg = isLight ? WarmPlayfulColorsLight.bg : WarmPlayfulColorsDark.bg;
-  final surface =
-      isLight ? WarmPlayfulColorsLight.surface : WarmPlayfulColorsDark.surface;
-  final border =
-      isLight ? WarmPlayfulColorsLight.border : WarmPlayfulColorsDark.border;
-  final divider =
-      isLight ? WarmPlayfulColorsLight.divider : WarmPlayfulColorsDark.divider;
-  final text =
-      isLight ? WarmPlayfulColorsLight.text : WarmPlayfulColorsDark.text;
-  final muted =
-      isLight ? WarmPlayfulColorsLight.muted : WarmPlayfulColorsDark.muted;
-  final accent =
-      isLight ? WarmPlayfulColorsLight.accent : WarmPlayfulColorsDark.accent;
-  final success =
-      isLight ? WarmPlayfulColorsLight.success : WarmPlayfulColorsDark.success;
-  final danger =
-      isLight ? WarmPlayfulColorsLight.danger : WarmPlayfulColorsDark.danger;
-  final warning =
-      isLight ? WarmPlayfulColorsLight.warning : WarmPlayfulColorsDark.warning;
+  final surface = isLight
+      ? WarmPlayfulColorsLight.surface
+      : WarmPlayfulColorsDark.surface;
+  final border = isLight
+      ? WarmPlayfulColorsLight.border
+      : WarmPlayfulColorsDark.border;
+  final divider = isLight
+      ? WarmPlayfulColorsLight.divider
+      : WarmPlayfulColorsDark.divider;
+  final text = isLight
+      ? WarmPlayfulColorsLight.text
+      : WarmPlayfulColorsDark.text;
+  final muted = isLight
+      ? WarmPlayfulColorsLight.muted
+      : WarmPlayfulColorsDark.muted;
+  final accent = isLight
+      ? WarmPlayfulColorsLight.accent
+      : WarmPlayfulColorsDark.accent;
+  final success = isLight
+      ? WarmPlayfulColorsLight.success
+      : WarmPlayfulColorsDark.success;
+  final danger = isLight
+      ? WarmPlayfulColorsLight.danger
+      : WarmPlayfulColorsDark.danger;
+  final warning = isLight
+      ? WarmPlayfulColorsLight.warning
+      : WarmPlayfulColorsDark.warning;
+  final dangerText = isLight
+      ? WarmPlayfulColorsLight.dangerText
+      : WarmPlayfulColorsDark.dangerText;
+  final onAccent = isLight
+      ? WarmPlayfulColorsLight.onAccent
+      : WarmPlayfulColorsDark.onAccent;
+  final shadow = isLight
+      ? WarmPlayfulColorsLight.shadow
+      : WarmPlayfulColorsDark.shadow;
 
-  final scheme = ColorScheme.fromSeed(
-    seedColor: WarmPlayfulTokens.seed,
-    brightness: brightness,
-    // Pin the variant explicitly — Material 3 may change defaults.
-    dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
-  ).copyWith(
-    primary: accent,
-    onPrimary: WarmPlayfulColorsLight.bg, // cream on coral reads well
-    surface: surface,
-    onSurface: text,
-    surfaceContainerLowest: bg,
-    surfaceContainerLow: bg,
-    surfaceContainer: surface,
-    surfaceContainerHigh: surface,
-    surfaceContainerHighest: surface,
-    outline: border,
-    outlineVariant: divider,
-    error: danger,
-    onError: WarmPlayfulColorsLight.bg,
-    tertiary: success,
-  );
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: WarmPlayfulTokens.seed,
+        brightness: brightness,
+        // Pin the variant explicitly — Material 3 may change defaults.
+        dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+      ).copyWith(
+        primary: accent,
+        onPrimary: onAccent,
+        onSurfaceVariant: muted,
+        surface: surface,
+        onSurface: text,
+        surfaceContainerLowest: bg,
+        surfaceContainerLow: bg,
+        surfaceContainer: surface,
+        surfaceContainerHigh: surface,
+        surfaceContainerHighest: surface,
+        outline: border,
+        outlineVariant: divider,
+        error: dangerText,
+        onError: bg,
+        tertiary: success,
+      );
 
   // Nunito body text via google_fonts. Apply tuned weights/heights.
   final base = ThemeData(
@@ -238,8 +258,9 @@ ThemeData buildTheme(Brightness brightness) {
       backgroundColor: surface,
       selectedColor: accent,
       labelStyle: textTheme.bodySmall?.copyWith(color: text),
-      secondaryLabelStyle:
-          textTheme.bodySmall?.copyWith(color: WarmPlayfulColorsLight.bg),
+      secondaryLabelStyle: textTheme.bodySmall?.copyWith(
+        color: WarmPlayfulColorsLight.bg,
+      ),
       side: BorderSide(color: border),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
@@ -270,11 +291,7 @@ ThemeData buildTheme(Brightness brightness) {
       titleTextStyle: textTheme.titleLarge,
       contentTextStyle: textTheme.bodyMedium,
     ),
-    dividerTheme: DividerThemeData(
-      color: divider,
-      thickness: 1,
-      space: 1,
-    ),
+    dividerTheme: DividerThemeData(color: divider, thickness: 1, space: 1),
     iconTheme: IconThemeData(color: text, size: 24),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
@@ -304,10 +321,14 @@ ThemeData buildTheme(Brightness brightness) {
         success: success,
         warning: warning,
         danger: danger,
+        dangerText: dangerText,
+        onAccent: onAccent,
+        shadow: shadow,
         // Surfaces + text shades not cleanly mapped to ColorScheme
         muted: muted,
-        subtle:
-            isLight ? WarmPlayfulColorsLight.subtle : WarmPlayfulColorsDark.subtle,
+        subtle: isLight
+            ? WarmPlayfulColorsLight.subtle
+            : WarmPlayfulColorsDark.subtle,
         border: border,
         divider: divider,
       ),
@@ -336,6 +357,9 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
     required this.success,
     required this.warning,
     required this.danger,
+    required this.dangerText,
+    required this.onAccent,
+    required this.shadow,
     required this.muted,
     required this.subtle,
     required this.border,
@@ -354,6 +378,15 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
   final Color warning;
   final Color danger;
 
+  /// Error text/icon colour readable (>= 4.5:1) on page and cards.
+  final Color dangerText;
+
+  /// Label colour on coral accent fills.
+  final Color onAccent;
+
+  /// Card/elevation shadow colour.
+  final Color shadow;
+
   // Surface/text shades not in ColorScheme.
   final Color muted;
   final Color subtle;
@@ -362,8 +395,13 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
 
   /// Convenient ordered list of the 5 category colors, e.g. for assigning
   /// a habit category color by index.
-  List<Color> get categoryPalette =>
-      <Color>[peach, sage, butter, lavender, sky];
+  List<Color> get categoryPalette => <Color>[
+    peach,
+    sage,
+    butter,
+    lavender,
+    sky,
+  ];
 
   @override
   WarmPlayfulExtensions copyWith({
@@ -375,6 +413,9 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
     Color? success,
     Color? warning,
     Color? danger,
+    Color? dangerText,
+    Color? onAccent,
+    Color? shadow,
     Color? muted,
     Color? subtle,
     Color? border,
@@ -389,6 +430,9 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
       success: success ?? this.success,
       warning: warning ?? this.warning,
       danger: danger ?? this.danger,
+      dangerText: dangerText ?? this.dangerText,
+      onAccent: onAccent ?? this.onAccent,
+      shadow: shadow ?? this.shadow,
       muted: muted ?? this.muted,
       subtle: subtle ?? this.subtle,
       border: border ?? this.border,
@@ -411,10 +455,19 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
       success: Color.lerp(success, other.success, t)!,
       warning: Color.lerp(warning, other.warning, t)!,
       danger: Color.lerp(danger, other.danger, t)!,
+      dangerText: Color.lerp(dangerText, other.dangerText, t)!,
+      onAccent: Color.lerp(onAccent, other.onAccent, t)!,
+      shadow: Color.lerp(shadow, other.shadow, t)!,
       muted: Color.lerp(muted, other.muted, t)!,
       subtle: Color.lerp(subtle, other.subtle, t)!,
       border: Color.lerp(border, other.border, t)!,
       divider: Color.lerp(divider, other.divider, t)!,
     );
   }
+}
+
+/// `context.wp` shortcut for the Warm Playful theme extension.
+extension WarmPlayfulContext on BuildContext {
+  WarmPlayfulExtensions get wp =>
+      Theme.of(this).extension<WarmPlayfulExtensions>()!;
 }
