@@ -15,6 +15,8 @@
 library;
 
 import 'package:not_eat_alone/core/util/geohash.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 
 import '../../integration_test/support/auth.dart';
 import '../../integration_test/support/emulator_admin.dart';
@@ -22,7 +24,7 @@ import '../../integration_test/support/emulator_admin.dart';
 /// Where `tool/ux_images.py` serves the placeholder portraits.
 const String kAvatarBase = 'http://127.0.0.1:8765';
 
-/// The ids the capture needs, returned by [seedWorld].
+/// The ids the capture needs, returned by [seedMeals].
 class UxWorld {
   const UxWorld({
     required this.viewerUid,
@@ -32,6 +34,8 @@ class UxWorld {
     required this.matchPartnerUid,
     required this.ownMealId,
     required this.pastMatchMealId,
+    required this.ownMeal,
+    required this.womenOnlyMeal,
     required this.mealIds,
   });
 
@@ -54,6 +58,16 @@ class UxWorld {
 
   /// A past meal the viewer hosted that was matched and rated.
   final String pastMatchMealId;
+
+  /// The viewer's own upcoming meal as an entity. Own meals are filtered out
+  /// of Discover and the app has no "my meals" list, so the capture opens the
+  /// detail screen for it by pushing `/meals/detail` with this object.
+  final Meal ownMeal;
+
+  /// The women-only meal ("Café de Flore", hosted by Giulia) as an entity.
+  /// Discover hides women-only meals from non-women, so the capture opens the
+  /// detail screen as a man by pushing `/meals/detail` with this object.
+  final Meal womenOnlyMeal;
 
   /// Meal label -> meal id, for the later full-matrix capture.
   final Map<String, String> mealIds;
@@ -363,11 +377,27 @@ Future<void> _message({
   });
 }
 
-/// Seeds the whole world and leaves the Auth session signed in as the viewer.
+/// The Auth users and profile docs of the world, returned by [seedUsers].
+class UxUsers {
+  const UxUsers({required this.viewerUid, required this.uids});
+
+  /// The user the capture signs in as ("Amélie Lefèvre", a woman).
+  final String viewerUid;
+
+  /// Persona key (`bastien`, `dario`, ...) -> Firebase uid.
+  final Map<String, String> uids;
+}
+
+/// Stage 1 of the world: clears both emulators, mints the Auth users, writes
+/// their profile docs and the viewer's block of Hugo, and leaves the Auth
+/// session signed in as the viewer. NO meals, requests, matches or messages
+/// yet, so the capture can photograph the empty Discover / Chats / Requests
+/// states before [seedMeals] fills the world in (the feeds are live streams,
+/// so the open app updates by itself).
 ///
 /// Call after the app is booted (so the sign-in screen can be photographed
-/// first). Clears both emulators before writing.
-Future<UxWorld> seedWorld() async {
+/// first).
+Future<UxUsers> seedUsers() async {
   await clearEmulators();
 
   // 1. Mint the Auth users via the real sign-in path. The viewer goes last so
@@ -379,11 +409,6 @@ Future<UxWorld> seedWorld() async {
     uids[p.key] = user.uid;
   }
   final viewer = uids['viewer']!;
-  final bastien = uids['bastien']!;
-  final dario = uids['dario']!;
-  final emilia = uids['emilia']!;
-  final farid = uids['farid']!;
-  final giulia = uids['giulia']!;
   final hugo = uids['hugo']!;
   final now = DateTime.now();
 
@@ -404,7 +429,40 @@ Future<UxWorld> seedWorld() async {
     });
   }
 
-  // 3. Meals. Open meals by other hosts (Discover), nearest-first order is
+  // The viewer blocked Hugo (his meal is then hidden from Discover).
+  await adminSetDoc('blocks', '${viewer}_$hugo', {
+    'id': '${viewer}_$hugo',
+    'blockerUid': viewer,
+    'blockedUid': hugo,
+    'pair': [viewer, hugo],
+    'createdAt': now.subtract(const Duration(days: 10)),
+  });
+
+  // 3. Leave the session signed in as the viewer (signInTestUser returns the
+  //    emulator-minted uid; it must equal the one used above).
+  final signedIn = await signInTestUser(uid: 'ux-viewer');
+  if (signedIn.uid != viewer) {
+    throw StateError('viewer uid changed between sign-ins');
+  }
+  return UxUsers(viewerUid: viewer, uids: uids);
+}
+
+/// Stage 2 of the world: everything that hangs off the users (meals,
+/// requests, the matches and their chats, a rating). Writes through the admin
+/// REST API; the signed-in app picks the data up through its live streams.
+Future<UxWorld> seedMeals(UxUsers users) async {
+  final uids = users.uids;
+  final viewer = users.viewerUid;
+  final bastien = uids['bastien']!;
+  final dario = uids['dario']!;
+  final emilia = uids['emilia']!;
+  final farid = uids['farid']!;
+  final giulia = uids['giulia']!;
+  final hugo = uids['hugo']!;
+  final ines = uids['ines']!;
+  final now = DateTime.now();
+
+  // Meals. Open meals by other hosts (Discover), nearest-first order is
   //    decided by the app. Hugo is blocked by the viewer, so his meal is
   //    hidden from Discover.
   final mealIds = <String, String>{};
@@ -451,12 +509,14 @@ Future<UxWorld> seedWorld() async {
         'does for a living.',
   );
   await open('cambodge', farid, 'cambodge', _at(1, 12, 30));
+  final floreWhen = _at(2, 17);
+  const floreNote = 'Women-only brunch-ish thing. Hot chocolate and gossip.';
   await open(
     'flore',
     giulia,
     'flore',
-    _at(2, 17),
-    note: 'Women-only brunch-ish thing. Hot chocolate and gossip.',
+    floreWhen,
+    note: floreNote,
     womenOnly: true,
   );
   await open(
@@ -491,13 +551,9 @@ Future<UxWorld> seedWorld() async {
   await open('bao', dario, 'bao', _at(7, 13), note: 'Lunch.');
 
   // The viewer's own upcoming meal, with two pending requests.
-  final ownMeal = await open(
-    'own',
-    viewer,
-    'pigalle',
-    _at(2, 19, 30),
-    note: 'First time hosting! I will be the one with the red scarf.',
-  );
+  final ownWhen = _at(2, 19, 30);
+  const ownNote = 'First time hosting! I will be the one with the red scarf.';
+  final ownMeal = await open('own', viewer, 'pigalle', ownWhen, note: ownNote);
   await _request(
     mealId: ownMeal,
     guestId: dario,
@@ -720,21 +776,41 @@ Future<UxWorld> seedWorld() async {
     createdAt: now.subtract(const Duration(days: 3)),
   );
 
-  // The viewer blocked Hugo.
-  await adminSetDoc('blocks', '${viewer}_$hugo', {
-    'id': '${viewer}_$hugo',
-    'blockerUid': viewer,
-    'blockedUid': hugo,
-    'pair': [viewer, hugo],
-    'createdAt': now.subtract(const Duration(days: 10)),
-  });
+  // Farid declined the viewer's request on his Kunitoraya dinner ("Not
+  // selected" on the meal detail).
+  await _request(
+    mealId: 'ux-meal-kunitoraya',
+    guestId: viewer,
+    hostId: farid,
+    status: 'denied',
+    createdAt: now.subtract(const Duration(days: 1)),
+  );
 
-  // 4. Leave the session signed in as the viewer (signInTestUser returns the
-  //    emulator-minted uid; it must equal the one used above).
-  final signedIn = await signInTestUser(uid: 'ux-viewer');
-  if (signedIn.uid != viewer) {
-    throw StateError('viewer uid changed between sign-ins');
-  }
+  // A second match that has no messages yet (the chat's empty state), with
+  // Inès hosting and the viewer approved.
+  final emptyChatMeal = await _meal(
+    id: 'ux-meal-empty-chat',
+    hostId: ines,
+    place: 'bao',
+    when: _at(4, 12, 30),
+    note: 'Dumplings and a long lunch.',
+    status: 'matched',
+    guestId: viewer,
+  );
+  mealIds['emptyChat'] = emptyChatMeal;
+  await _request(
+    mealId: emptyChatMeal,
+    guestId: viewer,
+    hostId: ines,
+    status: 'approved',
+    createdAt: now.subtract(const Duration(hours: 6)),
+  );
+  await _match(
+    mealId: emptyChatMeal,
+    hostId: ines,
+    guestId: viewer,
+    createdAt: now.subtract(const Duration(hours: 5)),
+  );
 
   return UxWorld(
     viewerUid: viewer,
@@ -744,6 +820,37 @@ Future<UxWorld> seedWorld() async {
     matchPartnerUid: bastien,
     ownMealId: ownMeal,
     pastMatchMealId: past,
+    womenOnlyMeal: Meal(
+      id: 'ux-meal-flore',
+      hostId: giulia,
+      restaurant: Restaurant(
+        placeId: _places['flore']!.id,
+        name: _places['flore']!.name,
+        address: _places['flore']!.address,
+        lat: _places['flore']!.lat,
+        lng: _places['flore']!.lng,
+      ),
+      dateTime: floreWhen,
+      geohash: encodeGeohash(_places['flore']!.lat, _places['flore']!.lng),
+      note: floreNote,
+      womenOnly: true,
+      createdAt: now.subtract(const Duration(days: 4)),
+    ),
+    ownMeal: Meal(
+      id: ownMeal,
+      hostId: viewer,
+      restaurant: Restaurant(
+        placeId: _places['pigalle']!.id,
+        name: _places['pigalle']!.name,
+        address: _places['pigalle']!.address,
+        lat: _places['pigalle']!.lat,
+        lng: _places['pigalle']!.lng,
+      ),
+      dateTime: ownWhen,
+      geohash: encodeGeohash(_places['pigalle']!.lat, _places['pigalle']!.lng),
+      note: ownNote,
+      createdAt: now.subtract(const Duration(days: 4)),
+    ),
     mealIds: mealIds,
   );
 }
