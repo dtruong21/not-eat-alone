@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:not_eat_alone/core/config/emulator_config.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
+import 'package:not_eat_alone/core/design/font_license.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/routing/router.dart';
 
@@ -22,6 +23,7 @@ Future<void> bootstrap({
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
   FlavorConfig.current = config;
+  registerFontLicense();
   try {
     await dotenv.load(fileName: '.env');
   } catch (_) {

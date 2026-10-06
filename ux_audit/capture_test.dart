@@ -16,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:not_eat_alone/features/meal/presentation/discovery_screen.dart';
 
@@ -105,13 +104,9 @@ void _answerPushPermissionPrompt(WidgetTester tester) {
   addTearDown(() => messenger.setMockMessageHandler(channelName, null));
 }
 
-/// Lets runtime-fetched fonts (google_fonts downloads Nunito on first use) and
-/// network images (avatars) finish, bounded, and pumps so they paint.
+/// Lets network images (avatars) finish, bounded, and pumps so they paint.
+/// (Nunito is a bundled asset, so there is no font to wait for.)
 Future<void> _awaitAssets(WidgetTester tester) async {
-  await GoogleFonts.pendingFonts().timeout(
-    const Duration(seconds: 15),
-    onTimeout: () => const [],
-  );
   // Network images have no completion hook here: a bounded run of frames.
   final end = DateTime.now().add(const Duration(milliseconds: 1500));
   while (DateTime.now().isBefore(end)) {
@@ -146,9 +141,6 @@ void _logFontDiagnostics(WidgetTester tester) {
       'weight=${e.value?.fontWeight}',
     );
   }
-  // Same diagnostic as above.
-  // ignore: avoid_print
-  print('UXFONT runtimeFetching=${GoogleFonts.config.allowRuntimeFetching}');
 }
 
 // ---------------------------------------------------------------------------

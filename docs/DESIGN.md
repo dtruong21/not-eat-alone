@@ -70,7 +70,7 @@ Use these for: habit category colors, tag chips, empty-state illustrations, onbo
 
 ## Typography
 
-- **Body**: Nunito — rounded geometric sans, very readable, friendly. Bundled via `google_fonts`.
+- **Body**: Nunito — rounded geometric sans, very readable, friendly. Bundled as an asset (`assets/fonts/Nunito-{Regular,Medium,Bold,ExtraBold}.ttf`, weights 400/500/700/800, SIL OFL 1.1 — licence in `assets/fonts/OFL.txt` and the in-app Licences page). Applied to every text style via `ThemeData(fontFamily:)`; nothing is downloaded at runtime.
 - **Display**: same family, just heavier weights (700/800).
 - **Mono**: JetBrains Mono if you need it (numbers in stats), but most screens skip it.
 

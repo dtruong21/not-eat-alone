@@ -74,9 +74,8 @@ blank).
   ("tonight 20:30", "+5 days", chat timestamps), so date lines and the status-bar
   clock differ between runs and, slightly, between cells. After ~19:30 "tonight"
   becomes "tomorrow 12:30". Compare structure, not text.
-- **Fonts:** google_fonts downloads Nunito at runtime; each shot waits (bounded)
-  for pending fonts. `lib/core/design/theme.dart` only applies Nunito to two text
-  styles (the rest render in the system font): a known audit finding, not fixed here.
+- **Fonts:** Nunito is a bundled asset (`assets/fonts/`) applied to every text
+  style, so there is no font download to wait for.
 - The app boots once per process, so every cell is its own `flutter drive` run.
 - A native alert that gets stuck on a simulator (rare) needs
   `xcrun simctl shutdown/boot` of that device.

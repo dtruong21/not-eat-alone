@@ -10,13 +10,12 @@
 /// Container(color: palette.peach);
 /// ```
 ///
-/// Typography is Nunito via `google_fonts`. Heavier weights (700/800) are
-/// used for titles — Nunito carries weight well.
+/// Typography is Nunito, bundled as an asset (no runtime download). Heavier
+/// weights (700/800) are used for titles — Nunito carries weight well.
 library;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
 
@@ -123,7 +122,7 @@ ThemeData buildTheme(Brightness brightness) {
         tertiary: success,
       );
 
-  // Nunito body text via google_fonts. Apply tuned weights/heights.
+  // Nunito (bundled asset). Every style below carries the family explicitly.
   final base = ThemeData(
     useMaterial3: true,
     brightness: brightness,
@@ -132,70 +131,84 @@ ThemeData buildTheme(Brightness brightness) {
     canvasColor: bg,
     dividerColor: divider,
     visualDensity: VisualDensity.adaptivePlatformDensity,
+    fontFamily: WarmPlayfulFonts.body,
   );
 
-  final textTheme = GoogleFonts.nunitoTextTheme(base.textTheme).copyWith(
+  final textTheme = base.textTheme
+      .apply(fontFamily: WarmPlayfulFonts.body)
+      .copyWith(
     displayLarge: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.displaySize,
       height: WarmPlayfulType.displayHeight,
       fontWeight: WarmPlayfulType.displayWeight,
       color: text,
     ),
     displayMedium: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.displaySize,
       height: WarmPlayfulType.displayHeight,
       fontWeight: WarmPlayfulType.displayWeight,
       color: text,
     ),
     headlineLarge: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.h1Size,
       height: WarmPlayfulType.h1Height,
       fontWeight: WarmPlayfulType.h1Weight,
       color: text,
     ),
     headlineMedium: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.h1Size,
       height: WarmPlayfulType.h1Height,
       fontWeight: WarmPlayfulType.h1Weight,
       color: text,
     ),
     titleLarge: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.h2Size,
       height: WarmPlayfulType.h2Height,
       fontWeight: WarmPlayfulType.h2Weight,
       color: text,
     ),
     titleMedium: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.h2Size,
       height: WarmPlayfulType.h2Height,
       fontWeight: WarmPlayfulType.h2Weight,
       color: text,
     ),
     bodyLarge: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.bodySize,
       height: WarmPlayfulType.bodyHeight,
       fontWeight: WarmPlayfulType.bodyWeight,
       color: text,
     ),
     bodyMedium: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.bodySize,
       height: WarmPlayfulType.bodyHeight,
       fontWeight: WarmPlayfulType.bodyWeight,
       color: text,
     ),
     bodySmall: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.captionSize,
       height: WarmPlayfulType.captionHeight,
       fontWeight: WarmPlayfulType.captionWeight,
       color: muted,
     ),
     labelLarge: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.bodySize,
       height: WarmPlayfulType.bodyHeight,
       fontWeight: FontWeight.w700, // buttons get weight
       color: text,
     ),
     labelMedium: TextStyle(
+      fontFamily: WarmPlayfulFonts.body,
       fontSize: WarmPlayfulType.captionSize,
       height: WarmPlayfulType.captionHeight,
       fontWeight: WarmPlayfulType.captionWeight,
