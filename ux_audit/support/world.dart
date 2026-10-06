@@ -854,3 +854,45 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     mealIds: mealIds,
   );
 }
+
+/// Writes ONE deliberately malformed doc that makes a repository stream throw
+/// `RepositoryParseException` (a required field is missing), which drives the
+/// "Something went wrong" branch of the matching screen. [kind] is `message`
+/// (chat), `request` (requests inbox), `match` (chats list) or `meal`
+/// (Discover). Call it last: a malformed doc keeps its feed in the error state.
+Future<void> seedMalformed(String kind, UxWorld world) async {
+  final now = DateTime.now();
+  switch (kind) {
+    case 'message':
+      // No `text`.
+      await adminSetDoc('matches/${world.matchMealId}/messages', 'ux-poison', {
+        'senderId': world.matchPartnerUid,
+        'createdAt': now,
+      });
+    case 'request':
+      // Pending for the viewer as host (so the inbox query returns it) but
+      // without `mealId` / `guestId`.
+      await adminSetDoc('requests', 'ux-poison', {
+        'hostId': world.viewerUid,
+        'status': 'pending',
+        'createdAt': now,
+      });
+    case 'match':
+      // A chat of the viewer without `hostId` / `guestId` / `mealId`.
+      await adminSetDoc('matches', 'ux-poison', {
+        'participants': [world.viewerUid, world.matchPartnerUid],
+        'createdAt': now,
+      });
+    case 'meal':
+      // Open, in Paris, in the future (so the Discover query returns it) but
+      // without `hostId` / `restaurant`.
+      await adminSetDoc('meals', 'ux-poison', {
+        'status': 'open',
+        'geohash': encodeGeohash(48.8566, 2.3522),
+        'dateTime': now.add(const Duration(days: 3)),
+        'womenOnly': false,
+      });
+    default:
+      throw ArgumentError.value(kind, 'kind');
+  }
+}

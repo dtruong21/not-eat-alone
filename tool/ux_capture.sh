@@ -14,8 +14,8 @@
 #     (SIGSTOP/SIGCONT) of this project's Firestore emulator or of the
 #     firebase-tools process hosting the Auth emulator, so an action that
 #     waits on a server stays "in flight" while the screen is photographed
-#     (auto-thaw after 25 s and on exit; only processes of project
-#     not-eat-alone are touched), and
+#     (a 25 s watchdog and the exit trap thaw; only a process that is the
+#     single match for this project is touched), and
 #   - re-applies `simctl privacy ... revoke location` every 2 s (same
 #     belt-and-suspenders as `make e2e`: a native location alert would block
 #     the app, and nothing taps it in an unattended run).
@@ -54,13 +54,36 @@ mkdir -p "$OUT_DIR" "$HANDOFF_DIR"
 rm -f "$HANDOFF_DIR"/*.ready "$HANDOFF_DIR"/*.ack "$HANDOFF_DIR"/cmd.*.req "$HANDOFF_DIR"/.done "$HANDOFF_DIR"/.host-up
 
 FAILED=0
-FROZEN_FS=0
-FROZEN_AUTH=0
+# Processes this script may freeze (SIGSTOP) for the test, selected by command
+# line and always scoped to THIS project's id; a pattern must match exactly one
+# process, otherwise nothing is signalled (never another project's emulators).
+FS_PATTERN='cloud-firestore-emulator.*project_id not-eat-alone'
+AUTH_PATTERN='bin/firebase emulators:exec.*project not-eat-alone'
 pids=()
+
+# freeze_proc <label> <pattern>: SIGSTOP the single matching process and start
+# a watchdog that SIGCONTs it after 25 s, independent of the main loop.
+freeze_proc() {
+  local label="$1" pattern="$2" count
+  count="$(pgrep -f "$pattern" | wc -l | tr -d ' ')"
+  if [[ "$count" != 1 ]]; then
+    echo "[ux-capture] NOT freezing $label: $count processes match (need exactly 1)" >&2
+    return 0
+  fi
+  pkill -STOP -f "$pattern"
+  ( sleep 25; pkill -CONT -f "$pattern" ) >/dev/null 2>&1 &
+  pids+=($!)
+}
+
+# thaw_proc <label> <pattern>: SIGCONT (a no-op on a running process).
+thaw_proc() {
+  [[ "$(pgrep -f "$2" | wc -l | tr -d ' ')" == 1 ]] && pkill -CONT -f "$2"
+  return 0
+}
 cleanup() {
   # Never leave an emulator stopped (SIGCONT on a running process is a no-op).
-  pkill -CONT -f 'cloud-firestore-emulator.*project_id not-eat-alone' >/dev/null 2>&1
-  pkill -CONT -f 'bin/firebase emulators:exec.*project not-eat-alone' >/dev/null 2>&1
+  pkill -CONT -f "$FS_PATTERN" >/dev/null 2>&1
+  pkill -CONT -f "$AUTH_PATTERN" >/dev/null 2>&1
   for p in "${pids[@]:-}"; do
     [[ -n "$p" ]] && kill "$p" >/dev/null 2>&1
   done
@@ -113,21 +136,14 @@ while [[ ! -f "$HANDOFF_DIR/.done" ]]; do
     ack="${req%.req}.ack"
     [[ -e "$ack" ]] && continue
     case "$(cat "$req" 2>/dev/null)" in
-      freeze-firestore) pkill -STOP -f 'cloud-firestore-emulator.*project_id not-eat-alone' ; FROZEN_FS=$SECONDS ;;
-      thaw-firestore)   pkill -CONT -f 'cloud-firestore-emulator.*project_id not-eat-alone' ; FROZEN_FS=0 ;;
-      freeze-auth)      pkill -STOP -f 'bin/firebase emulators:exec.*project not-eat-alone' ; FROZEN_AUTH=$SECONDS ;;
-      thaw-auth)        pkill -CONT -f 'bin/firebase emulators:exec.*project not-eat-alone' ; FROZEN_AUTH=0 ;;
+      freeze-firestore) freeze_proc firestore "$FS_PATTERN" ;;
+      thaw-firestore)   thaw_proc firestore "$FS_PATTERN" ;;
+      freeze-auth)      freeze_proc auth "$AUTH_PATTERN" ;;
+      thaw-auth)        thaw_proc auth "$AUTH_PATTERN" ;;
       *) echo "[ux-capture] unknown command in $req" >&2 ;;
     esac
     : >"$ack"
   done
-  # Safety net: never leave an emulator frozen for long.
-  if (( FROZEN_FS > 0 && SECONDS - FROZEN_FS > 25 )); then
-    pkill -CONT -f 'cloud-firestore-emulator.*project_id not-eat-alone'; FROZEN_FS=0
-  fi
-  if (( FROZEN_AUTH > 0 && SECONDS - FROZEN_AUTH > 25 )); then
-    pkill -CONT -f 'bin/firebase emulators:exec.*project not-eat-alone'; FROZEN_AUTH=0
-  fi
   for ready in "$HANDOFF_DIR"/*.ready; do
     [[ -e "$ready" ]] || continue
     name="$(basename "$ready" .ready)"
@@ -135,8 +151,21 @@ while [[ ! -f "$HANDOFF_DIR/.done" ]]; do
     # A short settle so the last frame is on screen before the grab.
     sleep 0.4
     rm -f "$OUT_DIR/$name.png"
-    if xcrun simctl io "$UDID" screenshot --type=png "$OUT_DIR/$name.png" >/dev/null 2>&1 \
-        && [[ -s "$OUT_DIR/$name.png" ]]; then
+    # The grab runs in the background so a hung simctl cannot stall the loop
+    # (and with it the thaw of a frozen emulator): killed after 15 s.
+    xcrun simctl io "$UDID" screenshot --type=png "$OUT_DIR/$name.png" >/dev/null 2>&1 &
+    shot_pid=$!
+    for _ in $(seq 1 150); do
+      kill -0 "$shot_pid" 2>/dev/null || break
+      sleep 0.1
+    done
+    if kill -0 "$shot_pid" 2>/dev/null; then
+      kill "$shot_pid" 2>/dev/null
+      wait "$shot_pid" 2>/dev/null
+      echo "[ux-capture] screenshot call timed out for $name" >&2
+      FAILED=1
+      rm -f "$OUT_DIR/$name.png"
+    elif wait "$shot_pid" && [[ -s "$OUT_DIR/$name.png" ]]; then
       echo "[ux-capture] shot $name"
     else
       echo "[ux-capture] screenshot FAILED for $name" >&2

@@ -417,6 +417,7 @@ void main() {
     await _captureProfileAndSettings(tester);
     await _captureInboxInFlight(tester, world);
     await _captureWomenOnlyAsMan(tester, world);
+    await _captureFeedErrors(tester, world);
 
     // ---- Onboarding screens need a user without a profile: last.
     await _captureOnboarding(tester, world);
@@ -514,23 +515,30 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
 Future<void> _captureEmptyStates(WidgetTester tester) async {
   final createButton = find.byKey(const Key('discovery_create_meal_button'));
 
-  // The app has not pumped since sign-in; the first frames build Discover
-  // from scratch, so its feed is still loading. Frames are only rendered on
-  // pump, so the screen stays on the spinner while the host photographs it.
+  // The app has not pumped since sign-in, so the first frames build Discover
+  // from scratch with its feed still loading; Firestore is frozen so that stays
+  // true while the host photographs it.
   await _step(tester, '20_discover_loading', () async {
     final spinner = find.descendant(
       of: find.byType(DiscoveryScreen),
       matching: find.byType(CircularProgressIndicator),
     );
-    final deadline = DateTime.now().add(const Duration(seconds: 30));
-    while (DateTime.now().isBefore(deadline)) {
-      await tester.pump(const Duration(milliseconds: 16));
-      if (createButton.evaluate().isNotEmpty) break;
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-    }
-    expect(createButton, findsOneWidget);
-    expect(spinner, findsOneWidget, reason: 'feed already loaded');
-    await _snap(tester, '20_discover_loading', assets: false);
+    // Let the viewer's own user doc arrive (without it the router would send
+    // them to the age gate), then freeze Firestore: the feed's meal query can
+    // not answer, so the loading state holds for as long as the host needs.
+    await Future<void>.delayed(const Duration(seconds: 2));
+    await _frozen('firestore', () async {
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (DateTime.now().isBefore(deadline)) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (createButton.evaluate().isNotEmpty) break;
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(createButton, findsOneWidget);
+      await _snap(tester, '20_discover_loading', assets: false);
+      expect(spinner, findsOneWidget, reason: 'feed already loaded');
+    });
   });
 
   await _step(tester, '21_discover_empty', () async {
@@ -1012,18 +1020,6 @@ Future<void> _captureProfileAndSettings(WidgetTester tester) async {
     await _snap(tester, '83_settings');
   });
 
-  await _step(tester, '84_settings_bottom', () async {
-    final list = find.descendant(
-      of: find.byType(Scaffold).last,
-      matching: find.byType(Scrollable),
-    );
-    await tester.drag(list.first, const Offset(0, -800));
-    await _settle(tester);
-    await _snap(tester, '84_settings_bottom');
-    await tester.drag(list.first, const Offset(0, 2000));
-    await _settle(tester);
-  });
-
   await _step(tester, '85_settings_delete_dialog', () async {
     await _tap(tester, find.byKey(const Key('settings_delete_account')));
     await _pumpUntilFound(
@@ -1199,5 +1195,59 @@ Future<void> _captureWomenOnlyAsMan(WidgetTester tester, UxWorld world) async {
       find.byKey(const Key('meal_detail_women_only_disabled_button')),
     );
     await _snap(tester, '46_meal_detail_women_only_disabled');
+  });
+}
+
+// ---- Error states of the feeds (last stage before onboarding) -------------
+
+/// One malformed doc per feed makes its repository stream throw
+/// `RepositoryParseException` (see `seedMalformed`), which the screens render
+/// as "Something went wrong - please try again.". Written one at a time and
+/// only now, so they cannot affect any earlier shot: each poisoned feed stays
+/// in its error state. Order matters: the chat first (it is opened from the
+/// chats list, which is poisoned third).
+Future<void> _captureFeedErrors(WidgetTester tester, UxWorld world) async {
+  final error = find.text('Something went wrong — please try again.');
+
+  await _step(tester, 'errors_viewer_signin', () async {
+    await signInTestUser(uid: 'ux-viewer');
+    await _pumpUntilFound(
+      tester,
+      find.byKey(const Key('discovery_create_meal_button')),
+    );
+  });
+
+  // Riverpod retries a failed provider (10 times, with a back-off of up to
+  // 6.4 s, about 40 s in all) and shows its loading state in between; only
+  // when the retries are exhausted does the error stay on screen. All four
+  // feeds are poisoned together so that wait happens once.
+  const retriesExhausted = Duration(seconds: 90);
+
+  await _step(tester, '90_chat_error', () async {
+    await _openChatFromList(tester, world.matchMealId);
+    for (final kind in ['message', 'request', 'match', 'meal']) {
+      await seedMalformed(kind, world);
+    }
+    await _pumpUntilFound(tester, error, timeout: retriesExhausted);
+    await _snap(tester, '90_chat_error');
+  });
+
+  await _step(tester, '91_requests_error', () async {
+    await _recover(tester);
+    await _tap(tester, _tab('Requests'));
+    await _pumpUntilFound(tester, error, timeout: retriesExhausted);
+    await _snap(tester, '91_requests_error');
+  });
+
+  await _step(tester, '92_chats_error', () async {
+    await _tap(tester, _tab('Chats'));
+    await _pumpUntilFound(tester, error, timeout: retriesExhausted);
+    await _snap(tester, '92_chats_error');
+  });
+
+  await _step(tester, '93_discover_error', () async {
+    await _tap(tester, _tab('Discover'));
+    await _pumpUntilFound(tester, error, timeout: retriesExhausted);
+    await _snap(tester, '93_discover_error');
   });
 }

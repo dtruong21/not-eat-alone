@@ -129,6 +129,25 @@ fi
 
 is_booted() { xcrun simctl list devices | grep "$1" | grep -q Booted; }
 
+E2E_APP=""; E2E_SIZE=""; E2E_BOOTED=1
+SMALL_APP=""; SMALL_SIZE=""; SMALL_BOOTED=1
+restore_one() { # <udid> <app> <size> <was_booted>
+  # An empty app/size means "not captured yet": leave that simulator alone.
+  [[ -n "$2" ]] && xcrun simctl ui "$1" appearance "$2" >/dev/null 2>&1
+  [[ -n "$3" ]] && xcrun simctl ui "$1" content_size "$3" >/dev/null 2>&1
+  [[ "$4" == 0 ]] && xcrun simctl shutdown "$1" >/dev/null 2>&1
+  return 0
+}
+restore() {
+  trap - EXIT INT TERM
+  echo "[ux-matrix] restoring simulator appearance / text size"
+  restore_one "$E2E_UDID" "$E2E_APP" "$E2E_SIZE" "$E2E_BOOTED"
+  restore_one "$SMALL_UDID" "$SMALL_APP" "$SMALL_SIZE" "$SMALL_BOOTED"
+}
+# Installed BEFORE anything is booted or changed.
+trap restore EXIT
+trap 'echo "[ux-matrix] interrupted"; exit 130' INT TERM
+
 # Remember each simulator's state so the end of the run can put it back
 # (macOS ships bash 3.2: no associative arrays, hence the two variable sets).
 prepare() { # <prefix> <udid>
@@ -142,23 +161,9 @@ prepare() { # <prefix> <udid>
   [[ -z "$size" || "$size" == unsupported || "$size" == unknown ]] && size=large
   eval "${p}_BOOTED=$booted ${p}_APP=$app ${p}_SIZE=$size"
 }
+
 prepare E2E "$E2E_UDID"
 prepare SMALL "$SMALL_UDID"
-
-restore_one() { # <udid> <app> <size> <was_booted>
-  xcrun simctl ui "$1" appearance "$2" >/dev/null 2>&1
-  xcrun simctl ui "$1" content_size "$3" >/dev/null 2>&1
-  [[ "$4" == 0 ]] && xcrun simctl shutdown "$1" >/dev/null 2>&1
-  return 0
-}
-restore() {
-  trap - EXIT INT TERM
-  echo "[ux-matrix] restoring simulator appearance / text size"
-  restore_one "$E2E_UDID" "$E2E_APP" "$E2E_SIZE" "$E2E_BOOTED"
-  restore_one "$SMALL_UDID" "$SMALL_APP" "$SMALL_SIZE" "$SMALL_BOOTED"
-}
-trap restore EXIT
-trap 'echo "[ux-matrix] interrupted"; exit 130' INT TERM
 
 # --- the matrix --------------------------------------------------------------
 mkdir -p "$LOGS"

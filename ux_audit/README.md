@@ -48,9 +48,11 @@ blank).
    matches with chats, a past meal with a rating).
 3. At each state the test calls `shot('NN_name')` (`support/handoff.dart`):
    it writes `/tmp/convyve-ux/NN_name.ready`; `tool/ux_capture.sh` runs
-   `xcrun simctl io <device> screenshot` and writes `.ack`. Frames are only
-   rendered on `pump`, so the screen stays frozen while the host photographs
-   it. All waits are bounded (30 s per shot). `hostCommand(...)` (same folder)
+   `xcrun simctl io <device> screenshot` and writes `.ack`. The test binding
+   renders frames on its own while the test waits for the ack, so the photograph
+   shows whatever the app is doing at that moment: a state that is transient
+   (a spinner) has to be held, see "In-flight states". All waits are bounded
+   (30 s per shot, 15 s for the screenshot call itself). `hostCommand(...)` (same folder)
    asks the host to freeze/thaw an emulator, see "In-flight states".
 4. A step that fails is logged (`UXSTEP FAIL`) and skipped, so one broken state
    costs one PNG; the run still fails at the end. Layout overflows are not
@@ -81,21 +83,38 @@ blank).
 
 ## Shots
 
-Numbering is by screen, not capture order; names sort in flow order. 62 per cell.
+Numbering is by screen, not capture order; names sort in flow order. 65 per cell
+(one file per name below, `<name>.png`).
 
 | Range | Screen | Shots |
 |---|---|---|
 | 01-06 | Sign-in, phone code | `01_signin`, `02_signin_phone_error`, `03_signin_phone_waiting`, `04_phone_verify`, `05_phone_verify_in_flight`, `06_phone_verify_error` |
 | 10-16 | Age gate, profile setup | `10_age_gate`, `11_age_gate_picker`, `12_age_gate_under18_selected`, `14_profile_setup_empty`, `15_profile_setup_filled`, `16_profile_setup_ready` |
 | 20-26 | Discover | `20_discover_loading`, `21_discover_empty`, `22_discover_data` (Paris notice shown), `23_discover_scrolled`, `24_discover_notice_dismissed`, `25_discover_refreshing` (pull to refresh), `26_discover_meal_created` (confirmation snackbar) |
-| 30-37 | Create a meal | `30_restaurant_search`, `31_..._no_matches`, `32_..._filtered`, `33_create_meal_empty`, `34_..._date_picker`, `35_..._time_picker`, `36_create_meal_filled`, `37_create_meal_in_flight` |
-| 40-49 | Meal detail | `40_open` (idle "Request to join"), `42_requested`, `43_matched`, `44_not_selected`, `45_women_only` (as a woman), `46_women_only_disabled` (as a man), `47_menu` (report/block), `48_own`, `49_request_rejected` |
+| 30-37 | Create a meal | `30_restaurant_search`, `31_restaurant_search_no_matches`, `32_restaurant_search_filtered`, `33_create_meal_empty`, `34_create_meal_date_picker`, `35_create_meal_time_picker`, `36_create_meal_filled`, `37_create_meal_in_flight` |
+| 40-49 | Meal detail | `40_meal_detail_open` (idle "Request to join"), `42_meal_detail_requested`, `43_meal_detail_matched`, `44_meal_detail_not_selected`, `45_meal_detail_women_only` (as a woman), `46_meal_detail_women_only_disabled` (as a man), `47_meal_detail_menu` (report/block), `48_meal_detail_own`, `49_meal_detail_request_rejected` |
 | 51-55 | Requests inbox | `51_requests_empty`, `52_requests_data` (two pending, one past-meal chip), `53_requests_scrolled`, `54_requests_approve_in_flight`, `55_requests_deny_in_flight` |
 | 60-75 | Chats | `60_chats_loading`, `61_chats_empty`, `62_chats_data`, `63_chat_messages` (safety tips, "Seen"), `64_chat_messages_older`, `65_chat_empty`, `66_chat_send_pending`, `67_chat_menu`, `68_chat_report_sheet`, `69_chat_report_filled`, `70_chat_report_in_flight`, `71_chat_block_dialog`, `72_chat_post_meal_card`, `73_rating_sheet`, `74_rating_sheet_filled`, `75_rating_sheet_in_flight` |
-| 80-85 | Profile, settings | `80_profile_edit`, `81_profile_edit_scrolled`, `83_settings`, `84_settings_bottom` (the whole Settings list), `85_settings_delete_dialog` |
+| 80-85 | Profile, settings | `80_profile_edit`, `81_profile_edit_scrolled`, `83_settings` (the whole list: it fits one screen), `85_settings_delete_dialog` |
+| 90-93 | Error states (last stage) | `90_chat_error`, `91_requests_error`, `92_chats_error`, `93_discover_error` |
 
 Keyboards: a text field that is focused by the test raises the iOS keyboard, as
 it would for a user, so some form shots show it.
+
+## Error states (90-93)
+
+Run as the last stage before onboarding, because each poisoned feed stays in its
+error state. One deliberately malformed doc per feed (`seedMalformed` in
+`support/world.dart`: a message without `text`, a pending request, a match and
+an open Paris meal each without their required fields) makes the repository
+stream throw `RepositoryParseException`, which the screens render as "Something
+went wrong - please try again." No change to the app. All four are written
+together: Riverpod 3 retries a failed provider (10 times, back-off up to 6.4 s,
+about 40 s) and shows the loading state in between, so the error only stays on
+screen once the retries are exhausted; the test waits for that once (up to 90 s)
+and then visits the four screens. The error text has no retry button or other
+affordance: that is what the audit sees. There is no offline UI in the app, so
+there is no offline state to photograph.
 
 ## In-flight states
 
@@ -104,17 +123,22 @@ renders frames on its own, so a spinner that waits on the server is gone before
 the host can photograph it. The harness holds those states instead of racing
 them: `_tapInFlight` (in `capture_test.dart`) asks the host (`hostCommand`) to
 **freeze the emulator** with SIGSTOP (Firestore's java process, or the
-firebase-tools process that hosts the Auth emulator; only processes of project
-`not-eat-alone`), taps, photographs, then thaws (SIGCONT). While it is frozen the
-server never answers, so the app stays exactly in its "waiting" state. The host
-also thaws on its own after 25 s and on exit. Nothing in the app is changed.
+firebase-tools process that hosts the Auth emulator, which also hosts the
+Functions emulator, so Cloud Function triggers stall too), taps, photographs,
+then thaws (SIGCONT). The host only signals a process when exactly ONE running
+process matches this project (`project_id` / `project not-eat-alone`); with
+zero or several matches (another run of this project) it refuses and the shot
+is logged as `UXMISSING`. Nothing of another project is ever matched. While it is frozen the
+server never answers, so the app stays exactly in its "waiting" state. A watchdog
+process started with every freeze also thaws after 25 s, whatever the host
+loop is doing, and the host thaws on exit. Nothing in the app is changed.
 
 | In-flight shots | Frozen |
 |---|---|
 | `05_phone_verify_in_flight` (Auth), `03_signin_phone_waiting` (Auth) | Auth emulator |
 | `37_create_meal_in_flight`, `54_requests_approve_in_flight`, `55_requests_deny_in_flight`, `66_chat_send_pending`, `70_chat_report_in_flight`, `75_rating_sheet_in_flight`, `60_chats_loading` | Firestore emulator |
 | `25_discover_refreshing` | nothing (the refresh indicator is held by pumping a fixed time) |
-| `20_discover_loading` | nothing: the first frames after sign-in, before the feed's stream has answered |
+| `20_discover_loading` | Firestore emulator, frozen after the viewer's own doc has arrived and before the feed's meal query is answered |
 
 What the in-flight shots show is worth reading rather than assuming:
 `03_signin_phone_waiting` has **no** indicator (the button spinner is gone as soon
@@ -139,11 +163,14 @@ Everything else is tapped and typed in the real UI. These are not:
 
 ## Not captured
 
-- **Under-18 "blocked" screen** (`AgeGateScreen` with the block icon): submitting
-  an under-18 date signs the user out locally, and the router sends them back to
-  sign-in within the same frame, with no server round trip to hold, so the
-  blocked layout is never on screen long enough to photograph.
-  `12_age_gate_under18_selected` is the last under-18 frame.
+- **Under-18 "blocked" screen** (`AgeGateScreen` with the block icon): the
+  controller signs the user out first (`age_gate_controller.dart`), and its
+  `blocked` state is only set after `signOut` returns. Signing out flips the
+  auth state, the router is rebuilt and the age gate is unmounted before that
+  state exists, so the blocked layout never reaches a frame. No seeded condition
+  changes that order (it is all client-side, with no server round trip to hold,
+  unlike the in-flight states), and showing it needs an app change. The nearest
+  states are `12_age_gate_under18_selected` and the sign-in screen it ends on.
 - **Age-gate Continue, profile-setup Continue, profile Save, and "Request to
   join" in flight**: the write is applied locally at once, which moves the router
   on (age gate -> profile setup, setup -> Discover, any user-doc change -> reset
@@ -157,11 +184,10 @@ Everything else is tapped and typed in the real UI. These are not:
 - **Sign-in with Google / Apple in flight**: native sheets.
 - **Location-denied banner**: the spec lists it, the app has none. Denial is
   silent (Paris fallback + the Paris-only notice, shot 22).
-- **Error states** of the feed screens (Discover, requests, chats, chat,
-  restaurant search, profile): they show the shared line "Something went wrong -
-  please try again." only when a stream or future fails, and the app has no
-  failure-injection hook (no `lib/` changes in Part A). Reached ones: sign-in
-  (02), code (06) and the rejected request (49, which shows no error at all).
+- **Offline state**: the app has none. **Error states** of the other
+  screens (restaurant search, profile, sign-in with Google/Apple) need a failing
+  repository that no seeded document can cause; sign-in (02), code (06) and the
+  four feeds (90-93) are covered.
 - **Native surfaces**: the photo picker, the iOS notification and location
   alerts, and `url_launcher` pages (Privacy, Terms) are not Flutter widgets.
 - **Account deletion, sign-out, block**: the dialogs are photographed and
@@ -184,19 +210,20 @@ Everything else is tapped and typed in the real UI. These are not:
 
 ## Last full matrix run (2026-10-06)
 
-`tool/ux_matrix.sh`: 8 cells, 62 distinct screenshots, about 6 min per cell, no
-blank PNG (smallest > 110 kB). The 4 default-size cells hold all 62; the 4 `xxl`
-cells hold 61: `06_phone_verify_error` cannot be produced at the large text
-size, because the code screen's "Verify" button ends up behind the keyboard or
-off the screen (the screen does not scroll), so the wrong-code request is never
-sent. Logged per cell in `ux_audit/out/logs/<cell>.findings.txt`:
+`tool/ux_matrix.sh`: 8 cells, 65 distinct screenshots (including the four error
+states 90-93, which run in every cell), about 8 min per cell, no blank PNG
+(smallest > 100 kB). The 4 default-size cells hold all 65; the 4 `xxl` cells
+hold 64: `06_phone_verify_error` cannot be produced at the large text size,
+because the code screen's "Verify" button ends up behind the keyboard or off the
+screen (the screen does not scroll), so the wrong-code request is never sent.
+Logged per cell in `ux_audit/out/logs/<cell>.findings.txt`:
 
 | Cell | `UXOVERFLOW` lines | `UXMISSING` (in-flight spinner not reachable) |
 |---|---|---|
-| iphone17-{light,dark}-default | 0 | 0 |
+| iphone17-{light,dark}-default | 0 | none |
 | iphone17-{light,dark}-xxl | 19 | 05, 66, 70, 75 |
 | se3-{light,dark}-default | 3 | 70, 75 |
-| se3-{light,dark}-xxl | 30 | 05, 66, 70, 75 |
+| se3-{light,dark}-xxl | 31 | 05, 66, 70, 75 |
 
 - `UXOVERFLOW <shot>: A RenderFlex overflowed by N pixels on the ...` is Flutter's
   overflow report (the yellow/black stripes are also visible in the PNG). The shot
@@ -211,3 +238,7 @@ sent. Logged per cell in `ux_audit/out/logs/<cell>.findings.txt`:
   appears. 05 = Verify on the code screen, 66 = chat send button with the
   keyboard open, 70 = report Submit, 75 = rating Submit. Their PNGs exist and
   show the screen as the user would see it.
+- One freeze was refused by the single-match safety check ("NOT freezing
+  firestore: 2 processes match", in `se3-dark-xxl` only, for
+  `54_requests_approve_in_flight`): that PNG was taken without the freeze and
+  may not show the in-flight state.
