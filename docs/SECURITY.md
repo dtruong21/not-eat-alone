@@ -11,6 +11,8 @@ How Convyve handles secrets, what's safe to commit, and what isn't.
 | Firebase web config (apiKey, projectId, …) | **No** — public by design | `lib/firebase_options.dart` | **Yes** — committed |
 | Google OAuth Client IDs | **No** — public by design | `ios/Runner/Info.plist`, `android/app/google-services.json` | **Yes** — committed |
 | `.env` runtime config (URLs, feature flags) | **No** — bundled into the app | `.env` locally | No (gitignored as hygiene) |
+| Google Maps SDK keys (Android / iOS) | **Restricted, not secret** — extractable from the binary, so locked to API + app | `android/local.properties`, `ios/Flutter/Secrets.xcconfig` (injected at build) | **NEVER commit** |
+| Places API key | **YES — secret** | Secret Manager (`PLACES_API_KEY`), used only by the `searchRestaurants` Cloud Function | **NEVER commit** |
 | Firestore Security Rules | Public (deployed) | `firebase/firestore.rules` | **Yes** — version-controlled |
 | Cloud Function source | Public | `firebase/functions/src/` | **Yes** |
 | Firebase Admin SDK service account JSON | **YES — secret** | NEVER on disk for client app | **NEVER commit** |
@@ -108,6 +110,25 @@ Real secrets are unchanged by this: Admin service account JSON, signing keystore
 
 ---
 
+## Google Maps Platform keys
+
+Convyve uses Maps Platform from a **separate, shared GCP project** (the "Maps project"). Key, billing and quota belong to that project; the Firebase project only stores the server-side secret. Setup steps: `docs/RELEASE.md` Phase 3.
+
+Three keys, each with the minimum scope:
+
+- **Places key (server):** API-restricted to Places API (New), kept in Secret Manager, read only by the `searchRestaurants` callable (`enforceAppCheck: true`, auth required, input validated, per-uid rate limit, field mask). Places web-service keys can't be app-restricted, so this key must never ship in the app.
+- **Maps SDK key — Android:** restricted to Maps SDK for Android + package name + SHA-1 (debug, upload, Play App Signing).
+- **Maps SDK key — iOS:** restricted to Maps SDK for iOS + bundle ID.
+
+Rules:
+- Native keys are injected at build time from gitignored files / CI secrets — not from `.env` and not from a committed Dart file.
+- Budget alert and per-API quota caps are mandatory on the Maps project; a leaked key must be capped, not just restricted.
+- Rotation: create new key → ship → delete old. Places key rotation needs only `firebase functions:secrets:set` + redeploy.
+- If a key is committed by accident: delete it in the Maps project immediately, then clean history. Restricted SDK keys are low-impact; the Places key is not.
+- Optional hardening: replace the Places key with the function's service-account OAuth token + `X-Goog-User-Project` (no secret to leak).
+
+---
+
 ## CI / deploy secrets
 
 Codemagic stores env vars encrypted at rest. Add them via the dashboard, not via `codemagic.yaml`:
@@ -115,6 +136,7 @@ Codemagic stores env vars encrypted at rest. Add them via the dashboard, not via
 - `FIREBASE_TOKEN` — from `firebase login:ci`
 - `APP_STORE_CONNECT_*` — API key for TestFlight/App Store publishing
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS` — JSON for Play Console publishing
+- `MAPS_API_KEY_ANDROID` / `MAPS_API_KEY_IOS` — Maps SDK keys, written to `local.properties` / `Secrets.xcconfig` in a pre-build step
 
 For self-hosted CI (Gitea Actions / GitHub Actions): use repo secrets, reference as env vars in the workflow YAML.
 
