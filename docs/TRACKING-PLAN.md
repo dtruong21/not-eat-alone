@@ -10,11 +10,15 @@ The analytics PRD. Every event in the product is defined here BEFORE it's instru
 
 The single number that, if it goes up, means the product is working.
 
-**NSM:** {{e.g. "Weekly active users who completed ≥1 check-in"}}
+**NSM:** Weekly completed meals — matched meals in Paris where at least one participant confirms the other showed up, per ISO week.
 
-**Why this one:** {{one sentence — what user behavior it captures}}
+**Why this one:** It is the product's promise delivered (two people actually ate together), and it only moves when supply (hosts), demand (requests), approval, and show-up all work — liquidity, trust, and low-pressure in one number.
 
-**How we'd compute it:** {{SQL-ish description of the query against the event stream}}
+**How we'd compute it:**
+- **Exact (Firestore, weekly query):** distinct `matchId` in `ratings` with `showedUp == true` and `createdAt` in the week. A meal counts once even when both people rate.
+- **Analytics proxy (dashboard):** count of `meal_rated` events with `showed_up = true`, divided by 2 (each completed meal usually yields two ratings). Events carry no ids by design, so this is an approximation; use the Firestore query for the reported figure.
+
+**Targets:** none yet — set them from the first four weeks of Paris soft-launch data. Until then, track the trend.
 
 ---
 
@@ -24,9 +28,10 @@ The dials that move the NSM. Resist the urge to track everything.
 
 | Metric | Definition | Why it matters |
 |---|---|---|
-| {{Activation rate}} | {{% of new signups who reach key moment within 24h}} | Leading indicator of NSM |
-| {{Retention W1}} | {{% of new users who return in week 1}} | Tells us we have product-market fit signal |
-| {{Feature adoption}} | {{% of WAU using feature X}} | Tells us which features earn their keep |
+| Activation rate | % of new signups (`signup_completed`) who fire `meal_created` or `join_requested` within 7 days | Did the new user reach the core loop, as a host or a guest? |
+| Request → match rate | `match_created` ÷ `join_requested`, weekly | Liquidity: are requests turning into meals? Low = too few hosts or slow approvals. |
+| Show-up rate | `meal_rated` with `showed_up = true` ÷ all `meal_rated`, weekly | No-shows are the main trust risk; reminders and ratings exist to move this. |
+| Retention W1 | % of new users with an `app_opened` in days 7–13 after `signup_completed` | Early signal that a first meal (or the hope of one) brings people back. |
 
 ---
 
