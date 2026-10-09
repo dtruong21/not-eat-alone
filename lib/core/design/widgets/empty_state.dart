@@ -12,6 +12,8 @@ class EmptyState extends StatelessWidget {
     this.message,
     this.icon,
     this.action,
+    this.mutedTitle = true,
+    this.announce = false,
     super.key,
   });
 
@@ -26,6 +28,14 @@ class EmptyState extends StatelessWidget {
 
   /// Optional call to action, usually an `AppButton`.
   final Widget? action;
+
+  /// Whether [title] uses the muted colour (the body always does). Error
+  /// states turn this off so the headline keeps full text contrast.
+  final bool mutedTitle;
+
+  /// Announce the title and message to screen readers when this appears
+  /// (live region), e.g. when an error replaces a loading skeleton.
+  final bool announce;
 
   @override
   Widget build(BuildContext context) {
@@ -54,19 +64,31 @@ class EmptyState extends StatelessWidget {
                     ),
                     const SizedBox(height: WarmPlayfulSpacing.s3),
                   ],
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: text.titleMedium?.copyWith(color: wp.muted),
-                  ),
-                  if (message != null) ...[
-                    const SizedBox(height: WarmPlayfulSpacing.s2),
-                    Text(
-                      message!,
-                      textAlign: TextAlign.center,
-                      style: text.bodyMedium?.copyWith(color: wp.muted),
+                  MergeSemantics(
+                    child: Semantics(
+                      liveRegion: announce,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: mutedTitle
+                                ? text.titleMedium?.copyWith(color: wp.muted)
+                                : text.titleMedium,
+                          ),
+                          if (message != null) ...[
+                            const SizedBox(height: WarmPlayfulSpacing.s2),
+                            Text(
+                              message!,
+                              textAlign: TextAlign.center,
+                              style: text.bodyMedium?.copyWith(color: wp.muted),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                   if (action != null) ...[
                     const SizedBox(height: WarmPlayfulSpacing.s5),
                     action!,

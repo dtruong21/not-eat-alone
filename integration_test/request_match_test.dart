@@ -55,7 +55,7 @@ void _suppressExpectedImageErrors() {
 /// A hand-rolled, bounded `pumpAndSettle` (same loop shape — pump on [step]
 /// while `binding.hasScheduledFrame`, bounded by [timeout]). Must never use
 /// `pumpAndSettle()`'s unbounded 10-minute default: an actively-animating
-/// widget (e.g. a `CircularProgressIndicator` shown while an upstream
+/// widget (e.g. a loading indicator / skeleton shown while an upstream
 /// provider is still `AsyncLoading`) would hang it (see task-3-report.md).
 Future<void> _settle(
   WidgetTester tester, {

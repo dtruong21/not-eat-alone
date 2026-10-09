@@ -19,6 +19,8 @@ import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
+import '../../../support/contrast.dart';
+
 class MockUserRepository extends Mock implements UserRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
@@ -139,11 +141,7 @@ void main() {
       expect((badge.decoration! as BoxDecoration).color, wp.peach);
       final text = tester.widget<Text>(find.text('Women only'));
       expect(text.style!.color, wp.onAccent);
-      final la = wp.onAccent.computeLuminance();
-      final lb = wp.peach.computeLuminance();
-      final ratio = (la > lb ? la + 0.05 : lb + 0.05) /
-          (la > lb ? lb + 0.05 : la + 0.05);
-      expect(ratio, greaterThanOrEqualTo(4.5));
+      expect(contrast(wp.onAccent, wp.peach), greaterThanOrEqualTo(4.5));
     });
   }
 

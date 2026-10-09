@@ -1,6 +1,5 @@
 import 'dart:ui' show Tristate;
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
@@ -174,6 +173,7 @@ void main() {
       }
 
       testWidgets('no overflow at 2x text scale and 320 px', (tester) async {
+        final sizes = <Size>[];
         for (final loading in [false, true]) {
           await tester.pumpWidget(
             _host(
@@ -188,7 +188,9 @@ void main() {
             ),
           );
           expect(tester.takeException(), isNull);
+          sizes.add(tester.getSize(find.byType(AppButton)));
         }
+        expect(sizes[1], sizes[0], reason: 'idle and loading sizes differ');
       });
     });
   }

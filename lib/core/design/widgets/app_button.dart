@@ -42,6 +42,8 @@ class AppButton extends StatelessWidget {
   final Widget? icon;
 
   /// Full width. Height is `actionHeight` for primary/tonal, `minTap` otherwise.
+  ///
+  /// Needs a bounded-width parent; use `expand: false` inside a `Row`.
   final bool expand;
 
   @override

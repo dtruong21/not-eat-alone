@@ -5,6 +5,8 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 
+import '../../../support/contrast.dart';
+
 Widget _host(
   Widget child, {
   Brightness brightness = Brightness.light,
@@ -111,5 +113,43 @@ void main() {
       _host(const SkeletonList(), textScale: 2, disableAnimations: true),
     );
     expect(tester.takeException(), isNull);
+  });
+
+  for (final b in Brightness.values) {
+    testWidgets('($b) shimmer highlight is visible against the blocks and '
+        'lighter than them', (tester) async {
+      late Color highlight;
+      await tester.pumpWidget(
+        _host(
+          Builder(
+            builder: (context) {
+              highlight = skeletonHighlight(context);
+              return const SkeletonCard();
+            },
+          ),
+          brightness: b,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      final wp = buildTheme(b).extension<WarmPlayfulExtensions>()!;
+      expect(contrast(highlight, wp.border), greaterThan(1.0));
+      expect(
+        highlight.computeLuminance(),
+        greaterThan(wp.border.computeLuminance()),
+      );
+    });
+  }
+
+  testWidgets('SkeletonList and SkeletonMessages are announced as Loading', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(_host(const SkeletonList()));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(find.bySemanticsLabel('Loading'), findsOneWidget);
+    await tester.pumpWidget(_host(const SkeletonMessages()));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(find.bySemanticsLabel('Loading'), findsOneWidget);
+    handle.dispose();
   });
 }

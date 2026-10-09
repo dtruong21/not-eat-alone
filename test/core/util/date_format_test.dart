@@ -87,11 +87,20 @@ void main() {
       );
     });
     test('without now it compares against the real clock', () {
-      final real = DateTime.now();
-      expect(
-        formatMealDateTime(DateTime(real.year, real.month, real.day, 23, 59)),
-        'Today 23:59',
-      );
+      // Retry once if midnight rolls over between reading the clock and the
+      // call under test.
+      for (var attempt = 0; attempt < 2; attempt++) {
+        final real = DateTime.now();
+        final out = formatMealDateTime(
+          DateTime(real.year, real.month, real.day, 23, 59),
+        );
+        final after = DateTime.now();
+        if (after.day == real.day) {
+          expect(out, 'Today 23:59');
+          return;
+        }
+      }
+      fail('the day rolled over twice in a row');
     });
 
     test('a UTC instant is placed on its LOCAL calendar day', () {

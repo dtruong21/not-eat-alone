@@ -55,4 +55,31 @@ void main() {
     final body = tester.widget<Text>(find.text('Match on a meal.'));
     expect(body.style?.color, wp.muted);
   });
+
+  testWidgets('dark mode: icon, title and body use the dark muted colour', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark),
+        home: const Scaffold(
+          body: EmptyState(
+            title: 'No chats yet',
+            message: 'Match on a meal.',
+            icon: Icons.chat_bubble_outline_rounded,
+          ),
+        ),
+      ),
+    );
+    final wp = buildTheme(Brightness.dark).extension<WarmPlayfulExtensions>()!;
+    expect(tester.widget<Icon>(find.byType(Icon)).color, wp.muted);
+    expect(
+      tester.widget<Text>(find.text('No chats yet')).style?.color,
+      wp.muted,
+    );
+    expect(
+      tester.widget<Text>(find.text('Match on a meal.')).style?.color,
+      wp.muted,
+    );
+  });
 }

@@ -12,6 +12,8 @@ import 'package:not_eat_alone/features/safety/application/report_providers.dart'
 import 'package:not_eat_alone/features/safety/domain/repositories/report_repository.dart';
 import 'package:not_eat_alone/features/safety/presentation/report_sheet.dart';
 
+import '../../../support/contrast.dart';
+
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class MockReportRepository extends Mock implements ReportRepository {}
@@ -147,11 +149,7 @@ void main() {
           matching: find.byType(CircularProgressIndicator),
         ),
       );
-      final la = spinner.color!.computeLuminance();
-      final lb = fill.computeLuminance();
-      final ratio = (la > lb ? la + 0.05 : lb + 0.05) /
-          (la > lb ? lb + 0.05 : la + 0.05);
-      expect(ratio, greaterThanOrEqualTo(3));
+      expect(contrast(spinner.color!, fill), greaterThanOrEqualTo(3));
       // Still disabled: no tap-through while sending.
       expect(
         tester

@@ -1,7 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+
+/// The sweep colour: lighter than the `wp.border` blocks in both modes
+/// (`wp.divider` is lighter in light mode but darker in dark mode).
+@visibleForTesting
+Color skeletonHighlight(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.light
+    ? context.wp.divider
+    : context.wp.subtle;
 
 /// Shimmers [child] in a loop, or leaves it still when the platform asks for
 /// reduced motion. The loop never settles, so tests that show a skeleton must
@@ -13,7 +22,7 @@ Widget _shimmer(BuildContext context, Widget child) =>
           .animate(onPlay: (controller) => controller.repeat())
           .shimmer(
             duration: WarmPlayfulSkeleton.shimmer,
-            color: context.wp.divider,
+            color: skeletonHighlight(context),
           );
 
 class _Block extends StatelessWidget {

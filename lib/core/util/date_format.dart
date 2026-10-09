@@ -64,6 +64,9 @@ String formatMonthDay(DateTime value) {
 }
 
 /// Formats [value] as e.g. "5 January 2027", in the viewer's local time.
+///
+/// Pass a local calendar date: a UTC-midnight date-only value would show the
+/// previous day for viewers behind UTC.
 String formatLongDate(DateTime value) {
   final local = value.toLocal();
   return '${local.day} ${_monthNames[local.month - 1]} ${local.year}';

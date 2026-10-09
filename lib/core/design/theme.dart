@@ -275,7 +275,7 @@ ThemeData buildTheme(Brightness brightness) {
       indicatorColor: accent,
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
-          size: 24,
+          size: WarmPlayfulSize.icon,
           color: states.contains(WidgetState.selected) ? onAccent : muted,
         ),
       ),

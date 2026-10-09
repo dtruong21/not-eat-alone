@@ -26,6 +26,8 @@ class ErrorState extends StatelessWidget {
     icon: Icons.cloud_off_rounded,
     title: title,
     message: message,
+    mutedTitle: false,
+    announce: true,
     action: AppButton(
       label: 'Try again',
       variant: AppButtonVariant.tonal,
