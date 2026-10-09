@@ -616,6 +616,10 @@ After v1.0.0 ships:
 | Play Store review rejection: "App signing certificate mismatch" | Signed with wrong keystore or mismatched SHA-256 | Verify Play Console's upload cert SHA-256 matches your keystore (Phase 4.2) |
 | Push notifications not arriving | App Check enforcement ON but debug token not added | Add App Check debug token to Firebase (Phase 1.2) |
 | Firestore rules rejected by App Check | Enforcement ON but app not signing requests | Verify app has valid App Check token (simulator/emulator may need debug token added) |
+| First functions deploy: `generateUploadUrl` 404, "Could not authenticate …gcf-admin-robot" | Service agents not yet created after the APIs were just enabled | Wait ~5 min and redeploy; else `gcloud beta services identity create --service=cloudfunctions.googleapis.com --project=<id>` (also `cloudbuild`, `eventarc`) |
+| Functions deploy: "Build failed … missing permission on the build service account" | New projects build as the default Compute Engine SA, which lacks the Cloud Build role | `gcloud projects add-iam-policy-binding <id> --member="serviceAccount:<project-number>-compute@developer.gserviceaccount.com" --role="roles/cloudbuild.builds.builder"`, then redeploy |
+| `firebase deploy --only functions:X`: "No function matches the filter" | Deploying from a checkout/branch that lacks the function (deploy packages the working tree) | Deploy from the right branch, or use a worktree: `git worktree add ../<name>-develop origin/develop` |
+| `searchRestaurants` returns `unauthenticated` / `failed-precondition` in debug | App Check enforced, no debug token registered | Register the device's debug token (Phase 1.2) |
 
 ---
 
