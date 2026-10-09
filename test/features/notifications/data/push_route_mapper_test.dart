@@ -25,6 +25,18 @@ void main() {
     });
     expect(r!.location, '/discover');
   });
+  test('meal reminder -> /chats/:mealId (the match chat)', () {
+    final r = mapPushData({
+      'type': 'meal_reminder',
+      'reminder': '2h',
+      'mealId': 'm9',
+    });
+    expect(r!.location, '/chats/m9');
+  });
+  test('meal reminder without a mealId -> null', () {
+    expect(mapPushData({'type': 'meal_reminder'}), isNull);
+    expect(mapPushData({'type': 'meal_reminder', 'mealId': ''}), isNull);
+  });
   test('unknown/missing type -> null', () {
     expect(mapPushData({}), isNull);
     expect(mapPushData({'type': 'nope'}), isNull);

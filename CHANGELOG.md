@@ -23,6 +23,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Added
 
+- Reminders for your matched meals: a notification the day before and about 2 hours before, with the restaurant and time (tap to open the chat with your match).
 - Settings now has a "Contact support" row that opens an email to support, with the address shown on screen.
 - A meal's restaurant card now has an "Open in Maps" button that opens the restaurant in your maps app (hidden when a meal has no usable location).
 - Restaurant search now finds real restaurants across Paris (previously a fixed list of 20); results update shortly after you stop typing.

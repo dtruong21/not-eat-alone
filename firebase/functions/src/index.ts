@@ -6,6 +6,7 @@ import { makeRatingCreated } from './triggers/rating_created';
 import { makeDeleteAccount } from './callable/delete_account';
 import { makeSearchRestaurants } from './callable/search_restaurants';
 import { makePostMealReminder } from './scheduled/post_meal_reminder';
+import { makeMealReminder } from './scheduled/meal_reminder';
 
 initializeApp();
 
@@ -21,3 +22,5 @@ export const deleteAccount = makeDeleteAccount();
 export const searchRestaurants = makeSearchRestaurants();
 export const postMealReminderDefault = makePostMealReminder('(default)');
 export const postMealReminderStage = makePostMealReminder('stage');
+export const mealReminderDefault = makeMealReminder('(default)');
+export const mealReminderStage = makeMealReminder('stage');

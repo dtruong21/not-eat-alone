@@ -1,3 +1,5 @@
+import { ReminderKind, formatMealTime, mealDayLabel } from './reminders';
+
 export interface PushPayload {
   notification: { title: string; body: string };
   data: Record<string, string>;
@@ -35,5 +37,23 @@ export function buildPostMealPrompt(otherName: string): PushPayload {
   return {
     notification: { title: 'How was it?', body: `Rate your meal with ${otherName}.` },
     data: { type: 'rate', matchId: '' },
+  };
+}
+
+export function buildMealReminder(
+  kind: ReminderKind,
+  restaurantName: string,
+  mealAt: Date,
+  now: Date,
+  mealId = '',
+): PushPayload {
+  const title =
+    kind === '24h' ? `Your meal is ${mealDayLabel(mealAt, now)}` : 'Your meal is coming up';
+  return {
+    notification: {
+      title,
+      body: `${truncate(restaurantName, 80)} at ${formatMealTime(mealAt)}`,
+    },
+    data: { type: 'meal_reminder', reminder: kind, mealId },
   };
 }

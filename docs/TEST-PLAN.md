@@ -435,6 +435,23 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 
 ---
 
+### Feature: Meal reminders (T-24h / T-2h)
+
+**Automated:** `firebase/functions/test/reminders.test.ts` (windows, flags, Paris-time formatting across DST, today/tomorrow label, payload content, truncation); `push_route_mapper_test.dart` (tap → `/chats/:mealId`).
+
+**Manual on the `stage` flavor (real device, two accounts, deployed `mealReminderStage`):**
+- [ ] Matched meal ~23h ahead: both phones get "Your meal is tomorrow — <restaurant> at HH:mm" within ~15 min; no second copy on later runs.
+- [ ] Matched meal ~90 min ahead: both get "Your meal is coming up"; a meal 3h ahead gets nothing yet.
+- [ ] Tap the push (app killed / background / foreground): opens the match chat; `push_opened` with `type: meal_reminder` in DebugView.
+- [ ] Meal matched with 30 min to go: no "tomorrow" reminder ever sent.
+- [ ] Cancelled or unmatched meal inside a window: nothing sent.
+- [ ] One participant has no device token / revoked permission: the other still gets it; no function error loop.
+- [ ] Meal across the DST change (last Sunday of October): time in the push matches Paris wall-clock.
+- [ ] Check the meal doc after: `reminder24hSent` / `reminder2hSent` set.
+- Known gap (pre-existing): the post-meal `rate` push has no tap route.
+
+---
+
 ## End-to-end tests (emulator)
 
 The `integration_test/` suite runs the real app, through the real UI, on an iOS
