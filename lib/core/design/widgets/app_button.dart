@@ -20,6 +20,7 @@ class AppButton extends StatelessWidget {
     this.loadingLabel,
     this.icon,
     this.expand = true,
+    this.height,
     super.key,
   });
 
@@ -46,6 +47,9 @@ class AppButton extends StatelessWidget {
   /// Needs a bounded-width parent; use `expand: false` inside a `Row`.
   final bool expand;
 
+  /// Minimum height override; null keeps the per-variant default.
+  final double? height;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -54,7 +58,8 @@ class AppButton extends StatelessWidget {
         variant == AppButtonVariant.tonal;
     final minimumSize = Size(
       expand ? double.infinity : 0,
-      big ? WarmPlayfulSize.actionHeight : WarmPlayfulSize.minTap,
+      height ??
+          (big ? WarmPlayfulSize.actionHeight : WarmPlayfulSize.minTap),
     );
 
     // Keep the enabled look while loading (the button is disabled to swallow
