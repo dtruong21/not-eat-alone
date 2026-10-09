@@ -1,5 +1,5 @@
-/// App router — single `GoRouter` instance, exposed as a Riverpod provider so
-/// it can react to auth state via `ref.watch`.
+/// App router — single `GoRouter` instance, exposed as a Riverpod provider
+/// and built once per provider lifetime (see [routerProvider]).
 ///
 /// Adding routes:
 ///   1. Declare a typed route in `routes.dart` using `@TypedGoRoute<T>` on a
@@ -25,10 +25,12 @@
 ///     }
 ///   }
 ///
-/// Auth redirects: read auth state inside the `redirect:` callback below. The
-/// provider re-watches it, so the router rebuilds on sign-in / sign-out.
+/// Auth redirects: the `redirect:` callback below reads auth state at call
+/// time; a refresh notifier re-runs it when a redirect input changes. The
+/// router itself is never rebuilt on auth or profile changes.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/routing/app_shell.dart';
@@ -105,29 +107,46 @@ String? authRedirect({
 /// dependency, but keep the manual `Provider` here so the template runs
 /// before `build_runner` is invoked.
 ///
-/// Auth redirects: `signedIn`/`ageVerified` are computed here from
-/// `authStateProvider` / `currentUserDocProvider` (both `ref.watch`, so a
-/// new `GoRouter` — and therefore a fresh redirect decision — is built
-/// whenever auth state changes) and handed to the pure `authRedirect`
-/// above. While `currentUserDocProvider` is still loading for a signed-in
-/// user we treat `ageVerified` as `false`; the `location == _ageGatePath`
+/// Built ONCE per provider lifetime: rebuilding it on every `users/{uid}`
+/// write reset navigation to the initial location (audit X-09). Instead the
+/// three redirect inputs — `signedIn`, `ageVerified`, `profileComplete` — are
+/// listened to as SELECTED bools; only a flip of one of them bumps
+/// `refreshListenable`, which makes go_router re-run `redirect` against the
+/// current location. Other user-doc fields (photos, name, bio, ratings) never
+/// touch the router. `redirect` reads the current values with `ref.read` at
+/// call time (so the first redirect sees the startup state, which
+/// `ref.listen` — change-only — would miss) and hands them to the pure
+/// `authRedirect` above. While `currentUserDocProvider` is still loading for a
+/// signed-in user `ageVerified` is `false`; the `location == _ageGatePath`
 /// guard in `authRedirect` stops that from bouncing a user who is already
 /// sitting on the age gate mid-load.
 final routerProvider = Provider<GoRouter>((ref) {
-  final signedIn = ref.watch(authStateProvider).value != null;
-  final userDoc = ref.watch(currentUserDocProvider).value;
-  final ageVerified = userDoc?.ageVerified ?? false;
-  final profileComplete = userDoc?.profileComplete ?? false;
+  final refresh = ValueNotifier<int>(0);
+  void bump(Object? previous, Object? next) => refresh.value++;
+  ref
+    ..listen(authStateProvider.select((a) => a.value != null), bump)
+    ..listen(
+      currentUserDocProvider.select((u) => u.value?.ageVerified ?? false),
+      bump,
+    )
+    ..listen(
+      currentUserDocProvider.select((u) => u.value?.profileComplete ?? false),
+      bump,
+    );
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: _homePath,
     debugLogDiagnostics: true,
-    redirect: (context, state) => authRedirect(
-      signedIn: signedIn,
-      ageVerified: ageVerified,
-      profileComplete: profileComplete,
-      location: state.matchedLocation,
-    ),
+    refreshListenable: refresh,
+    redirect: (context, state) {
+      final userDoc = ref.read(currentUserDocProvider).value;
+      return authRedirect(
+        signedIn: ref.read(authStateProvider).value != null,
+        ageVerified: userDoc?.ageVerified ?? false,
+        profileComplete: userDoc?.profileComplete ?? false,
+        location: state.matchedLocation,
+      );
+    },
     routes: [
       // TODO: replace with typed routes from `routes.g.dart` once scaffolded.
       // Inline routes kept here so the template compiles before codegen runs.
@@ -235,4 +254,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(() {
+    router.dispose();
+    refresh.dispose();
+  });
+  return router;
 });
