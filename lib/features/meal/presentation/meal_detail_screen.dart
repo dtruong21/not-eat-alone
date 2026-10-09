@@ -17,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
+import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
@@ -25,7 +27,9 @@ import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/matching/application/create_request_controller.dart';
 import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
+import 'package:not_eat_alone/features/meal/application/maps_launcher_provider.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -104,6 +108,13 @@ class MealDetailScreen extends ConsumerWidget {
                           color: context.wp.muted,
                         ),
                       ),
+                      if (hasMapsLocation(meal.restaurant)) ...[
+                        const SizedBox(height: WarmPlayfulSpacing.s3),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: _OpenInMapsButton(restaurant: meal.restaurant),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -562,6 +573,61 @@ class _YourMealChip extends StatelessWidget {
             fontWeight: WarmPlayfulType.captionWeight,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Open in Maps" — secondary (outlined) action on the restaurant card.
+///
+/// Fires `directions_opened` on tap (intent), then hands off to the maps app.
+/// A launch already in flight swallows further taps; a failed launch shows a
+/// snackbar and leaves the button usable.
+class _OpenInMapsButton extends ConsumerStatefulWidget {
+  const _OpenInMapsButton({required this.restaurant});
+
+  final Restaurant restaurant;
+
+  @override
+  ConsumerState<_OpenInMapsButton> createState() => _OpenInMapsButtonState();
+}
+
+class _OpenInMapsButtonState extends ConsumerState<_OpenInMapsButton> {
+  bool _launching = false;
+
+  Future<void> _open() async {
+    if (_launching) return;
+    _launching = true;
+    try {
+      // Read before the first await: `ref` is unusable once the screen is
+      // popped while the analytics send is in flight.
+      final launch = ref.read(mapsLauncherProvider);
+      await analytics.track(const DirectionsOpened());
+      final opened = await launch(widget.restaurant);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Couldn't open Maps")));
+      }
+    } finally {
+      _launching = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // The visible label is excluded; one merged announcement carries the
+    // restaurant name and the tap action.
+    return Semantics(
+      button: true,
+      label: 'Open ${widget.restaurant.name} in Maps',
+      excludeSemantics: true,
+      onTap: _open,
+      child: OutlinedButton.icon(
+        key: const Key('meal_detail_open_in_maps_button'),
+        onPressed: _open,
+        icon: const Icon(Icons.place_outlined),
+        label: const Text('Open in Maps'),
       ),
     );
   }

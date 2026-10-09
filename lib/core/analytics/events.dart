@@ -202,6 +202,16 @@ final class MealOpened extends AppEvent {
   Map<String, Object?> get props => {'women_only': womenOnly};
 }
 
+final class DirectionsOpened extends AppEvent {
+  const DirectionsOpened();
+
+  @override
+  String get name => 'directions_opened';
+
+  @override
+  Map<String, Object?> get props => const {};
+}
+
 final class JoinRequested extends AppEvent {
   const JoinRequested({required this.womenOnly});
   final bool womenOnly;

@@ -82,6 +82,7 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `meal_created` | User finishes creating a meal (restaurant, time, optional note, women-only toggle) | `women_only: bool` | Meals created, women-only adoption |
 | `discovery_viewed` | Discovery feed loads or refreshes with a (possibly empty) result list | `count: int` (number of meals shown) | Discovery engagement, feed health |
 | `meal_opened` | User opens a meal's detail view from the discovery feed | `women_only: bool` | Meal engagement, women-only funnel |
+| `directions_opened` | User taps "Open in Maps" on the meal detail restaurant card | — (No PII, no coordinates) | Meal engagement, meal detail → directions funnel |
 | `join_requested` | Guest sends a request to join a meal | `women_only: bool` (No PII) | Request funnel, women-only adoption |
 | `request_approved` | Host approves a pending join request | — (No PII) | Request funnel, host responsiveness |
 | `request_denied` | Host denies a pending join request | — (No PII) | Request funnel |

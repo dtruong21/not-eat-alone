@@ -412,6 +412,43 @@ Related PRD entry: `docs/PRD.md § Ratings`
 
 ---
 
+### Feature: Open in Maps (meal detail)
+
+Status: active
+Related PRD entry: `docs/PRD.md § Feature: Open restaurant in Maps (meal detail)` · design: `docs/DESIGN.md § Meal detail — "Open in Maps" action` · analytics: `directions_opened`
+Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `maps_launcher_uris_edge_test.dart`, `test/features/meal/presentation/meal_detail_open_in_maps_test.dart`, `meal_detail_open_in_maps_edge_test.dart`
+
+**Golden path:**
+- [ ] Meal detail for a restaurant with real coordinates shows "Open in Maps" (outlined, map-pin icon, left-aligned, intrinsic width) inside the restaurant card. *(Automated.)*
+- [ ] **iOS (real device + Simulator):** tap opens Apple Maps at the restaurant with the name as the pin label; Maps is foregrounded (no in-app browser, no Safari bounce). Verify that `ll` + `q` drops a pin at the exact lat/lng labelled with the name, rather than running a name search that snaps to a different nearby POI.
+- [ ] **Android (real device + Emulator with Google Play):** tap opens Google Maps at the pin with the name as the label. With a second geo handler installed (e.g. Waze), the system chooser appears and both work.
+- [ ] Returning to Convyve (back / app switcher) lands on the unchanged meal detail; the button is immediately usable again.
+- [ ] `directions_opened` fires once per tap, no properties (verified in code via log-sink tests). **Still to do manually:** see it in PostHog debug view AND Firebase Analytics DebugView (not verifiable without a device).
+
+**Edge cases (specific to this feature):**
+- [ ] Coordinates `0,0`, out of range, or NaN: button hidden, address still shown. *(Automated.)*
+- [ ] Android 11+ package visibility: `launchUrl` (not `canLaunchUrl`) is used, so no `<queries>` entry is needed; confirm on an Android 11+/14 device and on an emulator image WITHOUT Google Maps that `geo:` failing falls back to the https Google Maps URL (browser) and, with no handler at all, shows "Couldn't open Maps". *(URI order, false-vs-throw fallback automated via faked method channel.)*
+- [ ] iOS: no `LSApplicationQueriesSchemes` is required for https launches (only `canLaunchUrl` needs it). Confirm launch works from a release/TestFlight build with the Info.plist as committed.
+- [ ] Restaurant names with `&`, `#`, `%`, `+`, `=`, `?`, quotes, emoji, CJK, Cyrillic, Arabic, parentheses: apple `q` and geo label round-trip exactly (parentheses become spaces in the geo label). *(Automated.)* Manually spot-check one non-Latin and one `&` venue on each platform that the maps app shows the correct label.
+- [ ] 1000+ character restaurant name: URI stays valid; card does not overflow at 1.5x. *(Automated.)* Check whether the maps app truncates/refuses a very long `q` label on-device.
+- [ ] Viewer variants: guest (no request / pending / approved / denied / request-state loading / error), host viewing own meal, women-only meal as woman and non-woman viewer: button present and working in all. *(Automated.)*
+- [ ] Double-tap / rapid tap: exactly one launch and one `directions_opened`; guard releases after success, `false`, and a throwing launcher. *(Automated.)*
+- [ ] Failed launch (`false`): snackbar "Couldn't open Maps", button stays enabled, event already counted (intent). *(Automated.)*
+- [ ] Analytics sink failure never blocks the hand-off. *(Automated.)*
+- [ ] Leave the screen while a launch is in flight: no snackbar on an unmounted screen. *(Automated.)* Leave the screen while the `track()` await is in flight: **BUG** `2026-10-09-open-in-maps-ref-after-dispose` (test skipped until fixed).
+- [ ] Offline / airplane mode: button still launches the maps app; Convyve shows no connectivity error. Maps app owns its offline state. *(Manual.)*
+- [ ] Background app mid-launch / kill Maps and return: Convyve state unchanged, no crash. *(Manual.)*
+- [ ] Accessibility: TalkBack/VoiceOver announce one button "Open <name> in Maps" (no duplicate "Open in Maps" announcement); semantics tap action launches once; target >= 48dp at 2.0x. *(Semantics automated; screen-reader pass manual.)*
+- [ ] RTL (Arabic/Hebrew locale): button aligns to the start (right) edge. *(Automated via `Directionality`; confirm with a real RTL locale.)*
+- [ ] Dark + light parity at 1.5x/2.0x text, 320dp wide. *(Automated, light 2.0x and dark 1.5x/2.0x.)*
+- [ ] Coordinate precision: very small values (|lat| or |lng| < 1e-6) would stringify in scientific notation (`1e-7`). Not a real restaurant case; noted, not guarded.
+
+**Known issues:**
+- `docs/bugs/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed)
+- `docs/bugs/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card)
+
+---
+
 ## End-to-end tests (emulator)
 
 The `integration_test/` suite runs the real app, through the real UI, on an iOS
