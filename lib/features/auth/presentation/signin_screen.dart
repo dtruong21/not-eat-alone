@@ -63,6 +63,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
   Object? _error;
   bool _phoneInvalid = false;
   Timer? _smsTimer;
+  int _phoneAttempt = 0;
 
   @override
   void dispose() {
@@ -81,13 +82,16 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
     });
   }
 
-  /// Ends the phone wait (codeSent, onError, thrown, or timeout).
-  void _endPhoneWait({Object? error}) {
+  /// Ends the phone wait (codeSent, onError, thrown, or timeout). Callbacks
+  /// from a superseded [attempt] (e.g. a late `codeSent` after the timeout and
+  /// a retry) are ignored.
+  void _endPhoneWait(int attempt, {Object? error}) {
+    if (attempt != _phoneAttempt) return;
     _smsTimer?.cancel();
     if (!mounted) return;
     setState(() {
       if (_pendingMethod == SigninMethod.phone) _pendingMethod = null;
-      if (error != null) _error = error;
+      _error = error;
     });
   }
 
@@ -123,8 +127,8 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
 
   Future<void> _sendPhoneCode() async {
     if (_pendingMethod != null) return;
-    final phoneE164 = _phoneController.text.trim();
-    if (!isPlausiblePhone(phoneE164)) {
+    final typed = _phoneController.text.trim();
+    if (!isPlausiblePhone(typed)) {
       setState(() {
         _phoneInvalid = true;
         _error = null;
@@ -133,8 +137,17 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
       _phoneFocus.requestFocus();
       return;
     }
+    // E.164 has no spaces, and a trunk 0 after +33 is not dialled.
+    final phoneE164 = typed
+        .replaceAll(RegExp(r'\s'), '')
+        .replaceFirst(RegExp(r'^\+330'), '+33');
+    final attempt = ++_phoneAttempt;
     _start(SigninMethod.phone);
-    _smsTimer = Timer(_smsTimeout, () => _endPhoneWait(error: 'timeout'));
+    _smsTimer?.cancel();
+    _smsTimer = Timer(
+      _smsTimeout,
+      () => _endPhoneWait(attempt, error: 'timeout'),
+    );
     await analytics.track(const SigninStarted(method: SigninMethod.phone));
     try {
       await ref
@@ -142,16 +155,16 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
           .verifyPhone(
             phoneE164: phoneE164,
             codeSent: (verificationId) {
-              _endPhoneWait();
-              if (!mounted) return;
+              if (attempt != _phoneAttempt || !mounted) return;
+              _endPhoneWait(attempt);
               unawaited(
                 context.push(phoneVerifyRoutePath, extra: verificationId),
               );
             },
-            onError: (e) => _endPhoneWait(error: e),
+            onError: (e) => _endPhoneWait(attempt, error: e),
           );
     } catch (e) {
-      _endPhoneWait(error: e);
+      _endPhoneWait(attempt, error: e);
     }
   }
 
@@ -262,10 +275,15 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: WarmPlayfulSpacing.s4),
-                Text(
-                  'Something went wrong — please try again.',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.error),
+                // Appears without user action (SMS failure, timeout): announce it.
+                Semantics(
+                  liveRegion: true,
+                  container: true,
+                  child: Text(
+                    'Something went wrong — please try again.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(color: colors.error),
+                  ),
                 ),
               ],
             ],

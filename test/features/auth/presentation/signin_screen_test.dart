@@ -383,6 +383,81 @@ void main() {
       );
     });
 
+    testWidgets('spaces are stripped and a trunk 0 after +33 dropped before '
+        'verifyPhone', (tester) async {
+      stubVerifyPhone((_, _) async {});
+      await pumpScreen(tester);
+      for (final typed in ['+33 6 12 34 56 78', '+33 06 12 34 56 78']) {
+        await tester.enterText(
+          find.byKey(const Key('signin_phone_field')),
+          typed,
+        );
+        await tester.tap(find.text('Send code'));
+        await tester.pump();
+        verify(
+          () => authRepository.verifyPhone(
+            phoneE164: '+33612345678',
+            codeSent: any(named: 'codeSent'),
+            onError: any(named: 'onError'),
+          ),
+        ).called(1);
+        await tester.pump(const Duration(seconds: 61)); // timeout, retry-able
+      }
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the error line is a live region, also after the timeout', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      stubVerifyPhone((_, _) async {});
+      await pumpScreen(tester);
+      await enterValidPhone(tester);
+      await tester.tap(find.text('Send code'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 61));
+      expect(
+        tester.getSemantics(
+          find.text('Something went wrong — please try again.'),
+        ),
+        matchesSemantics(
+          label: 'Something went wrong — please try again.',
+          isLiveRegion: true,
+        ),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a superseded attempt\'s late codeSent does not push; the '
+        'current one does and clears the error', (tester) async {
+      final fires = <void Function(String)>[];
+      var pushes = 0;
+      stubVerifyPhone((codeSent, _) async => fires.add(codeSent));
+      await pumpScreen(tester, onPhonePush: (_) => pushes++);
+      await enterValidPhone(tester);
+      await tester.tap(find.text('Send code'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 61)); // attempt 1 times out
+      expect(
+        find.text('Something went wrong — please try again.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Send code')); // attempt 2
+      await tester.pump();
+      expect(fires, hasLength(2));
+
+      fires[0]('stale');
+      await tester.pump();
+      expect(pushes, 0);
+      expect(find.text('Sending code…'), findsOneWidget);
+
+      fires[1]('fresh');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(pushes, 1);
+      expect(find.text('code screen'), findsOneWidget);
+    });
+
     testWidgets('an invalid number shows the message on the field and does '
         'not call the repository', (tester) async {
       await pumpScreen(tester);
