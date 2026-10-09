@@ -17,7 +17,7 @@ the post-merge commit of `develop` / `main`. Five jobs, Flutter pinned to the
 | `Build Android (stage, unsigned)` | ubuntu | `flutter build apk --flavor stage --debug` — compile/flavor verification |
 | `Build iOS (stage, no codesign)` | macOS | `flutter build ios --flavor stage --debug --no-codesign` — iOS + Pods compile, no certs |
 | `Functions build & test` | ubuntu | `firebase/functions`: `npm ci` → `npm run build` → `npm test` — TypeScript Cloud Functions gate (Plan 8) |
-| `E2E (emulator, iOS sim)` | macOS | **Non-blocking.** `make e2e`: the `integration_test/` suite on a freshly created iOS Simulator against the Firebase Emulator Suite (Node 20, Java 21, `firebase-tools@13`). 100 min job timeout; each attempt capped at 40 min and retried once on failure/hang; emulator logs uploaded as an artifact on failure or retry |
+| `E2E (emulator, iOS sim)` | macOS | **Non-blocking.** `make e2e`: the `integration_test/` suite on a freshly created iOS Simulator against the Firebase Emulator Suite (Node 22, Java 21, `firebase-tools@13`). 100 min job timeout; each attempt capped at 40 min and retried once on failure/hang; emulator logs uploaded as an artifact on failure or retry |
 
 Generated files (`*.freezed.dart`, `*.g.dart`) are git-ignored, so every Flutter
 job runs `build_runner`. The required status checks for branch protection today are `Analyze & test`,
