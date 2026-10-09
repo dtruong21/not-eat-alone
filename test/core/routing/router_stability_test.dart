@@ -3,22 +3,32 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/notifications/push_listener.dart';
 import 'package:not_eat_alone/core/routing/router.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
+import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
+import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
+import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
 class _NoopProfileController extends ProfileController {}
 
-AppUser _user({bool? ageVerified, int? ratingCount}) => AppUser(
-  uid: 'u1',
-  dob: DateTime.utc(2000),
-  ageVerified: ageVerified ?? true,
-  ratingCount: ratingCount ?? 0,
-);
+AppUser _user({bool? ageVerified, int? ratingCount, bool complete = false}) =>
+    AppUser(
+      uid: 'u1',
+      dob: DateTime.utc(2000),
+      ageVerified: ageVerified ?? true,
+      ratingCount: ratingCount ?? 0,
+      displayName: complete ? 'Alex' : null,
+      photoUrls: complete ? const ['https://example.test/a.jpg'] : const [],
+      gender: complete ? Gender.woman : null,
+    );
 
 void main() {
   late StreamController<AuthUser?> auth;
@@ -26,6 +36,7 @@ void main() {
   late ProviderContainer container;
 
   setUp(() {
+    FlavorConfig.current = FlavorConfig(flavor: Flavor.prod);
     auth = StreamController<AuthUser?>.broadcast();
     userDoc = StreamController<AppUser?>.broadcast();
     container = ProviderContainer(
@@ -33,6 +44,16 @@ void main() {
         authStateProvider.overrideWith((ref) => auth.stream),
         currentUserDocProvider.overrideWith((ref) => userDoc.stream),
         profileControllerProvider.overrideWith(_NoopProfileController.new),
+        // Stubs so /discover (AppShell + DiscoveryScreen) builds without
+        // Firebase.
+        // Never emits: the screen stays on its skeleton.
+        discoveryControllerProvider.overrideWith(
+          (ref) => StreamController<List<DiscoverableMeal>>().stream,
+        ),
+        pendingRequestCountProvider.overrideWithValue(0),
+        foregroundPushMessagesProvider.overrideWithValue(const Stream.empty()),
+        openedPushMessagesProvider.overrideWithValue(const Stream.empty()),
+        initialPushMessageProvider.overrideWithValue(() async => null),
       ],
     );
   });
@@ -65,6 +86,10 @@ void main() {
     await tester.pump();
     await tester.pump();
   }
+
+  // Lets the skeleton's shimmer timer on /discover run out before teardown.
+  Future<void> drainTimers(WidgetTester tester) =>
+      tester.pump(const Duration(seconds: 5));
 
   String location() => container
       .read(routerProvider)
@@ -128,5 +153,36 @@ void main() {
 
     expect(location(), '/onboarding/profile');
     expect(find.text('Alex'), findsOneWidget);
+  });
+
+  testWidgets('profileComplete false -> true leaves the profile gate for '
+      '/discover, and true -> false returns to it', (tester) async {
+    await pumpApp(tester);
+    await emit(
+      tester,
+      a: const AuthUser(uid: 'u1'),
+      u: _user(),
+    );
+    expect(location(), '/onboarding/profile');
+
+    await emit(tester, u: _user(complete: true));
+    expect(location(), '/discover');
+
+    await emit(tester, u: _user());
+    expect(location(), '/onboarding/profile');
+    await drainTimers(tester);
+  });
+
+  testWidgets('cold start with an already-onboarded user ends on /discover', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await emit(
+      tester,
+      a: const AuthUser(uid: 'u1'),
+      u: _user(complete: true),
+    );
+    expect(location(), '/discover');
+    await drainTimers(tester);
   });
 }
