@@ -596,7 +596,6 @@ Once tagged + deployed:
 
 After v1.0.0 ships:
 
-- **Ratings GDPR completeness:** Account deletion does not yet purge `ratings` (where the user is the rater or target). Add this to `deleteAccount` Cloud Function after feedback from privacy review.
 - **Pre-meal reminders:** Scheduled nudges 1–2 hours before meal time (non-goal for v1, deferred pending user feedback)
 - **Comments on ratings:** Users can add short text; add moderation queue if spam surfaces
 - **Edit/delete ratings:** Allow up to 24h to withdraw a rating

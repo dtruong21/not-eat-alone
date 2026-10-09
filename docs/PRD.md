@@ -121,7 +121,7 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 - Pre-meal reminders (T-24h / T-2h pushes).
 - Swipe-on-people matching, group meals, restaurant reservations, restaurant partnerships, extra gender-preference filters (v2+; from the v1 design non-goals).
 - Monetization — v1 is free; ads/subscription later.
-- Comments on ratings, edit/delete ratings, ratings purge on account deletion (GDPR follow-up).
+- Comments on ratings, edit/delete ratings.
 
 ## Constraints
 
