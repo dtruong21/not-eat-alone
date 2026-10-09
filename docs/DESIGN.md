@@ -296,3 +296,42 @@ ClipRRect(
 ## Screen specs
 
 Added via `/design`.
+
+### Meal detail — "Open in Maps" action
+
+**Screen:** Meal detail (restaurant card addition). No new screen.
+**Purpose:** One-tap hand-off from the meal's restaurant to the user's own maps app, so a guest can find the venue on the day. Link-out only; no embedded map (post-MVP). PRD: "Open restaurant in Maps (meal detail)". Analytics: `directions_opened`.
+**Route:** Existing meal detail route (unchanged); opens an external app, no in-app navigation.
+
+**Layout (top→bottom)** — inside the existing `meal_detail_restaurant_card` (`Material`, `surfaceContainerHighest`, radius `lg`, padding `s4`):
+1. Restaurant name row (+ women-only badge) — unchanged
+2. Address (`bodyMedium`, `wp.muted`) — unchanged
+3. `SizedBox(height: s3)`
+4. **Open in Maps** — left-aligned, intrinsic width (not full width): map-pin icon (`lucide_icons` `mapPin`, 18) + label "Open in Maps"
+
+**Widgets**
+- Reused: existing restaurant card, `OutlinedButton.icon` (Outlined variant per DESIGN.md § Button — secondary action, so it never competes with the screen's primary action), `ScaffoldMessenger` snackbar.
+- New: none. No new tokens (min height `WarmPlayfulSize.minTap`, radius `md`, gaps `s3`/`s2`, colors from the button theme).
+- Placement stays inside the card so the address and its action read as one unit; `Wrap`-free `Align(alignment: centerStart)`.
+
+**States**
+- Filled: button visible as above (outline `muted` 1.5px, `text` label; same in dark mode via theme).
+- Empty (no usable coordinates — missing or 0,0, e.g. legacy meals): action not rendered, no gap left behind (the `SizedBox` is part of the conditional); card shows name + address exactly as today.
+- Loading: none — the hand-off is local; the button is tappable immediately. A rapid double tap is ignored while a launch is in flight (guard flag), no spinner.
+- Offline: unchanged behavior — still launches the maps app (no connectivity check in Convyve; the maps app handles its own offline state).
+- Error (no app can handle the URL / launch returns false or throws): snackbar "Couldn't open Maps"; card and screen state unchanged; button stays enabled for retry.
+- Dark mode: parity from the theme (no hard-coded colors); verify outline/label contrast against `surfaceContainerHighest` dark.
+
+**Interactions**
+- Tap → fire `track(const DirectionsOpened())` → launch the external maps app at restaurant `lat/lng` labeled with the restaurant name (`url_launcher`, `LaunchMode.externalApplication`): iOS `https://maps.apple.com/?ll=<lat>,<lng>&q=<name>`; Android `geo:<lat>,<lng>?q=<lat>,<lng>(<name>)`, falling back to `https://www.google.com/maps/search/?api=1&query=<lat>,<lng>`. URL-encode the name. No API key.
+- The event fires on tap (intent), before the launch result is known; a failed launch still shows the snackbar.
+
+**Accessibility**
+- `Semantics(button: true, label: 'Open ${restaurant.name} in Maps')` wrapping the button; the visible text "Open in Maps" is excluded from the semantics tree to avoid double announcement (`ExcludeSemantics` on the label).
+- Target ≥ 48dp (theme `minTap`); at large text scales the label wraps within the button and the button grows in height, never clips or truncates (no fixed height).
+- Icon is decorative (`excludeFromSemantics`).
+- Snackbar text announced as a live region by default (`SnackBar`).
+
+**Tests to write (via `/test`):** hidden for 0,0 / missing coords; visible otherwise; tap fires `directions_opened` once and calls the injected launcher with the expected URL per platform; launcher failure shows "Couldn't open Maps"; semantics label present; large text scale (2.0) renders without overflow; dark theme golden-free contrast assertion on the button theme.
+
+---
