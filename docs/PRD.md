@@ -53,7 +53,7 @@ Joiners are approval-gated, women-only meals exist, and block/report is always o
 - [x] 18+ gate; sign-in with phone, Apple or Google
 - [x] Safety-tips card
 - [x] Account deletion
-- [ ] Profanity / image moderation (Cloud Function) — not built; see Open questions
+- [ ] Profanity / image moderation (Cloud Function) — not built; deferred by decision (see Open questions)
 
 ### Pillar 4 — Liquidity over reach
 
@@ -134,7 +134,7 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 Track here. Resolve before implementation, never during.
 
 - [ ] **Scope tension.** The approved v1 design (`docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md`) calls v1 "a complete, polished product" with a discovery map and Maps SDK; this PRD's rule zero says v1 is a minimum. Current call: list-only discovery + "Open in Maps" link-out, embedded map post-MVP. Confirm or re-scope before launch.
-- [ ] **Moderation.** The v1 design lists profanity/image moderation as must-have; it is not built. Ship without it for the Paris soft launch (small, approved audience, report/block available), or build a minimal version first?
+- [x] **Moderation — decided 2026-10-09: ship the Paris soft launch without automated profanity/image moderation.** Mitigations in v1: host approves every join, report (user/meal/message) and block are always available, 18+ phone-verified accounts, small soft-launch audience. Revisit before any geo-expansion or after the first reported abuse. **Risk to watch:** Apple (Guideline 1.2) and Google Play user-generated-content rules expect a way to filter objectionable content as well as report/block and published contact info; a reviewer may reject the build. If so, the smallest fix is a server-side blocklist check on chat messages and profile text, not image moderation.
 - [ ] **Reminders.** The v1 design specified T-24h / T-2h meal reminders; only the post-meal prompt exists. Is the gap acceptable given no-show risk?
 - [ ] **North-star metric** is still unset in `docs/TRACKING-PLAN.md` (candidate: meals completed with both parties confirming show-up per week).
 - [ ] **Persona.** Validate the target user with the first 20 beta testers (who they are, why they'd join a stranger's meal).
