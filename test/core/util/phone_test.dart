@@ -21,4 +21,16 @@ void main() {
       expect(isPlausiblePhone('+33+612345678'), isFalse);
     });
   });
+
+  group('formatPhoneDisplay', () {
+    test('groups French numbers', () {
+      expect(formatPhoneDisplay('+33612345678'), '+33 6 12 34 56 78');
+    });
+
+    test('leaves other countries and malformed input as is', () {
+      expect(formatPhoneDisplay('+14155550123'), '+14155550123');
+      expect(formatPhoneDisplay('+3361234'), '+3361234');
+      expect(formatPhoneDisplay(''), '');
+    });
+  });
 }

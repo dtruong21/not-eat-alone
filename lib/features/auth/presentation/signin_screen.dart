@@ -35,6 +35,7 @@ import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
 import 'package:not_eat_alone/features/onboarding/application/underage_notice_provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -158,7 +159,13 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               if (attempt != _phoneAttempt || !mounted) return;
               _endPhoneWait(attempt);
               unawaited(
-                context.push(phoneVerifyRoutePath, extra: verificationId),
+                context.push(
+                  phoneVerifyRoutePath,
+                  extra: PhoneVerifyArgs(
+                    verificationId: verificationId,
+                    phoneE164: phoneE164,
+                  ),
+                ),
               );
             },
             onError: (e) => _endPhoneWait(attempt, error: e),

@@ -10,6 +10,7 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
+import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 import 'package:not_eat_alone/features/onboarding/application/underage_notice_provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -341,7 +342,10 @@ void main() {
       fire('verif-1');
       await tester.pumpAndSettle();
       expect(find.text('code screen'), findsOneWidget);
-      expect(extra, 'verif-1');
+      expect(extra, isA<PhoneVerifyArgs>());
+      final args = extra! as PhoneVerifyArgs;
+      expect(args.verificationId, 'verif-1');
+      expect(args.phoneE164, '+33612345678');
     });
 
     testWidgets('onError clears the loading state and shows the generic '
