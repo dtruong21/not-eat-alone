@@ -1,14 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
-
-double contrast(Color a, Color b) {
-  final la = a.computeLuminance();
-  final lb = b.computeLuminance();
-  final hi = la > lb ? la : lb;
-  final lo = la > lb ? lb : la;
-  return (hi + 0.05) / (lo + 0.05);
-}
+import '../../support/contrast.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -51,15 +44,6 @@ void main() {
           greaterThanOrEqualTo(4.5),
         );
       });
-      test('muted icons/borders used as UI parts >= 3.0 against bg', () {
-        expect(contrast(wp.muted, bg), greaterThanOrEqualTo(3));
-      });
     });
   }
-
-  test('light card vs page stays visibly separated by token choice', () {
-    // Documented, not a WCAG rule: the deeper surface plus shadow (Task 6).
-    final t = buildTheme(Brightness.light);
-    expect(t.colorScheme.surface, const Color(0xFFFBE8D8));
-  });
 }

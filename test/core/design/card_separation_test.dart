@@ -5,12 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_card.dart';
-
-double contrastRatio(Color a, Color b) {
-  final la = a.computeLuminance();
-  final lb = b.computeLuminance();
-  return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
-}
+import '../../support/contrast.dart';
 
 /// Card builds that are not `Card` widgets (Material/Container surfaces) must
 /// carry the elevation + shadow themselves; CardTheme does not reach them.
@@ -98,10 +93,7 @@ void main() {
 
   test('light border token stays visible on the deeper surface (>= 1.1:1)', () {
     expect(
-      contrastRatio(
-        WarmPlayfulColorsLight.border,
-        WarmPlayfulColorsLight.surface,
-      ),
+      contrast(WarmPlayfulColorsLight.border, WarmPlayfulColorsLight.surface),
       greaterThanOrEqualTo(1.1),
     );
   });

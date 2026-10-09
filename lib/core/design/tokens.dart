@@ -106,6 +106,8 @@ abstract final class WarmPlayfulSize {
   static const double actionHeight = 56; // primary/secondary action buttons
   /// Minimum tap target.
   static const double minTap = 48; // minimum tap target
+  /// Diameter of the in-button loading spinner.
+  static const double spinner = 20;
 }
 
 /// Elevation levels.

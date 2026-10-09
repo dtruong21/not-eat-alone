@@ -72,7 +72,10 @@ void main() {
     await pumpSheet(tester);
 
     final button = tester.widget<FilledButton>(
-      find.byKey(const Key('report_submit_button')),
+      find.descendant(
+        of: find.byKey(const Key('report_submit_button')),
+        matching: find.byType(FilledButton),
+      ),
     );
     expect(button.onPressed, isNull);
   });
@@ -87,8 +90,11 @@ void main() {
       await tester.pump();
 
       final enabledButton = tester.widget<FilledButton>(
-        find.byKey(const Key('report_submit_button')),
-      );
+      find.descendant(
+        of: find.byKey(const Key('report_submit_button')),
+        matching: find.byType(FilledButton),
+      ),
+    );
       expect(enabledButton.onPressed, isNotNull);
 
       await tester.tap(find.byKey(const Key('report_submit_button')));
@@ -147,7 +153,14 @@ void main() {
           (la > lb ? lb + 0.05 : la + 0.05);
       expect(ratio, greaterThanOrEqualTo(3));
       // Still disabled: no tap-through while sending.
-      expect(tester.widget<FilledButton>(button).onPressed, isNull);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.descendant(of: button, matching: find.byType(FilledButton)),
+            )
+            .onPressed,
+        isNull,
+      );
 
       inFlight.complete();
       await tester.pumpAndSettle();

@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
-
-double contrastRatio(Color a, Color b) {
-  final la = a.computeLuminance();
-  final lb = b.computeLuminance();
-  return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
-}
+import '../../support/contrast.dart';
 
 void main() {
   for (final b in Brightness.values) {
@@ -27,10 +22,7 @@ void main() {
       };
       for (final e in pairs.entries) {
         test('${e.key} pair >= 4.5:1', () {
-          expect(
-            contrastRatio(e.value.$1, e.value.$2),
-            greaterThanOrEqualTo(4.5),
-          );
+          expect(contrast(e.value.$1, e.value.$2), greaterThanOrEqualTo(4.5));
         });
       }
 
@@ -65,7 +57,7 @@ void main() {
         expect(sb.contentTextStyle?.color, s.onInverseSurface);
         expect(sb.actionTextColor, isNotNull);
         expect(
-          contrastRatio(sb.actionTextColor!, s.inverseSurface),
+          contrast(sb.actionTextColor!, s.inverseSurface),
           greaterThanOrEqualTo(4.5),
         );
         expect(sb.closeIconColor, s.onInverseSurface);
@@ -74,10 +66,7 @@ void main() {
       test('selected chip label is onAccent on accent', () {
         expect(theme.chipTheme.selectedColor, s.primary);
         expect(theme.chipTheme.secondaryLabelStyle?.color, wp.onAccent);
-        expect(
-          contrastRatio(wp.onAccent, s.primary),
-          greaterThanOrEqualTo(4.5),
-        );
+        expect(contrast(wp.onAccent, s.primary), greaterThanOrEqualTo(4.5));
       });
     });
   }

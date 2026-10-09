@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
-
-double _contrast(Color a, Color b) {
-  final la = a.computeLuminance();
-  final lb = b.computeLuminance();
-  return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
-}
+import '../../support/contrast.dart';
 
 void main() {
   for (final b in Brightness.values) {
@@ -23,14 +18,14 @@ void main() {
         expect(s.thumbColor!.resolve(off), wp.muted);
         expect(s.trackOutlineColor!.resolve(off), wp.muted);
         expect(s.trackColor!.resolve(off), surface);
-        expect(_contrast(wp.muted, surface), greaterThanOrEqualTo(3));
+        expect(contrast(wp.muted, surface), greaterThanOrEqualTo(3));
       });
 
       test('Switch on: onAccent thumb on the accent track (>= 3:1)', () {
         final s = theme.switchTheme;
         expect(s.thumbColor!.resolve(on), wp.onAccent);
         expect(s.trackColor!.resolve(on), accent);
-        expect(_contrast(wp.onAccent, accent), greaterThanOrEqualTo(3));
+        expect(contrast(wp.onAccent, accent), greaterThanOrEqualTo(3));
       });
 
       test('Switch disabled keeps the Material defaults', () {
@@ -57,7 +52,7 @@ void main() {
         final side = theme.segmentedButtonTheme.style!.side!.resolve(off)!;
         expect(side.color, wp.muted);
         expect(
-          _contrast(side.color, theme.scaffoldBackgroundColor),
+          contrast(side.color, theme.scaffoldBackgroundColor),
           greaterThanOrEqualTo(3),
         );
       });
@@ -66,7 +61,7 @@ void main() {
         final c = theme.chipTheme;
         expect(c.checkmarkColor, wp.onAccent);
         expect(
-          _contrast(c.checkmarkColor!, c.selectedColor!),
+          contrast(c.checkmarkColor!, c.selectedColor!),
           greaterThanOrEqualTo(4.5),
         );
       });
