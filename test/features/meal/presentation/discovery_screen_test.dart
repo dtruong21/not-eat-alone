@@ -82,6 +82,7 @@ void main() {
     required List<DiscoverableMeal> meals,
     Gender? viewerGender,
     PushRepository? pushRepository,
+    Brightness brightness = Brightness.light,
   }) async {
     final router = GoRouter(
       initialLocation: '/',
@@ -115,7 +116,7 @@ void main() {
             pushRepositoryProvider.overrideWithValue(pushRepository),
         ],
         child: MaterialApp.router(
-          theme: buildTheme(Brightness.light),
+          theme: buildTheme(brightness),
           routerConfig: router,
         ),
       ),
@@ -156,6 +157,32 @@ void main() {
 
     expect(find.text('Women only'), findsOneWidget);
   });
+
+  for (final b in Brightness.values) {
+    testWidgets('"Women only" badge is peach with onAccent text ($b)', (
+      tester,
+    ) async {
+      await pumpDiscovery(
+        tester,
+        meals: [_discoverableMeal],
+        viewerGender: Gender.woman,
+        brightness: b,
+      );
+
+      final wp = buildTheme(b).extension<WarmPlayfulExtensions>()!;
+      final badge = tester.widget<Container>(
+        find.byKey(const Key('women_only_badge')),
+      );
+      expect((badge.decoration! as BoxDecoration).color, wp.peach);
+      final text = tester.widget<Text>(find.text('Women only'));
+      expect(text.style!.color, wp.onAccent);
+      final la = wp.onAccent.computeLuminance();
+      final lb = wp.peach.computeLuminance();
+      final ratio = (la > lb ? la + 0.05 : lb + 0.05) /
+          (la > lb ? lb + 0.05 : la + 0.05);
+      expect(ratio, greaterThanOrEqualTo(4.5));
+    });
+  }
 
   testWidgets('"Women only" badge is hidden for a man viewer', (
     tester,

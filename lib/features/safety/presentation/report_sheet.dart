@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/safety/application/report_controller.dart';
 
@@ -36,10 +37,8 @@ Future<void> showReportSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (context) => _ReportSheet(
-      targetType: targetType,
-      targetId: targetId,
-    ),
+    builder: (context) =>
+        _ReportSheet(targetType: targetType, targetId: targetId),
   );
 }
 
@@ -73,7 +72,9 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     final note = _noteController.text.trim();
     final payload = note.isEmpty ? reason : '$reason: $note';
 
-    await ref.read(reportControllerProvider.notifier).submit(
+    await ref
+        .read(reportControllerProvider.notifier)
+        .submit(
           targetType: widget.targetType,
           targetId: widget.targetId,
           reason: payload,
@@ -108,8 +109,8 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
         left: WarmPlayfulSpacing.s5,
         right: WarmPlayfulSpacing.s5,
         top: WarmPlayfulSpacing.s5,
-        bottom: MediaQuery.of(context).viewInsets.bottom +
-            WarmPlayfulSpacing.s5,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom + WarmPlayfulSpacing.s5,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -155,14 +156,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
           FilledButton(
             key: const Key('report_submit_button'),
             onPressed: (_reason == null || isSubmitting) ? null : _submit,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                vertical: WarmPlayfulSpacing.s4,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-              ),
-            ),
+            style: loadingFilledStyle(context, isLoading: isSubmitting),
             child: isSubmitting
                 ? SizedBox(
                     height: WarmPlayfulSpacing.s4,

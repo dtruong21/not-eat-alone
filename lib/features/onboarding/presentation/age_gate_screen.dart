@@ -19,6 +19,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/onboarding/application/age_gate_controller.dart';
 
@@ -156,19 +157,11 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
               Text(
                 'You must be 18 or older to use Convyve.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s6),
               OutlinedButton(
                 onPressed: isSubmitting ? null : _pickDate,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
                 child: Text(
                   selected == null
                       ? 'Select date of birth'
@@ -186,14 +179,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
               ],
               FilledButton(
                 onPressed: (selected == null || isSubmitting) ? null : _submit,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
+                style: loadingFilledStyle(context, isLoading: isSubmitting),
                 child: isSubmitting
                     ? SizedBox(
                         height: WarmPlayfulSpacing.s4,

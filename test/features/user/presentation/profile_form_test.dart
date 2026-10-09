@@ -163,6 +163,28 @@ void main() {
     },
   );
 
+  testWidgets('the add-photo tile outline reaches 3:1 on its surface', (
+    tester,
+  ) async {
+    await pumpForm(
+      tester,
+      formKey: GlobalKey<ProfileFormState>(),
+      user: _user(),
+    );
+
+    final tile = find.byKey(const Key('add_photo_tile'));
+    final box = tester.widget<DecoratedBox>(
+      find.descendant(of: tile, matching: find.byType(DecoratedBox)).first,
+    );
+    final border = (box.decoration as BoxDecoration).border! as Border;
+    final surface = Theme.of(tester.element(tile)).colorScheme.surface;
+    final a = border.top.color.computeLuminance();
+    final b = surface.computeLuminance();
+    final hi = a > b ? a : b;
+    final lo = a > b ? b : a;
+    expect((hi + 0.05) / (lo + 0.05), greaterThanOrEqualTo(3));
+  });
+
   testWidgets(
     'tapping the remove button on a thumbnail calls removePhoto',
     (tester) async {

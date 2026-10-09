@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
@@ -27,6 +28,9 @@ class MessageBubble extends StatelessWidget {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
+    // Bubbles stay flat on purpose (no card shadow): the surface step plus the
+    // left/right alignment and the peach own-bubble separate them in the
+    // capture, and a shadow on every bubble would make the thread noisy.
     final bubbleColor = mine ? colors.primaryContainer : colors.surface;
     final textColor = mine ? colors.onPrimaryContainer : colors.onSurface;
 
@@ -58,12 +62,12 @@ class MessageBubble extends StatelessWidget {
           if (message.createdAt != null)
             Text(
               formatClockTime(message.createdAt!),
-              style: textTheme.bodySmall?.copyWith(color: colors.outline),
+              style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
             ),
           if (showSeen)
             Text(
               'Seen',
-              style: textTheme.bodySmall?.copyWith(color: colors.outline),
+              style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
             ),
         ],
       ),

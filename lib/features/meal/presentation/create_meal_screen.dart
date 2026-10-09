@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/meal/application/create_meal_controller.dart';
@@ -149,45 +150,40 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
+              Material(
                 key: const Key('create_meal_restaurant_card'),
-                padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-                decoration: BoxDecoration(
-                  color: colors.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.restaurant.name,
-                      style: textTheme.titleMedium?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: WarmPlayfulType.h2Weight,
+                color: colors.surfaceContainerHighest,
+                elevation: WarmPlayfulElevation.card,
+                shadowColor: context.wp.shadow,
+                surfaceTintColor: Colors.transparent,
+                borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
+                child: Padding(
+                  padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.restaurant.name,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: colors.onSurface,
+                          fontWeight: WarmPlayfulType.h2Weight,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: WarmPlayfulSpacing.s1),
-                    Text(
-                      widget.restaurant.address,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      Text(
+                        widget.restaurant.address,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: context.wp.muted,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
               OutlinedButton(
                 key: const Key('create_meal_datetime_button'),
                 onPressed: isSubmitting ? null : _pickDateTime,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
                 child: Text(
                   _dateTime == null
                       ? 'Pick date & time'
@@ -243,14 +239,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
               FilledButton(
                 key: const Key('create_meal_submit_button'),
                 onPressed: (_dateTime == null || isSubmitting) ? null : _submit,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
+                style: loadingFilledStyle(context, isLoading: isSubmitting),
                 child: isSubmitting
                     ? SizedBox(
                         height: WarmPlayfulSpacing.s4,

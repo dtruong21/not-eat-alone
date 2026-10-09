@@ -9,6 +9,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/chat_list_tile.dart';
@@ -44,7 +45,7 @@ class ChatListScreen extends ConsumerWidget {
                     'No chats yet — match on a meal to start talking',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(
-                      color: colors.outline,
+                      color: context.wp.muted,
                     ),
                   ),
                 ),

@@ -17,6 +17,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/presentation/widgets/profile_form.dart';
@@ -25,8 +26,7 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
   @override
-  ConsumerState<ProfileSetupScreen> createState() =>
-      ProfileSetupScreenState();
+  ConsumerState<ProfileSetupScreen> createState() => ProfileSetupScreenState();
 }
 
 /// Public (not `_`-prefixed) so widget tests can reach [debugFormData] to
@@ -46,7 +46,9 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     if (data == null || !data.isValid) return;
 
     final bio = data.bio?.trim();
-    await ref.read(profileControllerProvider.notifier).completeSetup(
+    await ref
+        .read(profileControllerProvider.notifier)
+        .completeSetup(
           displayName: data.name.trim(),
           gender: data.gender!,
           bio: (bio == null || bio.isEmpty) ? null : bio,
@@ -83,23 +85,16 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 Text(
                   'Add a name, a photo, and tell us how you identify — this '
                   'helps us match you.',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: context.wp.muted,
+                  ),
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s6),
                 ProfileForm(onChanged: _onFormChanged),
                 const SizedBox(height: WarmPlayfulSpacing.s5),
                 FilledButton(
                   onPressed: (isValid && !isSubmitting) ? _continue : null,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: WarmPlayfulSpacing.s4,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        WarmPlayfulRadius.sm,
-                      ),
-                    ),
-                  ),
+                  style: loadingFilledStyle(context, isLoading: isSubmitting),
                   child: isSubmitting
                       ? SizedBox(
                           height: WarmPlayfulSpacing.s4,

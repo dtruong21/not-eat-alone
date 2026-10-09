@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -64,6 +65,9 @@ class ChatListTile extends ConsumerWidget {
 
     return Material(
       color: colors.surface,
+      elevation: WarmPlayfulElevation.card,
+      shadowColor: context.wp.shadow,
+      surfaceTintColor: Colors.transparent,
       borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
       child: InkWell(
         key: Key('chat_list_tile_${item.match.id}'),
@@ -82,7 +86,7 @@ class ChatListTile extends ConsumerWidget {
                 backgroundImage:
                     photoUrl != null ? NetworkImage(photoUrl) : null,
                 child: photoUrl == null
-                    ? Icon(Icons.person_rounded, color: colors.outline)
+                    ? Icon(Icons.person_rounded, color: context.wp.muted)
                     : null,
               ),
               const SizedBox(width: WarmPlayfulSpacing.s3),
@@ -103,7 +107,7 @@ class ChatListTile extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
+                        color: context.wp.muted,
                       ),
                     ),
                   ],
@@ -117,7 +121,7 @@ class ChatListTile extends ConsumerWidget {
                     Text(
                       _relativeTime(lastMessage!.createdAt!),
                       style: textTheme.bodySmall?.copyWith(
-                        color: colors.outline,
+                        color: context.wp.muted,
                       ),
                     ),
                   if (unread) ...[

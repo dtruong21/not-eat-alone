@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -66,41 +67,44 @@ class MealDetailScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
+              Material(
                 key: const Key('meal_detail_restaurant_card'),
-                padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-                decoration: BoxDecoration(
-                  color: colors.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            meal.restaurant.name,
-                            style: textTheme.titleMedium?.copyWith(
-                              color: colors.onSurface,
-                              fontWeight: WarmPlayfulType.h2Weight,
+                color: colors.surfaceContainerHighest,
+                elevation: WarmPlayfulElevation.card,
+                shadowColor: context.wp.shadow,
+                surfaceTintColor: Colors.transparent,
+                borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
+                child: Padding(
+                  padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              meal.restaurant.name,
+                              style: textTheme.titleMedium?.copyWith(
+                                color: colors.onSurface,
+                                fontWeight: WarmPlayfulType.h2Weight,
+                              ),
                             ),
                           ),
-                        ),
-                        if (meal.womenOnly) ...[
-                          const SizedBox(width: WarmPlayfulSpacing.s2),
-                          _WomenOnlyBadge(colors: colors, textTheme: textTheme),
+                          if (meal.womenOnly) ...[
+                            const SizedBox(width: WarmPlayfulSpacing.s2),
+                            _WomenOnlyBadge(textTheme: textTheme),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: WarmPlayfulSpacing.s1),
-                    Text(
-                      meal.restaurant.address,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      Text(
+                        meal.restaurant.address,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: context.wp.muted,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
@@ -169,9 +173,8 @@ class _MealSafetyActions extends ConsumerWidget {
 }
 
 class _WomenOnlyBadge extends StatelessWidget {
-  const _WomenOnlyBadge({required this.colors, required this.textTheme});
+  const _WomenOnlyBadge({required this.textTheme});
 
-  final ColorScheme colors;
   final TextTheme textTheme;
 
   @override
@@ -183,13 +186,13 @@ class _WomenOnlyBadge extends StatelessWidget {
         vertical: WarmPlayfulSpacing.s1,
       ),
       decoration: BoxDecoration(
-        color: colors.secondaryContainer,
+        color: context.wp.peach,
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
       ),
       child: Text(
         'Women only',
         style: textTheme.bodySmall?.copyWith(
-          color: colors.onSecondaryContainer,
+          color: context.wp.onAccent,
           fontWeight: WarmPlayfulType.captionWeight,
         ),
       ),
@@ -230,7 +233,7 @@ class _HostBlock extends ConsumerWidget {
         if (host == null) {
           return Text(
             'Host unavailable',
-            style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+            style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
           );
         }
 
@@ -250,7 +253,7 @@ class _HostBlock extends ConsumerWidget {
                   ? Icon(
                       Icons.person_rounded,
                       size: WarmPlayfulSpacing.s5,
-                      color: colors.outline,
+                      color: context.wp.muted,
                     )
                   : null,
             ),
@@ -273,7 +276,7 @@ class _HostBlock extends ConsumerWidget {
                     Text(
                       host.bio!,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: colors.outline,
+                        color: context.wp.muted,
                       ),
                     ),
                   ],
@@ -398,12 +401,7 @@ class _RequestToJoinButton extends ConsumerWidget {
           : () => ref
                 .read(createRequestControllerProvider.notifier)
                 .request(meal),
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-        ),
-      ),
+      style: loadingFilledStyle(context, isLoading: isSubmitting),
       child: isSubmitting
           ? SizedBox(
               height: WarmPlayfulSpacing.s4,
@@ -433,21 +431,13 @@ class _RequestedState extends StatelessWidget {
         FilledButton(
           key: const Key('meal_detail_requested_button'),
           onPressed: null,
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              vertical: WarmPlayfulSpacing.s4,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-            ),
-          ),
           child: const Text('Requested'),
         ),
         const SizedBox(height: WarmPlayfulSpacing.s1),
         Text(
           'Waiting for the host',
           textAlign: TextAlign.center,
-          style: textTheme.bodySmall?.copyWith(color: colors.outline),
+          style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
         ),
       ],
     );
@@ -517,12 +507,6 @@ class _NotSelectedState extends StatelessWidget {
     return FilledButton(
       key: const Key('meal_detail_not_selected_button'),
       onPressed: null,
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-        ),
-      ),
       child: const Text('Not selected'),
     );
   }
@@ -537,7 +521,6 @@ class _WomenOnlyGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
     return Column(
@@ -545,14 +528,6 @@ class _WomenOnlyGuard extends StatelessWidget {
         FilledButton(
           key: const Key('meal_detail_women_only_disabled_button'),
           onPressed: null,
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              vertical: WarmPlayfulSpacing.s4,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-            ),
-          ),
           child: const Text('Request to join'),
         ),
         const SizedBox(height: WarmPlayfulSpacing.s1),
@@ -560,7 +535,7 @@ class _WomenOnlyGuard extends StatelessWidget {
           'This meal is women-only.',
           key: const Key('meal_detail_women_only_note'),
           textAlign: TextAlign.center,
-          style: textTheme.bodySmall?.copyWith(color: colors.outline),
+          style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
         ),
       ],
     );
@@ -591,7 +566,7 @@ class _YourMealChip extends StatelessWidget {
         child: Text(
           'Your meal',
           style: textTheme.bodySmall?.copyWith(
-            color: colors.outline,
+            color: context.wp.muted,
             fontWeight: WarmPlayfulType.captionWeight,
           ),
         ),

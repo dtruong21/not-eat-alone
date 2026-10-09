@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -325,7 +326,7 @@ class _PhotoThumbnail extends StatelessWidget {
             height: double.infinity,
             errorBuilder: (context, error, stackTrace) => ColoredBox(
               color: colors.surfaceContainerHighest,
-              child: Icon(Icons.broken_image_outlined, color: colors.outline),
+              child: Icon(Icons.broken_image_outlined, color: context.wp.muted),
             ),
           ),
         ),
@@ -368,7 +369,9 @@ class _AddPhotoTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: colors.outlineVariant),
+            // Enabled control: the outline must reach 3:1 on the surface
+            // (outlineVariant is the divider token, ~1:1 there).
+            border: Border.all(color: context.wp.muted),
             borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
           ),
           child: Center(
@@ -381,7 +384,7 @@ class _AddPhotoTile extends StatelessWidget {
                       color: colors.primary,
                     ),
                   )
-                : Icon(Icons.add_a_photo_outlined, color: colors.outline),
+                : Icon(Icons.add_a_photo_outlined, color: context.wp.muted),
           ),
         ),
       ),

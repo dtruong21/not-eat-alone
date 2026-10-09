@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/config/legal_urls.dart';
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
@@ -192,7 +193,6 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         WarmPlayfulSpacing.s4,
@@ -206,7 +206,7 @@ class _SectionHeader extends StatelessWidget {
           fontSize: WarmPlayfulType.captionSize,
           height: WarmPlayfulType.captionHeight,
           fontWeight: WarmPlayfulType.captionWeight,
-          color: colors.outline,
+          color: context.wp.muted,
         ),
       ),
     );

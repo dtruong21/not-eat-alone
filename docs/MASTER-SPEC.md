@@ -20,7 +20,7 @@ Flutter SDK pinned to **3.47.4** via `.fvmrc`. Dart SDK comes from Flutter. All 
 | `flutter_riverpod` + `riverpod_annotation` | State + code-gen providers (`@riverpod`). |
 | `go_router` | Single source of truth for routing. Used with `go_router_builder` for typed routes. |
 | `freezed_annotation` + `json_annotation` | Sealed-class models with `fromJson` / `toJson`. |
-| `google_fonts` | Inter / Nunito / JetBrains Mono loaded at runtime. |
+| (no `google_fonts`) | Nunito is bundled as an asset (`assets/fonts/`, OFL licence registered in `bootstrap`): no runtime download (GDPR, offline, fidelity). |
 | `lucide_icons` | Line icons across all three design systems. |
 | `flutter_animate` | Declarative one-shot animations; pairs with token motion specs. |
 | `posthog_flutter` | Product analytics — events from `lib/core/analytics/events.dart`. |
@@ -191,7 +191,7 @@ ThemeData buildLightTheme() => ThemeData(
     surface: AppTokens.light.surface,
     outline: AppTokens.light.border,
   ),
-  textTheme: GoogleFonts.interTextTheme(),
+  textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Nunito'), // Nunito is bundled (assets/fonts)
   extensions: const [AppExtensions.light],
 );
 ```

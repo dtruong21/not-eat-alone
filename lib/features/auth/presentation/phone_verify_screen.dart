@@ -15,6 +15,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 
@@ -51,7 +52,9 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
     });
 
     try {
-      await ref.read(authRepositoryProvider).confirmSmsCode(
+      await ref
+          .read(authRepositoryProvider)
+          .confirmSmsCode(
             verificationId: widget.verificationId,
             smsCode: smsCode,
           );
@@ -91,7 +94,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
               Text(
                 'We texted you a 6-digit code.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s6),
               TextField(
@@ -104,9 +107,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 decoration: InputDecoration(
                   labelText: '6-digit code',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      WarmPlayfulRadius.sm,
-                    ),
+                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
                   ),
                 ),
               ),
@@ -121,14 +122,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
               ],
               FilledButton(
                 onPressed: _isSubmitting ? null : _verify,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
+                style: loadingFilledStyle(context, isLoading: _isSubmitting),
                 child: _isSubmitting
                     ? SizedBox(
                         height: WarmPlayfulSpacing.s4,

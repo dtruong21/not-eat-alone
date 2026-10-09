@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
@@ -40,7 +41,9 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final name = data.name.trim();
     final bio = data.bio?.trim();
 
-    await ref.read(profileControllerProvider.notifier).save(
+    await ref
+        .read(profileControllerProvider.notifier)
+        .save(
           displayName: name.isEmpty ? null : name,
           bio: (bio == null || bio.isEmpty) ? null : bio,
           gender: data.gender,
@@ -88,14 +91,7 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               const SizedBox(height: WarmPlayfulSpacing.s5),
               FilledButton(
                 onPressed: isSubmitting ? null : _save,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: WarmPlayfulSpacing.s4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                  ),
-                ),
+                style: loadingFilledStyle(context, isLoading: isSubmitting),
                 child: isSubmitting
                     ? SizedBox(
                         height: WarmPlayfulSpacing.s4,

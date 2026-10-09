@@ -23,6 +23,7 @@ import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
@@ -126,7 +127,7 @@ class DiscoveryScreen extends ConsumerWidget {
         color: colors.error,
       ),
       data: (meals) => meals.isEmpty
-          ? _scrollableMessage('No meals near you yet', color: colors.outline)
+          ? _scrollableMessage('No meals near you yet', color: context.wp.muted)
           : ListView.separated(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
               physics: const AlwaysScrollableScrollPhysics(),
@@ -199,6 +200,9 @@ class _MealCard extends StatelessWidget {
 
     return Material(
       color: colors.surface,
+      elevation: WarmPlayfulElevation.card,
+      shadowColor: context.wp.shadow,
+      surfaceTintColor: Colors.transparent,
       borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
       child: InkWell(
         onTap: onTap,
@@ -228,12 +232,12 @@ class _MealCard extends StatelessWidget {
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
                 formatMealDateTime(meal.dateTime),
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
                 _formatDistance(item.distanceMeters),
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s3),
               _HostInfo(hostId: meal.hostId),
@@ -251,7 +255,6 @@ class _WomenOnlyBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
     return Container(
@@ -261,13 +264,13 @@ class _WomenOnlyBadge extends StatelessWidget {
         vertical: WarmPlayfulSpacing.s1,
       ),
       decoration: BoxDecoration(
-        color: colors.secondaryContainer,
+        color: context.wp.peach,
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
       ),
       child: Text(
         'Women only',
         style: textTheme.bodySmall?.copyWith(
-          color: colors.onSecondaryContainer,
+          color: context.wp.onAccent,
           fontWeight: WarmPlayfulType.captionWeight,
         ),
       ),
@@ -310,7 +313,7 @@ class _HostInfo extends ConsumerWidget {
                   ? Icon(
                       Icons.person_rounded,
                       size: WarmPlayfulSpacing.s4,
-                      color: colors.outline,
+                      color: context.wp.muted,
                     )
                   : null,
             ),

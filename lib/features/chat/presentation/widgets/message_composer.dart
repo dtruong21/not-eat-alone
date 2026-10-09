@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/chat/application/chat_controller.dart';
 
@@ -112,7 +113,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                       )
                     : Icon(
                         Icons.send_rounded,
-                        color: canSend ? colors.primary : colors.outline,
+                        color: canSend ? colors.primary : context.wp.subtle,
                       ),
               ),
             ],

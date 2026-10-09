@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 
 /// A static card displaying safety tips for meeting up in person.
@@ -19,7 +20,6 @@ class SafetyTipsCard extends StatelessWidget {
 
     return Card(
       key: const Key('safety_tips_card'),
-      elevation: 0,
       color: colors.surfaceContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
@@ -88,7 +88,7 @@ class _TipBullet extends StatelessWidget {
             width: WarmPlayfulSpacing.s1,
             height: WarmPlayfulSpacing.s1,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.outline,
+              color: context.wp.muted,
               shape: BoxShape.circle,
             ),
           ),

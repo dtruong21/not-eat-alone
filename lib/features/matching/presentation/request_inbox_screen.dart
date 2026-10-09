@@ -9,6 +9,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 import 'package:not_eat_alone/features/matching/presentation/widgets/request_inbox_tile.dart';
@@ -53,7 +54,7 @@ class RequestInboxScreen extends ConsumerWidget {
       data: (requests) => requests.isEmpty
           ? _scrollableMessage(
               'No pending requests',
-              color: colors.outline,
+              color: context.wp.muted,
             )
           : ListView.separated(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
