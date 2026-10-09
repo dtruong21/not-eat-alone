@@ -110,3 +110,4 @@ graphify-out/
 
 # UX capture harness output (screenshots + generated avatars; regenerable)
 ux_audit/out/
+ios/Flutter/Secrets.xcconfig
