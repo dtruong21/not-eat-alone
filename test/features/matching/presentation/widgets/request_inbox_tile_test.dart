@@ -20,7 +20,6 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
-import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/matching/application/request_meal_provider.dart';
 import 'package:not_eat_alone/features/matching/application/request_providers.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
@@ -244,10 +243,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(
-          of: line,
-          matching: find.text(formatMealDateTime(_futureMeal.dateTime)),
-        ),
+        find.descendant(of: line, matching: find.text('Mon 5 Jan 2099, 19:30')),
         findsOneWidget,
       );
     });
@@ -579,7 +575,7 @@ void main() {
           expect(tester.takeException(), isNull);
 
           // Date/time is fully shown on its own line.
-          final date = find.text(formatMealDateTime(meal.dateTime));
+          final date = find.text('Sun 5 Jan 2020, 19:30');
           expect(date, findsOneWidget);
           final dateText = tester.widget<Text>(date);
           final restaurant = find.text(longName);

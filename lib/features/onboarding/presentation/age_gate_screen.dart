@@ -22,27 +22,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/onboarding/application/age_gate_controller.dart';
-
-const _monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-/// Formats [date] as e.g. "January 5, 2000" without pulling in `intl`
-/// (not a direct dependency of this package).
-String _formatDate(DateTime date) =>
-    '${_monthNames[date.month - 1]} ${date.day}, ${date.year}';
 
 class AgeGateScreen extends ConsumerStatefulWidget {
   const AgeGateScreen({super.key});
@@ -166,7 +147,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                 child: Text(
                   selected == null
                       ? 'Select date of birth'
-                      : _formatDate(selected),
+                      : formatLongDate(selected),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
