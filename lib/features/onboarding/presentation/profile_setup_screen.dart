@@ -56,11 +56,18 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         );
   }
 
+  /// "a, b and c".
+  static String _sentence(List<String> parts) => parts.length < 2
+      ? parts.join()
+      : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
     final isSubmitting = state.isLoading;
     final isValid = _formData?.isValid ?? false;
+    // Before the form's first report nothing is known: show no hint.
+    final missing = _formData?.missingFields ?? const <String>[];
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -84,8 +91,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s2),
                 Text(
-                  'Add a name, a photo, and tell us how you identify — this '
-                  'helps us match you.',
+                  "Name, photo and gender. That's it.",
                   style: textTheme.bodyMedium?.copyWith(
                     color: context.wp.muted,
                   ),
@@ -98,6 +104,24 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   loadingLabel: 'Saving…',
                   isLoading: isSubmitting,
                   onPressed: (isValid && !isSubmitting) ? _continue : null,
+                ),
+                // Always mounted so screen readers announce text changes.
+                Semantics(
+                  liveRegion: true,
+                  child: missing.isEmpty
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(
+                            top: WarmPlayfulSpacing.s2,
+                          ),
+                          child: Text(
+                            'Still needed: ${_sentence(missing)}.',
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: context.wp.muted,
+                            ),
+                          ),
+                        ),
                 ),
               ],
             ),
