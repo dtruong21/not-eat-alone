@@ -146,7 +146,7 @@ Related PRD entry: `docs/PRD.md § Auth`
 
 **Known issues:**
 - `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1) — contradicts the "Non-owner cannot read" edge case above
-- `docs/bugs/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1)
+- `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed)
 - `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
 
 ---
@@ -175,7 +175,7 @@ Related PRD entry: `docs/PRD.md § Profile`
 - Firebase **Storage not yet enabled** on the project — click "Get Started" in the console, then `firebase deploy --only storage`. Until then, `upload()` I/O is unverified (only path-building + delete are unit-tested).
 
 **Known issues:**
-- `docs/bugs/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1) — each photo add rewrites the user doc and resets navigation
+- `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed) — each photo add rewrites the user doc and resets navigation
 - `docs/bugs/2026-10-09-profile-photos-uploaded-unresized.md` (P2, inferred)
 
 ---

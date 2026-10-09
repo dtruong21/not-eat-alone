@@ -20,3 +20,5 @@
 **Hypothesis:** Make the router long-lived: build one `GoRouter` and feed auth/profile state through `refreshListenable` (or `ref.listen` + `router.refresh()`), or at minimum `ref.watch(currentUserDocProvider.select((a) => (a.value?.ageVerified, a.value?.profileComplete)))` so only gate-relevant changes rebuild it. Also `ref.onDispose(router.dispose)`.
 
 **Workaround:** none for the user (they must navigate back). Photo add on profile setup: add photos before typing the name.
+
+**Status:** Fixed — `routerProvider` now builds one long-lived `GoRouter`; `refreshListenable` re-runs `redirect` only when signed-in / age-verified / profile-complete change, and `redirect` reads current state. Stability tests un-skipped; gate-change redirect tests added (`test/core/routing/router_stability_test.dart`).

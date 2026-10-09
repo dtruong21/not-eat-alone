@@ -29,6 +29,7 @@
 /// provider re-watches it, so the router rebuilds on sign-in / sign-out.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/routing/app_shell.dart';
@@ -105,29 +106,49 @@ String? authRedirect({
 /// dependency, but keep the manual `Provider` here so the template runs
 /// before `build_runner` is invoked.
 ///
-/// Auth redirects: `signedIn`/`ageVerified` are computed here from
-/// `authStateProvider` / `currentUserDocProvider` (both `ref.watch`, so a
-/// new `GoRouter` — and therefore a fresh redirect decision — is built
-/// whenever auth state changes) and handed to the pure `authRedirect`
-/// above. While `currentUserDocProvider` is still loading for a signed-in
-/// user we treat `ageVerified` as `false`; the `location == _ageGatePath`
-/// guard in `authRedirect` stops that from bouncing a user who is already
-/// sitting on the age gate mid-load.
+/// Auth redirects: the router is built ONCE and lives as long as the provider
+/// scope — rebuilding it would restart navigation at `initialLocation`, so any
+/// change to the signed-in user's doc (a rating landing, a photo added, a
+/// profile save) would throw the user back to `/discover`. Instead, the three
+/// gate inputs (`signedIn`, `ageVerified`, `profileComplete`) are read fresh
+/// inside `redirect`, and `refreshListenable` asks go_router to re-run
+/// `redirect` only when one of those inputs actually changes. While
+/// `currentUserDocProvider` is still loading for a signed-in user we treat
+/// `ageVerified` as `false`; the `location == _ageGatePath` guard in
+/// `authRedirect` stops that from bouncing a user who is already sitting on
+/// the age gate mid-load.
 final routerProvider = Provider<GoRouter>((ref) {
-  final signedIn = ref.watch(authStateProvider).value != null;
-  final userDoc = ref.watch(currentUserDocProvider).value;
-  final ageVerified = userDoc?.ageVerified ?? false;
-  final profileComplete = userDoc?.profileComplete ?? false;
+  final refresh = ValueNotifier<int>(0);
+  ref
+    ..onDispose(refresh.dispose)
+    ..listen<bool>(
+      authStateProvider.select((auth) => auth.value != null),
+      (previous, next) => refresh.value++,
+    )
+    ..listen<({bool ageVerified, bool profileComplete})>(
+      currentUserDocProvider.select((doc) {
+        final user = doc.value;
+        return (
+          ageVerified: user?.ageVerified ?? false,
+          profileComplete: user?.profileComplete ?? false,
+        );
+      }),
+      (previous, next) => refresh.value++,
+    );
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: _homePath,
     debugLogDiagnostics: true,
-    redirect: (context, state) => authRedirect(
-      signedIn: signedIn,
-      ageVerified: ageVerified,
-      profileComplete: profileComplete,
-      location: state.matchedLocation,
-    ),
+    refreshListenable: refresh,
+    redirect: (context, state) {
+      final userDoc = ref.read(currentUserDocProvider).value;
+      return authRedirect(
+        signedIn: ref.read(authStateProvider).value != null,
+        ageVerified: userDoc?.ageVerified ?? false,
+        profileComplete: userDoc?.profileComplete ?? false,
+        location: state.matchedLocation,
+      );
+    },
     routes: [
       // TODO: replace with typed routes from `routes.g.dart` once scaffolded.
       // Inline routes kept here so the template compiles before codegen runs.
@@ -235,4 +256,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  ref.onDispose(router.dispose);
+  return router;
 });
