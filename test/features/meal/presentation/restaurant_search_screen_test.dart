@@ -110,9 +110,7 @@ Future<void> _pumpScreen(
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [
-        restaurantSearchControllerProvider.overrideWith(controller),
-      ],
+      overrides: [restaurantSearchControllerProvider.overrideWith(controller)],
       child: MaterialApp.router(
         theme: buildTheme(Brightness.light),
         routerConfig: router,
@@ -149,28 +147,22 @@ void main() {
     expect(find.text('No matches'), findsOneWidget);
   });
 
-  testWidgets(
-    'tapping a row fires restaurant_selected and navigates to '
-    '/meals/new/details with the tapped restaurant',
-    (tester) async {
-      await _pumpScreen(
-        tester,
-        controller: () =>
-            FakeRestaurantSearchController([_restaurantA, _restaurantB]),
-      );
+  testWidgets('tapping a row fires restaurant_selected and navigates to '
+      '/meals/new/details with the tapped restaurant', (tester) async {
+    await _pumpScreen(
+      tester,
+      controller: () =>
+          FakeRestaurantSearchController([_restaurantA, _restaurantB]),
+    );
 
-      final logs = await _captureDebugLogs(() async {
-        await tester.tap(find.text(_restaurantB.name));
-        await tester.pumpAndSettle();
-      });
+    final logs = await _captureDebugLogs(() async {
+      await tester.tap(find.text(_restaurantB.name));
+      await tester.pumpAndSettle();
+    });
 
-      expect(find.text('details:${_restaurantB.name}'), findsOneWidget);
-      expect(
-        logs.any((l) => l.contains('restaurant_selected')),
-        isTrue,
-      );
-    },
-  );
+    expect(find.text('details:${_restaurantB.name}'), findsOneWidget);
+    expect(logs.any((l) => l.contains('restaurant_selected')), isTrue);
+  });
 
   testWidgets('loading shows a skeleton list, not a spinner', (tester) async {
     await _pumpScreen(
@@ -182,22 +174,25 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
+  // Every target platform: desktop targets take different text-input and
+  // focus paths, so don't cover only the host OS.
   testWidgets('error shows ErrorState; Try again re-runs the typed query', (
     tester,
   ) async {
     final controller = FlakyRestaurantSearchController();
     await _pumpScreen(tester, controller: () => controller);
     // Let the notifier's own async build() settle first: otherwise its late
-    // completion can overwrite the error state the search below sets (seen
-    // once on CI). Pump durations, never pumpAndSettle (the skeleton shimmer
-    // never settles).
+    // completion can overwrite the error state the search below sets.
+    // Pump durations, never pumpAndSettle (the skeleton shimmer never
+    // settles).
     await tester.pump(const Duration(milliseconds: 50));
 
     await tester.enterText(
       find.byKey(const Key('restaurant_search_field')),
       'bistrot',
     );
-    await tester.pump(const Duration(milliseconds: 50));
+    // Typing is debounced (400ms); pump past it so the search fires.
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(ErrorState), findsOneWidget);
 
     await tester.tap(find.text('Try again'));
@@ -206,5 +201,5 @@ void main() {
     expect(controller.queries, ['bistrot', 'bistrot']);
     expect(find.byType(ErrorState), findsNothing);
     expect(find.text(_restaurantB.name), findsOneWidget);
-  });
+  }, variant: TargetPlatformVariant.all());
 }
