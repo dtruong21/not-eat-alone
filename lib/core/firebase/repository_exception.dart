@@ -31,3 +31,16 @@ class RepositoryWriteException implements Exception {
   @override
   String toString() => 'RepositoryWriteException($collection): $cause';
 }
+
+/// Thrown when a remote read (callable, HTTP proxy) fails — network, auth,
+/// App Check, quota, or an upstream outage.
+class RepositoryReadException implements Exception {
+  RepositoryReadException(this.source, this.cause, this.stack);
+
+  final String source;
+  final Object cause;
+  final StackTrace stack;
+
+  @override
+  String toString() => 'RepositoryReadException($source): $cause';
+}

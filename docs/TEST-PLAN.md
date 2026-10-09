@@ -594,7 +594,7 @@ Storage). It needs no real Firebase project and touches no cloud data.
 make e2e
 ```
 
-Prerequisites: Xcode with an iOS Simulator runtime, Node 20, Java 21+ (the
+Prerequisites: Xcode with an iOS Simulator runtime, Node 22, Java 21+ (the
 emulators need it), `firebase-tools`, FVM, and a **dedicated simulator** named
 `Convyve E2E` (don't share one with other projects running concurrently — that
 causes hangs). Create it once:

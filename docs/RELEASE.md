@@ -147,33 +147,70 @@ For **release** (Play Store signing):
 
 ## Phase 3 — Maps & Places API
 
-### 3.1 Real Places API key + Map view
+### 3.1 Reuse an existing GCP project for Maps (no new project needed)
 
-**Current state:** Restaurants come from `FakeRestaurantSearchDataSource` (20 hardcoded Paris restaurants). Maps are not yet integrated (design deferred with the API key).
+**Current state:** Restaurant search is implemented end to end: `PlacesRestaurantSearchDataSource` (`lib/features/meal/data/datasources/`) → callable `searchRestaurants` (`firebase/functions/src/callable/search_restaurants.ts`) → Places API (New) Text Search, restricted to a Paris bounding box. `FakeRestaurantSearchDataSource` remains for tests (override `restaurantSearchRepositoryProvider`). **Remaining for you:** Maps-project keys + `PLACES_API_KEY` secret (steps 1–5), deploy + verify (below). Map view is not yet integrated (design deferred).
 
-**Action:**
+**Decision:** Convyve consumes Maps Platform from an **existing GCP project you own** (the "Maps project"). A Maps key is just an API key bound to whichever project enabled the APIs — it does not need to live in the Firebase project. Billing, quota and API enablement all belong to the Maps project; nothing is linked to Firebase.
 
-1. **GCP new project or existing:** Go to [Google Cloud Console](https://console.cloud.google.com)
-   - Create a new project or reuse `not-eat-alone`
-   - Enable **Places API** (Autocomplete + Nearby Search)
-   - Enable **Maps SDK for iOS** + **Maps SDK for Android**
-   - Create API key (or restrict existing key to these APIs)
-   - Store in a secure config — `lib/core/config/gcp_keys.dart` or `.env`
+**Three keys, never one.** Every key is restricted to the minimum; sharing one key across platforms/APIs defeats the restrictions.
 
-2. **Swap FakeRestaurantSearchDataSource:**
-   - File: `lib/features/meal_creation/data/datasources/restaurant_search_datasource.dart`
-   - Subclass `RestaurantSearchDatasource`
-   - Call Places API (Nearby Search) for Paris center
-   - Parse response into `RestaurantDto` list
-   - Test: feed real restaurant results into meal creation flow
+| Key | Used by | Restricted to | Lives in |
+|---|---|---|---|
+| `convyve-places-server` | Cloud Function `searchRestaurants` | API: **Places API (New)** only | Secret Manager (Convyve Firebase project) |
+| `convyve-maps-android` | `google_maps_flutter` on Android | API: **Maps SDK for Android** · app: packages `com.daki.noteatalone` **and** `com.daki.noteatalone.stage` + SHA-1 of debug, upload **and Play App Signing** certs | Build-time injection |
+| `convyve-maps-ios` | `google_maps_flutter` on iOS | API: **Maps SDK for iOS** · app: bundle IDs `com.daki.noteatalone` **and** `com.daki.noteatalone.stage` | Build-time injection |
 
-3. **Map view (optional for v1, design deferred):**
-   - Add `google_maps_flutter` to `pubspec.yaml`
-   - Meal detail screen: embed map showing restaurant location
-   - Requires API key + iOS/Android native setup (see [google_maps_flutter docs](https://pub.dev/packages/google_maps_flutter))
-   - Design spec → `/design` if you want to add this
+> Restriction entries must cover both flavors (prod + stage) — one entry per package/bundle ID + SHA-1.
 
-4. **Await API provision:** Google may take 30 days to provision new APIs for new projects. If you're on an existing project, it's instant.
+**Why Places goes through a Cloud Function:** Places web-service keys can only be restricted by IP/referrer, not by app, so a Places key shipped in the binary is extractable and reusable by anyone. The key stays server-side; the client calls an App Check-enforced callable.
+
+#### Action — in the Maps project (Google Cloud Console)
+
+1. **APIs & Services → Library:** enable **Places API (New)**, **Maps SDK for Android**, **Maps SDK for iOS**. (Existing project → instant, no provisioning delay.)
+2. **Billing:** confirm the project has an active billing account. Add a **Budget & alert** (e.g. 50 / 90 / 100 %) and per-API **quota caps** (APIs & Services → each API → Quotas → set a daily request limit) so a leaked key can't run up a bill.
+3. **Credentials → Create credentials → API key** × 3 (names in the table above). For each: *Edit API key* → set **API restrictions** and **Application restrictions** per the table.
+   - Android SHA-1s: debug (`keytool -list -v -keystore ~/.android/debug.keystore`), upload keystore, and the **App signing key certificate** from Play Console → Setup → App signing (add after Phase 4.2).
+   - `convyve-places-server`: application restriction = **None** (Cloud Functions has no static egress IP). Compensate with the API restriction, Secret Manager, App Check enforcement and a quota cap.
+4. **Optional keyless hardening (skip for v1):** instead of a Places key, call Places API (New) from the function with its service-account OAuth token plus the `X-Goog-User-Project: <maps-project-id>` header. Requires granting the function's service account **Service Usage Consumer** on the Maps project. Removes the secret entirely.
+
+#### Action — in the Convyve Firebase project
+
+5. **Store the Places key in Secret Manager** (never in `.env`, git or function config):
+   ```bash
+   firebase functions:secrets:set PLACES_API_KEY   # paste convyve-places-server value
+   ```
+6. **Callable `searchRestaurants`** — ✅ implemented in `firebase/functions/src/callable/search_restaurants.ts` (logic + tests in `src/lib/places.ts`, `test/places.test.ts`). Behavior:
+   - `onCall({ region: 'europe-west1', secrets: [PLACES_API_KEY], enforceAppCheck: true }, …)`
+   - Reject unauthenticated callers (`req.auth?.uid`).
+   - Validate input (query ≤ 80 chars); results are locked to the Paris bounding box server-side — v1 is Paris-only. An empty query returns generic Paris restaurants (initial picker state; one billed request per picker open).
+   - Call **Places API (New)** `places:searchText` / `places:searchNearby` with a **field mask** (`places.id,places.displayName,places.formattedAddress,places.location`) so you only pay for the SKU you use. Restrict with `includedTypes: ['restaurant']`.
+   - Per-uid rate limit (30 calls/min, in-memory per instance — best-effort; `maxInstances: 10` + the Maps quota cap bound the worst case) and map the response to `{ placeId, name, address, lat, lng }`.
+   - Upstream errors are never forwarded to the client (logged status only).
+   - **Deploy:** `firebase deploy --only functions:searchRestaurants` (first deploy asks to grant the function access to the `PLACES_API_KEY` secret → accept).
+7. **Enforce App Check on Functions** (Phase 1.3) — without it, `enforceAppCheck: true` still rejects, but the console toggle gives you metrics on blocked traffic.
+
+#### Action — in the Flutter app
+
+8. **Datasource swap** — ✅ done. `PlacesRestaurantSearchDataSource` maps the payload via `RestaurantDto` and throws `RepositoryReadException` / `RepositoryParseException`; the search field is debounced (400 ms) and the controller drops out-of-order responses. **Dev note:** debug builds need an App Check debug token registered (Phase 1.2) or the callable rejects them.
+9. **Map view (optional for v1, design deferred → `/design` first):** add `google_maps_flutter` to `pubspec.yaml`; embed it on the meal detail screen for the restaurant pin. Inject the native keys at build time — **never commit them**:
+   - **Android:** put `MAPS_API_KEY=…` in `android/local.properties` (gitignored) and read it in `android/app/build.gradle.kts` via `manifestPlaceholders["MAPS_API_KEY"]`; `AndroidManifest.xml` gets `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}"/>`.
+   - **iOS:** put `MAPS_API_KEY = …` in a gitignored `ios/Flutter/Secrets.xcconfig` (`#include?` it from `Debug/Release.xcconfig`), expose it through `Info.plist` (`$(MAPS_API_KEY)`) and call `GMSServices.provideAPIKey(...)` in `AppDelegate`.
+   - **CI (GitHub Actions / Codemagic):** store both as encrypted secrets and write the files in a pre-build step. The unsigned PR-gate builds can use an empty key (map renders blank, build still passes).
+10. **Track:** if the map adds user actions (e.g. `map_opened`), add them via `/track` first.
+
+#### Verify
+
+- `cd firebase/functions && npm test && npm run build` and `flutter analyze && flutter test` (the Flutter side was written without running the toolchain — run these first).
+- Release build on a real Android device and an iPhone: map tiles load, restaurant search returns real Paris results.
+- Negative checks: calling `searchRestaurants` without App Check / without auth fails; the Android key does not work from a different package (a request with the key but a wrong package header → `API_KEY_ANDROID_APP_BLOCKED`).
+- Maps project → APIs & Services → Metrics: filter by credential to confirm traffic per key and that quotas/budget alerts exist.
+
+#### Operating notes
+
+- **Rotate** a key by creating a new one, shipping it, then deleting the old one; a leaked Places key only needs `firebase functions:secrets:set` + redeploy (no app release).
+- Because the Maps project is shared with other apps, per-key quotas and the metrics-by-credential view are how you isolate Convyve's usage and cost.
+- Check Google Maps Platform's current Terms of Service and free-usage thresholds before launch; the display of Places data must follow attribution rules (Google logo on map views, "Powered by Google" when showing Places data on a non-Google map).
 
 ---
 
@@ -562,7 +599,7 @@ After v1.0.0 ships:
 - **Pre-meal reminders:** Scheduled nudges 1–2 hours before meal time (non-goal for v1, deferred pending user feedback)
 - **Comments on ratings:** Users can add short text; add moderation queue if spam surfaces
 - **Edit/delete ratings:** Allow up to 24h to withdraw a rating
-- **Live map integration:** Place card shows restaurant on map (requires Maps SDK setup; v1 uses list-only discovery)
+- **Live map integration:** Place card shows restaurant on map (setup steps in Phase 3.1 §9; v1 uses list-only discovery)
 - **Geofence expansion:** Auto-prompt "expand search beyond Paris" if no results (v1 Paris-only soft-launch)
 
 ---
@@ -579,6 +616,10 @@ After v1.0.0 ships:
 | Play Store review rejection: "App signing certificate mismatch" | Signed with wrong keystore or mismatched SHA-256 | Verify Play Console's upload cert SHA-256 matches your keystore (Phase 4.2) |
 | Push notifications not arriving | App Check enforcement ON but debug token not added | Add App Check debug token to Firebase (Phase 1.2) |
 | Firestore rules rejected by App Check | Enforcement ON but app not signing requests | Verify app has valid App Check token (simulator/emulator may need debug token added) |
+| First functions deploy: `generateUploadUrl` 404, "Could not authenticate …gcf-admin-robot" | Service agents not yet created after the APIs were just enabled | Wait ~5 min and redeploy; else `gcloud beta services identity create --service=cloudfunctions.googleapis.com --project=<id>` (also `cloudbuild`, `eventarc`) |
+| Functions deploy: "Build failed … missing permission on the build service account" | New projects build as the default Compute Engine SA, which lacks the Cloud Build role | `gcloud projects add-iam-policy-binding <id> --member="serviceAccount:<project-number>-compute@developer.gserviceaccount.com" --role="roles/cloudbuild.builds.builder"`, then redeploy |
+| `firebase deploy --only functions:X`: "No function matches the filter" | Deploying from a checkout/branch that lacks the function (deploy packages the working tree) | Deploy from the right branch, or use a worktree: `git worktree add ../<name>-develop origin/develop` |
+| `searchRestaurants` returns `unauthenticated` / `failed-precondition` in debug | App Check enforced, no debug token registered | Register the device's debug token (Phase 1.2) |
 
 ---
 
@@ -592,7 +633,7 @@ Before your first submission:
 4. ✅ APNs key uploaded
 5. ✅ Android SHA-256 registered
 6. ✅ Apple Sign-In enabled
-7. ✅ Places API key (optional if swapping to real API)
+7. ✅ Maps project: Places + Maps SDK enabled, 3 restricted keys, budget + quota caps; `PLACES_API_KEY` in Secret Manager; `searchRestaurants` deployed (Phase 3)
 8. ✅ iOS signing certificate + provisioning profile
 9. ✅ Android keystore + Play Console upload key
 10. ✅ App Store Connect app created

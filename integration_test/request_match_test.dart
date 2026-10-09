@@ -238,8 +238,17 @@ void main() {
     // Function, so `pollUntil` here is absorbing UI/async timing (the tap
     // above vs. this read), not waiting on a Function trigger.
     final match = await pollUntil(() async {
-      final m = await _db.collection('matches').doc(mealId).get();
-      return m.exists ? m : null;
+      try {
+        final m = await _db.collection('matches').doc(mealId).get();
+        return m.exists ? m : null;
+      } on FirebaseException catch (e) {
+        // The `matches` get rule dereferences resource.data, so reading the
+        // doc BEFORE the approve transaction has written it is a rules
+        // evaluation error (permission-denied), not "not found". Keep polling
+        // until the transaction lands; a real denial would time out below.
+        if (e.code == 'permission-denied') return null;
+        rethrow;
+      }
     });
     final participants = match.data()!['participants'] as List<Object?>;
     expect(participants, containsAll([host.uid, guest.uid]));
