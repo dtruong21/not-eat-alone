@@ -327,6 +327,7 @@ For **release** (Play Store signing):
    const privacyPolicyUrl = 'https://your-domain/privacy';
    const termsOfServiceUrl = 'https://your-domain/terms';
    ```
+   - Also set `supportEmail` in the same file to a mailbox you actually monitor (currently the placeholder `support@convyve.com`). It is shown in Settings → Contact support and must match the Support URL in the store listings.
    - Both URLs must be HTTPS and accessible to real users (not `localhost`)
    - App Store + Play Store verify these before approval
 

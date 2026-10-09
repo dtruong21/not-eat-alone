@@ -53,6 +53,7 @@ Joiners are approval-gated, women-only meals exist, and block/report is always o
 - [x] 18+ gate; sign-in with phone, Apple or Google
 - [x] Safety-tips card
 - [x] Account deletion
+- [x] Contact support (Settings; address shown in-app)
 - [ ] Profanity / image moderation (Cloud Function) — not built; deferred by decision (see Open questions)
 
 ### Pillar 4 — Liquidity over reach
