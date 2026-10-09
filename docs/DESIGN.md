@@ -289,6 +289,26 @@ ClipRRect(
 );
 ```
 
+## Auth and onboarding patterns (UX plan 17a)
+
+Sign-in, phone code, age gate and profile setup. All widget-tested unless noted; what only the capture shows is listed in `docs/ux/17a-verification.md`.
+
+**Inline field errors.** A problem with what the user typed is shown ON the field (`InputDecoration.errorText`, `wp.dangerText`, `errorMaxLines: 3`), never as a separate sentence under the button, and never costs a round trip: the sign-in phone number is checked locally (`isPlausiblePhone`, `+` and 8-15 digits) and the field is refocused so the keyboard scroll brings the error and the button into view. A wrong SMS code (`InvalidSmsCodeException`, mapped in the repository) shows "That code didn't work. Check it or resend." on the code field, clears it and refocuses it; the message clears as soon as the user types. Failures the user cannot fix by editing a field (SMS could not be sent, timeout, network) use one generic sentence, "Something went wrong — please try again.", in `colorScheme.error`, in a `liveRegion` + `container` `Semantics` so a screen reader announces it when it appears.
+
+**Waiting states.** Phone sign-in holds the "Sending code…" spinner (`AppButton.isLoading`) until `codeSent` / `onError` fires, with a 60 s safety timeout that falls back to the generic error. While one sign-in method is in flight the other two are disabled. The 6th code digit submits by itself (the Verify button stays as the fallback); after a success the button stays in its "Verifying…" state so the used code cannot be sent twice.
+
+**Resend countdown.** The code screen's text-variant `AppButton` reads "Resend code in 29 s" and is disabled until a 30 s deadline passes (`package:clock`, derived from the deadline, so time spent in the Messages app counts); it then reads "Resend code", shows "Sending code…" while it works (60 s timeout) and confirms with a muted live-region line "Code sent again" while the countdown restarts. A failed resend shows the generic sentence and keeps the typed code. "Change" (next to the number, 48 pt tall, spoken as "Change phone number") and the app bar's back arrow return to the sign-in screen.
+
+**Under-18 notice.** An under-18 date of birth signs the user out and the sign-in screen shows a dismissible peach card ("You must be 18 or older to use Convyve.", `wp.peach`, live region, 48 x 48 close button with a "Dismiss" tooltip). The age gate sets `underageNoticeProvider` BEFORE it signs out (the age gate is unmounted by then); starting any sign-in or dismissing clears it. If `signOut` fails the flag is reset (the user is still signed in), and an adult submission clears a stale flag before writing. The "blocked" layout in `AgeGateScreen` is a fallback no frame ever shows.
+
+**Official provider buttons.** Apple: `SignInWithAppleButton` from `sign_in_with_apple` (black on the light theme, white on the dark one, 56 high, radius `md`, "Continue with Apple", text scale capped at 1x because the label is 0.43 x height); it has no loading state, so while any method is in flight it is dimmed and inert (never a `null` handler: that swaps the brand colours for Cupertino grey), and while Apple itself is in flight it is one disabled "Signing in…" live-region node. Google: an outlined `AppButton` with the Material `g_mobiledata_rounded` icon is a stand-in; Google's brand rules want the multicolour "G" asset (open item, see `docs/ux/17a-verification.md`).
+
+**Scrolling forms.** The age gate and profile setup scroll (`SingleChildScrollView`; the age gate stays centred when it fits) and the code screen scrolls too, so large text or the keyboard never hides a button. Text fields that sit above other controls give the keyboard-scroll room for them (`scrollPadding`; the profile form's `kProfileFieldScrollPadding` = 3 x `actionHeight`). Typing in Bio with the keyboard up also scrolls Continue into view (`Scrollable.ensureVisible`, keep-visible-at-end), because `scrollPadding` only guesses how far below the caret the button is. The age-gate date picker opens on the year grid with the help text "Your date of birth".
+
+**Profile setup.** Subtitle "Name, photo and gender. That's it." The add-photo tile shows "Add photo" under the icon (icon and label in `onSurface`, outline `wp.muted`, label scaled down with `FittedBox(BoxFit.scaleDown)` instead of overflowing the fixed grid cell; spoken as "Add photo" or, while uploading, "Uploading photo"). The remove button is an `IconButton` with `tooltip: 'Remove photo'` (the tooltip is also its accessible name): 48 x 48 hit area, 24 visual badge in the thumbnail's top-right corner. Continue is disabled until photo, name and gender are set, and a muted live-region line under it names what is missing ("Still needed: a photo, your name and how you identify.", only the remaining items once some are done; hidden when valid).
+
+---
+
 ## Date and time formats
 
 English, 24-hour clock, day before month, always in the viewer's LOCAL time (`lib/core/util/date_format.dart`, pure, dependency-free; `intl` and French arrive with plan 19, which replaces the internals, not the call sites):

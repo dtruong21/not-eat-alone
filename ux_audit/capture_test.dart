@@ -440,15 +440,18 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
     await _snap(tester, '01_signin');
   });
 
-  // Real UI: a malformed number; the Auth emulator rejects it and the screen
-  // shows its error line.
+  // Real UI: an implausible number; since plan 17a the screen refuses it
+  // itself (no round trip) and shows the hint on the field.
   await _step(tester, '02_signin_phone_error', () async {
-    await tester.enterText(find.byKey(const Key('signin_phone_field')), 'abc');
+    await tester.enterText(
+      find.byKey(const Key('signin_phone_field')),
+      '+33 12',
+    );
     await _settle(tester);
     await _tap(tester, find.text('Send code'));
     await _pumpUntilFound(
       tester,
-      find.text('Something went wrong — please try again.'),
+      find.textContaining('Enter a phone number with country code'),
       timeout: const Duration(seconds: 20),
     );
     await _snap(tester, '02_signin_phone_error');
@@ -462,14 +465,14 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
       '+33612345678',
     );
     await _settle(tester);
-    // `verifyPhoneNumber` returns as soon as the request is dispatched, so the
-    // button's spinner is gone again before the code arrives: this is what the
-    // user sees while waiting (no indicator).
+    // Since plan 17a the button's spinner ("Sending code…") stays until
+    // `codeSent` arrives, so the frozen Auth emulator shows it.
     await _tapInFlight(
       tester,
       find.text('Send code'),
       '03_signin_phone_waiting',
       freeze: 'auth',
+      mustShow: _spinner,
     );
     await _pumpUntilFound(
       tester,
@@ -479,27 +482,61 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
     await _snap(tester, '04_phone_verify');
   });
 
-  // Real UI: a wrong code against the placeholder id fails in the Auth
-  // emulator and the screen shows its error line.
+  // Real UI: a wrong code against the placeholder id is rejected by the Auth
+  // emulator. The 6th digit submits by itself (plan 17a), so the emulator is
+  // frozen BEFORE the code is typed: the spinner is the in-flight shot.
   await _step(tester, '06_phone_verify_error', () async {
-    await tester.enterText(
-      find.byKey(const Key('phone_verify_code_field')),
-      '123456',
-    );
-    await _settle(tester);
-    await _tapInFlight(
-      tester,
-      find.text('Verify'),
-      '05_phone_verify_in_flight',
-      freeze: 'auth',
-      mustShow: _spinner,
-    );
+    await _frozen('auth', () async {
+      await tester.enterText(
+        find.byKey(const Key('phone_verify_code_field')),
+        '123456',
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (_spinner.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await _snap(tester, '05_phone_verify_in_flight', assets: false);
+      if (_spinner.evaluate().isEmpty) {
+        _missing.add('05_phone_verify_in_flight');
+        // Run-log diagnostic for the audit; there is no logger in dev tooling.
+        // ignore: avoid_print
+        print('UXMISSING 05_phone_verify_in_flight: no in-flight indicator');
+      }
+    });
+    // Either the "code didn't work" line on the field or, for an error the
+    // repository does not map, the generic sentence.
     await _pumpUntilFound(
       tester,
-      find.text('Something went wrong — please try again.'),
+      find.byWidgetPredicate((w) {
+        final text = w is Text ? w.data ?? '' : '';
+        return text.contains("didn't work") ||
+            text.contains('Something went wrong');
+      }),
       timeout: const Duration(seconds: 20),
     );
+    final fieldError = find
+        .textContaining("didn't work")
+        .evaluate()
+        .isNotEmpty;
+    // Run-log result for the verification doc; dev tooling has no logger.
+    // ignore: avoid_print
+    print('UXCHECK wrong code: ${fieldError ? "field error" : "generic"}');
     await _snap(tester, '06_phone_verify_error');
+  });
+
+  // Real UI: once the 30 s cooldown has run out, "Resend code" asks the Auth
+  // emulator for a new code and the screen confirms it ("Code sent again",
+  // countdown restarted).
+  await _step(tester, '07_phone_verify_resent', () async {
+    await _pumpUntilFound(
+      tester,
+      find.text('Resend code'),
+      timeout: const Duration(seconds: 45),
+    );
+    await _tap(tester, find.text('Resend code'));
+    await _pumpUntilFound(tester, find.text('Code sent again'));
+    await _snap(tester, '07_phone_verify_resent');
   });
 }
 
@@ -1080,7 +1117,11 @@ Future<void> _pickYear(WidgetTester tester, int year) async {
   final monthYear = find.byWidgetPredicate(
     (w) => w is Text && RegExp(r'^[A-Z][a-z]+ \d{4}$').hasMatch(w.data ?? ''),
   );
-  await _tap(tester, monthYear);
+  // Plan 17a: the picker opens on the year grid; tapping the header there
+  // would flip it back to the calendar.
+  if (find.byType(YearPicker).evaluate().isEmpty) {
+    await _tap(tester, monthYear);
+  }
   await _tap(tester, find.text('$year'));
   await _tap(tester, find.text('OK'));
 }
@@ -1117,6 +1158,12 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
   await _step(tester, 'under18_submit', () async {
     await _tap(tester, find.text('Continue'));
     await _pumpUntilFound(tester, find.byKey(const Key('signin_phone_field')));
+    // Plan 17a: the sign-in screen tells them why (dismissible banner).
+    await _pumpUntilFound(
+      tester,
+      find.text('You must be 18 or older to use Convyve.'),
+    );
+    await _snap(tester, '13_signin_underage_notice');
   });
 
   // The adult path: the picker's default date is exactly 18 years ago. The
