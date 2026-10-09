@@ -210,13 +210,21 @@ For a non-interactive label, a plain `Container` with `BorderRadius.circular(War
 
 Hierarchy (all share min height 48 = `WarmPlayfulSize.minTap`, radius `md` = 16, horizontal padding `s5`, label `labelLarge` 700):
 
-- **Primary** — `FilledButton`: coral `accent` fill, `onAccent` (brown) label; disabled = `border` fill, `subtle` label. A button that spins while a request is in flight keeps its coral fill via `loadingFilledStyle(context, isLoading:)`.
+- **Primary** — `FilledButton`: coral `accent` fill, `onAccent` (brown) label; disabled = `border` fill, `subtle` label. Use it through `AppButton` (below), which keeps the coral fill while loading.
 - **Secondary (tonal)** — `FilledButton.tonal`: `surface` fill (`secondaryContainer`), `text` label (defined by the theme but unused in the app today; the shipped secondary actions are outlined).
 - **Outlined** — `OutlinedButton`: `text` label, 1.5px `muted` outline (3:1 against the page).
 - **Ghost** — `TextButton`: transparent, `text` label.
 - `ElevatedButton`, FAB, the selected nav-bar icon, the selected segmented button and the selected choice chip all use coral + `onAccent`.
 - Switch: off = `muted` thumb and outline on the surface track; on = `onAccent` thumb on the coral track. Unselected SegmentedButton segments have a `muted` outline; the selected choice-chip checkmark is `onAccent`.
 - Destructive text ("Deny", delete) uses `wp.dangerText`.
+
+#### `AppButton` (`lib/core/design/widgets/app_button.dart`)
+
+The one button for screens (do not hand-roll `FilledButton` + spinner). `AppButton(label:, onPressed:, variant:, isLoading:, loadingLabel:, icon:, expand:)`.
+
+- Variants: `primary` (coral, 56 high), `tonal` (surface fill, 56 high), `outlined` and `text` (48 high = `minTap`). `expand: true` (default) is full width and needs a bounded-width parent; use `expand: false` inside a `Row`.
+- Loading: tap handler is dropped (taps swallowed) but the enabled colours are kept (no grey fill); a `WarmPlayfulSize.spinner` (20) spinner in the foreground colour replaces the icon and `loadingLabel` (default `label`) replaces the text. Idle and loading content sit in an `IndexedStack`, so the button never changes size between the two (also at 2.0x text). While loading it is one disabled-button semantics node, announced as a live region with the loading label.
+- Behaviour pinned by `test/core/design/widgets/app_button_test.dart` (variants, sizes, loading look, tap swallow, size stability, 2.0x/320 px, semantics); spinner contrast (>= 3:1) by `button_theme_test.dart`, `meal_detail_button_test.dart`, `report_sheet_test.dart`.
 
 Contrast and states are pinned by `test/core/design/button_theme_test.dart`. (The earlier "scale 0.96 on press" spring is not implemented.)
 
@@ -241,27 +249,15 @@ Material(
 
 Use a `Divider` between rows (uses `dividerColor` from theme).
 
-### `EmptyState`
+### `EmptyState`, `ErrorState`, `SkeletonCard` (loading / empty / error)
 
-Centered column: Lottie or illustration (200×200 area), `display` text, body-muted subtitle, primary action button below. Always playful.
+Every `AsyncValue` feed renders all three: a skeleton while loading, `EmptyState` for "nothing here", `ErrorState` for a failed load. Tokens only (`WarmPlayfulSize.stateIcon` 48, `WarmPlayfulSkeleton.*`).
 
-```dart
-Column(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
-    Lottie.asset('assets/lottie/empty_seedling.json', height: 200),
-    const SizedBox(height: WarmPlayfulSpacing.s5),
-    Text('No habits yet', style: Theme.of(context).textTheme.displayMedium),
-    const SizedBox(height: WarmPlayfulSpacing.s2),
-    Text(
-      'Plant your first one.',
-      style: TextStyle(color: wp.muted),
-    ),
-    const SizedBox(height: WarmPlayfulSpacing.s5),
-    ElevatedButton(onPressed: onAdd, child: const Text('Start a habit')),
-  ],
-);
-```
+- **`EmptyState`** (`lib/core/design/widgets/empty_state.dart`): centred, optional icon (muted, hidden from semantics), `titleMedium` title, optional body, optional action (usually an `AppButton`). Always scrollable (a parent `RefreshIndicator` keeps working) and safe at 2.0x text. Title and body use `wp.muted`.
+- **`ErrorState`** (`error_state.dart`): `EmptyState` with a `cloud_off` icon, default "Couldn't load this" / "Check your connection and try again." and a tonal **Try again** `AppButton` that calls `onRetry`. The title keeps the normal title colour (only the body and icon are muted); title and message are one live region, so a screen reader announces it when it replaces a skeleton. Feeds pass `onRetry: () => ref.invalidate(...)`.
+- **`SkeletonCard`** (`skeleton_card.dart`): surface card with an optional avatar block and `lines` text blocks (`wp.border`), the last one shorter; a shimmer sweep (`WarmPlayfulSkeleton.shimmer`) in a colour lighter than the blocks in both modes (`wp.divider` in light, `wp.subtle` in dark). `SkeletonList` stacks them with the feed padding (not scrollable, clips rather than overflows) and `SkeletonMessages` shows alternating bubbles for the chat. With `MediaQuery.disableAnimations` the shimmer is off and the skeleton is static. `SkeletonList`/`SkeletonMessages` are announced as "Loading" (live region); the cards themselves are hidden from semantics.
+
+Tested: `test/core/design/widgets/{empty_state,error_state,skeleton_card}_test.dart` (render, retry callback, semantics/live region, light and dark colours, 2.0x text at 320 px, shimmer on/off, highlight lighter than the blocks) plus the feed screen tests (skeleton while loading, Try again re-subscribes). Skeleton tests must `pump(Duration)`, never `pumpAndSettle` (see `MASTER-SPEC.md` gotcha 6).
 
 ### `Sheet`
 
@@ -292,6 +288,25 @@ ClipRRect(
   ),
 );
 ```
+
+## Date and time formats
+
+English, 24-hour clock, day before month, always in the viewer's LOCAL time (`lib/core/util/date_format.dart`, pure, dependency-free; `intl` and French arrive with plan 19, which replaces the internals, not the call sites):
+
+| Function | Output |
+|---|---|
+| `formatMealDateTime(v, {now})` | `Today 20:30`, `Tomorrow 12:30`, otherwise `Sat 10 Oct, 20:00` (`Sat 10 Oct 2027, 20:00` when the year differs from today's). Past dates use the absolute form. |
+| `formatClockTime(v)` | `20:30` (chat timestamps) |
+| `formatMonthDay(v)` | `5 Jan` |
+| `formatLongDate(v)` | `5 January 2027`; pass a local calendar date (a UTC-midnight date-only value shows the previous day behind UTC) |
+
+"Today"/"Tomorrow" compare local calendar days (DST-safe). Unit-tested in UTC and re-run under `TZ=Pacific/Kiritimati` in CI so a UTC-vs-local mistake cannot pass vacuously.
+
+## Router contract
+
+`routerProvider` (`lib/core/routing/router.dart`) builds ONE `GoRouter` per provider lifetime. It used to be rebuilt on every `users/{uid}` write, which reset navigation to Discover and dropped form state (audit X-09, e.g. adding a profile photo). Now only a flip of `signedIn`, `ageVerified` or `profileComplete` (selected bools, `ref.listen`) bumps `refreshListenable`, which re-runs `redirect` against the current location; other user-doc fields (photos, name, bio, ratings) never touch the router. Consequences: routes are fixed at startup (hot reload does not pick up route changes: hot restart); never `ref.watch` the user doc to build the router. A sign-out immediately followed by a sign-in never shows the signed-out state to the router (only possible in tests; see the E2E caveat in `TEST-PLAN.md`). Covered by `test/core/routing/router_stability_test.dart` and `redirect_test.dart` (widget level; the profile-photo case is only seen end-to-end in the UX capture note in `docs/ux/16b-verification.md`).
+
+---
 
 ## Screen specs
 

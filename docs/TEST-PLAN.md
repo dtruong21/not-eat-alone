@@ -96,6 +96,20 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 - [x] `profile_form_test.dart` — add-photo tile outline reaches 3:1 on its surface.
 - [ ] Manual: `make ux-capture` before/after comparison (see `docs/ux/16a-verification.md`).
 
+### Shared widgets, router, dates (UX plan 16b) — automated
+
+- [x] `test/core/design/widgets/app_button_test.dart` — four variants render at >= 48 high (56 for primary/tonal), loading keeps the enabled fill and a visible spinner, swallows taps, is a live-region semantics node with the loading label, idle size == loading size (also at 2.0x text, 320 px, light and dark).
+- [x] `empty_state_test.dart`, `error_state_test.dart` — render, Try again fires `onRetry` once, title colour (default for errors, muted for empties), muted body/icon in light and dark, title+message announced as one live region, 2.0x text at 320 px (with animations on), no overflow.
+- [x] `skeleton_card_test.dart` — `wp.border` blocks, configurable lines/avatar, shimmer runs and stays off with `disableAnimations`, highlight lighter than the blocks in both modes, `SkeletonList`/`SkeletonMessages` announced as "Loading", no overflow in a tight box and at 2.0x.
+- [x] Feed screen tests (`discovery_screen_test`, `request_inbox_screen_test`, `chat_list_screen_test`, `chat_screen_test`, `restaurant_search_screen_test`) — skeleton while loading, `ErrorState` with a working Try again, empty state.
+- [x] `test/core/routing/router_stability_test.dart` — same `GoRouter` instance across auth and non-redirect user-doc emissions, redirect chain (signin -> age gate -> profile -> Discover and back), `profileComplete` flips navigate, a profile TextField keeps its text across a user-doc change.
+- [x] `test/core/util/date_format_test.dart` — Today/Tomorrow/absolute/year forms, UTC instants placed on their LOCAL day, DST-safe, real-clock case retried across midnight. CI re-runs this file (and the chat/request tile tests) under `TZ=Pacific/Kiritimati` so a UTC-vs-local bug cannot pass vacuously.
+- [ ] Manual: `make ux-capture` before/after comparison (see `docs/ux/16b-verification.md`). Only the capture shows how it looks and the profile-setup form surviving a photo write.
+
+**E2E caveat (loading indicators):** `integration_test/` waits with a bounded hand-rolled settle, never `pumpAndSettle()` with its 10-minute default, because a loading indicator or skeleton shimmer never settles (and `flutter_animate` leaves a pending timer). Any new E2E that waits for a feed to load must pump on a duration and wait for the loaded widget, not for the tree to go idle. Skeletons replaced the old spinners, so E2E finders must not look for a `CircularProgressIndicator` as a loading marker; the in-button spinner is still one (inside `AppButton`).
+
+**E2E caveat (switching users):** the router is built once and only reacts to a flip of `signedIn`/`ageVerified`/`profileComplete`. A scenario that signs out and straight back in as someone else on a mounted app must use `signOutAndAwaitSignIn(tester)` (`integration_test/support/auth.dart`), which waits for the sign-in screen; with `signOutTestUser()` alone the router never sees the signed-out state and the previous user's route (a chat, a rating sheet) stays on screen. A real user always passes through the sign-in screen.
+
 ---
 
 ## Feature checklists

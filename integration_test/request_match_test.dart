@@ -116,7 +116,7 @@ void main() {
     final host = await signInTestUser(uid: 'host-1');
     await seedUserProfile(uid: host.uid);
     final mealId = await seedOpenMeal(hostId: host.uid);
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Act (guest): sign in, seed a profile-complete guest (a woman, so she's
     // eligible even if a meal happened to be women-only), then drive the
@@ -184,7 +184,7 @@ void main() {
     });
     expect(reqDoc.data()!['status'], 'pending');
 
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Arrange: a SECOND guest also has a pending request on this meal, so
     // the approve below must deny it in its post-commit sibling query
@@ -199,7 +199,7 @@ void main() {
       guestId: rival.uid,
       hostId: host.uid,
     );
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Act (host): sign back in as the host and drive the real Requests-
     // inbox UI to approve.
