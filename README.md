@@ -15,7 +15,7 @@ fvm flutter run --flavor prod  -t lib/main_prod.dart
 
 The `integration_test/` suite drives the real app on an iOS Simulator against the Firebase Emulator Suite (no real Firebase project needed).
 
-Prerequisites: Xcode + an iOS Simulator runtime, Node 20, Java 21+, [`firebase-tools`](https://firebase.google.com/docs/cli), FVM, and a dedicated simulator named `Convyve E2E`, created once with `xcrun simctl create "Convyve E2E" <iPhone devicetype id> <iOS runtime id>` (ids from `xcrun simctl list devicetypes` / `runtimes`).
+Prerequisites: Xcode + an iOS Simulator runtime, Node 22, Java 21+, [`firebase-tools`](https://firebase.google.com/docs/cli), FVM, and a dedicated simulator named `Convyve E2E`, created once with `xcrun simctl create "Convyve E2E" <iPhone devicetype id> <iOS runtime id>` (ids from `xcrun simctl list devicetypes` / `runtimes`).
 
 ```bash
 make e2e

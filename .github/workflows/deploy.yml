@@ -53,7 +53,7 @@ jobs:
         if: steps.guard.outputs.present == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Write service account
         if: steps.guard.outputs.present == 'true'

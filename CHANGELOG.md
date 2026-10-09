@@ -23,6 +23,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Added
 
+- Restaurant search now finds real restaurants across Paris (previously a fixed list of 20); results update shortly after you stop typing.
 - The request inbox now shows which meal each request is for (restaurant and time), marks requests whose meal time has passed (Approve is disabled, Deny still works), and confirms every Approve or Deny with a message, with a Chat shortcut after approving (the approve message dismisses itself after a few seconds).
 
 ### Changed

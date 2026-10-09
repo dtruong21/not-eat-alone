@@ -118,7 +118,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - run: npm ci
       - run: npm run build
       - run: npm test
@@ -145,7 +145,7 @@ jobs:
         run: cp .env.example .env
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       # firebase-tools' emulators need Java 21+; the runner image's default is 17.
       - uses: actions/setup-java@v4
         with:
