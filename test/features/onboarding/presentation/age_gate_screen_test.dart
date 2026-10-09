@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
@@ -46,8 +47,17 @@ void main() {
 
   Future<void> pumpScreen(
     WidgetTester tester,
-    GlobalKey<AgeGateScreenState> key,
-  ) async {
+    GlobalKey<AgeGateScreenState> key, {
+    double? width,
+    double height = 568,
+    double textScale = 1,
+  }) async {
+    if (width != null) {
+      tester.view
+        ..physicalSize = Size(width, height)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -56,6 +66,12 @@ void main() {
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
           home: AgeGateScreen(key: key),
         ),
       ),
@@ -162,4 +178,108 @@ void main() {
       );
     },
   );
+
+  group('layout', () {
+    testWidgets('at 320 px and 2.0x text nothing overflows and Continue is '
+        'reachable', (tester) async {
+      final key = GlobalKey<AgeGateScreenState>();
+      await pumpScreen(tester, key, width: 320, textScale: 2);
+      key.currentState!.debugSetSelectedDate(adultDob());
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      final continueButton = find.text('Continue');
+      await tester.ensureVisible(continueButton);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(tester.getBottomLeft(continueButton).dy, lessThanOrEqualTo(568));
+
+      await tester.tap(continueButton);
+      await tester.pump();
+      verify(
+        () => userRepository.upsertAgeVerified(
+          uid: any(named: 'uid'),
+          dob: any(named: 'dob'),
+        ),
+      ).called(1);
+    });
+
+    testWidgets('keeps the content vertically centred when it fits', (
+      tester,
+    ) async {
+      final key = GlobalKey<AgeGateScreenState>();
+      await pumpScreen(tester, key, width: 400, height: 800);
+      final top = tester.getTopLeft(find.text('Confirm your date of birth'));
+      final bottom = tester.getBottomLeft(find.text('Continue'));
+      expect(top.dy, greaterThan(150));
+      expect(800 - bottom.dy, greaterThan(150));
+    });
+  });
+
+  group('date picker', () {
+    testWidgets('opens on the year grid titled "Your date of birth" and shows '
+        'the chosen date as a long date', (tester) async {
+      final key = GlobalKey<AgeGateScreenState>();
+      await pumpScreen(tester, key);
+
+      await tester.tap(find.text('Select date of birth'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Your date of birth'), findsOneWidget);
+      expect(find.byType(YearPicker), findsOneWidget);
+
+      final year = DateTime.now().year - 19; // next to the 18-years-ago start
+      await tester.tap(find.text('$year'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      final now = DateTime.now();
+      expect(
+        find.text(formatLongDate(DateTime(year, now.month, now.day))),
+        findsOneWidget,
+      );
+      expect(find.text('Select date of birth'), findsNothing);
+    });
+
+    testWidgets('the typed-entry field is labelled "Date of birth"', (
+      tester,
+    ) async {
+      final key = GlobalKey<AgeGateScreenState>();
+      await pumpScreen(tester, key);
+
+      await tester.tap(find.text('Select date of birth'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Date of birth'), findsOneWidget);
+    });
+  });
+
+  testWidgets('Continue reads "Saving…" while the write is in flight', (
+    tester,
+  ) async {
+    final key = GlobalKey<AgeGateScreenState>();
+    final completer = Completer<void>();
+    when(
+      () => userRepository.upsertAgeVerified(
+        uid: any(named: 'uid'),
+        dob: any(named: 'dob'),
+      ),
+    ).thenAnswer((_) => completer.future);
+    await pumpScreen(tester, key);
+    key.currentState!.debugSetSelectedDate(adultDob());
+    await tester.pump();
+
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+
+    expect(find.text('Saving…'), findsOneWidget);
+    expect(find.text('Continue'), findsNothing);
+    completer.complete();
+    await tester.pump();
+    await tester.pump();
+  });
 }

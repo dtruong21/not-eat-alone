@@ -7,6 +7,7 @@ import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/onboarding/application/age_gate_controller.dart';
+import 'package:not_eat_alone/features/onboarding/application/underage_notice_provider.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
@@ -94,6 +95,36 @@ void main() {
       expect(state.value?.blocked, isTrue);
     },
   );
+
+  test('under-18 DOB sets the sign-in notice BEFORE signing out', () async {
+    final log = <String>[];
+    container.listen<bool>(
+      underageNoticeProvider,
+      (_, next) => log.add('notice:$next'),
+    );
+    when(() => authRepository.signOut()).thenAnswer((_) async {
+      log.add('signOut');
+    });
+
+    await container
+        .read(ageGateControllerProvider.notifier)
+        .submit(DateTime.utc(2015));
+
+    expect(log, ['notice:true', 'signOut']);
+    expect(container.read(underageNoticeProvider), isTrue);
+  });
+
+  test('adult DOB does not set the sign-in notice', () async {
+    final seen = <bool>[];
+    container.listen<bool>(underageNoticeProvider, (_, next) => seen.add(next));
+
+    await container
+        .read(ageGateControllerProvider.notifier)
+        .submit(DateTime.utc(2000));
+
+    expect(seen, isEmpty);
+    expect(container.read(underageNoticeProvider), isFalse);
+  });
 
   // Regression: the controller's only watcher unmounting mid-action used
   // to dispose it, so the trailing `state =` threw UnmountedRefException.
