@@ -12,6 +12,7 @@ import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
+import 'package:not_eat_alone/features/settings/presentation/settings_screen.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
@@ -98,6 +99,13 @@ void main() {
       .uri
       .path;
 
+  int matchCount() => container
+      .read(routerProvider)
+      .routerDelegate
+      .currentConfiguration
+      .matches
+      .length;
+
   testWidgets('router instance survives a user doc emit that touches no '
       'redirect input', (tester) async {
     await pumpApp(tester);
@@ -183,6 +191,33 @@ void main() {
       u: _user(complete: true),
     );
     expect(location(), '/discover');
+    await drainTimers(tester);
+  });
+
+  testWidgets('a direct switch from one signed-in user to another (no '
+      'signed-out state) drops the previous user pushed route', (tester) async {
+    await pumpApp(tester);
+    await emit(
+      tester,
+      a: const AuthUser(uid: 'u1'),
+      u: _user(complete: true),
+    );
+    expect(location(), '/discover');
+
+    unawaited(container.read(routerProvider).push<void>('/settings'));
+    await tester.pump();
+    await tester.pump();
+    expect(matchCount(), 2);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+
+    await emit(
+      tester,
+      a: const AuthUser(uid: 'u2'),
+      u: _user(complete: true),
+    );
+    expect(location(), '/discover');
+    expect(matchCount(), 1);
+    expect(find.byType(SettingsScreen), findsNothing);
     await drainTimers(tester);
   });
 }

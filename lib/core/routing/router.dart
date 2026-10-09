@@ -109,10 +109,12 @@ String? authRedirect({
 ///
 /// Built ONCE per provider lifetime: rebuilding it on every `users/{uid}`
 /// write reset navigation to the initial location (audit X-09). Instead the
-/// three redirect inputs — `signedIn`, `ageVerified`, `profileComplete` — are
-/// listened to as SELECTED bools; only a flip of one of them bumps
-/// `refreshListenable`, which makes go_router re-run `redirect` against the
-/// current location. Other user-doc fields (photos, name, bio, ratings) never
+/// three redirect inputs — `signedIn` (as the uid), `ageVerified`,
+/// `profileComplete` — are listened to as SELECTED values; only a change of
+/// one of them bumps `refreshListenable`, which makes go_router re-run
+/// `redirect` against the current location (a direct switch from one
+/// signed-in user to another goes home instead, see the uid listener at the
+/// end). Other user-doc fields (photos, name, bio, ratings) never
 /// touch the router. `redirect` reads the current values with `ref.read` at
 /// call time (so the first redirect sees the startup state, which
 /// `ref.listen` — change-only — would miss) and hands them to the pure
@@ -124,7 +126,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   void bump(Object? previous, Object? next) => refresh.value++;
   ref
-    ..listen(authStateProvider.select((a) => a.value != null), bump)
     ..listen(
       currentUserDocProvider.select((u) => u.value?.ageVerified ?? false),
       bump,
@@ -258,5 +259,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     router.dispose();
     refresh.dispose();
   });
+  // Registered after the router exists: a switch from one signed-in user to
+  // another with no signed-out state in between (Android phone auto
+  // verification) would keep `signedIn` true, so nothing would re-run the
+  // redirect and the first user's pushed route would stay under the second.
+  // Go home explicitly; sign-in and sign-out just let the redirect decide.
+  ref.listen(authStateProvider.select((a) => a.value?.uid), (prev, next) {
+    if (prev != null && next != null && prev != next) {
+      router.go(_homePath);
+    } else {
+      refresh.value++;
+    }
+  });
+
   return router;
 });

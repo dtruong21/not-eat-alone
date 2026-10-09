@@ -175,7 +175,11 @@ void main() {
       // 00:30Z: the local day differs in any zone behind UTC.
       final utc = DateTime.utc(2027, 3, 1, 0, 30);
       final shifted = _shifted(utc);
-      expect(formatMonthDay(utc), '${shifted.day} Mar');
+      const months = ['Jan', 'Feb', 'Mar'];
+      expect(
+        formatMonthDay(utc),
+        '${shifted.day} ${months[shifted.month - 1]}',
+      );
     });
   });
 

@@ -106,8 +106,7 @@ Future<void> signOutTestUser() => FirebaseAuth.instance.signOut();
 /// the signed-out state, so the previous user's route (a chat, a sheet) would
 /// stay on screen. A real user always passes through the sign-in screen, so
 /// scenarios that switch users on a mounted app use this instead of
-/// [signOutTestUser]. Bounded (10 s); a missing sign-in screen is reported by
-/// the next step's own assertion.
+/// [signOutTestUser]. Bounded (10 s); a missing sign-in screen fails here.
 Future<void> signOutAndAwaitSignIn(WidgetTester tester) async {
   await signOutTestUser();
   final signIn = find.byKey(const Key('signin_phone_field'));
@@ -115,6 +114,11 @@ Future<void> signOutAndAwaitSignIn(WidgetTester tester) async {
   while (signIn.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
     await tester.pump(const Duration(milliseconds: 100));
   }
+  expect(
+    signIn,
+    findsOneWidget,
+    reason: 'sign-out did not reach the sign-in screen',
+  );
 }
 
 /// Truncates [body] for inclusion in an exception message so a large HTML/

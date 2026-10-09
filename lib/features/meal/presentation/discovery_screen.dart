@@ -16,6 +16,8 @@
 /// watches it, so a fresh location re-runs the geohash-scoped query.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -100,7 +102,9 @@ class DiscoveryScreen extends ConsumerWidget {
     final contentBody = state.when(
       loading: () => const SkeletonList(),
       error: (error, stackTrace) => ErrorState(
-        onRetry: () => ref.invalidate(discoveryControllerProvider),
+        // Same path as pull-to-refresh: also re-reads the location, so a
+        // cached upstream error cannot make Try again a dead button.
+        onRetry: () => unawaited(_onRefresh(ref)),
       ),
       data: (meals) => meals.isEmpty
           ? const EmptyState(

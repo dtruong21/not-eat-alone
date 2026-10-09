@@ -11,6 +11,7 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
 import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
+import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
@@ -66,9 +67,11 @@ AppUser _viewer(Gender gender) => AppUser(
 void main() {
   late MockAuthRepository authRepository;
   late MockUserRepository userRepository;
+  var locationCalls = 0;
 
   setUp(() {
     FlavorConfig.current = FlavorConfig(flavor: Flavor.prod);
+    locationCalls = 0;
     authRepository = MockAuthRepository();
     userRepository = MockUserRepository();
     when(() => authRepository.signOut()).thenAnswer((_) async {});
@@ -110,6 +113,10 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(authRepository),
           userRepositoryProvider.overrideWithValue(userRepository),
+          locationProvider.overrideWith((ref) async {
+            locationCalls++;
+            return (lat: 48.8566, lng: 2.3522);
+          }),
           discoveryControllerProvider.overrideWith(
             (ref) => mealsStream != null ? mealsStream() : Stream.value(meals),
           ),
@@ -333,6 +340,9 @@ void main() {
           : Stream.value([_discoverableMeal]),
     );
     expect(find.byType(ErrorState), findsOneWidget);
+    // Pull-to-refresh path: the location is read again too (not only the
+    // feed provider invalidated).
+    final locationBefore = locationCalls;
 
     await tester.tap(find.text('Try again'));
     await tester.pump();
@@ -340,6 +350,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
 
     expect(calls, 2);
+    expect(locationCalls, locationBefore + 1);
     expect(find.byType(ErrorState), findsNothing);
     expect(find.text(_restaurant.name), findsOneWidget);
   });

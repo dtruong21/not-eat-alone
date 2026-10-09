@@ -25,7 +25,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 - The request inbox now shows which meal each request is for (restaurant and time), marks requests whose meal time has passed (Approve is disabled, Deny still works), and confirms every Approve or Deny with a message, with a Chat shortcut after approving (the approve message dismisses itself after a few seconds).
 
-- A feed that can't load now shows a "Couldn't load this" message with a Try again button (Discover, requests, chats, chat messages).
+- A feed that can't load now shows a "Couldn't load this" message with a Try again button (Discover, requests, chats, chat messages, restaurant search).
 
 ### Changed
 
