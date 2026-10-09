@@ -34,12 +34,29 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
 /// confirm the required-set gate reacts to [ProfileForm]'s reported state.
 class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   ProfileFormData? _formData;
+  final GlobalKey _continueKey = GlobalKey();
 
   @visibleForTesting
   ProfileFormData? get debugFormData => _formData;
 
   void _onFormChanged(ProfileFormData data) {
-    if (data != _formData) setState(() => _formData = data);
+    if (data == _formData) return;
+    // Typing in Bio (the last field) with the keyboard up: keep Continue in
+    // view. The field's own caret reveal (scrollPadding) only guesses how
+    // far below the caret the button is, which breaks at large text sizes.
+    final bioEdited = _formData != null && data.bio != _formData!.bio;
+    final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
+    setState(() => _formData = data);
+    if (bioEdited && keyboardUp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final continueContext = _continueKey.currentContext;
+        if (!mounted || continueContext == null) return;
+        Scrollable.ensureVisible(
+          continueContext,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        );
+      });
+    }
   }
 
   Future<void> _continue() async {
@@ -100,6 +117,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 ProfileForm(onChanged: _onFormChanged),
                 const SizedBox(height: WarmPlayfulSpacing.s5),
                 AppButton(
+                  key: _continueKey,
                   label: 'Continue',
                   loadingLabel: 'Saving…',
                   isLoading: isSubmitting,

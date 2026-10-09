@@ -29,8 +29,11 @@ class FakeProfileController extends ProfileController {
   }
 }
 
-AppUser _user({List<String> photoUrls = const []}) =>
-    AppUser(uid: 'u1', dob: DateTime.utc(2000, 1, 1), photoUrls: photoUrls);
+AppUser _user({List<String> photoUrls = const []}) => AppUser(
+      uid: 'u1',
+      dob: DateTime.utc(2000, 1, 1),
+      photoUrls: photoUrls,
+    );
 
 void main() {
   Future<ProfileFormData?> pumpForm(
@@ -52,9 +55,8 @@ void main() {
       ProviderScope(
         overrides: [
           currentUserDocProvider.overrideWith((ref) => Stream.value(user)),
-          profileControllerProvider.overrideWith(
-            () => controller ?? FakeProfileController(),
-          ),
+          profileControllerProvider
+              .overrideWith(() => controller ?? FakeProfileController()),
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
@@ -81,18 +83,20 @@ void main() {
     return captured;
   }
 
-  testWidgets('no name, gender, or photo reports the required set as invalid', (
-    tester,
-  ) async {
-    final formKey = GlobalKey<ProfileFormState>();
-    final captured = await pumpForm(tester, formKey: formKey, user: _user());
+  testWidgets(
+    'no name, gender, or photo reports the required set as invalid',
+    (tester) async {
+      final formKey = GlobalKey<ProfileFormState>();
+      final captured =
+          await pumpForm(tester, formKey: formKey, user: _user());
 
-    expect(captured, isNotNull);
-    expect(captured!.isValid, isFalse);
-    expect(captured.photoCount, 0);
-    expect(captured.name, isEmpty);
-    expect(captured.gender, isNull);
-  });
+      expect(captured, isNotNull);
+      expect(captured!.isValid, isFalse);
+      expect(captured.photoCount, 0);
+      expect(captured.name, isEmpty);
+      expect(captured.gender, isNull);
+    },
+  );
 
   testWidgets(
     'a name, a gender, and an existing photo make the required set valid',
@@ -108,7 +112,8 @@ void main() {
                 _user(photoUrls: const ['https://example.com/1.jpg']),
               ),
             ),
-            profileControllerProvider.overrideWith(FakeProfileController.new),
+            profileControllerProvider
+                .overrideWith(FakeProfileController.new),
           ],
           child: MaterialApp(
             theme: buildTheme(Brightness.light),
@@ -195,26 +200,27 @@ void main() {
     expect((hi + 0.05) / (lo + 0.05), greaterThanOrEqualTo(3));
   });
 
-  testWidgets('tapping the remove button on a thumbnail calls removePhoto', (
-    tester,
-  ) async {
-    final formKey = GlobalKey<ProfileFormState>();
-    final controller = FakeProfileController();
-    const url = 'https://example.com/1.jpg';
+  testWidgets(
+    'tapping the remove button on a thumbnail calls removePhoto',
+    (tester) async {
+      final formKey = GlobalKey<ProfileFormState>();
+      final controller = FakeProfileController();
+      const url = 'https://example.com/1.jpg';
 
-    await pumpForm(
-      tester,
-      formKey: formKey,
-      user: _user(photoUrls: const [url]),
-      controller: controller,
-    );
+      await pumpForm(
+        tester,
+        formKey: formKey,
+        user: _user(photoUrls: const [url]),
+        controller: controller,
+      );
 
-    await tester.tap(find.byIcon(Icons.close));
-    await tester.pump();
-    await tester.pump();
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pump();
+      await tester.pump();
 
-    expect(controller.removedPhotoUrl, url);
-  });
+      expect(controller.removedPhotoUrl, url);
+    },
+  );
 
   testWidgets('missingFields lists what is still needed, in screen order', (
     tester,
@@ -306,6 +312,10 @@ void main() {
       spinner.color,
       Theme.of(tester.element(find.byType(ProfileForm))).colorScheme.onSurface,
     );
+    expect(
+      tester.getSemantics(find.byKey(const Key('add_photo_tile'))).label,
+      'Uploading photo',
+    );
     controller.release();
     await tester.pump();
     await tester.pump();
@@ -339,8 +349,10 @@ void main() {
       rects.add(tester.getRect(button));
       expect(
         tester.getSemantics(button),
+        // IconButton.tooltip: the tooltip text is the node's accessible name
+        // (the engine reads it as the label).
         matchesSemantics(
-          label: 'Remove photo',
+          tooltip: 'Remove photo',
           isButton: true,
           hasTapAction: true,
           hasFocusAction: true,
@@ -366,6 +378,13 @@ void main() {
     expect(visual, const Size(24, 24));
   });
 
+  test('the field scroll padding is larger than Flutter\'s default', () {
+    expect(
+      kProfileFieldScrollPadding.bottom,
+      greaterThan(const EdgeInsets.all(20).bottom),
+    );
+  });
+
   testWidgets('name and bio fields leave room to scroll above the keyboard', (
     tester,
   ) async {
@@ -381,11 +400,7 @@ void main() {
           matching: find.byType(TextField),
         ),
       );
-      expect(
-        field.scrollPadding.bottom,
-        greaterThanOrEqualTo(120),
-        reason: key,
-      );
+      expect(field.scrollPadding, kProfileFieldScrollPadding, reason: key);
     }
   });
 

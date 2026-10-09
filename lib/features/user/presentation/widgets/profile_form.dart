@@ -36,7 +36,7 @@ const _maxBioLength = 300;
 
 /// Extra room below a focused field when the keyboard scrolls it into view,
 /// so the fields (and the button) under it stay visible too.
-const EdgeInsets _fieldScrollPadding = EdgeInsets.fromLTRB(
+const EdgeInsets kProfileFieldScrollPadding = EdgeInsets.fromLTRB(
   WarmPlayfulSpacing.s5,
   WarmPlayfulSpacing.s5,
   WarmPlayfulSpacing.s5,
@@ -231,7 +231,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
           controller: _nameController,
           maxLength: _maxNameLength,
           textCapitalization: TextCapitalization.words,
-          scrollPadding: _fieldScrollPadding,
+          scrollPadding: kProfileFieldScrollPadding,
           decoration: InputDecoration(
             labelText: 'Name',
             border: OutlineInputBorder(
@@ -266,7 +266,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
           controller: _bioController,
           maxLength: _maxBioLength,
           maxLines: 4,
-          scrollPadding: _fieldScrollPadding,
+          scrollPadding: kProfileFieldScrollPadding,
           minLines: 3,
           decoration: InputDecoration(
             labelText: 'Bio',
@@ -355,34 +355,26 @@ class _PhotoThumbnail extends StatelessWidget {
         Positioned(
           top: 0,
           right: 0,
-          // Tooltip's own semantics are excluded: the icon carries the label,
-          // so screen readers hear "Remove photo" once.
-          child: Tooltip(
-            message: 'Remove photo',
-            excludeFromSemantics: true,
-            child: IconButton(
-              onPressed: onRemove,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(
-                width: _removeHit,
-                height: _removeHit,
-              ),
-              icon: Semantics(
-                label: 'Remove photo',
-                excludeSemantics: true,
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(WarmPlayfulSpacing.s1),
-                    child: CircleAvatar(
-                      radius: _removeBadge / 2,
-                      backgroundColor: colors.surface,
-                      child: Icon(
-                        Icons.close,
-                        size: WarmPlayfulSpacing.s4,
-                        color: colors.onSurface,
-                      ),
-                    ),
+          child: IconButton(
+            onPressed: onRemove,
+            // Tooltip text doubles as the semantics label.
+            tooltip: 'Remove photo',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(
+              width: _removeHit,
+              height: _removeHit,
+            ),
+            icon: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(WarmPlayfulSpacing.s1),
+                child: CircleAvatar(
+                  radius: _removeBadge / 2,
+                  backgroundColor: colors.surface,
+                  child: Icon(
+                    Icons.close,
+                    size: WarmPlayfulSpacing.s4,
+                    color: colors.onSurface,
                   ),
                 ),
               ),
@@ -420,13 +412,14 @@ class _AddPhotoTile extends StatelessWidget {
           child: Semantics(
             button: true,
             enabled: onTap != null,
-            label: 'Add photo',
+            label: isBusy ? 'Uploading photo' : 'Add photo',
             excludeSemantics: true,
             child: Padding(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s1),
               // Scales the icon + label down together rather than overflowing
-              // the fixed-size grid cell at large text sizes.
+              // the fixed-size grid cell at large text sizes (never up).
               child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

@@ -63,13 +63,24 @@ class AgeGateController extends _$AgeGateController {
         state = await AsyncValue.guard(() async {
           // Before signing out: the router then sends them to sign-in, whose
           // banner explains why (this screen is unmounted by then).
-          ref.read(underageNoticeProvider.notifier).set(value: true);
-          await ref.read(authRepositoryProvider).signOut();
+          final notice = ref.read(underageNoticeProvider.notifier)
+            ..set(value: true);
+          try {
+            await ref.read(authRepositoryProvider).signOut();
+          } on Object {
+            // Still signed in: a banner about being under 18 would greet
+            // this user's next (adult) sign-out.
+            notice.set(value: false);
+            rethrow;
+          }
           return const AgeGateState(blocked: true);
         });
         return;
       }
 
+      // A stale banner from an earlier under-18 attempt must not outlive an
+      // adult sign-in.
+      ref.read(underageNoticeProvider.notifier).set(value: false);
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
         final uid = ref.read(authRepositoryProvider).currentUser!.uid;

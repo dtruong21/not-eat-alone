@@ -126,6 +126,38 @@ void main() {
     expect(container.read(underageNoticeProvider), isFalse);
   });
 
+  test('under-18 DOB whose sign-out fails clears the notice (still signed in)',
+      () async {
+    when(() => authRepository.signOut()).thenThrow(Exception('network'));
+
+    await container
+        .read(ageGateControllerProvider.notifier)
+        .submit(DateTime.utc(2015));
+
+    expect(container.read(ageGateControllerProvider).hasError, isTrue);
+    expect(container.read(underageNoticeProvider), isFalse);
+  });
+
+  test('adult DOB clears a stale notice before the user doc is written',
+      () async {
+    container.read(underageNoticeProvider.notifier).set(value: true);
+    bool? noticeAtUpsert;
+    when(
+      () => userRepository.upsertAgeVerified(
+        uid: any(named: 'uid'),
+        dob: any(named: 'dob'),
+      ),
+    ).thenAnswer((_) async {
+      noticeAtUpsert = container.read(underageNoticeProvider);
+    });
+
+    await container
+        .read(ageGateControllerProvider.notifier)
+        .submit(DateTime.utc(2000));
+
+    expect(noticeAtUpsert, isFalse);
+  });
+
   // Regression: the controller's only watcher unmounting mid-action used
   // to dispose it, so the trailing `state =` threw UnmountedRefException.
   test('AgeGateController.submit (adult) survives its listener '

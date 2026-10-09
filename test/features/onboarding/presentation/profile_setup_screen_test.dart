@@ -24,8 +24,11 @@ class FakeProfileController extends ProfileController {
   }
 }
 
-AppUser _user({List<String> photoUrls = const []}) =>
-    AppUser(uid: 'u1', dob: DateTime.utc(2000, 1, 1), photoUrls: photoUrls);
+AppUser _user({List<String> photoUrls = const []}) => AppUser(
+      uid: 'u1',
+      dob: DateTime.utc(2000, 1, 1),
+      photoUrls: photoUrls,
+    );
 
 void main() {
   Future<FakeProfileController> pumpScreen(
@@ -80,29 +83,32 @@ void main() {
     },
   );
 
-  testWidgets('the tree reaches idle instead of rebuilding forever', (
-    tester,
-  ) async {
-    final controller = FakeProfileController();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          currentUserDocProvider.overrideWith((ref) => Stream.value(_user())),
-          profileControllerProvider.overrideWith(() => controller),
-        ],
-        child: MaterialApp(
-          theme: buildTheme(Brightness.light),
-          home: const ProfileSetupScreen(),
+  testWidgets(
+    'the tree reaches idle instead of rebuilding forever',
+    (tester) async {
+      final controller = FakeProfileController();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserDocProvider.overrideWith(
+              (ref) => Stream.value(_user()),
+            ),
+            profileControllerProvider.overrideWith(() => controller),
+          ],
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light),
+            home: const ProfileSetupScreen(),
+          ),
         ),
-      ),
-    );
+      );
 
-    // Regression test: ProfileForm.build() used to schedule
-    // widget.onChanged unconditionally on every frame, and both host
-    // screens' onChanged handlers called setState unconditionally, so the
-    // tree never settled and this would time out.
-    await tester.pumpAndSettle();
-  });
+      // Regression test: ProfileForm.build() used to schedule
+      // widget.onChanged unconditionally on every frame, and both host
+      // screens' onChanged handlers called setState unconditionally, so the
+      // tree never settled and this would time out.
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('no back navigation is offered', (tester) async {
     await pumpScreen(tester);
@@ -198,6 +204,28 @@ void main() {
     },
   );
 
+  testWidgets('the hint names the one missing field', (tester) async {
+    await pumpScreen(tester, photoUrls: const ['https://example.com/1.jpg']);
+    await tester.enterText(find.byKey(const Key('profile_name_field')), 'Ada');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Still needed: how you identify.'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('profile_name_field')), '');
+    await tester.tap(find.text('Woman'));
+    await tester.pumpAndSettle();
+    expect(find.text('Still needed: your name.'), findsOneWidget);
+  });
+
+  testWidgets('the hint names a missing photo on its own', (tester) async {
+    await pumpScreen(tester);
+    await tester.enterText(find.byKey(const Key('profile_name_field')), 'Ada');
+    await tester.tap(find.text('Woman'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Still needed: a photo.'), findsOneWidget);
+  });
+
   testWidgets('the hint is hidden once the form is valid', (tester) async {
     await pumpScreen(tester, photoUrls: const ['https://example.com/1.jpg']);
     await tester.enterText(find.byKey(const Key('profile_name_field')), 'Ada');
@@ -209,25 +237,40 @@ void main() {
     expect(find.textContaining('Still needed'), findsNothing);
   });
 
-  testWidgets('Bio and Continue scroll above the keyboard', (tester) async {
-    await pumpScreen(tester, width: 320);
-    const keyboard = 280.0;
+  testWidgets('typing at the end of Bio keeps Continue above the keyboard', (
+    tester,
+  ) async {
+    // Short viewport + big text: Continue starts far below the keyboard line.
+    await pumpScreen(
+      tester,
+      width: 320,
+      height: 480,
+      textScale: 2,
+      photoUrls: const ['https://example.com/1.jpg'],
+    );
+    const keyboard = 200.0;
     tester.view.viewInsets = const FakeViewPadding(bottom: keyboard);
     addTearDown(tester.view.resetViewInsets);
     await tester.pump();
 
-    await tester.ensureVisible(find.byKey(const Key('profile_bio_field')));
-    await tester.pumpAndSettle();
+    final continueFinder = find.widgetWithText(FilledButton, 'Continue');
+    const visibleBottom = 480 - keyboard;
+    expect(
+      tester.getBottomLeft(continueFinder).dy,
+      greaterThan(visibleBottom),
+      reason: 'precondition: Continue starts below the keyboard line',
+    );
+
     await tester.tap(find.byKey(const Key('profile_bio_field')));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('profile_bio_field')),
+      'Loves ramen and long dinners.',
+    );
     await tester.pumpAndSettle();
 
-    const visibleBottom = 568 - keyboard;
     expect(
-      tester.getBottomLeft(find.byKey(const Key('profile_bio_field'))).dy,
-      lessThanOrEqualTo(visibleBottom),
-    );
-    expect(
-      tester.getBottomLeft(find.widgetWithText(FilledButton, 'Continue')).dy,
+      tester.getBottomLeft(continueFinder).dy,
       lessThanOrEqualTo(visibleBottom),
     );
   });
