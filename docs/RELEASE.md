@@ -149,7 +149,7 @@ For **release** (Play Store signing):
 
 ### 3.1 Reuse an existing GCP project for Maps (no new project needed)
 
-**Current state:** Restaurants come from `FakeRestaurantSearchDataSource` (20 hardcoded Paris restaurants) wired in `lib/features/meal/application/restaurant_providers.dart`. Maps are not yet integrated.
+**Current state:** Restaurant search is implemented end to end: `PlacesRestaurantSearchDataSource` (`lib/features/meal/data/datasources/`) → callable `searchRestaurants` (`firebase/functions/src/callable/search_restaurants.ts`) → Places API (New) Text Search, restricted to a Paris bounding box. `FakeRestaurantSearchDataSource` remains for tests (override `restaurantSearchRepositoryProvider`). **Remaining for you:** Maps-project keys + `PLACES_API_KEY` secret (steps 1–5), deploy + verify (below). Map view is not yet integrated (design deferred).
 
 **Decision:** Convyve consumes Maps Platform from an **existing GCP project you own** (the "Maps project"). A Maps key is just an API key bound to whichever project enabled the APIs — it does not need to live in the Firebase project. Billing, quota and API enablement all belong to the Maps project; nothing is linked to Firebase.
 
@@ -180,19 +180,19 @@ For **release** (Play Store signing):
    ```bash
    firebase functions:secrets:set PLACES_API_KEY   # paste convyve-places-server value
    ```
-6. **Add the callable** `firebase/functions/src/callable/search_restaurants.ts` (+ export in `index.ts`):
+6. **Callable `searchRestaurants`** — ✅ implemented in `firebase/functions/src/callable/search_restaurants.ts` (logic + tests in `src/lib/places.ts`, `test/places.test.ts`). Behavior:
    - `onCall({ region: 'europe-west1', secrets: [PLACES_API_KEY], enforceAppCheck: true }, …)`
    - Reject unauthenticated callers (`req.auth?.uid`).
-   - Validate input (query length ≤ 80, lat/lng inside the Paris bounding box) — v1 is Paris-only.
+   - Validate input (query ≤ 80 chars); results are locked to the Paris bounding box server-side — v1 is Paris-only. An empty query returns generic Paris restaurants (initial picker state; one billed request per picker open).
    - Call **Places API (New)** `places:searchText` / `places:searchNearby` with a **field mask** (`places.id,places.displayName,places.formattedAddress,places.location`) so you only pay for the SKU you use. Restrict with `includedTypes: ['restaurant']`.
-   - Per-uid rate limit (e.g. N calls/min) and map the response to `{ placeId, name, address, lat, lng }`.
-   - Unit-test the input validation and response mapper in `firebase/functions/test/`.
-   - Deploy: `firebase deploy --only functions:searchRestaurants`.
+   - Per-uid rate limit (30 calls/min, in-memory per instance — best-effort; `maxInstances: 10` + the Maps quota cap bound the worst case) and map the response to `{ placeId, name, address, lat, lng }`.
+   - Upstream errors are never forwarded to the client (logged status only).
+   - **Deploy:** `firebase deploy --only functions:searchRestaurants` (first deploy asks to grant the function access to the `PLACES_API_KEY` secret → accept).
 7. **Enforce App Check on Functions** (Phase 1.3) — without it, `enforceAppCheck: true` still rejects, but the console toggle gives you metrics on blocked traffic.
 
 #### Action — in the Flutter app
 
-8. **Swap the datasource.** Add `PlacesRestaurantSearchDataSource implements RestaurantSearchRepository` in `lib/features/meal/data/datasources/` (cloud_functions import allowed — it's the `data/` layer). Call `searchRestaurants`, map the result to the `Restaurant` entity, map errors to `RepositoryException`. Switch `restaurantSearchRepositoryProvider` in `restaurant_providers.dart` to it. Keep the fake for tests. Debounce the search field (≥ 300 ms) and keep the existing loading/empty/error/offline states.
+8. **Datasource swap** — ✅ done. `PlacesRestaurantSearchDataSource` maps the payload via `RestaurantDto` and throws `RepositoryReadException` / `RepositoryParseException`; the search field is debounced (400 ms) and the controller drops out-of-order responses. **Dev note:** debug builds need an App Check debug token registered (Phase 1.2) or the callable rejects them.
 9. **Map view (optional for v1, design deferred → `/design` first):** add `google_maps_flutter` to `pubspec.yaml`; embed it on the meal detail screen for the restaurant pin. Inject the native keys at build time — **never commit them**:
    - **Android:** put `MAPS_API_KEY=…` in `android/local.properties` (gitignored) and read it in `android/app/build.gradle.kts` via `manifestPlaceholders["MAPS_API_KEY"]`; `AndroidManifest.xml` gets `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}"/>`.
    - **iOS:** put `MAPS_API_KEY = …` in a gitignored `ios/Flutter/Secrets.xcconfig` (`#include?` it from `Debug/Release.xcconfig`), expose it through `Info.plist` (`$(MAPS_API_KEY)`) and call `GMSServices.provideAPIKey(...)` in `AppDelegate`.
@@ -201,6 +201,7 @@ For **release** (Play Store signing):
 
 #### Verify
 
+- `cd firebase/functions && npm test && npm run build` and `flutter analyze && flutter test` (the Flutter side was written without running the toolchain — run these first).
 - Release build on a real Android device and an iPhone: map tiles load, restaurant search returns real Paris results.
 - Negative checks: calling `searchRestaurants` without App Check / without auth fails; the Android key does not work from a different package (a request with the key but a wrong package header → `API_KEY_ANDROID_APP_BLOCKED`).
 - Maps project → APIs & Services → Metrics: filter by credential to confirm traffic per key and that quotas/budget alerts exist.
