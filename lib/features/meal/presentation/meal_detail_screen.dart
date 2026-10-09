@@ -607,8 +607,11 @@ class _OpenInMapsButtonState extends ConsumerState<_OpenInMapsButton> {
     if (_launching) return;
     _launching = true;
     try {
+      // Read before the first await: `ref` is unusable once the screen is
+      // popped while the analytics send is in flight.
+      final launch = ref.read(mapsLauncherProvider);
       await analytics.track(const DirectionsOpened());
-      final opened = await ref.read(mapsLauncherProvider)(widget.restaurant);
+      final opened = await launch(widget.restaurant);
       if (!opened && mounted) {
         ScaffoldMessenger.of(
           context,

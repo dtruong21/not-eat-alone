@@ -437,10 +437,6 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(calls, lessThanOrEqualTo(1));
       },
-      // Known bug: `ref.read` after the awaited track() throws once the
-      // widget is gone. Un-skip when
-      // docs/bugs/2026-10-09-open-in-maps-ref-after-dispose.md is fixed.
-      skip: true,
     );
   });
 

@@ -430,7 +430,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Coordinate precision: very small values (|lat| or |lng| < 1e-6) would stringify in scientific notation (`1e-7`). Not a real restaurant case; noted, not guarded.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-open-in-maps-ref-after-dispose.md` (P2)
+- `docs/bugs/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed)
 - `docs/bugs/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card)
 
 ---

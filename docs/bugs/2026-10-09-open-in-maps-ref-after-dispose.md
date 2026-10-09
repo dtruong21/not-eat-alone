@@ -15,3 +15,5 @@
 **Hypothesis:** In `_OpenInMapsButtonState._open` (`lib/features/meal/presentation/meal_detail_screen.dart` ~L606-620) capture the launcher before the first await (`final launch = ref.read(mapsLauncherProvider);`) and/or fire `track()` without awaiting it (`unawaited`), so the hand-off does not wait on analytics at all (also removes the dependency of the user-visible action on a telemetry call). Keep the `mounted` check before touching `context`.
 
 **Regression test:** `test/features/meal/presentation/meal_detail_open_in_maps_edge_test.dart` -> "leaving the screen while the analytics send is in flight" (currently `skip: true`; un-skip when fixed).
+
+**Status:** Fixed — the launcher is read before the first await in `_OpenInMapsButtonState._open`; regression test un-skipped.
