@@ -307,7 +307,7 @@ Added via `/design`.
 1. Restaurant name row (+ women-only badge) — unchanged
 2. Address (`bodyMedium`, `wp.muted`) — unchanged
 3. `SizedBox(height: s3)`
-4. **Open in Maps** — left-aligned, intrinsic width (not full width): map-pin icon (`lucide_icons` `mapPin`, 18) + label "Open in Maps"
+4. **Open in Maps** — left-aligned, intrinsic width (not full width): map-pin icon (Material `Icons.place_outlined`, matching the icons used across the app today; button-theme default size) + label "Open in Maps"
 
 **Widgets**
 - Reused: existing restaurant card, `OutlinedButton.icon` (Outlined variant per DESIGN.md § Button — secondary action, so it never competes with the screen's primary action), `ScaffoldMessenger` snackbar.
