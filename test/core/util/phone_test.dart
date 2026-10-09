@@ -30,6 +30,9 @@ void main() {
     test('leaves other countries and malformed input as is', () {
       expect(formatPhoneDisplay('+14155550123'), '+14155550123');
       expect(formatPhoneDisplay('+3361234'), '+3361234');
+      // Near miss: a trunk 0 after +33 (10 national digits) is not mangled;
+      // the sign-in screen normalises it away before this is ever shown.
+      expect(formatPhoneDisplay('+330612345678'), '+330612345678');
       expect(formatPhoneDisplay(''), '');
     });
   });

@@ -9,26 +9,32 @@
 ///
 /// The 6th digit submits automatically; "Resend code" re-calls `verifyPhone`
 /// for the same number after a 30 s cooldown and swaps in the new
-/// verification id. This screen must not import `firebase_auth`, so it cannot
-/// tell a wrong code from any other `confirmSmsCode` failure: every one of
-/// them shows the "code didn't work" message on the field. Resend failures
-/// show the generic sentence.
+/// verification id. This screen must not import `firebase_auth`: the
+/// repository maps a rejected code to [InvalidSmsCodeException], which shows
+/// the "code didn't work" message on the field (cleared and refocused). Any
+/// other failure (and a failed resend) shows the generic sentence and keeps
+/// the typed code.
 library;
 
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
 
 const _codeLength = 6;
 const _resendCooldown = 30;
+
+/// How long "Resend code" waits for `codeSent` / `onError` before giving up.
+const _resendTimeout = Duration(seconds: 60);
 const _wrongCodeText = "That code didn't work. Check it or resend.";
 
 /// The phone-code screen; see the library comment.
@@ -53,9 +59,12 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
   bool _isResending = false;
   bool _resendFailed = false;
   bool _resentNotice = false;
+  bool _verifyFailed = false;
   int _secondsLeft = _resendCooldown;
   int _resendAttempt = 0;
   Timer? _countdown;
+  Timer? _resendTimer;
+  late DateTime _deadline;
 
   @override
   void initState() {
@@ -66,17 +75,27 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
   @override
   void dispose() {
     _countdown?.cancel();
+    _resendTimer?.cancel();
     _codeFocus.dispose();
     _codeController.dispose();
     super.dispose();
   }
 
+  /// Remaining whole seconds until the cooldown deadline. Derived from the
+  /// clock (not a per-tick decrement) so time spent suspended — e.g. reading
+  /// the SMS in Messages — counts.
+  int _remaining() {
+    final ms = _deadline.difference(clock.now()).inMilliseconds;
+    return ms <= 0 ? 0 : (ms / 1000).ceil();
+  }
+
   void _startCountdown() {
     _countdown?.cancel();
+    _deadline = clock.now().add(const Duration(seconds: _resendCooldown));
     _secondsLeft = _resendCooldown;
     _countdown = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) return;
-      setState(() => _secondsLeft--);
+      setState(() => _secondsLeft = _remaining());
       if (_secondsLeft <= 0) t.cancel();
     });
   }
@@ -90,6 +109,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
     setState(() {
       _isSubmitting = true;
       _wrongCode = false;
+      _verifyFailed = false;
       _resendFailed = false;
       _resentNotice = false;
     });
@@ -100,14 +120,23 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
           .confirmSmsCode(verificationId: _verificationId, smsCode: smsCode);
       // Success: authStateProvider picks up the new session and the
       // router's redirect advances us — no navigation here.
-    } on Object catch (_) {
+    } on InvalidSmsCodeException {
       if (!mounted) return;
       _codeController.clear();
-      setState(() => _wrongCode = true);
+      setState(() {
+        _isSubmitting = false;
+        _wrongCode = true;
+      });
       _codeFocus.requestFocus();
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+    } on Object catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _verifyFailed = true;
+      });
     }
+    // On success `_isSubmitting` stays true: the router leaves this screen,
+    // and Verify must not come alive again with the used code.
   }
 
   Future<void> _resend() async {
@@ -121,12 +150,17 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
 
     void fail() {
       if (attempt != _resendAttempt || !mounted) return;
+      // Invalidate the attempt so a late codeSent/onError is ignored.
+      _resendAttempt++;
+      _resendTimer?.cancel();
       setState(() {
         _isResending = false;
         _resendFailed = true;
       });
     }
 
+    _resendTimer?.cancel();
+    _resendTimer = Timer(_resendTimeout, fail);
     try {
       await ref
           .read(authRepositoryProvider)
@@ -134,6 +168,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
             phoneE164: widget.args.phoneE164,
             codeSent: (verificationId) {
               if (attempt != _resendAttempt || !mounted) return;
+              _resendTimer?.cancel();
               setState(() {
                 _verificationId = verificationId;
                 _isResending = false;
@@ -189,7 +224,10 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                       ),
                     ),
                     onPressed: () => Navigator.of(context).maybePop(),
-                    child: const Text('Change'),
+                    child: const Text(
+                      'Change',
+                      semanticsLabel: 'Change phone number',
+                    ),
                   ),
                 ],
               ),
@@ -213,6 +251,8 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 onSubmitted: (_) => _verify(),
                 decoration: InputDecoration(
                   labelText: '6-digit code',
+                  // The "0/6" counter would be re-announced on every digit.
+                  counterText: '',
                   errorText: _wrongCode ? _wrongCodeText : null,
                   errorStyle: TextStyle(color: wp.dangerText),
                   errorMaxLines: 3,
@@ -240,19 +280,21 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                     ? null
                     : _resend,
               ),
-              if (_resentNotice || _resendFailed) ...[
+              if (_resentNotice || _resendFailed || _verifyFailed) ...[
                 const SizedBox(height: WarmPlayfulSpacing.s2),
                 // Appears without user action on the field: announce it.
                 Semantics(
                   liveRegion: true,
                   container: true,
                   child: Text(
-                    _resendFailed
+                    _resendFailed || _verifyFailed
                         ? 'Something went wrong — please try again.'
                         : 'Code sent again',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(
-                      color: _resendFailed ? wp.dangerText : wp.muted,
+                      color: _resendFailed || _verifyFailed
+                          ? wp.dangerText
+                          : wp.muted,
                     ),
                   ),
                 ),

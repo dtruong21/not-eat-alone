@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
@@ -212,16 +213,36 @@ void main() {
 
       done.complete();
       await tester.pump();
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      await tester.pump();
+      // Success: the router leaves the screen. Until it does, Verify must not
+      // become live again with the used code still in the field.
+      expect(find.text('Verifying…'), findsOneWidget);
+      await tester.tap(find.text('Verifying…'), warnIfMissed: false);
+      await tester.pump();
+      verifyConfirmCalls('verif-1', '123456', 1);
       await leave(tester);
     });
 
     testWidgets('a wrong code shows the specific message on the field in '
         'dangerText, clears the field and refocuses it', (tester) async {
-      stubConfirm(() async => throw Exception('invalid-verification-code'));
+      final done = Completer<void>();
+      stubConfirm(() => done.future);
       await pumpScreen(tester);
 
       await tester.enterText(_codeField, '123456');
+      await tester.pump();
+      // Drop focus while the request is in flight, so the assertion below
+      // only passes if the screen refocuses the field itself.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText))
+            .focusNode
+            .hasFocus,
+        isFalse,
+      );
+      done.completeError(const InvalidSmsCodeException());
       await tester.pump();
       await tester.pump();
 
@@ -248,6 +269,45 @@ void main() {
         tester.widget<TextField>(_codeField).decoration?.errorText,
         isNull,
       );
+      await leave(tester);
+    });
+
+    testWidgets('any other error shows the generic sentence in a live region '
+        'and keeps the typed code', (tester) async {
+      final handle = tester.ensureSemantics();
+      stubConfirm(() async => throw Exception('network-request-failed'));
+      await pumpScreen(tester);
+
+      await tester.enterText(_codeField, '123456');
+      await tester.pump();
+      await tester.pump();
+
+      final field = tester.widget<TextField>(_codeField);
+      expect(field.decoration?.errorText, isNull);
+      expect(field.controller?.text, '123456');
+      expect(find.text(_wrongCode), findsNothing);
+      expect(
+        tester.getSemantics(find.text(_generic)),
+        matchesSemantics(label: _generic, isLiveRegion: true),
+      );
+      // Verify is usable again for a retry.
+      await tester.tap(find.text('Verify'));
+      await tester.pump();
+      verifyConfirmCalls('verif-1', '123456', 2);
+      handle.dispose();
+      await leave(tester);
+    });
+
+    testWidgets('Change has a descriptive label and the length counter is '
+        'not announced', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpScreen(tester);
+      expect(find.bySemanticsLabel('Change phone number'), findsOneWidget);
+      expect(
+        tester.widget<TextField>(_codeField).decoration?.counterText,
+        isEmpty,
+      );
+      handle.dispose();
       await leave(tester);
     });
   });
@@ -338,6 +398,40 @@ void main() {
       expect(find.text('Code sent again'), findsNothing);
       expect(find.text('Resend code'), findsOneWidget);
       handle.dispose();
+      await leave(tester);
+    });
+
+    testWidgets('a re-send that never answers gives up after 60 s, and its '
+        'late codeSent is ignored', (tester) async {
+      late void Function(String) fire;
+      stubVerifyPhone((codeSent, _) => fire = codeSent);
+      await pumpScreen(tester);
+      await tester.pump(const Duration(seconds: 30));
+
+      await tester.tap(find.text('Resend code'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 59));
+      expect(find.text('Sending code…'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.text('Sending code…'), findsNothing);
+      expect(find.text('Resend code'), findsOneWidget);
+      expect(find.text(_generic), findsOneWidget);
+
+      fire('stale');
+      await tester.pump();
+      expect(find.text('Code sent again'), findsNothing);
+      await leave(tester);
+    });
+
+    testWidgets('the countdown follows the clock, not the tick count (the '
+        'app may be suspended while the user reads the SMS)', (tester) async {
+      await pumpScreen(tester);
+      (tester.binding as AutomatedTestWidgetsFlutterBinding).elapseBlocking(
+        const Duration(seconds: 20),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Resend code in 9 s'), findsOneWidget);
       await leave(tester);
     });
   });
