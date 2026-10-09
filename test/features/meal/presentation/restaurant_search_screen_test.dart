@@ -187,16 +187,21 @@ void main() {
   ) async {
     final controller = FlakyRestaurantSearchController();
     await _pumpScreen(tester, controller: () => controller);
+    // Let the notifier's own async build() settle first: otherwise its late
+    // completion can overwrite the error state the search below sets (seen
+    // once on CI). Pump durations, never pumpAndSettle (the skeleton shimmer
+    // never settles).
+    await tester.pump(const Duration(milliseconds: 50));
 
     await tester.enterText(
       find.byKey(const Key('restaurant_search_field')),
       'bistrot',
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.byType(ErrorState), findsOneWidget);
 
     await tester.tap(find.text('Try again'));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.queries, ['bistrot', 'bistrot']);
     expect(find.byType(ErrorState), findsNothing);
