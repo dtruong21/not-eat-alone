@@ -32,6 +32,8 @@ import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 /// sync with the route wired in Task 7.
 const createMealDetailsRoutePath = '/meals/new/details';
 
+const _searchDebounce = Duration(milliseconds: 400);
+
 class RestaurantSearchScreen extends ConsumerStatefulWidget {
   const RestaurantSearchScreen({super.key});
 
@@ -43,14 +45,23 @@ class RestaurantSearchScreen extends ConsumerStatefulWidget {
 class _RestaurantSearchScreenState
     extends ConsumerState<RestaurantSearchScreen> {
   final _queryController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _queryController.dispose();
     super.dispose();
   }
 
+  /// Typing is debounced so each keystroke doesn't bill a Places request.
+  void _onQueryTyped(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(_searchDebounce, () => _onQueryChanged(value));
+  }
+
   void _onQueryChanged(String value) {
+    _debounce?.cancel();
     unawaited(
       ref.read(restaurantSearchControllerProvider.notifier).search(value),
     );
@@ -116,7 +127,7 @@ class _RestaurantSearchScreenState
               TextField(
                 key: const Key('restaurant_search_field'),
                 controller: _queryController,
-                onChanged: _onQueryChanged,
+                onChanged: _onQueryTyped,
                 onSubmitted: _onQueryChanged,
                 decoration: InputDecoration(
                   hintText: 'Search restaurants',

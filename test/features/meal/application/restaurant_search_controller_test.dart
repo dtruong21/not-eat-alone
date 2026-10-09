@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_providers.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_search_controller.dart';
+import 'package:not_eat_alone/features/meal/data/datasources/fake_restaurant_search_datasource.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/domain/repositories/restaurant_search_repository.dart';
 
@@ -23,7 +24,13 @@ void main() {
   late ProviderContainer container;
 
   setUp(() {
-    container = ProviderContainer();
+    container = ProviderContainer(
+      overrides: [
+        restaurantSearchRepositoryProvider.overrideWithValue(
+          FakeRestaurantSearchDataSource(),
+        ),
+      ],
+    );
   });
 
   tearDown(() {
