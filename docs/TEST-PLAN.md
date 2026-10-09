@@ -431,7 +431,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 
 **Known issues:**
 - `docs/bugs/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed)
-- `docs/bugs/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card)
+- `docs/bugs/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed)
 
 ---
 
