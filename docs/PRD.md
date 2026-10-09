@@ -21,7 +21,7 @@ Every MVP feature must serve one of these. Anything else gets cut to post-MVP. R
 Every match is organized around trying a specific restaurant, not browsing people.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [ ] Open restaurant in Maps (meal detail) — see Feature specs
 - [ ] {{Feature 2}}
 
 ### Pillar 2 — Low-pressure
@@ -67,13 +67,37 @@ As a {{user}}, I want {{capability}} so that {{outcome}}.
 - {{thing 1}}
 - {{thing 2}}
 
+### Feature: Open restaurant in Maps (meal detail)
+Pillar: 1 — Meal-first (supports 2 — Low-pressure)
+Status: in-MVP (reduced form: link-out only). The embedded map / pin is **post-MVP**.
+
+**Verdict:** The outcome that matters is "I can find the restaurant on the day." That needs a one-tap hand-off to the user's own maps app, not a map rendered inside Convyve. The link-out costs one row on the meal detail, uses `url_launcher` (already a dependency), and needs no Maps SDK, no API keys and no billing exposure. The embedded pin adds two restricted SDK keys, native setup on both platforms and ongoing cost for no extra outcome, so it is cut from v1.
+
+**User story:**
+As a guest who was approved for a meal, I want to open the restaurant in my maps app so that I can get there without copying the address by hand.
+
+**Acceptance criteria:**
+- [ ] Meal detail's restaurant card shows an "Open in Maps" action (only the existing restaurant card; no new section, no new route).
+- [ ] Tap opens the platform maps app at the restaurant's `lat/lng` with the restaurant name as label (Apple Maps on iOS, Google Maps URL/intent on Android). No API key involved.
+- [ ] Fires `directions_opened` (no PII, no coordinates) via the typed registry; event is in `docs/TRACKING-PLAN.md` first (`/track`).
+- [ ] Empty: if the meal has no usable coordinates (missing or 0,0, e.g. legacy meals), the action is hidden — the address text stays as today.
+- [ ] Loading: none (pure local hand-off; the card renders with the meal).
+- [ ] Offline: the action still launches the maps app (the hand-off is local); the maps app owns its own offline behavior.
+- [ ] Error: if no app can handle the URL, show a snackbar "Couldn't open Maps" and keep the screen state unchanged.
+- [ ] Accessibility: `Semantics` label "Open <restaurant name> in Maps", button role, ≥ 48dp target, readable in dark mode and at large text sizes.
+
+**Out of scope (cut from this feature):**
+- Embedded map or pin inside the app (`google_maps_flutter`), Maps SDK keys, native key injection.
+- Turn-by-turn directions, distance/ETA, "nearby" map discovery, live location sharing.
+- Showing a map on the discovery list or in the create-meal flow.
+
 ---
 
 ## Out of scope for MVP (post-MVP backlog)
 
 Things deliberately deferred. Anything that lives here cannot be argued back into MVP without an explicit re-scoping discussion.
 
-- {{Item 1}}
+- Embedded map / restaurant pin in the app (Maps SDK Android + iOS, restricted keys; setup steps preserved in `docs/RELEASE.md` Phase 3.1 §9). Revisit after v1 if users report trouble finding venues.
 - {{Item 2}}
 
 ## Constraints

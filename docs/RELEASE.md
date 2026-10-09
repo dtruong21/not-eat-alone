@@ -149,7 +149,7 @@ For **release** (Play Store signing):
 
 ### 3.1 Reuse an existing GCP project for Maps (no new project needed)
 
-**Current state:** Restaurant search is implemented end to end: `PlacesRestaurantSearchDataSource` (`lib/features/meal/data/datasources/`) → callable `searchRestaurants` (`firebase/functions/src/callable/search_restaurants.ts`) → Places API (New) Text Search, restricted to a Paris bounding box. `FakeRestaurantSearchDataSource` remains for tests (override `restaurantSearchRepositoryProvider`). **Remaining for you:** Maps-project keys + `PLACES_API_KEY` secret (steps 1–5), deploy + verify (below). Map view is not yet integrated (design deferred).
+**Current state:** Restaurant search is implemented end to end: `PlacesRestaurantSearchDataSource` (`lib/features/meal/data/datasources/`) → callable `searchRestaurants` (`firebase/functions/src/callable/search_restaurants.ts`) → Places API (New) Text Search, restricted to a Paris bounding box. `FakeRestaurantSearchDataSource` remains for tests (override `restaurantSearchRepositoryProvider`). **Remaining for you:** Maps-project keys + `PLACES_API_KEY` secret (steps 1–5), deploy + verify (below). Embedded map is post-MVP (v1 = "Open in Maps" link-out only, see PRD).
 
 **Decision:** Convyve consumes Maps Platform from an **existing GCP project you own** (the "Maps project"). A Maps key is just an API key bound to whichever project enabled the APIs — it does not need to live in the Firebase project. Billing, quota and API enablement all belong to the Maps project; nothing is linked to Firebase.
 
@@ -193,7 +193,7 @@ For **release** (Play Store signing):
 #### Action — in the Flutter app
 
 8. **Datasource swap** — ✅ done. `PlacesRestaurantSearchDataSource` maps the payload via `RestaurantDto` and throws `RepositoryReadException` / `RepositoryParseException`; the search field is debounced (400 ms) and the controller drops out-of-order responses. **Dev note:** debug builds need an App Check debug token registered (Phase 1.2) or the callable rejects them.
-9. **Map view (optional for v1, design deferred → `/design` first):** add `google_maps_flutter` to `pubspec.yaml`; embed it on the meal detail screen for the restaurant pin. Inject the native keys at build time — **never commit them**:
+9. **Map view — post-MVP (PRD: "Open restaurant in Maps").** v1 ships only an "Open in Maps" link-out on the meal detail (`url_launcher`, no keys). The embedded map below is deferred; do steps 1–3 for the Maps SDK keys only when it is re-scoped into a release. When it is: `/design` first, then: add `google_maps_flutter` to `pubspec.yaml`; embed it on the meal detail screen for the restaurant pin. Inject the native keys at build time — **never commit them**:
    - **Android:** put `MAPS_API_KEY=…` in `android/local.properties` (gitignored) and read it in `android/app/build.gradle.kts` via `manifestPlaceholders["MAPS_API_KEY"]`; `AndroidManifest.xml` gets `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}"/>`.
    - **iOS:** put `MAPS_API_KEY = …` in a gitignored `ios/Flutter/Secrets.xcconfig` (`#include?` it from `Debug/Release.xcconfig`), expose it through `Info.plist` (`$(MAPS_API_KEY)`) and call `GMSServices.provideAPIKey(...)` in `AppDelegate`.
    - **CI (GitHub Actions / Codemagic):** store both as encrypted secrets and write the files in a pre-build step. The unsigned PR-gate builds can use an empty key (map renders blank, build still passes).
