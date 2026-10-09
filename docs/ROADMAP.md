@@ -25,7 +25,7 @@ Boots, signs in, persists, instrumented.
 - ✅ Material 3 theme from the Warm Playful tokens (`lib/core/design/`)
 - ✅ Firebase Auth + Firestore with security rules (`firebase/firestore.rules`)
 - ✅ Analytics: typed event registry + Firebase Analytics sink; north-star metric defined (`docs/TRACKING-PLAN.md`)
-- ✅ Crashlytics + App Check activated (enforcement still off — see Phase 11)
+- ✅ Crashlytics + App Check activated (enforcement still off — see Phase 11). **Firebase Analytics + Crashlytics are the only analytics and crash tools for now** — PostHog and Sentry are deferred until there is budget
 - ✅ CI: GitHub Actions PR gate (analyze, test, unsigned stage builds) + backend CD (rules); Node 22 for Functions
 
 ## Phase 1 — Meal-first core loop ✅
@@ -97,6 +97,7 @@ Cuts from the original plan. Track here so they don't sneak back in:
 - Comments on ratings; edit/delete ratings
 - Geofence expansion beyond Paris; multi-city
 - Swipe matching, group meals, reservations, restaurant partnerships, extra gender filters (v2+)
+- PostHog (funnels, session replay) and Sentry (performance tracing) — no budget yet; the typed analytics client makes adding a sink a small change
 - Monetization — v1 is free
 
 ## Tracking per-feature spec status

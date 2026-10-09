@@ -92,7 +92,7 @@ Before signing off for release (`/release`):
 - [ ] Cold-start time under 3s on mid-tier Android (`flutter run --profile`)
 - [ ] Memory: no obvious leaks over 5 min of normal use (DevTools memory tab)
 - [ ] Network: feature still works on Slow-3G throttle
-- [ ] **Analytics: every new event in `docs/TRACKING-PLAN.md` (since last release) verified in PostHog debug view** and in the Firebase Analytics DebugView
+- [ ] **Analytics: every new event in `docs/TRACKING-PLAN.md` (since last release) verified in the Firebase Analytics DebugView** (the only analytics tool for now)
 - [ ] **Feedback path: in-app feedback submits successfully and the Firestore doc appears**
 - [ ] Verify on a real device (not simulator) for the production build
 

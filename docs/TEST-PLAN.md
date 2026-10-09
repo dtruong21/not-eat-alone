@@ -409,7 +409,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] **iOS (real device + Simulator):** tap opens Apple Maps at the restaurant with the name as the pin label; Maps is foregrounded (no in-app browser, no Safari bounce). Verify that `ll` + `q` drops a pin at the exact lat/lng labelled with the name, rather than running a name search that snaps to a different nearby POI.
 - [ ] **Android (real device + Emulator with Google Play):** tap opens Google Maps at the pin with the name as the label. With a second geo handler installed (e.g. Waze), the system chooser appears and both work.
 - [ ] Returning to Convyve (back / app switcher) lands on the unchanged meal detail; the button is immediately usable again.
-- [ ] `directions_opened` fires once per tap, no properties (verified in code via log-sink tests). **Still to do manually:** see it in PostHog debug view AND Firebase Analytics DebugView (not verifiable without a device).
+- [ ] `directions_opened` fires once per tap, no properties (verified in code via log-sink tests). **Still to do manually:** see it in the Firebase Analytics DebugView (not verifiable without a device).
 
 **Edge cases (specific to this feature):**
 - [ ] Coordinates `0,0`, out of range, or NaN: button hidden, address still shown. *(Automated.)*

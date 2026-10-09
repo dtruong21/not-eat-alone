@@ -48,7 +48,7 @@ Good: `habit_created`, `friends_tab_viewed`, `checkin_marked_done`.
 
 ## Identification strategy
 
-- Anonymous users get a stable anonymous ID from the analytics SDK (PostHog / Firebase Analytics).
+- Anonymous users get a stable anonymous ID from the analytics SDK (Firebase Analytics).
 - On sign-up, call `identify(uid)` with the Firebase Auth uid. Analytics merges anonymous events into the identified profile.
 - On sign-out, call `reset()` so the device doesn't continue attributing events to the prior user.
 - Never send PII (email, name, content) as event properties. Reference by `user_id` only — joins happen at query time, not at send time.
