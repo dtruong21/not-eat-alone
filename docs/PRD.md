@@ -10,7 +10,11 @@ People want to try new restaurants but often won't go alone. Convyve lets someon
 
 ## Target user
 
-{{Who specifically. Not "everyone." A concrete persona.}}
+**Primary:** adults (18+) in Paris who want to try a specific restaurant but don't want to go alone — people who would happily share a table with a stranger if it is in a public place, at a fixed time, with someone the host chose to approve.
+
+**Also served:** women who want women-only meals (self-declared in v1); newcomers to the city who have the appetite but not the dining company yet.
+
+*Working hypothesis from the v1 design — to be validated with the first soft-launch testers (see Open questions).*
 
 ## Pillars
 
@@ -21,29 +25,44 @@ Every MVP feature must serve one of these. Anything else gets cut to post-MVP. R
 Every match is organized around trying a specific restaurant, not browsing people.
 
 **Features:**
-- [ ] Open restaurant in Maps (meal detail) — see Feature specs
-- [ ] {{Feature 2}}
+- [x] Create a meal: restaurant (real Places search, Paris), date/time, optional note
+- [x] Discovery: list of open, future meals near you
+- [x] Meal detail: restaurant, host, time, note
+- [x] Open restaurant in Maps (meal detail) — see Feature specs (built; real-device check pending)
+- [ ] Embedded map / discovery map — post-MVP (see backlog)
 
 ### Pillar 2 — Low-pressure
 
 A public restaurant at a fixed time keeps first meetings light, not a loaded date.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Strictly 1:1 meals at a public restaurant at a fixed time
+- [x] Request to join (optional message) → host approves or denies → chat opens on match
+- [x] Post-meal: confirm show-up and rate
+- [x] Push notifications: new request, approved/denied, new message, post-meal rating prompt
+- [ ] Pre-meal reminders (T-24h / T-2h) — post-MVP
 
 ### Pillar 3 — Trust & safety
 
 Joiners are approval-gated, women-only meals exist, and block/report is always on.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Host approves every join — no auto-match
+- [x] Women-only meals (self-declared gender in v1)
+- [x] Block and report (user, meal, message)
+- [x] 18+ gate; sign-in with phone, Apple or Google
+- [x] Safety-tips card
+- [x] Account deletion
+- [ ] Profanity / image moderation (Cloud Function) — not built; see Open questions
 
 ### Pillar 4 — Liquidity over reach
 
 Depth in one city (Paris) beats thin coverage everywhere.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Paris-only soft launch (location fallback to Paris center; restaurant search limited to a Paris bounding box)
+- [x] Dismissible "Coming soon in Paris" notice for first-time users
+- [ ] Geofence expansion / "expand search" prompt — post-MVP
 
 ## Feature specs
 
@@ -97,8 +116,11 @@ As a guest who was approved for a meal, I want to open the restaurant in my maps
 
 Things deliberately deferred. Anything that lives here cannot be argued back into MVP without an explicit re-scoping discussion.
 
-- Embedded map / restaurant pin in the app (Maps SDK Android + iOS, restricted keys; setup steps preserved in `docs/RELEASE.md` Phase 3.1 §9). Revisit after v1 if users report trouble finding venues.
-- {{Item 2}}
+- Embedded map / restaurant pin in the app and a discovery map (Maps SDK Android + iOS, restricted keys; setup steps preserved in `docs/RELEASE.md` Phase 3.1 §9). Revisit after v1 if users report trouble finding venues.
+- Pre-meal reminders (T-24h / T-2h pushes).
+- Swipe-on-people matching, group meals, restaurant reservations, restaurant partnerships, extra gender-preference filters (v2+; from the v1 design non-goals).
+- Monetization — v1 is free; ads/subscription later.
+- Comments on ratings, edit/delete ratings, ratings purge on account deletion (GDPR follow-up).
 
 ## Constraints
 
@@ -111,5 +133,8 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 
 Track here. Resolve before implementation, never during.
 
-- [ ] {{Question 1}}
-- [ ] {{Question 2}}
+- [ ] **Scope tension.** The approved v1 design (`docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md`) calls v1 "a complete, polished product" with a discovery map and Maps SDK; this PRD's rule zero says v1 is a minimum. Current call: list-only discovery + "Open in Maps" link-out, embedded map post-MVP. Confirm or re-scope before launch.
+- [ ] **Moderation.** The v1 design lists profanity/image moderation as must-have; it is not built. Ship without it for the Paris soft launch (small, approved audience, report/block available), or build a minimal version first?
+- [ ] **Reminders.** The v1 design specified T-24h / T-2h meal reminders; only the post-meal prompt exists. Is the gap acceptable given no-show risk?
+- [ ] **North-star metric** is still unset in `docs/TRACKING-PLAN.md` (candidate: meals completed with both parties confirming show-up per week).
+- [ ] **Persona.** Validate the target user with the first 20 beta testers (who they are, why they'd join a stranger's meal).
