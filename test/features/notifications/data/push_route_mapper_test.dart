@@ -37,6 +37,14 @@ void main() {
     expect(mapPushData({'type': 'meal_reminder'}), isNull);
     expect(mapPushData({'type': 'meal_reminder', 'mealId': ''}), isNull);
   });
+  test('rate prompt -> /chats/:matchId (where the rating card lives)', () {
+    final r = mapPushData({'type': 'rate', 'matchId': 'm3'});
+    expect(r!.location, '/chats/m3');
+  });
+  test('rate prompt without a matchId -> null', () {
+    expect(mapPushData({'type': 'rate'}), isNull);
+    expect(mapPushData({'type': 'rate', 'matchId': ''}), isNull);
+  });
   test('unknown/missing type -> null', () {
     expect(mapPushData({}), isNull);
     expect(mapPushData({'type': 'nope'}), isNull);

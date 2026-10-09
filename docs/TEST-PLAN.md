@@ -448,7 +448,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] One participant has no device token / revoked permission: the other still gets it; no function error loop.
 - [ ] Meal across the DST change (last Sunday of October): time in the push matches Paris wall-clock.
 - [ ] Check the meal doc after: `reminder24hSent` / `reminder2hSent` set.
-- Known gap (pre-existing): the post-meal `rate` push has no tap route.
+- [ ] Post-meal "How was it?" push: tap opens the match chat with the rating card at the top.
 
 ---
 
