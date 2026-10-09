@@ -108,6 +108,30 @@ abstract final class WarmPlayfulSize {
   static const double minTap = 48; // minimum tap target
   /// Diameter of the in-button loading spinner.
   static const double spinner = 20;
+
+  /// Icon above the title in empty / error states.
+  static const double stateIcon = 48;
+}
+
+/// Loading-skeleton dimensions (`SkeletonCard`, `SkeletonMessages`).
+abstract final class WarmPlayfulSkeleton {
+  /// Height of one text-line block.
+  static const double lineHeight = 14;
+
+  /// Diameter of the avatar block.
+  static const double avatar = 48;
+
+  /// Height of one chat-bubble block.
+  static const double bubbleHeight = 44;
+
+  /// Width of a chat-bubble block as a fraction of the available width.
+  static const double bubbleWidthFactor = 0.6;
+
+  /// Width of the last text line as a fraction of the others.
+  static const double lastLineWidthFactor = 0.6;
+
+  /// One shimmer sweep.
+  static const Duration shimmer = Duration(milliseconds: 1200);
 }
 
 /// Elevation levels.

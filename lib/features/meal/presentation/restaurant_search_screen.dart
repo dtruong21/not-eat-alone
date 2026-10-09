@@ -23,6 +23,8 @@ import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_search_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 
@@ -65,7 +67,6 @@ class _RestaurantSearchScreenState
     final state = ref.watch(restaurantSearchControllerProvider);
 
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
     final isLoading = state.isLoading;
@@ -73,14 +74,12 @@ class _RestaurantSearchScreenState
 
     Widget resultsBody;
     if (isLoading) {
-      resultsBody = const Center(child: CircularProgressIndicator());
+      resultsBody = const SkeletonList();
     } else if (hasError) {
-      resultsBody = Center(
-        child: Text(
-          'Something went wrong — please try again.',
-          textAlign: TextAlign.center,
-          style: textTheme.bodyMedium?.copyWith(color: colors.error),
-        ),
+      // Re-run the search for what is typed (invalidating the controller
+      // would reset the results to the empty query under a non-empty field).
+      resultsBody = ErrorState(
+        onRetry: () => _onQueryChanged(_queryController.text),
       );
     } else {
       final restaurants = state.value ?? const <Restaurant>[];

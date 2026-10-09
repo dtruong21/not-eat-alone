@@ -8,6 +8,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
@@ -79,7 +82,8 @@ void main() {
 
   Future<void> pumpDiscovery(
     WidgetTester tester, {
-    required List<DiscoverableMeal> meals,
+    List<DiscoverableMeal> meals = const [],
+    Stream<List<DiscoverableMeal>> Function()? mealsStream,
     Gender? viewerGender,
     PushRepository? pushRepository,
     Brightness brightness = Brightness.light,
@@ -107,7 +111,7 @@ void main() {
           authRepositoryProvider.overrideWithValue(authRepository),
           userRepositoryProvider.overrideWithValue(userRepository),
           discoveryControllerProvider.overrideWith(
-            (ref) => Stream.value(meals),
+            (ref) => mealsStream != null ? mealsStream() : Stream.value(meals),
           ),
           currentUserDocProvider.overrideWith(
             (ref) => Stream.value(_viewer(viewerGender ?? Gender.man)),
@@ -121,9 +125,11 @@ void main() {
         ),
       ),
     );
-    // Two pumps to let both StreamProviders resolve past AsyncLoading.
+    // Two pumps to let both StreamProviders resolve past AsyncLoading; the
+    // second advances time so the skeleton's zero-delay shimmer start timer
+    // (flutter_animate) fires and leaves nothing pending.
     await tester.pump();
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
   }
 
   testWidgets('shows the flavor-aware app title', (tester) async {
@@ -143,7 +149,7 @@ void main() {
   });
 
   testWidgets('an empty meal list renders the empty state', (tester) async {
-    await pumpDiscovery(tester, meals: const []);
+    await pumpDiscovery(tester);
 
     expect(find.text('No meals near you yet'), findsOneWidget);
   });
@@ -296,4 +302,45 @@ void main() {
       verify(() => authRepository.signOut()).called(1);
     },
   );
+
+  testWidgets('loading shows a skeleton list, not a spinner', (tester) async {
+    await pumpDiscovery(
+      tester,
+      mealsStream: () => const Stream<List<DiscoverableMeal>>.empty(),
+    );
+
+    expect(find.byType(SkeletonList), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('empty feed shows the EmptyState with the same words', (
+    tester,
+  ) async {
+    await pumpDiscovery(tester);
+
+    expect(find.byType(EmptyState), findsOneWidget);
+    expect(find.text('No meals near you yet'), findsOneWidget);
+  });
+
+  testWidgets('error shows ErrorState; Try again re-fetches the feed', (
+    tester,
+  ) async {
+    var calls = 0;
+    await pumpDiscovery(
+      tester,
+      mealsStream: () => ++calls == 1
+          ? Stream<List<DiscoverableMeal>>.error(StateError('boom'))
+          : Stream.value([_discoverableMeal]),
+    );
+    expect(find.byType(ErrorState), findsOneWidget);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(calls, 2);
+    expect(find.byType(ErrorState), findsNothing);
+    expect(find.text(_restaurant.name), findsOneWidget);
+  });
 }

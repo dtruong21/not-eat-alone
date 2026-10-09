@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_search_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/restaurant_search_screen.dart';
@@ -25,6 +29,28 @@ class FakeRestaurantSearchController extends RestaurantSearchController {
   Future<void> search(String query) async {
     lastQuery = query;
     state = AsyncValue.data(_restaurants);
+  }
+}
+
+/// Never resolves its initial load.
+class LoadingRestaurantSearchController extends RestaurantSearchController {
+  @override
+  Future<List<Restaurant>> build() => Completer<List<Restaurant>>().future;
+}
+
+/// The first search fails, later ones succeed.
+class FlakyRestaurantSearchController extends RestaurantSearchController {
+  final queries = <String>[];
+
+  @override
+  Future<List<Restaurant>> build() async => const [];
+
+  @override
+  Future<void> search(String query) async {
+    queries.add(query);
+    state = queries.length == 1
+        ? AsyncValue.error(StateError('boom'), StackTrace.empty)
+        : const AsyncValue.data([_restaurantB]);
   }
 }
 
@@ -94,7 +120,7 @@ Future<void> _pumpScreen(
     ),
   );
   await tester.pump();
-  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 1));
 }
 
 void main() {
@@ -145,4 +171,35 @@ void main() {
       );
     },
   );
+
+  testWidgets('loading shows a skeleton list, not a spinner', (tester) async {
+    await _pumpScreen(
+      tester,
+      controller: LoadingRestaurantSearchController.new,
+    );
+
+    expect(find.byType(SkeletonList), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('error shows ErrorState; Try again re-runs the typed query', (
+    tester,
+  ) async {
+    final controller = FlakyRestaurantSearchController();
+    await _pumpScreen(tester, controller: () => controller);
+
+    await tester.enterText(
+      find.byKey(const Key('restaurant_search_field')),
+      'bistrot',
+    );
+    await tester.pump();
+    expect(find.byType(ErrorState), findsOneWidget);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+
+    expect(controller.queries, ['bistrot', 'bistrot']);
+    expect(find.byType(ErrorState), findsNothing);
+    expect(find.text(_restaurantB.name), findsOneWidget);
+  });
 }

@@ -25,6 +25,9 @@ import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -89,45 +92,21 @@ class DiscoveryScreen extends ConsumerWidget {
     await context.push('/meals/detail', extra: item.meal);
   }
 
-  Widget _scrollableMessage(String message, {required Color color}) {
-    return LayoutBuilder(
-      builder: (context, constraints) => ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: constraints.maxHeight,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: color),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(discoveryControllerProvider);
     final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
 
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
     final contentBody = state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => _scrollableMessage(
-        'Something went wrong — please try again.',
-        color: colors.error,
+      loading: () => const SkeletonList(),
+      error: (error, stackTrace) => ErrorState(
+        onRetry: () => ref.invalidate(discoveryControllerProvider),
       ),
       data: (meals) => meals.isEmpty
-          ? _scrollableMessage('No meals near you yet', color: context.wp.muted)
+          ? const EmptyState(
+              icon: Icons.restaurant_rounded,
+              title: 'No meals near you yet',
+            )
           : ListView.separated(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
               physics: const AlwaysScrollableScrollPhysics(),

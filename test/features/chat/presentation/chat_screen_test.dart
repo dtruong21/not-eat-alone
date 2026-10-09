@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
@@ -79,7 +82,8 @@ void main() {
 
   Future<void> pumpChatScreen(
     WidgetTester tester, {
-    required DateTime otherLastReadAt,
+    DateTime? otherLastReadAt,
+    Stream<List<ChatMessage>> Function()? messages,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -94,11 +98,16 @@ void main() {
             (ref) => Stream.value(const [_item]),
           ),
           chatMessagesProvider('m1').overrideWith(
-            (ref) => Stream.value([_theirMessage, _myMessage]),
+            (ref) => messages != null
+                ? messages()
+                : Stream.value([_theirMessage, _myMessage]),
           ),
           otherReadProvider.overrideWith(
             (ref, key) => Stream.value(
-              MessageRead(uid: key.otherUid, lastReadAt: otherLastReadAt),
+              MessageRead(
+                uid: key.otherUid,
+                lastReadAt: otherLastReadAt ?? DateTime(2027),
+              ),
             ),
           ),
           // The post-meal card's own providers — stubbed out so the widget
@@ -116,7 +125,7 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
   }
 
   testWidgets('renders both my and their message bubbles', (tester) async {
@@ -177,4 +186,43 @@ void main() {
       expect(button.onPressed, isNotNull);
     },
   );
+
+  testWidgets('loading shows message skeletons, not a spinner', (tester) async {
+    await pumpChatScreen(
+      tester,
+      messages: () => const Stream<List<ChatMessage>>.empty(),
+    );
+
+    expect(find.byType(SkeletonMessages), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('no messages shows the Say hi empty state', (tester) async {
+    await pumpChatScreen(tester, messages: () => Stream.value(const []));
+
+    expect(find.byType(EmptyState), findsOneWidget);
+    expect(find.text('Say hi \u{1F44B}'), findsOneWidget);
+  });
+
+  testWidgets('error shows ErrorState; Try again re-fetches the messages', (
+    tester,
+  ) async {
+    var calls = 0;
+    await pumpChatScreen(
+      tester,
+      messages: () => ++calls == 1
+          ? Stream<List<ChatMessage>>.error(StateError('boom'))
+          : Stream.value([_theirMessage]),
+    );
+    expect(find.byType(ErrorState), findsOneWidget);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(calls, 2);
+    expect(find.byType(ErrorState), findsNothing);
+    expect(find.text('hi there'), findsOneWidget);
+  });
 }
