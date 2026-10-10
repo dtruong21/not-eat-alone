@@ -212,11 +212,11 @@ void main() {
       reason: 'post-meal card should hide once the caller has rated',
     );
 
-    // Function under test: poll `users/{guestUid}` until `onRatingCreated`
+    // Function under test: poll `profiles/{guestUid}` until `onRatingCreated`
     // has applied the aggregate. The emulator dispatches Firestore triggers
     // asynchronously, so this can take a few seconds after the write above.
     final updatedGuest = await pollUntil(() async {
-      final u = await _db.collection('users').doc(guest.uid).get();
+      final u = await _db.collection('profiles').doc(guest.uid).get();
       final count = (u.data()?['ratingCount'] as num?)?.toInt() ?? 0;
       return count == 1 ? u : null;
     }, timeout: const Duration(seconds: 20));
@@ -255,7 +255,7 @@ void main() {
     );
 
     final updatedHost = await pollUntil(() async {
-      final u = await _db.collection('users').doc(host.uid).get();
+      final u = await _db.collection('profiles').doc(host.uid).get();
       final count = (u.data()?['ratingCount'] as num?)?.toInt() ?? 0;
       return count == 1 ? u : null;
     }, timeout: const Duration(seconds: 20));

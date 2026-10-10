@@ -20,7 +20,7 @@ export const makeMessageCreated = (database: string) =>
       const recipient = participants.find((p) => p !== senderId);
       if (!recipient) return;
 
-      const senderSnap = await db.collection('users').doc(senderId).get();
+      const senderSnap = await db.collection('profiles').doc(senderId).get();
       const senderName = (senderSnap.data()?.displayName as string) ?? 'New message';
 
       await sendToUser(database, recipient, buildMessageCreated(senderName, text, matchId));

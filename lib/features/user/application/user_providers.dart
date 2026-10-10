@@ -6,15 +6,17 @@ import 'package:not_eat_alone/features/user/domain/repositories/user_repository.
 
 final userRepositoryProvider = Provider<UserRepository>((ref) => UserRepositoryImpl());
 
-/// The signed-in user's `users/{uid}` document, or `null` when signed out
-/// or the document doesn't exist yet.
+/// The signed-in user's OWN record (private `users/{uid}` merged with their
+/// public profile), or `null` when signed out or the age gate hasn't created
+/// it yet.
 final currentUserDocProvider = StreamProvider<AppUser?>((ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value(null);
-  return ref.watch(userRepositoryProvider).watch(user.uid);
+  return ref.watch(userRepositoryProvider).watchOwn(user.uid);
 });
 
-/// Any user's `users/{uid}` document — for showing a host/guest profile.
+/// Any user's PUBLIC profile (`profiles/{uid}`) — for showing a host/guest.
+/// Has no `dob`/`gender`; use [AppUser.ageYears] for the age.
 final userDocProvider = StreamProvider.family<AppUser?, String>((ref, uid) {
   return ref.watch(userRepositoryProvider).watch(uid);
 });

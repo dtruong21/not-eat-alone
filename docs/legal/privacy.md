@@ -21,7 +21,7 @@
 ### Account & Profile
 
 - **Account creation:** email address, phone number (authentication method)
-- **Profile information:** display name, date of birth, age, gender, biography, profile photos (stored in Firebase Storage)
+- **Profile information:** display name, date of birth (private), age, gender (private), biography, profile photos (stored in Firebase Storage)
 - **Authentication:** sign-in credentials via Firebase Auth (Google, Apple, or phone number); sign-in provider identifiers
 
 ### Location
@@ -66,6 +66,10 @@ We do **not**:
 ---
 
 ## 4. Who we share your data with
+
+### What other Convyve users can see
+
+Other signed-in users can see your **public profile only**: display name, profile photos, biography, **age in years**, and your average rating and rating count. Your **exact date of birth and your gender are private** — they are stored separately, are never shown to other users, and are readable only by you and by our systems (for example, to enforce the 18+ requirement and women-only meals). The age gate is a self-declared date of birth and is not independently verified.
 
 ### Third-party processors (on your behalf)
 
@@ -123,7 +127,7 @@ Account deletion is **PERMANENT and IRREVERSIBLE**. When you delete your account
 ### Technical measures
 
 - **App Check**: Firebase App Check verifies that requests to your backend come from the genuine app (not from a hacked or forged client)
-- **Firestore Security Rules**: all database access is scoped to the authenticated user (you can only read/write your own data, except for public meal/profile data visible to other users)
+- **Firestore Security Rules**: all database access is scoped to the authenticated user (you can only read/write your own data, except for your public profile — name, photos, bio, age, rating — and public meal data, which other signed-in users can view one at a time)
 - **HTTPS/TLS**: all data in transit is encrypted
 - **Firebase Storage rules**: your photos are private by default; only you and the service can access them
 

@@ -74,7 +74,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Security
 
-- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; **FAIL for `users/{uid}` (open read incl. dob)**, see `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`
+- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`
 - [ ] `.env` is gitignored — `git log --all -p -- .env` returns nothing.
 - [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
 
@@ -137,7 +137,7 @@ Related PRD entry: `docs/PRD.md § Auth`
 - [ ] DOB exactly 18 today = allowed; one day short = blocked (unit-tested in `age_test.dart`).
 - [ ] DOB stored UTC-midnight — no timezone day-drift on read (unit-tested in `users_repository_test.dart`).
 - [ ] Malformed `users` doc surfaces `RepositoryParseException`, not a raw crash.
-- [ ] Non-owner cannot read/write another user's `users/{uid}` doc (Firestore rules).
+- [x] Non-owner cannot read/write another user's private `users/{uid}` doc; other users can `get` (not list) the public `profiles/{uid}` only (Firestore rules; `firebase/rules-test/`).
 - [ ] Redirect never loops across signin / age-gate / home / OTP (unit-tested in `redirect_test.dart`).
 
 **Pending native config (blocks live tests):**
@@ -145,7 +145,7 @@ Related PRD entry: `docs/PRD.md § Auth`
 - Phone: APNs auth key (iOS), Android SHA-256 + Play Integrity not yet registered.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1) — contradicts the "Non-owner cannot read" edge case above
+- `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1, fixed) — private/public split; rules tests in `firebase/rules-test/`
 - `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed)
 - `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
 
@@ -444,6 +444,20 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Private vs public profile
+
+**Automated:** `firebase/rules-test/users_profiles.rules.test.cjs` (7 cases, emulator); `test/features/user/data/*` (DTO split, merge, public age self-heal, no dob/gender in the public doc); `firebase/functions/test/profile_split.test.ts` (backfill split).
+
+**Manual (stage, after the rollout in `docs/RELEASE.md` §1.5):**
+- [ ] Sign up a new account: age gate -> profile setup works; a second account sees the first one's name/photo/age on a meal and in the request inbox and chat, with no crash.
+- [ ] A second account cannot read `users/<other>` or list `profiles` (Rules Playground / emulator).
+- [ ] After a rating lands, the aggregate appears on the rated person's profile badge.
+- [ ] Delete an account: both `users/{uid}` and `profiles/{uid}` are gone; their meals/ratings behave as before.
+- [ ] Existing test accounts show correct names/photos after the backfill (dry-run first).
+- [ ] A person with no public profile shows a neutral placeholder, not an error.
 
 ---
 

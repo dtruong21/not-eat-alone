@@ -8,6 +8,7 @@ How Convyve handles secrets, what's safe to commit, and what isn't.
 
 | Item | Sensitive? | Where it lives | In git? |
 |---|---|---|---|
+| User date of birth + gender | **Private** (owner-only) | Firestore `users/{uid}` — see § Private vs public user data | n/a |
 | Firebase web config (apiKey, projectId, …) | **No** — public by design | `lib/firebase_options.dart` | **Yes** — committed |
 | Google OAuth Client IDs | **No** — public by design | `ios/Runner/Info.plist`, `android/app/google-services.json` | **Yes** — committed |
 | `.env` runtime config (URLs, feature flags) | **No** — bundled into the app | `.env` locally | No (gitignored as hygiene) |
@@ -72,6 +73,22 @@ Cloud Functions don't need a JSON file — `initializeApp()` with no args uses t
 ### Signing credentials
 
 Codemagic manages iOS certs + Android keystores via its Code Signing UI. **Never** download to disk and commit. Locally, signing artifacts live in `~/Library/MobileDevice/Provisioning Profiles/` (iOS) and `~/.android/` (Android) — also outside the repo.
+
+---
+
+## Private vs public user data
+
+Each person has two Firestore documents:
+
+| Doc | Readable by | Holds |
+|---|---|---|
+| `users/{uid}` (private) | the owner only (rules may also `get()` it, e.g. women-only checks read `gender`) | date of birth, age-verified flag, gender, created-at; `fcmTokens` subcollection |
+| `profiles/{uid}` (public) | any signed-in user, **one doc at a time — `list`/queries are denied** | display name, photos, bio, age in years, rating count/average |
+
+- Only the owner writes either doc. The rating fields on `profiles` are written only by Cloud Functions (Admin SDK).
+- Once `ageVerified` is true, `dob` and `ageVerified` can't be rewritten. The 18+ gate stays **self-declared** behind phone/Apple/Google sign-in; stronger verification is out of scope for v1 and the privacy policy says so.
+- The owner's app keeps the public age correct (`UserRepositoryImpl.watchOwn` rewrites it when the birthday passes). No month/day/year of birth is ever in a public document.
+- Tests: `firebase/rules-test/` (emulator). Migration/rollout: `docs/RELEASE.md` §1.5.
 
 ---
 

@@ -8,6 +8,7 @@ export interface WhereQuery {
 
 export interface DeletionTargets {
   userDoc: string;
+  profileDoc: string;
   mealsWhere: WhereQuery;
   requestsWhere: WhereQuery[];
   matchesWhere: WhereQuery;
@@ -26,6 +27,7 @@ export function storagePrefixFor(databaseId: string): string {
 export function deletionTargets(uid: string): DeletionTargets {
   return {
     userDoc: `users/${uid}`,
+    profileDoc: `profiles/${uid}`,
     mealsWhere: { field: 'hostId', op: '==', value: uid },
     requestsWhere: [
       { field: 'guestId', op: '==', value: uid },

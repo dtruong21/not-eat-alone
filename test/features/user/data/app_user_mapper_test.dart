@@ -1,76 +1,77 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:not_eat_alone/features/user/data/dtos/app_user_dto.dart';
+import 'package:not_eat_alone/features/user/data/dtos/private_user_dto.dart';
+import 'package:not_eat_alone/features/user/data/dtos/public_profile_dto.dart';
 import 'package:not_eat_alone/features/user/data/mappers/app_user_mapper.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
 void main() {
-  test('dto <-> entity round-trip preserves fields', () {
-    final entity = AppUserDto(uid: 'u1', dob: DateTime.utc(2000, 1, 1), ageVerified: true).toEntity();
-    expect(entity.uid, 'u1');
-    expect(entity.ageVerified, true);
-    expect(entity.dob, DateTime.utc(2000, 1, 1));
-    final back = entity.toDto();
-    expect(back.uid, 'u1');
-    expect(back.dob, DateTime.utc(2000, 1, 1));
-  });
+  final dob = DateTime.utc(2000, 1, 1);
 
-  test('dto <-> entity round-trip preserves profile fields incl. gender', () {
-    final dto = AppUserDto(
+  test('public profile -> entity has no dob or gender', () {
+    const dto = PublicProfileDto(
       uid: 'u1',
-      dob: DateTime.utc(2000, 1, 1),
       displayName: 'Ada',
       photoUrls: ['a', 'b'],
       bio: 'hello',
-      gender: 'woman',
-    );
-
-    final entity = dto.toEntity();
-    expect(entity.displayName, 'Ada');
-    expect(entity.photoUrls, ['a', 'b']);
-    expect(entity.bio, 'hello');
-    expect(entity.gender, Gender.woman);
-
-    final back = entity.toDto();
-    expect(back.displayName, 'Ada');
-    expect(back.photoUrls, ['a', 'b']);
-    expect(back.bio, 'hello');
-    expect(back.gender, 'woman');
-  });
-
-  test('dto with null gender maps to null entity gender', () {
-    final entity = AppUserDto(uid: 'u1', dob: DateTime.utc(2000, 1, 1)).toEntity();
-    expect(entity.gender, isNull);
-  });
-
-  test('dto with invalid gender string maps to null entity gender', () {
-    final entity = AppUserDto(
-      uid: 'u1',
-      dob: DateTime.utc(2000, 1, 1),
-      gender: 'not-a-real-gender',
-    ).toEntity();
-    expect(entity.gender, isNull);
-  });
-
-  test('dto <-> entity round-trip preserves rating aggregate fields', () {
-    final dto = AppUserDto(
-      uid: 'u1',
-      dob: DateTime.utc(2000, 1, 1),
+      age: 30,
       ratingCount: 3,
       ratingAvg: 4.5,
     );
 
     final entity = dto.toEntity();
+
+    expect(entity.displayName, 'Ada');
+    expect(entity.photoUrls, ['a', 'b']);
+    expect(entity.bio, 'hello');
+    expect(entity.ageYears, 30);
     expect(entity.ratingCount, 3);
     expect(entity.ratingAvg, 4.5);
-
-    final back = entity.toDto();
-    expect(back.ratingCount, 3);
-    expect(back.ratingAvg, 4.5);
+    expect(entity.dob, isNull);
+    expect(entity.gender, isNull);
   });
 
-  test('dto with absent rating fields maps to zero-default entity', () {
-    final entity = AppUserDto(uid: 'u1', dob: DateTime.utc(2000, 1, 1)).toEntity();
-    expect(entity.ratingCount, 0);
-    expect(entity.ratingAvg, 0);
+  test('mergeOwn combines private and public fields', () {
+    final entity = mergeOwn(
+      PrivateUserDto(
+        uid: 'u1',
+        dob: dob,
+        ageVerified: true,
+        gender: 'woman',
+      ),
+      const PublicProfileDto(
+        uid: 'u1',
+        displayName: 'Ada',
+        photoUrls: ['a'],
+        ratingCount: 2,
+        ratingAvg: 5,
+      ),
+    );
+
+    expect(entity.dob, dob);
+    expect(entity.ageVerified, isTrue);
+    expect(entity.gender, Gender.woman);
+    expect(entity.displayName, 'Ada');
+    expect(entity.photoUrls, ['a']);
+    expect(entity.ratingCount, 2);
+    expect(entity.profileComplete, isTrue);
+  });
+
+  test('mergeOwn without a public profile yields a valid incomplete user', () {
+    final entity = mergeOwn(
+      PrivateUserDto(uid: 'u1', dob: dob, ageVerified: true),
+      null,
+    );
+
+    expect(entity.ageVerified, isTrue);
+    expect(entity.displayName, isNull);
+    expect(entity.photoUrls, isEmpty);
+    expect(entity.profileComplete, isFalse);
+    expect(entity.ageYears, isNotNull, reason: 'falls back to dob');
+  });
+
+  test('invalid gender string maps to null', () {
+    expect(genderFromString('not-a-real-gender'), isNull);
+    expect(genderFromString(null), isNull);
+    expect(genderFromString('man'), Gender.man);
   });
 }

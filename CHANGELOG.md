@@ -37,6 +37,10 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - The Nunito font now ships inside the app instead of being downloaded when it first opens, so text looks the same offline and nothing is fetched from Google.
 - Creating a meal now needs a time at least 5 minutes ahead; an earlier pick shows a message instead of being accepted.
 
+### Security
+
+- Your exact date of birth and gender are now private. Other people only see your name, photos, bio, age and rating.
+
 ### Fixed
 
 - The "add photo" tile on the profile now has a visible outline.

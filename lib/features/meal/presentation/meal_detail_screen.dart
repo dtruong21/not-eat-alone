@@ -35,20 +35,6 @@ import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
-/// Age in whole years for someone born on [dob], as of [now] (defaults to
-/// `DateTime.now()`). Same birthday-not-yet-happened-this-year logic as
-/// `core/util/age.dart`'s `isAdult`, but returns the age itself rather than
-/// an 18+ boolean.
-int _ageFromDob(DateTime dob, {DateTime? now}) {
-  final today = now ?? DateTime.now();
-  var age = today.year - dob.year;
-  final hadBirthday =
-      (today.month > dob.month) ||
-      (today.month == dob.month && today.day >= dob.day);
-  if (!hadBirthday) age -= 1;
-  return age;
-}
-
 class MealDetailScreen extends ConsumerWidget {
   const MealDetailScreen({required this.meal, super.key});
 
@@ -282,7 +268,7 @@ class _HostBlock extends ConsumerWidget {
         final photoUrl = host.photoUrls.isNotEmpty
             ? host.photoUrls.first
             : null;
-        final age = _ageFromDob(host.dob);
+        final age = host.ageYears;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,7 +291,9 @@ class _HostBlock extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${host.displayName ?? 'Host'}, $age',
+                    age == null
+                        ? (host.displayName ?? 'Host')
+                        : '${host.displayName ?? 'Host'}, $age',
                     style: textTheme.bodyMedium?.copyWith(
                       color: colors.onSurface,
                       fontWeight: WarmPlayfulType.h2Weight,

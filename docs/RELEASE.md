@@ -85,6 +85,21 @@ Verify in [Cloud Functions dashboard](https://console.cloud.google.com/functions
 
 ---
 
+### 1.5 Private/public profile split — rollout order (once per database)
+
+The rules, the functions and the app all changed together (`users/{uid}` is now private; `profiles/{uid}` is the public profile). Existing accounts must be migrated and the pieces deployed in this order, for `(default)` and then `stage`:
+
+1. **Deploy functions:** `firebase deploy --only functions` (rating aggregate, message push names and account deletion now use `profiles/`).
+2. **Dry-run the backfill:** `cd firebase/functions && npm run build && node scripts/backfill_profiles.js --database "(default)"` (needs Admin credentials, e.g. `gcloud auth application-default login`). Check the output.
+3. **Apply it:** the same command with `--apply`. Idempotent; copies name/photos/bio/rating/age to `profiles/{uid}` and removes those fields from `users/{uid}`.
+4. **Deploy the rules:** `firebase deploy --only firestore:rules`. Doing this before step 3 makes existing `users` docs (which still hold public fields) un-updatable.
+5. **Ship the new app build** (older builds read the public fields from `users/` and will show blank profiles).
+6. **Verify:** as a second account, `getDoc(users/<other>)` and a `profiles` list query must fail; the profile screens still render; rate a meal and see the aggregate update on `profiles/{uid}`.
+
+Rules tests (needs Java): `cd firebase/rules-test && npm install && npm test`.
+
+---
+
 ## Phase 2 — Native Auth + Push Notifications
 
 ### 2.1 iOS: APNs auth key
