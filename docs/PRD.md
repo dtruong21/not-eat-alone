@@ -54,6 +54,7 @@ Joiners are approval-gated, women-only meals exist, and block/report is always o
 - [x] Safety-tips card
 - [x] Account deletion
 - [x] Contact support (Settings; address shown in-app)
+- [ ] Private vs public profile split — closes the P1 date-of-birth exposure (see Feature specs)
 - [ ] Profanity / image moderation (Cloud Function) — not built; deferred by decision (see Open questions)
 
 ### Pillar 4 — Liquidity over reach
@@ -136,6 +137,37 @@ As a host or guest with a matched meal, I want a reminder the day before and a c
 - Email/SMS reminders, calendar invites, "add to calendar".
 - Reminders to people with pending (unapproved) requests.
 - Time-zone handling beyond Paris.
+
+---
+
+### Feature: Private vs public profile (close the date-of-birth exposure)
+Pillar: 3 — Trust & safety
+Status: in-MVP (release blocker: QA P1 `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`)
+
+**Verdict:** Today any signed-in account can read and list every `users/{uid}` doc: exact date of birth, gender, bio, photos, rating. For a dating-adjacent app launching in the EU this is not acceptable, and accepting it would also require a privacy-policy change and store privacy labels saying "date of birth visible to other users". Fixing it is cheaper than disclosing it, so it earns its way into v1. Smallest version: split what other people legitimately see from what only the owner (and the security rules) may read, and lock the age-gate fields. No new screens, no new features, no change to what users see.
+
+**User story:**
+As a person on Convyve, I want other users to see only my name, photo, bio, age and rating so that my exact date of birth and gender are never exposed to strangers.
+
+**Acceptance criteria:**
+- [ ] Two documents per user: **public** `profiles/{uid}` (display name, photo URLs, bio, age in years, rating count/average) and **private** `users/{uid}` (date of birth, age-verified flag, gender, created-at). Nothing else is added.
+- [ ] Rules: any signed-in user may `get` a public profile; `list`/query on `profiles` is denied (no enumeration); only the owner may write their own public profile (never the rating fields, which only the `onRatingCreated` / deletion functions write). `users/{uid}` is readable and writable by the owner only; the rules themselves may still read it (e.g. women-only checks use `gender`). `fcmTokens` stays owner-only.
+- [ ] 18+ gate lock: once `ageVerified` is true, the owner can no longer change `dob` or `ageVerified`. Before it is true (age-gate retry) they can. Self-attestation remains the v1 trust model; stronger verification is out of scope and the privacy policy says so.
+- [ ] Age: other users see an age in years only. The owner's app keeps the public age correct (written on profile save and refreshed at sign-in when it differs from the date of birth). No month/day/year of birth is ever in a public document.
+- [ ] All screens that show another person (discovery, meal detail host block, request inbox, chat, rating badge) read the public profile; none reads another user's `users/{uid}`.
+- [ ] Existing accounts are backfilled once (script run per database) before the rules are deployed; account deletion also removes the public profile; rating aggregates move to the public profile (functions updated, aggregate math unchanged).
+- [ ] Empty: a person with no public profile yet (not backfilled / brand new) renders as a neutral placeholder name and avatar, never a crash or a blocked screen.
+- [ ] Offline: previously loaded profiles show from cache; no new loading state is introduced.
+- [ ] Error: a failed public-profile read shows the screen's existing error/placeholder state; it never exposes the private document as a fallback.
+- [ ] Rules tests (emulator): another user cannot read or list `users`, cannot list `profiles`, cannot write another's profile, cannot change `dob`/`ageVerified` after verification, cannot write rating fields; the owner can read/edit their own documents; women-only request rules still work.
+- [ ] `docs/legal/privacy.md` and the store privacy labels list exactly what is public (name, photos, bio, age, rating) and what is private (date of birth, gender).
+
+**Out of scope (cut from this feature):**
+- Server-side age or identity verification (ID check, document upload) — v1 stays self-attested behind phone sign-in.
+- Hiding the 18+ gate from the owner's own device, or tamper-proof age (the owner can still lie about age before verification).
+- Age bands/ranges instead of exact age; per-field visibility settings; showing profiles only to matched users.
+- Other rule-hardening gaps from the same QA sweep (report payload limits, server-set message timestamps) — tracked in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`.
+- Changing women-only enforcement logic.
 
 ---
 
