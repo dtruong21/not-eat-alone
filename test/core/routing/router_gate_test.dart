@@ -134,7 +134,10 @@ void main() {
 
     Future<void> settle(WidgetTester tester) async {
       await tester.pump();
-      await tester.pump();
+      // 1 ms: flutter_animate (skeletons) leaves a zero-delay Future.delayed
+      // pending; never pumpAndSettle here (docs/MASTER-SPEC.md gotcha 6).
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
       // Drain build errors from Firebase-backed screens we don't stub.
       while (tester.takeException() != null) {}
     }
