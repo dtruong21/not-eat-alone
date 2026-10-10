@@ -871,7 +871,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
       find.byKey(const Key('restaurant_search_field')),
       'zzzz',
     );
-    await _pumpUntilFound(tester, find.text('No matches'));
+    await _pumpUntilFound(tester, find.textContaining('No restaurant called'));
     await _snap(tester, '31_restaurant_search_no_matches');
   });
 
@@ -930,7 +930,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
   await _step(tester, '26_discover_meal_created', () async {
     await _pumpUntilFound(
       tester,
-      find.text('Meal created!'),
+      find.textContaining('Meal posted.'),
       timeout: const Duration(seconds: 60),
     );
     await _snap(tester, '26_discover_meal_created');

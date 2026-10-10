@@ -147,6 +147,27 @@ void main() {
     expect(find.text('No matches'), findsOneWidget);
   });
 
+  testWidgets('a typed query with no results names the query and a next '
+      'step', (tester) async {
+    await _pumpScreen(
+      tester,
+      controller: () => FakeRestaurantSearchController(const []),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('restaurant_search_field')),
+      'zzzz',
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(
+      find.text('No restaurant called \u201czzzz\u201d. Try another name.'),
+      findsOneWidget,
+    );
+    expect(find.text('No matches'), findsNothing);
+  });
+
   testWidgets('tapping a row fires restaurant_selected and navigates to '
       '/meals/new/details with the tapped restaurant', (tester) async {
     await _pumpScreen(
