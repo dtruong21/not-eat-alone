@@ -77,6 +77,16 @@ blank).
 - **Fonts:** Nunito is a bundled asset (`assets/fonts/`) applied to every text
   style, so there is no font download to wait for.
 - The app boots once per process, so every cell is its own `flutter drive` run.
+- **Restaurant search** (shots 30-33, 36-37) is served from a fixed list of six
+  Paris restaurants (`_FixedRestaurantSearch` in `capture_test.dart`), not the
+  real Places-backed `searchRestaurants` callable: that callable needs a
+  `PLACES_API_KEY` secret the Firebase emulator cannot read, so every search
+  would fail. `bootstrap` runs the app in a plain `ProviderScope` with no
+  overrides, and `lib/` must not change for the harness, so right after boot the
+  test re-pumps `NotEatAloneApp` in a fresh `ProviderScope` that overrides
+  `restaurantSearchRepositoryProvider` (name contains, case-insensitive; `zzzz`
+  matches nothing). The screen's 400 ms debounce is covered by the bounded
+  `_pumpUntilFound` waits on the expected result text.
 - A native alert that gets stuck on a simulator (rare) needs
   `xcrun simctl shutdown/boot` of that device.
 

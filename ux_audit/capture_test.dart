@@ -14,17 +14,77 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
+import 'package:not_eat_alone/features/meal/application/restaurant_providers.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/features/meal/domain/repositories/restaurant_search_repository.dart';
 import 'package:not_eat_alone/features/meal/presentation/discovery_screen.dart';
+import 'package:not_eat_alone/main_common.dart' show NotEatAloneApp;
 
 import '../integration_test/support/app_harness.dart';
 import '../integration_test/support/auth.dart';
 import '../integration_test/support/emulator_admin.dart';
 import 'support/handoff.dart';
 import 'support/world.dart';
+
+/// Restaurant search served from a fixed list: the real one is a Places-backed
+/// callable whose `PLACES_API_KEY` secret the emulator cannot read.
+class _FixedRestaurantSearch implements RestaurantSearchRepository {
+  static const _all = <Restaurant>[
+    Restaurant(
+      placeId: 'fake_001',
+      name: 'Le Comptoir du Relais',
+      address: "9 Carrefour de l'Odéon, 75006 Paris",
+      lat: 48.8512,
+      lng: 2.3387,
+    ),
+    Restaurant(
+      placeId: 'fake_002',
+      name: 'Bouillon Chartier',
+      address: '7 Rue du Faubourg Montmartre, 75009 Paris',
+      lat: 48.8718,
+      lng: 2.3433,
+    ),
+    Restaurant(
+      placeId: 'fake_003',
+      name: 'Le Baratin',
+      address: '3 Rue Jouye-Rouve, 75020 Paris',
+      lat: 48.8736,
+      lng: 2.3871,
+    ),
+    Restaurant(
+      placeId: 'fake_004',
+      name: 'Café de Flore',
+      address: '172 Boulevard Saint-Germain, 75006 Paris',
+      lat: 48.8541,
+      lng: 2.3326,
+    ),
+    Restaurant(
+      placeId: 'fake_005',
+      name: "L'As du Fallafel",
+      address: '34 Rue des Rosiers, 75004 Paris',
+      lat: 48.8575,
+      lng: 2.3592,
+    ),
+    Restaurant(
+      placeId: 'fake_007',
+      name: 'Chez Georges',
+      address: '1 Rue du Mail, 75002 Paris',
+      lat: 48.8668,
+      lng: 2.3407,
+    ),
+  ];
+
+  @override
+  Future<List<Restaurant>> search(String query) async {
+    final q = query.trim().toLowerCase();
+    return _all.where((r) => r.name.toLowerCase().contains(q)).toList();
+  }
+}
 
 /// Name of the screen state being photographed (for the overflow log).
 String _current = 'boot';
@@ -390,6 +450,21 @@ void main() {
     _answerPushPermissionPrompt(tester);
 
     await pumpApp(tester);
+    // `bootstrap` runs the app in a plain ProviderScope with no overrides, and
+    // lib/ must not change for the harness: swap in a fresh scope (new key =
+    // new state) that serves restaurant search from the fixed list.
+    await tester.pumpWidget(
+      ProviderScope(
+        key: UniqueKey(),
+        overrides: [
+          restaurantSearchRepositoryProvider.overrideWithValue(
+            _FixedRestaurantSearch(),
+          ),
+        ],
+        child: const NotEatAloneApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
     // A previous run's session can survive in the simulator keychain even
     // though the emulator was reset: always start from signed out.
     await signOutTestUser();
