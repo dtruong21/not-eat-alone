@@ -128,7 +128,10 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump();
+    // 1 ms, not pump(): the messages skeleton (flutter_animate) leaves a
+    // zero-delay Future.delayed pending (docs/MASTER-SPEC.md gotcha 6).
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
   }
 
   testWidgets('120-message history builds lazily (ListView.builder)', (

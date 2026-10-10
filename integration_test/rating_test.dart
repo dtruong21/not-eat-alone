@@ -229,7 +229,7 @@ void main() {
         await _db.collection('ratings').doc(ratingDocId).get();
     expect(aggregatedRating.data()!['aggregated'], true);
 
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Act (guest): rate the host 4 stars, WITHOUT a comment (the sheet's own
     // default) — exercises the fixed `ratings` create rule's `comment`

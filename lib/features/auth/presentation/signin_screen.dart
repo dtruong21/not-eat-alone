@@ -28,6 +28,7 @@ import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 
 /// Route path for the phone OTP screen this screen pushes to. Kept in sync
@@ -149,16 +150,20 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                 style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s6),
-              _AuthButton(
+              AppButton(
                 label: 'Continue with Google',
-                icon: Icons.g_mobiledata_rounded,
+                loadingLabel: 'Signing in…',
+                variant: AppButtonVariant.outlined,
+                icon: const Icon(Icons.g_mobiledata_rounded),
                 isLoading: _pendingMethod == SigninMethod.google,
                 onPressed: isBusy ? null : _signInWithGoogle,
               ),
               const SizedBox(height: WarmPlayfulSpacing.s3),
-              _AuthButton(
+              AppButton(
                 label: 'Continue with Apple',
-                icon: Icons.apple_rounded,
+                loadingLabel: 'Signing in…',
+                variant: AppButtonVariant.outlined,
+                icon: const Icon(Icons.apple_rounded),
                 isLoading: _pendingMethod == SigninMethod.apple,
                 onPressed: isBusy ? null : _signInWithApple,
               ),
@@ -195,11 +200,11 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s4),
-              _AuthButton(
+              AppButton(
                 label: 'Send code',
+                loadingLabel: 'Sending code…',
                 isLoading: _pendingMethod == SigninMethod.phone,
                 onPressed: isBusy ? null : _sendPhoneCode,
-                filled: true,
               ),
               if (_error != null) ...[
                 const SizedBox(height: WarmPlayfulSpacing.s4),
@@ -213,60 +218,6 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// A full-width auth action button with a leading icon (optional) and an
-/// inline loading spinner that replaces its label while [isLoading].
-class _AuthButton extends StatelessWidget {
-  const _AuthButton({
-    required this.label,
-    required this.isLoading,
-    required this.onPressed,
-    this.icon,
-    this.filled = false,
-  });
-
-  final String label;
-  final IconData? icon;
-  final bool isLoading;
-  final bool filled;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final child = isLoading
-        ? SizedBox(
-            height: WarmPlayfulSpacing.s4,
-            width: WarmPlayfulSpacing.s4,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: filled ? colors.onPrimary : colors.onSurface,
-            ),
-          )
-        : Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[
-                Icon(icon),
-                const SizedBox(width: WarmPlayfulSpacing.s2),
-              ],
-              Text(label),
-            ],
-          );
-
-    if (filled) {
-      return FilledButton(
-        onPressed: onPressed,
-        style: loadingFilledStyle(context, isLoading: isLoading),
-        child: child,
-      );
-    }
-    return OutlinedButton(
-      onPressed: onPressed,
-      child: child,
     );
   }
 }

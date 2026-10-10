@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
@@ -85,7 +87,7 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
   }
 
   testWidgets('empty chat list shows the empty state', (tester) async {
@@ -112,15 +114,68 @@ void main() {
     expect(find.text('chat:m1'), findsOneWidget);
   });
 
-  testWidgets('error state renders an error message', (tester) async {
+  testWidgets('loading shows a skeleton list, not a spinner', (tester) async {
+    await pumpChatList(tester, chatListState: const AsyncLoading());
+
+    expect(find.byType(SkeletonList), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('error state shows ErrorState with Try again', (tester) async {
     await pumpChatList(
       tester,
       chatListState: AsyncError(StateError('boom'), StackTrace.empty),
     );
 
-    expect(
-      find.text('Something went wrong — please try again.'),
-      findsOneWidget,
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('Try again re-fetches: fails once, then shows the chat', (
+    tester,
+  ) async {
+    var calls = 0;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const ChatListScreen(),
+        ),
+      ],
     );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          userRepositoryProvider.overrideWithValue(userRepository),
+          authStateProvider.overrideWith(
+            (ref) => Stream.value(const AuthUser(uid: 'me')),
+          ),
+          chatMessagesProvider('m1').overrideWith(
+            (ref) => const Stream<List<ChatMessage>>.empty(),
+          ),
+          chatListProvider.overrideWith(
+            (ref) => ++calls == 1
+                ? Stream<List<ChatListItem>>.error(StateError('boom'))
+                : Stream.value(const [_item]),
+          ),
+        ],
+        child: MaterialApp.router(
+          theme: buildTheme(Brightness.light),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(find.byType(ErrorState), findsOneWidget);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(calls, 2);
+    expect(find.byType(ErrorState), findsNothing);
+    expect(find.textContaining('Amélie'), findsOneWidget);
   });
 }

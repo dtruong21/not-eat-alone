@@ -211,7 +211,7 @@ ThemeData buildLightTheme() => ThemeData(
 
 ---
 
-## 5. Gotchas — the five traps that bite
+## 5. Gotchas — the traps that bite
 
 ### Gotcha 1 — Riverpod `ref.watch` after `build()`
 
@@ -232,6 +232,10 @@ Forgetting `part 'routes.g.dart';` in `routes.dart` results in cryptic "unresolv
 ### Gotcha 5 — flutter_dotenv values are bundled into the app
 
 `.env` ships inside the app bundle. Any value there can be extracted by any user with the IPA/APK. This is FINE for Firebase web config and OAuth client IDs (they're not secret — see `docs/SECURITY.md`). It is NOT fine for service-account JSONs, OAuth client secrets, or signing keys. Those live with Codemagic / Firebase / EAS-equivalent — never in `.env`.
+
+### Gotcha 6 — flutter_animate leaves a pending timer in tests
+
+`flutter_animate` schedules a `Future.delayed` that is never cancelled, so a test that builds a skeleton (`SkeletonCard`/`SkeletonList`/`SkeletonMessages`) must advance a frame with `await tester.pump(const Duration(milliseconds: 1))` (a bare `pump()` never fires it) and must **never** `pumpAndSettle()` (the shimmer loop never settles; it times out). Symptom: "A Timer is still pending" or a `pumpAndSettle` timeout. Fix: `pump(Duration)`, or `MediaQueryData(disableAnimations: true)` to render the skeleton still.
 
 ---
 

@@ -20,6 +20,9 @@ import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/chat/application/chat_controller.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
@@ -85,10 +88,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
     final myUid = ref.watch(authStateProvider).value?.uid;
     final chatItems =
         ref.watch(chatListProvider).value ?? const <ChatListItem>[];
@@ -157,26 +156,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             Expanded(
               child: messagesAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (error, stackTrace) => Center(
-                  child: Text(
-                    'Something went wrong — please try again.',
-                    textAlign: TextAlign.center,
-                    style:
-                        textTheme.bodyMedium?.copyWith(color: colors.error),
-                  ),
+                loading: () => const SkeletonMessages(),
+                error: (error, stackTrace) => ErrorState(
+                  onRetry: () =>
+                      ref.invalidate(chatMessagesProvider(widget.matchId)),
                 ),
                 data: (messages) {
                   if (messages.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Say hi \u{1F44B}',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: context.wp.muted,
-                        ),
-                      ),
-                    );
+                    return const EmptyState(title: 'Say hi \u{1F44B}');
                   }
 
                   final myLatestId = _myLatestMessageId(messages, myUid);

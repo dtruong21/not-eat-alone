@@ -83,7 +83,7 @@ void main() {
     expect(find.text('2d'), findsOneWidget);
   });
 
-  testWidgets('a week or older falls back to the local M/D date', (
+  testWidgets('a week or older falls back to the local D Mon date', (
     tester,
   ) async {
     final createdAt = ago(const Duration(days: 10));
@@ -93,6 +93,13 @@ void main() {
     // machine this degenerates to UTC; CI also runs this file under
     // TZ=Pacific/Kiritimati (UTC+14) so it cannot pass vacuously.
     final shifted = createdAt.add(createdAt.toLocal().timeZoneOffset);
-    expect(find.text('${shifted.month}/${shifted.day}'), findsOneWidget);
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    expect(
+      find.text('${shifted.day} ${months[shifted.month - 1]}'),
+      findsOneWidget,
+    );
   });
 }

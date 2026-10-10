@@ -1,5 +1,5 @@
-/// App router — single `GoRouter` instance, exposed as a Riverpod provider so
-/// it can react to auth state via `ref.watch`.
+/// App router — single `GoRouter` instance, exposed as a Riverpod provider
+/// and built once per provider lifetime (see [routerProvider]).
 ///
 /// Adding routes:
 ///   1. Declare a typed route in `routes.dart` using `@TypedGoRoute<T>` on a
@@ -25,8 +25,9 @@
 ///     }
 ///   }
 ///
-/// Auth redirects: read auth state inside the `redirect:` callback below. The
-/// provider re-watches it, so the router rebuilds on sign-in / sign-out.
+/// Auth redirects: the `redirect:` callback below reads auth state at call
+/// time; a refresh notifier re-runs it when a redirect input changes. The
+/// router itself is never rebuilt on auth or profile changes.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -106,34 +107,32 @@ String? authRedirect({
 /// dependency, but keep the manual `Provider` here so the template runs
 /// before `build_runner` is invoked.
 ///
-/// Auth redirects: the router is built ONCE and lives as long as the provider
-/// scope — rebuilding it would restart navigation at `initialLocation`, so any
-/// change to the signed-in user's doc (a rating landing, a photo added, a
-/// profile save) would throw the user back to `/discover`. Instead, the three
-/// gate inputs (`signedIn`, `ageVerified`, `profileComplete`) are read fresh
-/// inside `redirect`, and `refreshListenable` asks go_router to re-run
-/// `redirect` only when one of those inputs actually changes. While
-/// `currentUserDocProvider` is still loading for a signed-in user we treat
-/// `ageVerified` as `false`; the `location == _ageGatePath` guard in
-/// `authRedirect` stops that from bouncing a user who is already sitting on
-/// the age gate mid-load.
+/// Built ONCE per provider lifetime: rebuilding it on every `users/{uid}`
+/// write reset navigation to the initial location (audit X-09). Instead the
+/// three redirect inputs — `signedIn` (as the uid), `ageVerified`,
+/// `profileComplete` — are listened to as SELECTED values; only a change of
+/// one of them bumps `refreshListenable`, which makes go_router re-run
+/// `redirect` against the current location (a direct switch from one
+/// signed-in user to another goes home instead, see the uid listener at the
+/// end). Other user-doc fields (photos, name, bio, ratings) never
+/// touch the router. `redirect` reads the current values with `ref.read` at
+/// call time (so the first redirect sees the startup state, which
+/// `ref.listen` — change-only — would miss) and hands them to the pure
+/// `authRedirect` above. While `currentUserDocProvider` is still loading for a
+/// signed-in user `ageVerified` is `false`; the `location == _ageGatePath`
+/// guard in `authRedirect` stops that from bouncing a user who is already
+/// sitting on the age gate mid-load.
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
+  void bump(Object? previous, Object? next) => refresh.value++;
   ref
-    ..onDispose(refresh.dispose)
-    ..listen<bool>(
-      authStateProvider.select((auth) => auth.value != null),
-      (previous, next) => refresh.value++,
+    ..listen(
+      currentUserDocProvider.select((u) => u.value?.ageVerified ?? false),
+      bump,
     )
-    ..listen<({bool ageVerified, bool profileComplete})>(
-      currentUserDocProvider.select((doc) {
-        final user = doc.value;
-        return (
-          ageVerified: user?.ageVerified ?? false,
-          profileComplete: user?.profileComplete ?? false,
-        );
-      }),
-      (previous, next) => refresh.value++,
+    ..listen(
+      currentUserDocProvider.select((u) => u.value?.profileComplete ?? false),
+      bump,
     );
 
   final router = GoRouter(
@@ -256,7 +255,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(() {
+    router.dispose();
+    refresh.dispose();
+  });
+  // Registered after the router exists: a switch from one signed-in user to
+  // another with no signed-out state in between (Android phone auto
+  // verification) would keep `signedIn` true, so nothing would re-run the
+  // redirect and the first user's pushed route would stay under the second.
+  // Go home explicitly; sign-in and sign-out just let the redirect decide.
+  ref.listen(authStateProvider.select((a) => a.value?.uid), (prev, next) {
+    if (prev != null && next != null && prev != next) {
+      router.go(_homePath);
+    } else {
+      refresh.value++;
+    }
+  });
 
-  ref.onDispose(router.dispose);
   return router;
 });

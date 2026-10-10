@@ -11,8 +11,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/rating/application/rating_controller.dart';
 
 /// Opens the rating sheet for [targetUid] within [matchId].
@@ -152,20 +152,12 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
             ),
           ),
           const SizedBox(height: WarmPlayfulSpacing.s2),
-          FilledButton(
+          AppButton(
+            label: 'Submit',
+            loadingLabel: 'Submitting…',
+            isLoading: isSubmitting,
             key: const Key('rating_submit_button'),
             onPressed: (_stars <= 0 || isSubmitting) ? null : _submit,
-            style: loadingFilledStyle(context, isLoading: isSubmitting),
-            child: isSubmitting
-                ? SizedBox(
-                    height: WarmPlayfulSpacing.s4,
-                    width: WarmPlayfulSpacing.s4,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colors.onPrimary,
-                    ),
-                  )
-                : const Text('Submit'),
           ),
         ],
       ),

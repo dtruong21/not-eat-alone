@@ -55,7 +55,7 @@ void _suppressExpectedImageErrors() {
 /// A hand-rolled, bounded `pumpAndSettle` (same loop shape — pump on [step]
 /// while `binding.hasScheduledFrame`, bounded by [timeout]). Must never use
 /// `pumpAndSettle()`'s unbounded 10-minute default: an actively-animating
-/// widget (e.g. a `CircularProgressIndicator` shown while an upstream
+/// widget (e.g. a loading indicator / skeleton shown while an upstream
 /// provider is still `AsyncLoading`) would hang it (see task-3-report.md).
 Future<void> _settle(
   WidgetTester tester, {
@@ -116,7 +116,7 @@ void main() {
     final host = await signInTestUser(uid: 'host-1');
     await seedUserProfile(uid: host.uid);
     final mealId = await seedOpenMeal(hostId: host.uid);
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Act (guest): sign in, seed a profile-complete guest (a woman, so she's
     // eligible even if a meal happened to be women-only), then drive the
@@ -184,7 +184,7 @@ void main() {
     });
     expect(reqDoc.data()!['status'], 'pending');
 
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Arrange: a SECOND guest also has a pending request on this meal, so
     // the approve below must deny it in its post-commit sibling query
@@ -199,7 +199,7 @@ void main() {
       guestId: rival.uid,
       hostId: host.uid,
     );
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Act (host): sign back in as the host and drive the real Requests-
     // inbox UI to approve.
@@ -238,8 +238,17 @@ void main() {
     // Function, so `pollUntil` here is absorbing UI/async timing (the tap
     // above vs. this read), not waiting on a Function trigger.
     final match = await pollUntil(() async {
-      final m = await _db.collection('matches').doc(mealId).get();
-      return m.exists ? m : null;
+      try {
+        final m = await _db.collection('matches').doc(mealId).get();
+        return m.exists ? m : null;
+      } on FirebaseException catch (e) {
+        // The `matches` get rule dereferences resource.data, so reading the
+        // doc BEFORE the approve transaction has written it is a rules
+        // evaluation error (permission-denied), not "not found". Keep polling
+        // until the transaction lands; a real denial would time out below.
+        if (e.code == 'permission-denied') return null;
+        rethrow;
+      }
     });
     final participants = match.data()!['participants'] as List<Object?>;
     expect(participants, containsAll([host.uid, guest.uid]));

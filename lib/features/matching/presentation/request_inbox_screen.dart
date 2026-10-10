@@ -9,52 +9,28 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 import 'package:not_eat_alone/features/matching/presentation/widgets/request_inbox_tile.dart';
 
 class RequestInboxScreen extends ConsumerWidget {
   const RequestInboxScreen({super.key});
 
-  Widget _scrollableMessage(String message, {required Color color}) {
-    return LayoutBuilder(
-      builder: (context, constraints) => ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: constraints.maxHeight,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: color),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(hostInboxProvider);
-    final colors = Theme.of(context).colorScheme;
 
     final body = state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => _scrollableMessage(
-        'Something went wrong — please try again.',
-        color: colors.error,
-      ),
+      loading: () => const SkeletonList(),
+      error: (error, stackTrace) =>
+          ErrorState(onRetry: () => ref.invalidate(hostInboxProvider)),
       data: (requests) => requests.isEmpty
-          ? _scrollableMessage(
-              'No pending requests',
-              color: context.wp.muted,
+          ? const EmptyState(
+              icon: Icons.inbox_rounded,
+              title: 'No pending requests',
             )
           : ListView.separated(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),

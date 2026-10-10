@@ -15,6 +15,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 import 'emulator_admin.dart';
@@ -96,6 +98,28 @@ Future<void> _awaitTokenFor(User user) async {
 
 /// Signs the current Firebase Auth SDK session out.
 Future<void> signOutTestUser() => FirebaseAuth.instance.signOut();
+
+/// Signs out and pumps until the running app has shown the sign-in screen.
+///
+/// The router (built once, plan 16b) redirects on a flip of `signedIn`; a
+/// sign-out followed at once by a sign-in as someone else never lets it see
+/// the signed-out state, so the previous user's route (a chat, a sheet) would
+/// stay on screen. A real user always passes through the sign-in screen, so
+/// scenarios that switch users on a mounted app use this instead of
+/// [signOutTestUser]. Bounded (10 s); a missing sign-in screen fails here.
+Future<void> signOutAndAwaitSignIn(WidgetTester tester) async {
+  await signOutTestUser();
+  final signIn = find.byKey(const Key('signin_phone_field'));
+  final deadline = DateTime.now().add(const Duration(seconds: 10));
+  while (signIn.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  expect(
+    signIn,
+    findsOneWidget,
+    reason: 'sign-out did not reach the sign-in screen',
+  );
+}
 
 /// Truncates [body] for inclusion in an exception message so a large HTML/
 /// JSON error page doesn't flood test output.

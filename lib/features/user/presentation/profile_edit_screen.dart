@@ -13,8 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -60,9 +60,6 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
     final isSubmitting = state.isLoading;
-
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final myUid = ref.watch(currentUserDocProvider).value?.uid;
 
     return Scaffold(
@@ -89,19 +86,11 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               ],
               ProfileForm(onChanged: _onFormChanged),
               const SizedBox(height: WarmPlayfulSpacing.s5),
-              FilledButton(
+              AppButton(
+                label: 'Save',
+                loadingLabel: 'Saving…',
+                isLoading: isSubmitting,
                 onPressed: isSubmitting ? null : _save,
-                style: loadingFilledStyle(context, isLoading: isSubmitting),
-                child: isSubmitting
-                    ? SizedBox(
-                        height: WarmPlayfulSpacing.s4,
-                        width: WarmPlayfulSpacing.s4,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colors.onPrimary,
-                        ),
-                      )
-                    : const Text('Save'),
               ),
             ],
           ),

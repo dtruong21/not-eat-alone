@@ -34,10 +34,9 @@ void main() {
     // UTC machine this degenerates to UTC; CI also runs this file under
     // TZ=Pacific/Kiritimati (UTC+14) so it cannot pass vacuously.
     final shifted = createdAt.add(createdAt.toLocal().timeZoneOffset);
-    final hour12 = shifted.hour % 12 == 0 ? 12 : shifted.hour % 12;
     final minute = shifted.minute.toString().padLeft(2, '0');
-    final period = shifted.hour < 12 ? 'AM' : 'PM';
-    expect(find.text('$hour12:$minute $period'), findsOneWidget);
+    final hour = shifted.hour.toString().padLeft(2, '0');
+    expect(find.text('$hour:$minute'), findsOneWidget);
     expect(find.text(formatClockTime(createdAt)), findsOneWidget);
   });
 
@@ -48,6 +47,6 @@ void main() {
     );
 
     expect(find.text('hi'), findsOneWidget);
-    expect(find.textContaining(RegExp(r'\d+:\d\d (AM|PM)')), findsNothing);
+    expect(find.textContaining(RegExp(r'\d{2}:\d{2}')), findsNothing);
   });
 }

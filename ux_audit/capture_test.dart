@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/meal/presentation/discovery_screen.dart';
 
 import '../integration_test/support/app_harness.dart';
@@ -513,7 +514,7 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
   await _step(tester, '20_discover_loading', () async {
     final spinner = find.descendant(
       of: find.byType(DiscoveryScreen),
-      matching: find.byType(CircularProgressIndicator),
+      matching: find.byType(SkeletonList),
     );
     // Let the viewer's own user doc arrive (without it the router would send
     // them to the age gate), then freeze Firestore: the feed's meal query can
@@ -543,7 +544,11 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
       await tester.tap(_tab('Chats'));
       await tester.pump(const Duration(milliseconds: 100));
       await _snap(tester, '60_chats_loading', assets: false);
-      expect(_spinner, findsWidgets, reason: 'chat list already loaded');
+      expect(
+        find.byType(SkeletonList),
+        findsOneWidget,
+        reason: 'chat list already loaded',
+      );
     });
   });
 
@@ -1154,13 +1159,27 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
       'photoUrls': ['$kAvatarBase/ines.png'],
     });
     await _pumpUntilFound(tester, find.byKey(const Key('add_photo_tile')));
-    // The user doc changed, which rebuilds the router and the screen with a
-    // fresh (empty) form: fill it in again.
-    await tester.enterText(
-      find.byKey(const Key('profile_name_field')),
-      'Noor Haddad',
+    // Plan 16b: the router is built once, so a user-doc write (here a photo)
+    // no longer rebuilds the screen with an empty form. Report whether the
+    // typed name survived; fill the form in again only if it did not.
+    final nameField = find.descendant(
+      of: find.byKey(const Key('profile_name_field')),
+      matching: find.byType(EditableText),
     );
-    await _tap(tester, find.text('Woman'));
+    final kept =
+        tester.widget<EditableText>(nameField).controller.text ==
+        'Noor Haddad';
+    // Run-log result for the verification doc; dev tooling has no logger.
+    // ignore: avoid_print
+    print('UXCHECK router: profile form kept its input after a user-doc '
+        'write: $kept');
+    if (!kept) {
+      await tester.enterText(
+        find.byKey(const Key('profile_name_field')),
+        'Noor Haddad',
+      );
+      await _tap(tester, find.text('Woman'));
+    }
     await _snap(tester, '16_profile_setup_ready');
   });
 }
@@ -1169,8 +1188,7 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
 
 /// Discover hides women-only meals from men, so there is no UI path to the
 /// disabled button. (Changing the gender of the signed-in viewer is no way
-/// either: any change of the user doc rebuilds the router and resets the
-/// navigation stack to Discover.) Sign in as Dario and push the route with
+/// either.) Sign in as Dario and push the route with
 /// the seeded meal.
 Future<void> _captureWomenOnlyAsMan(WidgetTester tester, UxWorld world) async {
   await _step(tester, '46_meal_detail_women_only_disabled', () async {
@@ -1194,15 +1212,18 @@ Future<void> _captureWomenOnlyAsMan(WidgetTester tester, UxWorld world) async {
 
 /// One malformed doc per feed makes its repository stream throw
 /// `RepositoryParseException` (see `seedMalformed`), which the screens render
-/// as "Something went wrong - please try again.". Written one at a time and
+/// as the shared ErrorState ("Couldn't load this"). Written one at a time and
 /// only now, so they cannot affect any earlier shot: each poisoned feed stays
 /// in its error state. Order matters: the chat first (it is opened from the
 /// chats list, which is poisoned third).
 Future<void> _captureFeedErrors(WidgetTester tester, UxWorld world) async {
-  final error = find.text('Something went wrong — please try again.');
+  final error = find.text("Couldn't load this");
 
   await _step(tester, 'errors_viewer_signin', () async {
     await signInTestUser(uid: 'ux-viewer');
+    // Since plan 16b the router is not rebuilt on a user change, so the
+    // meal-detail route pushed for Dario stays on top: go to Discover.
+    await _recover(tester);
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('discovery_create_meal_button')),

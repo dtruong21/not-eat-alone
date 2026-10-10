@@ -21,6 +21,7 @@ import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/matching/application/create_request_controller.dart';
@@ -433,27 +434,18 @@ class _RequestToJoinButton extends ConsumerWidget {
       }
     });
 
-    final colors = Theme.of(context).colorScheme;
     final isSubmitting = ref.watch(createRequestControllerProvider).isLoading;
 
-    return FilledButton(
+    return AppButton(
+      label: 'Request to join',
+      loadingLabel: 'Sending request…',
+      isLoading: isSubmitting,
       key: const Key('meal_detail_request_to_join_button'),
       onPressed: isSubmitting
           ? null
           : () => ref
                 .read(createRequestControllerProvider.notifier)
                 .request(meal),
-      style: loadingFilledStyle(context, isLoading: isSubmitting),
-      child: isSubmitting
-          ? SizedBox(
-              height: WarmPlayfulSpacing.s4,
-              width: WarmPlayfulSpacing.s4,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: colors.onPrimary,
-              ),
-            )
-          : const Text('Request to join'),
     );
   }
 }

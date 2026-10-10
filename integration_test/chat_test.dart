@@ -157,7 +157,7 @@ void main() {
     expect(sentMessages.docs.first['senderId'], host.uid);
     expect(sentMessages.docs.first['text'], messageText);
 
-    await signOutTestUser();
+    await signOutAndAwaitSignIn(tester);
 
     // Act (guest): sign back in and open the same chat through the real UI.
     await signInTestUser(uid: guest.uid);
