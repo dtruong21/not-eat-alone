@@ -14,14 +14,19 @@
 ///
 /// Only one method can be in flight at a time — [_pendingMethod] tracks
 /// which, disabling all three controls and showing a spinner on the active
-/// one. Errors are stored as an opaque `Object?` (mirroring
-/// `AgeGateScreen`) and rendered as a single generic message: this screen
+/// one. The phone flow holds it until `codeSent` / `onError` fires (the SMS
+/// really is in flight until then), with a 60 s safety timeout. Errors are
+/// stored as an opaque `Object?` (mirroring `AgeGateScreen`) and rendered as a
+/// single generic message: this screen
 /// must not import `firebase_auth` to inspect exception types — see
 /// `AuthRepository`'s file header, which names it the sole boundary for
 /// that package.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
@@ -29,11 +34,21 @@ import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
+import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
+import 'package:not_eat_alone/features/onboarding/application/underage_notice_provider.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Route path for the phone OTP screen this screen pushes to. Kept in sync
 /// with `_phoneVerifyPath` in `lib/core/routing/router.dart`.
 const phoneVerifyRoutePath = '/auth/phone';
+
+const _phoneErrorText =
+    'Enter a phone number with country code, e.g. +33 6 12 34 56 78';
+
+/// How long "Send code" waits for `codeSent` / `onError` before giving up.
+const _smsTimeout = Duration(seconds: 60);
 
 class SigninScreen extends ConsumerStatefulWidget {
   const SigninScreen({super.key});
@@ -44,22 +59,47 @@ class SigninScreen extends ConsumerStatefulWidget {
 
 class _SigninScreenState extends ConsumerState<SigninScreen> {
   final _phoneController = TextEditingController(text: '+33');
+  final _phoneFocus = FocusNode();
 
   SigninMethod? _pendingMethod;
   Object? _error;
+  bool _phoneInvalid = false;
+  Timer? _smsTimer;
+  int _phoneAttempt = 0;
 
   @override
   void dispose() {
+    _smsTimer?.cancel();
+    _phoneFocus.dispose();
     _phoneController.dispose();
     super.dispose();
   }
 
+  void _start(SigninMethod method) {
+    ref.read(underageNoticeProvider.notifier).set(value: false);
+    setState(() {
+      _pendingMethod = method;
+      _error = null;
+      _phoneInvalid = false;
+    });
+  }
+
+  /// Ends the phone wait (codeSent, onError, thrown, or timeout). Callbacks
+  /// from a superseded [attempt] (e.g. a late `codeSent` after the timeout and
+  /// a retry) are ignored.
+  void _endPhoneWait(int attempt, {Object? error}) {
+    if (attempt != _phoneAttempt) return;
+    _smsTimer?.cancel();
+    if (!mounted) return;
+    setState(() {
+      if (_pendingMethod == SigninMethod.phone) _pendingMethod = null;
+      _error = error;
+    });
+  }
+
   Future<void> _signInWithGoogle() async {
     if (_pendingMethod != null) return;
-    setState(() {
-      _pendingMethod = SigninMethod.google;
-      _error = null;
-    });
+    _start(SigninMethod.google);
     await analytics.track(const SigninStarted(method: SigninMethod.google));
     try {
       await ref.read(authRepositoryProvider).signInWithGoogle();
@@ -75,10 +115,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
 
   Future<void> _signInWithApple() async {
     if (_pendingMethod != null) return;
-    setState(() {
-      _pendingMethod = SigninMethod.apple;
-      _error = null;
-    });
+    _start(SigninMethod.apple);
     await analytics.track(const SigninStarted(method: SigninMethod.apple));
     try {
       await ref.read(authRepositoryProvider).signInWithApple();
@@ -92,10 +129,24 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
 
   Future<void> _sendPhoneCode() async {
     if (_pendingMethod != null) return;
-    final phoneE164 = _phoneController.text.trim();
-    setState(() {
-      _pendingMethod = SigninMethod.phone;
-      _error = null;
+    final phoneE164 = toE164(_phoneController.text);
+    if (phoneE164 == null) {
+      setState(() {
+        _phoneInvalid = true;
+        _error = null;
+      });
+      // Focus scrolls the field (and its error) above the keyboard.
+      _phoneFocus.requestFocus();
+      return;
+    }
+    final attempt = ++_phoneAttempt;
+    _start(SigninMethod.phone);
+    _smsTimer?.cancel();
+    _smsTimer = Timer(_smsTimeout, () {
+      _endPhoneWait(attempt, error: 'timeout');
+      // A codeSent that arrives after this (or after another method has
+      // started) must not open the code screen.
+      if (attempt == _phoneAttempt) _phoneAttempt++;
     });
     await analytics.track(const SigninStarted(method: SigninMethod.phone));
     try {
@@ -104,19 +155,22 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
           .verifyPhone(
             phoneE164: phoneE164,
             codeSent: (verificationId) {
-              if (!mounted) return;
-              context.push(phoneVerifyRoutePath, extra: verificationId);
+              if (attempt != _phoneAttempt || !mounted) return;
+              _endPhoneWait(attempt);
+              unawaited(
+                context.push(
+                  phoneVerifyRoutePath,
+                  extra: PhoneVerifyArgs(
+                    verificationId: verificationId,
+                    phoneE164: phoneE164,
+                  ),
+                ),
+              );
             },
-            onError: (e) {
-              if (!mounted) return;
-              setState(() => _error = e);
-            },
+            onError: (e) => _endPhoneWait(attempt, error: e),
           );
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e);
-    } finally {
-      if (mounted) setState(() => _pendingMethod = null);
+      _endPhoneWait(attempt, error: e);
     }
   }
 
@@ -126,6 +180,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
     final isBusy = _pendingMethod != null;
+    final showUnderage = ref.watch(underageNoticeProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -134,7 +189,11 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: WarmPlayfulSpacing.s6),
+              if (showUnderage) ...[
+                const _UnderageBanner(),
+                const SizedBox(height: WarmPlayfulSpacing.s4),
+              ] else
+                const SizedBox(height: WarmPlayfulSpacing.s6),
               Text(
                 'Welcome to Convyve',
                 textAlign: TextAlign.center,
@@ -145,7 +204,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s2),
               Text(
-                'Sign in to get started.',
+                'Meet one person over a meal in Paris.',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
@@ -154,18 +213,17 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                 label: 'Continue with Google',
                 loadingLabel: 'Signing in…',
                 variant: AppButtonVariant.outlined,
+                height: WarmPlayfulSize.actionHeight,
                 icon: const Icon(Icons.g_mobiledata_rounded),
                 isLoading: _pendingMethod == SigninMethod.google,
                 onPressed: isBusy ? null : _signInWithGoogle,
               ),
               const SizedBox(height: WarmPlayfulSpacing.s3),
-              AppButton(
-                label: 'Continue with Apple',
-                loadingLabel: 'Signing in…',
-                variant: AppButtonVariant.outlined,
-                icon: const Icon(Icons.apple_rounded),
-                isLoading: _pendingMethod == SigninMethod.apple,
-                onPressed: isBusy ? null : _signInWithApple,
+              _AppleButton(
+                dark: theme.brightness == Brightness.dark,
+                busy: isBusy,
+                signingIn: _pendingMethod == SigninMethod.apple,
+                onPressed: _signInWithApple,
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
               Row(
@@ -189,11 +247,25 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               TextField(
                 key: const Key('signin_phone_field'),
                 controller: _phoneController,
+                focusNode: _phoneFocus,
                 enabled: !isBusy,
                 keyboardType: TextInputType.phone,
+                autofillHints: const [AutofillHints.telephoneNumber],
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9+ ]')),
+                ],
+                // Room for the error line and the button under the field.
+                scrollPadding: const EdgeInsets.only(
+                  bottom: WarmPlayfulSize.keyboardReveal,
+                ),
+                onChanged: (_) {
+                  if (_phoneInvalid) setState(() => _phoneInvalid = false);
+                },
                 decoration: InputDecoration(
                   labelText: 'Phone number',
                   hintText: '+33 6 12 34 56 78',
+                  errorText: _phoneInvalid ? _phoneErrorText : null,
+                  errorMaxLines: 3,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
                   ),
@@ -203,19 +275,129 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               AppButton(
                 label: 'Send code',
                 loadingLabel: 'Sending code…',
+                height: WarmPlayfulSize.actionHeight,
                 isLoading: _pendingMethod == SigninMethod.phone,
                 onPressed: isBusy ? null : _sendPhoneCode,
               ),
               if (_error != null) ...[
                 const SizedBox(height: WarmPlayfulSpacing.s4),
-                Text(
-                  'Something went wrong — please try again.',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.error),
+                // Appears without user action (SMS failure, timeout):
+                // announce it.
+                Semantics(
+                  liveRegion: true,
+                  container: true,
+                  child: Text(
+                    'Something went wrong — please try again.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(color: colors.error),
+                  ),
                 ),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Official "Sign in with Apple" button (brand rules: black on light, white on
+/// dark, Apple's own glyph and type). It has no loading state, so while any
+/// method is in flight it is dimmed and inert, and while Apple itself is in
+/// flight it is announced as "Signing in…". Text scale is capped at 1x: the
+/// label is already 0.43 x height (24 px) and the height is fixed.
+class _AppleButton extends StatelessWidget {
+  const _AppleButton({
+    required this.dark,
+    required this.busy,
+    required this.signingIn,
+    required this.onPressed,
+  });
+
+  final bool dark;
+  final bool busy;
+  final bool signingIn;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    var button = MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1,
+      child: SignInWithAppleButton(
+        text: 'Continue with Apple',
+        height: WarmPlayfulSize.actionHeight,
+        style: dark
+            ? SignInWithAppleButtonStyle.white
+            : SignInWithAppleButtonStyle.black,
+        borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
+        // Never null: a null handler would swap the brand colours for
+        // Cupertino's disabled grey.
+        onPressed: busy ? () {} : onPressed,
+      ),
+    );
+    if (busy) {
+      button = Opacity(opacity: 0.5, child: IgnorePointer(child: button));
+      // Dimmed and inert for the eye; also disabled for VoiceOver.
+      if (!signingIn) button = Semantics(enabled: false, child: button);
+    }
+    if (signingIn) {
+      button = Semantics(
+        container: true,
+        button: true,
+        enabled: false,
+        liveRegion: true,
+        label: 'Signing in…',
+        excludeSemantics: true,
+        child: button,
+      );
+    }
+    return button;
+  }
+}
+
+/// Dismissible "you must be 18" notice shown after the age gate bounced the
+/// user. Announced when it appears.
+class _UnderageBanner extends ConsumerWidget {
+  const _UnderageBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.wp.peach,
+          borderRadius: BorderRadius.circular(WarmPlayfulRadius.md),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: WarmPlayfulSpacing.s4),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: WarmPlayfulSpacing.s3,
+                ),
+                child: Text(
+                  'You must be 18 or older to use Convyve.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: colors.onSurface),
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Dismiss',
+              constraints: const BoxConstraints(
+                minWidth: WarmPlayfulSize.minTap,
+                minHeight: WarmPlayfulSize.minTap,
+              ),
+              icon: const Icon(Icons.close_rounded),
+              onPressed: () =>
+                  ref.read(underageNoticeProvider.notifier).set(value: false),
+            ),
+          ],
         ),
       ),
     );

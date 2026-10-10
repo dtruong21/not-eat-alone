@@ -34,12 +34,29 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
 /// confirm the required-set gate reacts to [ProfileForm]'s reported state.
 class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   ProfileFormData? _formData;
+  final GlobalKey _continueKey = GlobalKey();
 
   @visibleForTesting
   ProfileFormData? get debugFormData => _formData;
 
   void _onFormChanged(ProfileFormData data) {
-    if (data != _formData) setState(() => _formData = data);
+    if (data == _formData) return;
+    // Typing in Bio (the last field) with the keyboard up: keep Continue in
+    // view. The field's own caret reveal (scrollPadding) only guesses how
+    // far below the caret the button is, which breaks at large text sizes.
+    final bioEdited = _formData != null && data.bio != _formData!.bio;
+    final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
+    setState(() => _formData = data);
+    if (bioEdited && keyboardUp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final continueContext = _continueKey.currentContext;
+        if (!mounted || continueContext == null) return;
+        Scrollable.ensureVisible(
+          continueContext,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        );
+      });
+    }
   }
 
   Future<void> _continue() async {
@@ -56,11 +73,18 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         );
   }
 
+  /// "a, b and c".
+  static String _sentence(List<String> parts) => parts.length < 2
+      ? parts.join()
+      : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
     final isSubmitting = state.isLoading;
     final isValid = _formData?.isValid ?? false;
+    // Before the form's first report nothing is known: show no hint.
+    final missing = _formData?.missingFields ?? const <String>[];
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -84,8 +108,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s2),
                 Text(
-                  'Add a name, a photo, and tell us how you identify — this '
-                  'helps us match you.',
+                  "Name, photo and gender. That's it.",
                   style: textTheme.bodyMedium?.copyWith(
                     color: context.wp.muted,
                   ),
@@ -94,10 +117,29 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 ProfileForm(onChanged: _onFormChanged),
                 const SizedBox(height: WarmPlayfulSpacing.s5),
                 AppButton(
+                  key: _continueKey,
                   label: 'Continue',
                   loadingLabel: 'Saving…',
                   isLoading: isSubmitting,
                   onPressed: (isValid && !isSubmitting) ? _continue : null,
+                ),
+                // Always mounted so screen readers announce text changes.
+                Semantics(
+                  liveRegion: true,
+                  child: missing.isEmpty
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(
+                            top: WarmPlayfulSpacing.s2,
+                          ),
+                          child: Text(
+                            'Still needed: ${_sentence(missing)}.',
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: context.wp.muted,
+                            ),
+                          ),
+                        ),
                 ),
               ],
             ),

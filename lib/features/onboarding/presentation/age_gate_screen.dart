@@ -16,6 +16,8 @@
 /// repository/analytics calls — lives in the controller.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,6 +60,9 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
       initialDate: initial.isAfter(_lastDate) ? _lastDate : initial,
       firstDate: _firstDate,
       lastDate: _lastDate,
+      initialDatePickerMode: DatePickerMode.year,
+      helpText: 'Your date of birth',
+      fieldLabelText: 'Date of birth',
     );
     if (picked != null) {
       setState(() => _selectedDate = picked);
@@ -121,51 +126,69 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Confirm your date of birth',
-                textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(
-                  color: colors.onSurface,
-                  fontWeight: WarmPlayfulType.h1Weight,
+        // Scrolls when text is large or the screen short; stays centred when
+        // it fits (minHeight = viewport, no IntrinsicHeight).
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: math.max(
+                  0,
+                  constraints.maxHeight - 2 * WarmPlayfulSpacing.s5,
                 ),
               ),
-              const SizedBox(height: WarmPlayfulSpacing.s2),
-              Text(
-                'You must be 18 or older to use Convyve.',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Confirm your date of birth',
+                    textAlign: TextAlign.center,
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: WarmPlayfulType.h1Weight,
+                    ),
+                  ),
+                  const SizedBox(height: WarmPlayfulSpacing.s2),
+                  Text(
+                    'You must be 18 or older to use Convyve.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: context.wp.muted,
+                    ),
+                  ),
+                  const SizedBox(height: WarmPlayfulSpacing.s6),
+                  OutlinedButton(
+                    onPressed: isSubmitting ? null : _pickDate,
+                    child: Text(
+                      selected == null
+                          ? 'Select date of birth'
+                          : formatLongDate(selected),
+                    ),
+                  ),
+                  const SizedBox(height: WarmPlayfulSpacing.s5),
+                  if (hasError) ...[
+                    Text(
+                      'Something went wrong — please try again.',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.error,
+                      ),
+                    ),
+                    const SizedBox(height: WarmPlayfulSpacing.s4),
+                  ],
+                  AppButton(
+                    label: 'Continue',
+                    loadingLabel: 'Saving…',
+                    isLoading: isSubmitting,
+                    onPressed: (selected == null || isSubmitting)
+                        ? null
+                        : _submit,
+                  ),
+                ],
               ),
-              const SizedBox(height: WarmPlayfulSpacing.s6),
-              OutlinedButton(
-                onPressed: isSubmitting ? null : _pickDate,
-                child: Text(
-                  selected == null
-                      ? 'Select date of birth'
-                      : formatLongDate(selected),
-                ),
-              ),
-              const SizedBox(height: WarmPlayfulSpacing.s5),
-              if (hasError) ...[
-                Text(
-                  'Something went wrong — please try again.',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.error),
-                ),
-                const SizedBox(height: WarmPlayfulSpacing.s4),
-              ],
-              AppButton(
-                label: 'Continue',
-                loadingLabel: 'Saving…',
-                isLoading: isSubmitting,
-                onPressed: (selected == null || isSubmitting) ? null : _submit,
-              ),
-            ],
+            ),
           ),
         ),
       ),

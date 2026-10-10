@@ -16,8 +16,7 @@ class RepositoryParseException implements Exception {
   final StackTrace stack;
 
   @override
-  String toString() =>
-      'RepositoryParseException($collection/$docId): $cause';
+  String toString() => 'RepositoryParseException($collection/$docId): $cause';
 }
 
 /// Thrown when a Firestore write fails (network, rules, quota, etc.).
@@ -43,4 +42,15 @@ class RepositoryReadException implements Exception {
 
   @override
   String toString() => 'RepositoryReadException($source): $cause';
+}
+
+/// Thrown by `AuthRepository.confirmSmsCode` when the code (or its
+/// verification id/session) was rejected as wrong or expired — as opposed to
+/// a transport or service failure, which propagate as-is.
+class InvalidSmsCodeException implements Exception {
+  /// Creates the exception.
+  const InvalidSmsCodeException();
+
+  @override
+  String toString() => 'InvalidSmsCodeException';
 }
