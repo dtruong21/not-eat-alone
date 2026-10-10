@@ -43,6 +43,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Fixed
 
+- Discover no longer keeps showing a meal after its start time has passed, and it loads faster by only fetching upcoming meals.
 - The "add photo" tile on the profile now has a visible outline.
 - Chat message times now show in your local time instead of UTC.
 - Meal times now show in your local time instead of UTC (a 7:30 PM meal in Paris no longer reads 5:30 PM).

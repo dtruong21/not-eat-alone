@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/core/location/location_service.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
@@ -34,8 +35,9 @@ Meal _meal(String id, DateTime at) => Meal(
 
 /// QA sweep 2026-10-09 (edge cases 3 and 6: date rollover, large data). The
 /// feed is derived only when Firestore emits, so a meal whose time passes while
-/// the screen stays open is still listed. Open bug:
-/// docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md
+/// the screen stays open must drop out by itself (fixed: the controller
+/// schedules a re-check at the next start time).
+/// docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md
 void main() {
   late _MockMeals repo;
   late StreamController<List<Meal>> snapshots;
@@ -89,10 +91,45 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 1500));
       expect(c.read(discoveryControllerProvider).value, isEmpty);
     },
-    skip:
-        'BUG docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md '
-        '(un-skip when fixed)',
   );
+
+  test('only the meals that have started are dropped; later ones stay', () async {
+    final c = container();
+    c.listen(discoveryControllerProvider, (_, __) {});
+    await untilSubscribed();
+    snapshots.add([
+      _meal('soon', DateTime.now().add(const Duration(milliseconds: 600))),
+      _meal('later', DateTime.now().add(const Duration(hours: 2))),
+    ]);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(c.read(discoveryControllerProvider).value, hasLength(2));
+
+    await Future<void>.delayed(const Duration(milliseconds: 1000));
+    expect(
+      c.read(discoveryControllerProvider).value!.map((d) => d.meal.id),
+      ['later'],
+    );
+  });
+
+  test('re-emitting the same feed does not count another discovery view', () async {
+    final logged = <String>[];
+    analytics.debugSetForceSend(true);
+    analytics.debugSetLogSink((name, params) async => logged.add(name));
+    addTearDown(analytics.debugResetAnalytics);
+
+    final c = container();
+    c.listen(discoveryControllerProvider, (_, __) {});
+    await untilSubscribed();
+    final meals = [
+      _meal('a', DateTime.now().add(const Duration(hours: 1))),
+    ];
+    snapshots.add(meals);
+    snapshots.add(meals);
+    snapshots.add([...meals, _meal('b', DateTime.now().add(const Duration(hours: 2)))]);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(logged.where((n) => n == 'discovery_viewed'), hasLength(2));
+  });
 
   test('300 open meals in the cell are mapped and sorted', () async {
     final c = container();

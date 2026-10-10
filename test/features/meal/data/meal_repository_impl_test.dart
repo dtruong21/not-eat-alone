@@ -74,17 +74,19 @@ void main() {
         'watchDiscoverable emits only open meals whose geohash starts with '
         'the prefix', () async {
       const prefix = 'u09tv';
+      final future = DateTime.now().add(const Duration(days: 2));
 
       Future<void> seed({
         required String id,
         required String status,
         required String geohash,
+        DateTime? at,
       }) {
         return firestore.collection('meals').doc(id).set({
           'id': id,
           'hostId': 'host-$id',
           'restaurant': restaurant.toJsonForTest(),
-          'dateTime': Timestamp.fromDate(DateTime.utc(2026, 10, 1, 19, 30)),
+          'dateTime': Timestamp.fromDate(at ?? future),
           'geohash': geohash,
           'note': null,
           'womenOnly': false,
@@ -101,6 +103,14 @@ void main() {
       await seed(id: 'b', status: 'open', geohash: 'gbsuv12');
       // (c) matched (not open) but in-prefix -> should NOT match.
       await seed(id: 'c', status: 'matched', geohash: '${prefix}abc');
+      // (d) open + in-prefix but already started -> should NOT match (the
+      // query is time-bounded so expired meals are never downloaded).
+      await seed(
+        id: 'd',
+        status: 'open',
+        geohash: '${prefix}def',
+        at: DateTime.now().subtract(const Duration(hours: 1)),
+      );
 
       final results = await repository
           .watchDiscoverable(geohashPrefix: prefix)
@@ -108,6 +118,36 @@ void main() {
 
       expect(results.map((m) => m.id), ['a']);
       expect(results.single.status, MealStatus.open);
+    });
+
+    test('watchDiscoverable returns soonest first and caps the download',
+        () async {
+      const prefix = 'u09tv';
+      final base = DateTime.now().add(const Duration(days: 1));
+      // Seed 105 upcoming meals out of order; the cap keeps the 100 soonest.
+      for (var i = 104; i >= 0; i--) {
+        await firestore.collection('meals').doc('m$i').set({
+          'id': 'm$i',
+          'hostId': 'h',
+          'restaurant': restaurant.toJsonForTest(),
+          'dateTime': Timestamp.fromDate(base.add(Duration(minutes: i))),
+          'geohash': '${prefix}x',
+          'note': null,
+          'womenOnly': false,
+          'seats': 1,
+          'status': 'open',
+          'guestId': null,
+          'createdAt': Timestamp.fromDate(DateTime.utc(2026, 9, 1)),
+        });
+      }
+
+      final results = await repository
+          .watchDiscoverable(geohashPrefix: prefix)
+          .first;
+
+      expect(results, hasLength(MealRepositoryImpl.discoverableLimit));
+      expect(results.first.id, 'm0');
+      expect(results.last.id, 'm99');
     });
 
     test('getMeal returns the meal for an existing id', () async {

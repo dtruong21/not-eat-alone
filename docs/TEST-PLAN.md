@@ -36,7 +36,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Data + time
 
 - [ ] Timezone math. Date-keyed data must respect local TZ, not UTC.
-- [ ] Date rollover at midnight — "today" advances without manual refresh. — **FAIL (code)**, see `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md`
+- [ ] Date rollover at midnight — "today" advances without manual refresh. — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md`
 - [ ] DST transition — math still correct on clock-change days.
 - [ ] Long strings (≥1000 chars) in text fields don't crash.
 - [ ] Long lists (≥100 items) render without dropped frames.
@@ -203,7 +203,7 @@ Related PRD entry: `docs/PRD.md § Meals`
 
 **Known issues:**
 - `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
-- `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
+- `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
 
 ---
 
@@ -230,7 +230,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - **Map view** of the feed (post-MVP, see PRD).
 
 **Known issues:**
-- `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
+- `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
 - `docs/bugs/2026-10-09-location-fix-has-no-timeout.md` (P2)
 
 ---
@@ -444,6 +444,17 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Discovery feed freshness
+
+**Automated:** `test/features/meal/application/discovery_clock_edge_test.dart` (a meal drops when its start passes with no new snapshot; only started meals drop; unchanged feed doesn't recount `discovery_viewed`); `meal_repository_impl_test.dart` (past meals excluded, soonest-first, capped at 100).
+
+**Manual:**
+- [ ] Leave Discover open past a listed meal's start time: it disappears without pulling or reopening.
+- [ ] Production data: the `status + dateTime` index is deployed (`firebase/firestore.indexes.json`), the Discover query succeeds (no "requires an index" error).
+- [ ] Known follow-up: cancelling a meal — `docs/bugs/2026-10-10-no-way-to-cancel-a-meal.md`.
 
 ---
 
