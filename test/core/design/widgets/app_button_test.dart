@@ -190,6 +190,28 @@ void main() {
         });
       }
 
+      testWidgets('maxLines: 1 keeps a long label as tall as a short one', (
+        tester,
+      ) async {
+        Future<double> heightOf(String label) async {
+          await tester.pumpWidget(
+            _host(
+              b,
+              AppButton(label: label, maxLines: 1, onPressed: () {}),
+              textScale: 2,
+            ),
+          );
+          expect(tester.takeException(), isNull);
+          return tester.getSize(find.byType(FilledButton)).height;
+        }
+
+        final short = await heightOf('Go');
+        expect(
+          await heightOf('Send the verification code to my phone now'),
+          short,
+        );
+      });
+
       testWidgets('no overflow at 2x text scale and 320 px', (tester) async {
         final sizes = <Size>[];
         for (final loading in [false, true]) {

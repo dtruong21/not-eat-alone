@@ -163,7 +163,7 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('pending request -> disabled "Requested" + host hint',
+  testWidgets('pending request -> disabled "Requested" + waiting status',
       (tester) async {
     await pumpWith(tester, viewerUid: 'guest1', request: _pendingRequest);
 

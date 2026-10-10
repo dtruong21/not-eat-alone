@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +23,8 @@ import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
+
+import '../../../helpers/load_app_fonts.dart';
 
 class _MockUserRepository extends Mock implements UserRepository {}
 
@@ -99,7 +102,7 @@ final _cases = <_Case>[
     gender: null,
     request: null,
     label: 'This is your meal',
-    status: "You'll see requests in the Requests tab.",
+    status: 'See requests in the Requests tab.',
     enabled: false,
     buttonKey: 'meal_detail_your_meal_button',
   ),
@@ -154,13 +157,16 @@ final _cases = <_Case>[
     gender: null,
     request: _request(RequestStatus.denied),
     label: 'Not selected',
-    status: 'The host chose someone else. Have a look at other meals.',
+    status: 'The host chose someone else.',
     enabled: false,
     buttonKey: 'meal_detail_not_selected_button',
   ),
 ];
 
 void main() {
+  // Real glyph widths: the Ahem test font makes wrap checks meaningless.
+  setUpAll(loadAppFonts);
+
   late _MockUserRepository userRepository;
 
   setUp(() {
@@ -237,21 +243,11 @@ void main() {
   final bar = find.byKey(const Key('meal_action_bar'));
 
   group('every state', () {
-    Size? firstBarSize;
-
-    /// Bar size of the plain "Request to join" state, for tests that run
-    /// alone.
-    Future<Size> baseline(WidgetTester tester) async {
-      await pump(tester, meal: _meal);
-      final size = tester.getSize(bar);
-      await tester.pumpWidget(const SizedBox());
-      return size;
-    }
-
     for (final c in _cases) {
-      testWidgets('${c.name}: full-width 56 high button, fixed bar', (
+      testWidgets('${c.name}: full-width 56 high button, status line', (
         tester,
       ) async {
+        final semantics = tester.ensureSemantics();
         await pump(
           tester,
           meal: c.meal,
@@ -271,10 +267,6 @@ void main() {
         expect(buttonSize.width, barSize.width);
         expect(buttonSize.height, WarmPlayfulSize.actionHeight);
 
-        // The bar is the same size in every state.
-        firstBarSize ??= barSize;
-        expect(barSize, firstBarSize);
-
         // Pinned at the bottom of the screen.
         expect(
           tester.getRect(bar).bottom,
@@ -282,26 +274,27 @@ void main() {
         );
 
         final status = find.byKey(const Key('meal_action_status'));
+        final data = tester.getSemantics(status).getSemanticsData();
         if (c.status == null) {
           expect(
             find.descendant(of: status, matching: find.byType(Text)),
             findsNothing,
           );
+          expect(data.label, isEmpty);
         } else {
           expect(
             find.descendant(of: status, matching: find.text(c.status!)),
             findsOneWidget,
           );
-          expect(
-            tester.widget<Semantics>(status).properties.liveRegion,
-            isTrue,
-          );
+          // The real semantics node: a live region carrying the full text.
+          expect(data.label, c.status);
+          expect(data.flagsCollection.isLiveRegion, isTrue);
         }
+        semantics.dispose();
       });
     }
 
-    testWidgets('loading request: skeleton, same bar size', (tester) async {
-      final expected = await baseline(tester);
+    testWidgets('loading request: skeleton, no spinner', (tester) async {
       await pump(
         tester,
         meal: _meal,
@@ -311,13 +304,11 @@ void main() {
 
       expect(find.byKey(const Key('meal_action_skeleton')), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(tester.getSize(bar), expected);
     });
 
-    testWidgets('request error: retry row, same bar size, retry refetches', (
+    testWidgets('request error: Try again button, retry refetches', (
       tester,
     ) async {
-      final expected = await baseline(tester);
       var calls = 0;
       // StateError: Riverpod's default retry skips Errors, so it lands at once.
       await pump(
@@ -328,8 +319,8 @@ void main() {
             : Stream.value(null),
       );
 
-      expect(find.text("Couldn't load your request"), findsOneWidget);
-      expect(tester.getSize(bar), expected);
+      expect(find.text("Couldn't load your request."), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
       await tester.tap(
         find.byKey(const Key('meal_detail_request_retry_button')),
       );
@@ -390,6 +381,16 @@ void main() {
   });
 
   group('rejection feedback', () {
+    // Snackbars queue one at a time, so a double fire would still show one:
+    // dismiss it and make sure no second one takes its place.
+    Future<void> expectFiredOnce(WidgetTester tester) async {
+      tester
+          .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
+          .hideCurrentSnackBar();
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsNothing);
+    }
+
     testWidgets('generic failure: one snackbar, even after the button '
         'swapped to Requested', (tester) async {
       final requests = StreamController<JoinRequest?>();
@@ -425,6 +426,7 @@ void main() {
         find.text("Couldn't send your request. Try again."),
         findsOneWidget,
       );
+      await expectFiredOnce(tester);
     });
 
     testWidgets('meal no longer open: its own copy', (tester) async {
@@ -441,42 +443,116 @@ void main() {
 
       expect(find.text('This meal is no longer open.'), findsOneWidget);
       expect(find.text("Couldn't send your request. Try again."), findsNothing);
+      await expectFiredOnce(tester);
     });
   });
 
-  testWidgets('320 px wide, 2.0x text, long note and bio: no overflow, bar '
-      'stays on screen', (tester) async {
-    tester.view
-      ..physicalSize = const Size(320, 640)
-      ..devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    final longMeal = Meal(
-      id: 'm1',
-      hostId: 'host1',
-      restaurant: _restaurant,
-      dateTime: DateTime(2027, 1, 5, 19, 30),
-      geohash: 'u09tvw',
-      note: 'A very long note about the evening. ' * 30,
-    );
-
-    for (final c in _cases) {
-      await tester.pumpWidget(const SizedBox());
-      await pump(
-        tester,
-        meal: longMeal.copyWith(womenOnly: c.meal.womenOnly),
-        viewer: c.viewer,
-        gender: c.gender,
-        request: c.request,
-        textScale: 2,
+  for (final scale in [1.0, 2.0]) {
+    testWidgets('bar is one fixed size in every state at ${scale}x text '
+        '(320x568)', (tester) async {
+      tester.view
+        ..physicalSize = const Size(320, 568)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final longMeal = Meal(
+        id: 'm1',
+        hostId: 'host1',
+        restaurant: _restaurant,
+        dateTime: DateTime(2027, 1, 5, 19, 30),
+        geohash: 'u09tvw',
+        note: 'A very long note about the evening. ' * 30,
       );
-      expect(tester.takeException(), isNull, reason: c.name);
-      final rect = tester.getRect(bar);
-      expect(rect.bottom, lessThanOrEqualTo(640), reason: c.name);
-      expect(rect.left, greaterThanOrEqualTo(0), reason: c.name);
-      expect(rect.right, lessThanOrEqualTo(320), reason: c.name);
-      expect(find.byKey(Key(c.buttonKey)), findsOneWidget, reason: c.name);
-    }
-  });
+
+      final states = <String, Future<void> Function()>{
+        for (final c in _cases)
+          c.name: () => pump(
+            tester,
+            meal: longMeal.copyWith(womenOnly: c.meal.womenOnly),
+            viewer: c.viewer,
+            gender: c.gender,
+            request: c.request,
+            textScale: scale,
+          ),
+        'loading': () => pump(
+          tester,
+          meal: longMeal,
+          requests: StreamController<JoinRequest?>().stream,
+          textScale: scale,
+        ),
+        'error': () => pump(
+          tester,
+          meal: longMeal,
+          requests: Stream.error(StateError('boom')),
+          textScale: scale,
+        ),
+        'sending': () async {
+          await pump(
+            tester,
+            meal: longMeal,
+            controller: _FakeCreateRequest(),
+            textScale: scale,
+          );
+          await tester.tap(
+            find.byKey(const Key('meal_detail_request_to_join_button')),
+          );
+          await tester.pump();
+        },
+      };
+
+      Size? expected;
+      for (final entry in states.entries) {
+        await tester.pumpWidget(const SizedBox());
+        await entry.value();
+        final name = entry.key;
+        expect(tester.takeException(), isNull, reason: name);
+
+        final size = tester.getSize(bar);
+        expected ??= size;
+        expect(size, expected, reason: '$name bar size');
+
+        final rect = tester.getRect(bar);
+        expect(rect.bottom, lessThanOrEqualTo(568), reason: name);
+        expect(rect.left, greaterThanOrEqualTo(0), reason: name);
+        expect(rect.right, lessThanOrEqualTo(320), reason: name);
+
+        // The one action, when there is one, is exactly 56 high.
+        final action = find.descendant(
+          of: bar,
+          matching: find.byType(FilledButton),
+        );
+        if (action.evaluate().isNotEmpty) {
+          expect(
+            tester.getSize(action).height,
+            WarmPlayfulSize.actionHeight,
+            reason: name,
+          );
+        }
+
+        // The status line shows its whole text, never ellipsized.
+        final line = find.descendant(
+          of: find.byKey(const Key('meal_action_status')),
+          matching: find.byType(RichText),
+        );
+        if (line.evaluate().isNotEmpty) {
+          expect(
+            tester.renderObject<RenderParagraph>(line).didExceedMaxLines,
+            isFalse,
+            reason: '$name status line is cut',
+          );
+        }
+
+        // The scroll body keeps room.
+        expect(
+          tester.getSize(find.byType(SingleChildScrollView)).height,
+          greaterThanOrEqualTo(300),
+          reason: name,
+        );
+
+        // Let a sending request settle before the next state.
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    });
+  }
 
   group('safety menu', () {
     testWidgets('absent on your own meal', (tester) async {

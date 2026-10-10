@@ -21,6 +21,7 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.expand = true,
     this.height,
+    this.maxLines = 2,
     super.key,
   });
 
@@ -49,6 +50,10 @@ class AppButton extends StatelessWidget {
 
   /// Minimum height override; null keeps the per-variant default.
   final double? height;
+
+  /// Lines the label may use before it is ellipsized (idle and loading).
+  /// `1` keeps the button at its minimum height at any text size.
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +88,7 @@ class AppButton extends StatelessWidget {
 
     final text = Text(
       label,
-      maxLines: 2,
+      maxLines: maxLines,
       textAlign: TextAlign.center,
       overflow: TextOverflow.ellipsis,
     );
@@ -100,7 +105,7 @@ class AppButton extends StatelessWidget {
               : const SizedBox.square(dimension: WarmPlayfulSize.spinner),
           text: Text(
             loadingLabel ?? label,
-            maxLines: 2,
+            maxLines: maxLines,
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
           ),
