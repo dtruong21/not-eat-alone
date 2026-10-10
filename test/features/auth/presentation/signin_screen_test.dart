@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -250,7 +249,10 @@ void main() {
 
     testWidgets('subtitle names the product promise', (tester) async {
       await pumpScreen(tester);
-      expect(find.text('Meet one person over a meal in Paris.'), findsOneWidget);
+      expect(
+        find.text('Meet one person over a meal in Paris.'),
+        findsOneWidget,
+      );
       expect(find.text('Sign in to get started.'), findsNothing);
     });
   });
@@ -275,12 +277,44 @@ void main() {
       expect(b.style, SignInWithAppleButtonStyle.white);
     });
 
-    testWidgets('tapping it signs in with Apple', (tester) async {
+    testWidgets('tapping it signs in with Apple, firing signin_started(apple) '
+        'once', (tester) async {
       when(() => authRepository.signInWithApple()).thenAnswer((_) async {});
       await pumpScreen(tester);
-      await tester.tap(find.text('Continue with Apple'));
-      await tester.pump();
+      final logs = await _captureDebugLogs(() async {
+        await tester.tap(find.text('Continue with Apple'));
+        await tester.pump();
+        await tester.pump();
+      });
       verify(() => authRepository.signInWithApple()).called(1);
+      expect(
+        logs.where((l) => l.contains('signin_started') && l.contains('apple')),
+        hasLength(1),
+      );
+    });
+
+    testWidgets('is disabled for screen readers while another method is in '
+        'flight', (tester) async {
+      final handle = tester.ensureSemantics();
+      stubVerifyPhone((_, _) async {});
+      await pumpScreen(tester);
+      final apple = find.byType(SignInWithAppleButton);
+      await enterValidPhone(tester);
+      await tester.tap(find.text('Send code'));
+      await tester.pump();
+      await tester.pump();
+      expect(
+        tester.getSemantics(apple),
+        matchesSemantics(
+          label: 'Continue with Apple',
+          isButton: true,
+          // hasEnabledState without isEnabled: it is read as disabled.
+          hasEnabledState: true,
+          isFocusable: true,
+        ),
+      );
+      await tester.pumpWidget(const SizedBox());
+      handle.dispose();
     });
 
     testWidgets('looks disabled and ignores taps while another method is in '
@@ -309,7 +343,9 @@ void main() {
         'in', (tester) async {
       final handle = tester.ensureSemantics();
       final done = Completer<void>();
-      when(() => authRepository.signInWithApple()).thenAnswer((_) => done.future);
+      when(
+        () => authRepository.signInWithApple(),
+      ).thenAnswer((_) => done.future);
       await pumpScreen(tester);
       await tester.tap(find.text('Continue with Apple'));
       await tester.pump();
@@ -432,7 +468,7 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('a superseded attempt\'s late codeSent does not push; the '
+    testWidgets("a superseded attempt's late codeSent does not push; the "
         'current one does and clears the error', (tester) async {
       final fires = <void Function(String)>[];
       var pushes = 0;
@@ -460,6 +496,30 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       expect(pushes, 1);
       expect(find.text('code screen'), findsOneWidget);
+    });
+
+    testWidgets('a codeSent arriving after the 60 s timeout does not open the '
+        'code screen, even once Google has started', (tester) async {
+      void Function(String)? lateCodeSent;
+      var pushes = 0;
+      stubVerifyPhone((codeSent, _) async => lateCodeSent = codeSent);
+      when(() => authRepository.signInWithGoogle()).thenAnswer(
+        (_) => Completer<void>().future,
+      );
+      await pumpScreen(tester, onPhonePush: (_) => pushes++);
+      await enterValidPhone(tester);
+      await tester.tap(find.text('Send code'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 61));
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pump();
+
+      lateCodeSent!('late');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(pushes, 0);
+      expect(find.text('code screen'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
     });
 
     testWidgets('an invalid number shows the message on the field and does '
@@ -520,6 +580,30 @@ void main() {
       expect(bottom, lessThanOrEqualTo(640 - 300));
     });
 
+    testWidgets('with a 300 px keyboard at 320 x 568 and 2.0x text, the error '
+        'and Send code are scrolled above it', (tester) async {
+      await pumpScreen(tester, width: 320, height: 568, textScale: 2);
+      const keyboard = 300.0;
+      tester.view.viewInsets = const FakeViewPadding(bottom: keyboard);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pump();
+      final send = find.widgetWithText(FilledButton, 'Send code');
+      // Precondition: without a focus-scroll the button is under the keyboard.
+      expect(
+        tester.getBottomLeft(send).dy,
+        greaterThan(568 - keyboard),
+      );
+
+      // Focusing the field (what the app does after an invalid number, and
+      // what a tap does) scrolls it up by its scrollPadding.
+      await tester.showKeyboard(find.byKey(const Key('signin_phone_field')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getBottomLeft(send).dy,
+        lessThanOrEqualTo(568 - keyboard),
+      );
+    });
+
     testWidgets('only digits, + and spaces are accepted; autofill hint set', (
       tester,
     ) async {
@@ -540,7 +624,10 @@ void main() {
   group('under-18 banner', () {
     testWidgets('absent by default', (tester) async {
       await pumpScreen(tester);
-      expect(find.text('You must be 18 or older to use Convyve.'), findsNothing);
+      expect(
+        find.text('You must be 18 or older to use Convyve.'),
+        findsNothing,
+      );
     });
 
     testWidgets('shown above the title as a live region and dismissible', (

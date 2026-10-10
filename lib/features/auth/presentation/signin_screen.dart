@@ -15,8 +15,9 @@
 /// Only one method can be in flight at a time — [_pendingMethod] tracks
 /// which, disabling all three controls and showing a spinner on the active
 /// one. The phone flow holds it until `codeSent` / `onError` fires (the SMS
-/// really is in flight until then), with a 60 s safety timeout. Errors are stored as an opaque `Object?` (mirroring
-/// `AgeGateScreen`) and rendered as a single generic message: this screen
+/// really is in flight until then), with a 60 s safety timeout. Errors are
+/// stored as an opaque `Object?` (mirroring `AgeGateScreen`) and rendered as a
+/// single generic message: this screen
 /// must not import `firebase_auth` to inspect exception types — see
 /// `AuthRepository`'s file header, which names it the sole boundary for
 /// that package.
@@ -128,8 +129,8 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
 
   Future<void> _sendPhoneCode() async {
     if (_pendingMethod != null) return;
-    final typed = _phoneController.text.trim();
-    if (!isPlausiblePhone(typed)) {
+    final phoneE164 = toE164(_phoneController.text);
+    if (phoneE164 == null) {
       setState(() {
         _phoneInvalid = true;
         _error = null;
@@ -138,17 +139,15 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
       _phoneFocus.requestFocus();
       return;
     }
-    // E.164 has no spaces, and a trunk 0 after +33 is not dialled.
-    final phoneE164 = typed
-        .replaceAll(RegExp(r'\s'), '')
-        .replaceFirst(RegExp(r'^\+330'), '+33');
     final attempt = ++_phoneAttempt;
     _start(SigninMethod.phone);
     _smsTimer?.cancel();
-    _smsTimer = Timer(
-      _smsTimeout,
-      () => _endPhoneWait(attempt, error: 'timeout'),
-    );
+    _smsTimer = Timer(_smsTimeout, () {
+      _endPhoneWait(attempt, error: 'timeout');
+      // A codeSent that arrives after this (or after another method has
+      // started) must not open the code screen.
+      if (attempt == _phoneAttempt) _phoneAttempt++;
+    });
     await analytics.track(const SigninStarted(method: SigninMethod.phone));
     try {
       await ref
@@ -257,7 +256,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                 ],
                 // Room for the error line and the button under the field.
                 scrollPadding: const EdgeInsets.only(
-                  bottom: WarmPlayfulSpacing.s8 + WarmPlayfulSpacing.s6,
+                  bottom: WarmPlayfulSize.keyboardReveal,
                 ),
                 onChanged: (_) {
                   if (_phoneInvalid) setState(() => _phoneInvalid = false);
@@ -282,7 +281,8 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: WarmPlayfulSpacing.s4),
-                // Appears without user action (SMS failure, timeout): announce it.
+                // Appears without user action (SMS failure, timeout):
+                // announce it.
                 Semantics(
                   liveRegion: true,
                   container: true,
@@ -321,7 +321,7 @@ class _AppleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget button = MediaQuery.withClampedTextScaling(
+    var button = MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1,
       child: SignInWithAppleButton(
         text: 'Continue with Apple',
@@ -337,6 +337,8 @@ class _AppleButton extends StatelessWidget {
     );
     if (busy) {
       button = Opacity(opacity: 0.5, child: IgnorePointer(child: button));
+      // Dimmed and inert for the eye; also disabled for VoiceOver.
+      if (!signingIn) button = Semantics(enabled: false, child: button);
     }
     if (signingIn) {
       button = Semantics(

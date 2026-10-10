@@ -40,12 +40,12 @@ const EdgeInsets kProfileFieldScrollPadding = EdgeInsets.fromLTRB(
   WarmPlayfulSpacing.s5,
   WarmPlayfulSpacing.s5,
   WarmPlayfulSpacing.s5,
-  WarmPlayfulSize.actionHeight * 3,
+  WarmPlayfulSize.keyboardReveal,
 );
 
 /// Visible diameter of the remove-photo badge; the tap area is [_removeHit].
-const _removeBadge = 24.0;
-const _removeHit = WarmPlayfulSize.minTap;
+const double _removeBadge = WarmPlayfulSize.badge;
+const double _removeHit = WarmPlayfulSize.minTap;
 
 /// Snapshot of the form's current values, reported to the parent screen on
 /// every change via [ProfileForm.onChanged].

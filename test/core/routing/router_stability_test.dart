@@ -126,9 +126,7 @@ void main() {
   testWidgets('/auth/phone without a PhoneVerifyArgs extra falls back to the '
       'sign-in screen instead of crashing', (tester) async {
     await pumpApp(tester);
-    final router = container.read(routerProvider);
-
-    router.go('/auth/phone');
+    final router = container.read(routerProvider)..go('/auth/phone');
     await tester.pump();
     await tester.pump();
     // The location really is /auth/phone (signed out may stay there), so the

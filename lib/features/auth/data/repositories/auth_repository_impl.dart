@@ -19,11 +19,10 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-
 import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// `FirebaseAuthException` codes that mean "wrong or expired SMS code".
 const _invalidSmsCodes = {

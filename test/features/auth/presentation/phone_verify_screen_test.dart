@@ -131,6 +131,41 @@ void main() {
     });
   });
 
+  group('keyboard', () {
+    // 320 x 568 with a 300 px keyboard leaves 268 px. At 2.0x text the error
+    // alone takes most of that, so Verify can only be asserted at 1.0x (it is
+    // not needed there: the 6th digit submits).
+    for (final (scale, verifyAbove) in [(1.0, true), (2.0, false)]) {
+      testWidgets('after a wrong code at ${scale}x text the error '
+          '${verifyAbove ? 'and Verify stay' : 'stays'} above the keyboard', (
+        tester,
+      ) async {
+        stubConfirm(() => Future.error(const InvalidSmsCodeException()));
+        await pumpScreen(tester, width: 320, height: 568, textScale: scale);
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(_codeField, '123456');
+        await tester.pumpAndSettle();
+
+        const visibleBottom = 568 - 300;
+        expect(find.text(_wrongCode), findsOneWidget);
+        expect(
+          tester.getBottomLeft(find.text(_wrongCode)).dy,
+          lessThanOrEqualTo(visibleBottom),
+        );
+        if (verifyAbove) {
+          expect(
+            tester.getBottomLeft(find.text('Verify')).dy,
+            lessThanOrEqualTo(visibleBottom),
+          );
+        }
+        await leave(tester);
+      });
+    }
+  });
+
   group('header', () {
     testWidgets('has a back button, the number being texted, and a Change '
         'button that pops', (tester) async {

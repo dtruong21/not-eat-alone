@@ -16,6 +16,8 @@
 /// repository/analytics calls — lives in the controller.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -131,7 +133,10 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
             padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 2 * WarmPlayfulSpacing.s5,
+                minHeight: math.max(
+                  0,
+                  constraints.maxHeight - 2 * WarmPlayfulSpacing.s5,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

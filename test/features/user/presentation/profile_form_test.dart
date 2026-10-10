@@ -378,7 +378,7 @@ void main() {
     expect(visual, const Size(24, 24));
   });
 
-  test('the field scroll padding is larger than Flutter\'s default', () {
+  test("the field scroll padding is larger than Flutter's default", () {
     expect(
       kProfileFieldScrollPadding.bottom,
       greaterThan(const EdgeInsets.all(20).bottom),

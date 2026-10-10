@@ -242,6 +242,10 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.oneTimeCode],
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                // Room for the error, Verify and its spinner under the field.
+                scrollPadding: const EdgeInsets.only(
+                  bottom: WarmPlayfulSize.keyboardReveal,
+                ),
                 maxLength: _codeLength,
                 textAlign: TextAlign.center,
                 onChanged: (v) {

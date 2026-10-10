@@ -37,16 +37,16 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - Cards (meals, chats, requests, restaurants) now stand out from the page with a soft shadow and a slightly deeper peach; your own chat messages use a warm peach bubble and snackbars are readable in dark mode.
 - The Nunito font now ships inside the app instead of being downloaded when it first opens, so text looks the same offline and nothing is fetched from Google.
 - Creating a meal now needs a time at least 5 minutes ahead; an earlier pick shows a message instead of being accepted.
-- Sign-in: "Continue with Apple" is now Apple's own button (black on the light theme, white on the dark one); the phone number field shows what is wrong with the number right on the field and keeps the keyboard out of the way; "Send code" keeps its spinner until the code is on its way.
-- The phone code screen scrolls (the Verify button is no longer lost behind the keyboard or at large text sizes), shows the number the code went to with a "Change" button and a back arrow, and submits by itself after the sixth digit. A wrong code is explained on the field ("That code didn't work. Check it or resend."), and "Resend code" counts down 30 seconds before it can be used.
+- Sign-in: "Continue with Apple" is now Apple's own button (black on the light theme, white on the dark one); the phone number field shows what is wrong with the number right on the field, and when you tap into it the field, its message and "Send code" scroll up above the keyboard; "Send code" keeps its spinner until the code is on its way.
+- The phone code screen scrolls (so Verify can be reached at large text sizes and with the keyboard up), shows the number the code went to with a "Change" button and a back arrow, and submits by itself after the sixth digit. A wrong code is explained on the field ("That code didn't work. Check it or resend."), and "Resend code" counts down 30 seconds before it can be used.
 - Under-18 date of birth: you are now told why you were signed out ("You must be 18 or older to use Convyve.") on the sign-in screen. The date-of-birth picker opens on the year, and the age gate scrolls at large text sizes.
 - Profile setup: the "Add photo" tile is labelled, the remove-photo button on a photo is easy to hit, and a line under Continue says what is still missing ("Still needed: a photo and your name.").
 
 ### Fixed
 
-- The phone number is now sent without spaces (a number typed as "+33 6 12 34 56 78" was rejected by the SMS service).
+- The phone number is now sent as a clean international number (no spaces, and the leading 0 of a French number such as "+33 06 12 34 56 78" is dropped; a French number with the wrong number of digits is refused before anything is sent).
 - A wrong SMS code and a network problem are no longer shown with the same message, and a late "code sent" from a timed-out attempt no longer opens a second code screen.
-- Profile form: fields lower down are no longer hidden by the keyboard while typing, and large text no longer overflows the profile setup, age gate, sign-in or code screens.
+- Profile form: Continue is no longer hidden by the keyboard while you type your bio, and large text no longer overflows the profile setup, age gate, sign-in or code screens.
 - Editing your profile (for example adding a photo) no longer sends you back to Discover or empties the form you were filling in.
 - The "add photo" tile on the profile now has a visible outline.
 - Chat message times now show in your local time instead of UTC.

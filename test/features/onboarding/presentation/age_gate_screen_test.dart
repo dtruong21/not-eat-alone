@@ -229,13 +229,13 @@ void main() {
       expect(find.text('Your date of birth'), findsOneWidget);
       expect(find.byType(YearPicker), findsOneWidget);
 
-      final year = DateTime.now().year - 19; // next to the 18-years-ago start
+      final now = DateTime.now(); // read once: not flaky across midnight
+      final year = now.year - 19; // next to the 18-years-ago start
       await tester.tap(find.text('$year'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      final now = DateTime.now();
       expect(
         find.text(formatLongDate(DateTime(year, now.month, now.day))),
         findsOneWidget,
