@@ -148,6 +148,9 @@ void main() {
     }
     await tester.pump();
     await tester.pump();
+    // Drains the bar skeleton's zero-length animate timer (never pumpAndSettle
+    // with a skeleton on screen).
+    await tester.pump(const Duration(milliseconds: 50));
   }
 
   group('who sees the action', () {
@@ -163,7 +166,7 @@ void main() {
 
       expect(find.byKey(_buttonKey), findsOneWidget);
       expect(
-        find.byKey(const Key('meal_detail_your_meal_chip')),
+        find.byKey(const Key('meal_detail_your_meal_button')),
         findsOneWidget,
       );
     });
@@ -179,7 +182,7 @@ void main() {
       );
 
       expect(find.byKey(_buttonKey), findsOneWidget);
-      expect(find.text('This meal is women-only.'), findsOneWidget);
+      expect(find.text('Only women can join this meal.'), findsOneWidget);
     });
 
     testWidgets('women-only meal: action shown to a woman viewer', (
@@ -249,7 +252,7 @@ void main() {
         },
       );
 
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
       await tester.tap(find.byKey(_buttonKey));
       await tester.pump();
 
