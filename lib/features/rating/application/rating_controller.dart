@@ -8,6 +8,7 @@ library;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:not_eat_alone/core/util/queued_write.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -47,7 +48,7 @@ class RatingController extends _$RatingController {
           showedUp: showedUp,
           comment: comment,
         );
-        await ref.read(ratingRepositoryProvider).submit(rating);
+        await settleOrQueue(ref.read(ratingRepositoryProvider).submit(rating));
         await analytics.track(MealRated(stars: stars, showedUp: showedUp));
       });
     } finally {

@@ -19,7 +19,8 @@ class _MockChat extends Mock implements ChatRepository {}
 /// QA sweep 2026-10-09 (edge case 2, offline). Firestore completes a write's
 /// Future only on server acknowledgement, so while offline `sendMessage`
 /// stays pending. The composer must not hold the user hostage meanwhile.
-/// Open bug: docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md
+/// Fixed: controllers stop waiting for the server after a short grace period
+/// (`settleOrQueue`). docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md
 void main() {
   late _MockAuth auth;
   late _MockChat chat;
@@ -105,5 +106,5 @@ void main() {
     expect(field.controller!.text, isEmpty);
     serverAck.complete();
     await tester.pump();
-  }, skip: true); // BUG awaited-writes-block-ui-offline
+  });
 }

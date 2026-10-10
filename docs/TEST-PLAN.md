@@ -44,7 +44,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Network
 
-- [ ] Offline write queues (toggle airplane mode mid-action). — **FAIL (code)**: UI awaits the server ack, see `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md`
+- [ ] Offline write queues (toggle airplane mode mid-action). — **FAIL (code)**: UI awaits the server ack, see `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md`
 - [ ] Reconnect syncs queued writes.
 - [ ] Slow network throttle (Network Link Conditioner / Android emulator throttle) doesn't break UI.
 - [ ] Firestore cache renders previously-fetched data on cold offline launch.
@@ -202,7 +202,7 @@ Related PRD entry: `docs/PRD.md § Meals`
 - **Map preview** of the restaurant (embedded map is post-MVP; "Open in Maps" link-out shipped). Real Places search shipped via the `searchRestaurants` callable (stale "fake list" note above).
 
 **Known issues:**
-- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
 
 ---
@@ -271,7 +271,7 @@ Related PRD entry: `docs/PRD.md § Matching`
 - [ ] Firestore rules (`firebase/firestore.rules`) restrict `requests/{id}` writes to the guest (create, pending only) and the host (status transition pending→approved/denied only); `matches/{mealId}` is host/guest-readable, write-restricted to the approve transaction. Verify via Rules Playground or emulator — a non-host cannot approve/deny another host's request, and a non-participant cannot read a match doc.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline
 
 ---
 
@@ -300,7 +300,7 @@ Related PRD entry: `docs/PRD.md § Chat`
 
 **Known issues:**
 - `docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
-- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
 - `docs/bugs/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
 
 ---
@@ -444,6 +444,18 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Offline writes don't block the UI
+
+**Automated:** `test/core/util/queued_write_test.dart` (ack, rejection inside the grace period, pending past it = queued, late error swallowed); `message_composer_offline_edge_test.dart` (composer frees up); `create_meal_controller_test.dart` (never-acknowledged create settles).
+
+**Manual on a device (airplane mode):**
+- [ ] Chat: send a message; within ~3 s the field clears and a second message can be sent; both appear in the thread; after reconnecting they deliver once each (no duplicates).
+- [ ] Create meal / Request to join / Rate: after ~3 s the screen moves on instead of spinning; after reconnect the meal / request / rating appears server-side (check Firestore) and the host gets the push.
+- [ ] A write rejected by the rules while online (e.g. messaging someone who blocked you) still shows the error within 3 s.
+- Known trade-off: while offline the success snackbar ("Meal created!") appears even though delivery waits for the network; a rejection that only arrives after reconnect is logged, not shown.
 
 ---
 

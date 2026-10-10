@@ -43,6 +43,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Fixed
 
+- Sending a message, creating a meal, requesting to join and rating no longer hang on a spinner when you have no connection; they are saved and delivered when you are back online.
 - Discover no longer keeps showing a meal after its start time has passed, and it loads faster by only fetching upcoming meals.
 - The "add photo" tile on the profile now has a visible outline.
 - Chat message times now show in your local time instead of UTC.

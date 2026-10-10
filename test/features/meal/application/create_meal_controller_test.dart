@@ -85,6 +85,31 @@ void main() {
   });
 
   test(
+    'offline: a createMeal the server never acknowledges still settles '
+    '(queued) after the grace period',
+    () async {
+      when(() => mealRepository.createMeal(any()))
+          .thenAnswer((_) => Completer<String>().future);
+
+      final started = DateTime.now();
+      await container.read(createMealControllerProvider.notifier).create(
+            restaurant: _restaurant,
+            dateTime: DateTime.utc(2030, 1, 1, 19),
+            womenOnly: false,
+          );
+
+      final state = container.read(createMealControllerProvider);
+      expect(state.hasError, isFalse);
+      expect(state.isLoading, isFalse);
+      expect(
+        DateTime.now().difference(started),
+        greaterThanOrEqualTo(const Duration(seconds: 2)),
+        reason: 'waited out the grace period, not returned instantly',
+      );
+    },
+  );
+
+  test(
     'create() calls createMeal with hostId from the current user and fires '
     'meal_created with the passed women_only',
     () async {

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:not_eat_alone/core/util/queued_write.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -20,9 +21,11 @@ class ChatController extends _$ChatController {
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
         final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-        await ref.read(chatRepositoryProvider).sendMessage(
-              matchId: matchId, senderId: uid, text: text,
-            );
+        await settleOrQueue(
+          ref.read(chatRepositoryProvider).sendMessage(
+                matchId: matchId, senderId: uid, text: text,
+              ),
+        );
         await analytics.track(const MessageSent());
       });
     } finally {
