@@ -57,6 +57,28 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign out?'),
+        actions: [
+          TextButton(
+            key: const Key('settings_sign_out_cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('settings_sign_out_confirm'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) await _signOut(ref);
+  }
+
   Future<bool> _confirmDeleteAccount(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -106,9 +128,8 @@ class SettingsScreen extends ConsumerWidget {
     // user to /auth/signin automatically — no navigation needed here.
   }
 
-  /// Best-effort token cleanup before sign-out — mirrors
-  /// `discovery_screen.dart`'s `_onSignOut`: a failure here must never block
-  /// the user from signing out.
+  /// Best-effort token cleanup before sign-out: a failure here must never
+  /// block the user from signing out.
   Future<void> _signOut(WidgetRef ref) async {
     // Everything is read from `ref` BEFORE the first await: this is a
     // `ConsumerWidget`, so `ref` is bound to the element and reading it after
@@ -172,7 +193,7 @@ class SettingsScreen extends ConsumerWidget {
               key: const Key('settings_sign_out'),
               leading: const Icon(Icons.logout_rounded),
               title: const Text('Sign out'),
-              onTap: () => unawaited(_signOut(ref)),
+              onTap: () => unawaited(_confirmSignOut(context, ref)),
             ),
             ListTile(
               key: const Key('settings_delete_account'),

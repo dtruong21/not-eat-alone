@@ -101,6 +101,37 @@ void main() {
     },
   );
 
+  testWidgets('sign out asks first: cancel does nothing', (tester) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.byKey(const Key('settings_sign_out')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign out?'), findsOneWidget);
+    verifyNever(() => authRepository.signOut());
+
+    await tester.tap(find.byKey(const Key('settings_sign_out_cancel')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign out?'), findsNothing);
+    verifyNever(() => authRepository.signOut());
+  });
+
+  testWidgets('confirming the sign-out dialog signs out once, no spinner', (
+    tester,
+  ) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.byKey(const Key('settings_sign_out')));
+    await tester.pumpAndSettle();
+    expect(find.byType(FilledButton), findsOneWidget);
+    await tester.tap(find.byKey(const Key('settings_sign_out_confirm')));
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    verify(() => authRepository.signOut()).called(1);
+  });
+
   testWidgets(
     'sign out survives the screen unmounting while the token unregister is '
     'in flight (no ref read after the await) and still signs out',
@@ -115,6 +146,8 @@ void main() {
       await pumpSettings(tester, pushRepository: pushRepository);
 
       await tester.tap(find.byKey(const Key('settings_sign_out')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('settings_sign_out_confirm')));
       await tester.pump();
 
       // Unmount the whole tree (disposing the screen's ref) mid-flight.
