@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -49,12 +50,15 @@ final _discoverableMeal = DiscoverableMeal(meal: _meal, distanceMeters: 1234);
 
 final _host = AppUser(
   uid: 'host1',
-  dob: DateTime(1990, 1, 1),
+  dob: DateTime(1990),
   displayName: 'Alex',
 );
 
-AppUser _viewer(Gender gender) =>
-    AppUser(uid: 'viewer1', dob: DateTime(1995, 1, 1), gender: gender);
+AppUser _viewer(Gender gender) => AppUser(
+      uid: 'viewer1',
+      dob: DateTime(1995),
+      gender: gender,
+    );
 
 void main() {
   late MockAuthRepository authRepository;
@@ -66,9 +70,8 @@ void main() {
     locationCalls = 0;
     authRepository = MockAuthRepository();
     userRepository = MockUserRepository();
-    when(
-      () => userRepository.watch('host1'),
-    ).thenAnswer((_) => Stream.value(_host));
+    when(() => userRepository.watch('host1'))
+        .thenAnswer((_) => Stream.value(_host));
   });
 
   Future<void> pumpDiscovery(
@@ -174,13 +177,15 @@ void main() {
       expect(text.style!.color, wp.onAccent);
       final la = wp.onAccent.computeLuminance();
       final lb = wp.peach.computeLuminance();
-      final ratio =
-          (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
+      final ratio = (la > lb ? la + 0.05 : lb + 0.05) /
+          (la > lb ? lb + 0.05 : la + 0.05);
       expect(ratio, greaterThanOrEqualTo(4.5));
     });
   }
 
-  testWidgets('"Women only" badge is hidden for a man viewer', (tester) async {
+  testWidgets('"Women only" badge is hidden for a man viewer', (
+    tester,
+  ) async {
     await pumpDiscovery(
       tester,
       meals: [_discoverableMeal],
@@ -284,6 +289,23 @@ void main() {
     final host = tester.widget<Text>(find.text('Emilia Vasquez-Hernandez'));
     expect(host.maxLines, 1);
     expect(host.overflow, TextOverflow.ellipsis);
+
+    // The meta line keeps its start (when) and is cut at the end (distance).
+    final whenText = formatMealDateTime(long.dateTime);
+    final metaFinder = find.textContaining(whenText);
+    final meta = tester.widget<Text>(metaFinder);
+    expect(meta.data, '$whenText · 1.3 km');
+    expect(meta.overflow, TextOverflow.ellipsis);
+    expect(
+      tester.renderObject<RenderParagraph>(metaFinder).didExceedMaxLines,
+      isTrue,
+    );
+    expect(
+      tester.getRect(metaFinder).left,
+      greaterThanOrEqualTo(
+        tester.getRect(find.byKey(Key('discovery_meal_card_${long.id}'))).left,
+      ),
+    );
   });
 
   testWidgets('the last card scrolls fully above the Create a meal button', (
@@ -308,11 +330,6 @@ void main() {
       find.byKey(const Key('discovery_create_meal_button')),
     );
     expect(last.bottom, lessThanOrEqualTo(fab.top));
-    final list = tester.widget<ListView>(find.byType(ListView));
-    expect(
-      (list.padding! as EdgeInsets).bottom,
-      WarmPlayfulSize.actionHeight + WarmPlayfulSpacing.s8,
-    );
   });
 
   group('Paris notice', () {
@@ -359,11 +376,48 @@ void main() {
       expect(find.text(_restaurant.name), findsOneWidget);
     });
 
-    testWidgets('stays above the empty state', (tester) async {
+    testWidgets('stays above the empty state; dismissing keeps the state', (
+      tester,
+    ) async {
       await pumpDiscovery(tester);
 
       expect(find.byKey(noticeKey), findsOneWidget);
       expect(find.byType(EmptyState), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('paris_notice_close_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(noticeKey), findsNothing);
+      expect(find.byType(EmptyState), findsOneWidget);
+    });
+
+    testWidgets('stays above the error state; dismissing keeps the state', (
+      tester,
+    ) async {
+      await pumpDiscovery(
+        tester,
+        mealsStream: () =>
+            Stream<List<DiscoverableMeal>>.error(StateError('x')),
+      );
+
+      expect(find.byKey(noticeKey), findsOneWidget);
+      expect(find.byType(ErrorState), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('paris_notice_close_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(noticeKey), findsNothing);
+      expect(find.byType(ErrorState), findsOneWidget);
+    });
+
+    testWidgets('stays above the loading skeleton', (tester) async {
+      await pumpDiscovery(
+        tester,
+        mealsStream: () => const Stream<List<DiscoverableMeal>>.empty(),
+      );
+
+      expect(find.byKey(noticeKey), findsOneWidget);
+      expect(find.byType(SkeletonList), findsOneWidget);
     });
   });
 

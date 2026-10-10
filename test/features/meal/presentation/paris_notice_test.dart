@@ -20,9 +20,7 @@ void main() {
     await pumpNotice(tester);
 
     expect(
-      find.text(
-        "Convyve is Paris-only for now — we're just getting started here.",
-      ),
+      find.text("Convyve is Paris-only for now — we're just getting started here."),
       findsOneWidget,
     );
   });

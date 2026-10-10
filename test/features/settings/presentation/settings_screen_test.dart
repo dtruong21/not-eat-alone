@@ -133,6 +133,44 @@ void main() {
   });
 
   testWidgets(
+    'screen unmounting while the confirm dialog is open: confirming still '
+    'signs out (repository read before the dialog), no exception',
+    (tester) async {
+      final showSettings = ValueNotifier(true);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appVersionProvider.overrideWith((ref) async => 'v1'),
+            authRepositoryProvider.overrideWithValue(authRepository),
+            accountRepositoryProvider.overrideWithValue(accountRepository),
+          ],
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light),
+            home: ValueListenableBuilder<bool>(
+              valueListenable: showSettings,
+              builder: (context, show, _) =>
+                  show ? const SettingsScreen() : const SizedBox(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('settings_sign_out')));
+      await tester.pumpAndSettle();
+
+      // The dialog route outlives the screen (e.g. a session redirect).
+      showSettings.value = false;
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('settings_sign_out_confirm')));
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      verify(() => authRepository.signOut()).called(1);
+    },
+  );
+
+  testWidgets(
     'sign out survives the screen unmounting while the token unregister is '
     'in flight (no ref read after the await) and still signs out',
     (tester) async {

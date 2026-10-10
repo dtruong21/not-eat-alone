@@ -18,6 +18,7 @@ import 'package:not_eat_alone/core/config/legal_urls.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
 import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
 
@@ -58,6 +59,10 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
+    // Read before the await: `ref` must not be used once the screen may have
+    // unmounted, and a confirmed sign-out still completes in that case.
+    final auth = ref.read(authRepositoryProvider);
+    final push = ref.read(pushRegistrationControllerProvider.notifier);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -76,7 +81,7 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (confirmed ?? false) await _signOut(ref);
+    if (confirmed ?? false) await _signOut(auth, push);
   }
 
   Future<bool> _confirmDeleteAccount(BuildContext context) async {
@@ -130,14 +135,10 @@ class SettingsScreen extends ConsumerWidget {
 
   /// Best-effort token cleanup before sign-out: a failure here must never
   /// block the user from signing out.
-  Future<void> _signOut(WidgetRef ref) async {
-    // Everything is read from `ref` BEFORE the first await: this is a
-    // `ConsumerWidget`, so `ref` is bound to the element and reading it after
-    // an await throws if the widget unmounted meanwhile (e.g. the unregister
-    // call below changing what the screen shows). The captured repository /
-    // notifier stay usable for the rest of the flow.
-    final auth = ref.read(authRepositoryProvider);
-    final push = ref.read(pushRegistrationControllerProvider.notifier);
+  Future<void> _signOut(
+    AuthRepository auth,
+    PushRegistrationController push,
+  ) async {
     final uid = auth.currentUser?.uid;
     if (uid != null) {
       try {
