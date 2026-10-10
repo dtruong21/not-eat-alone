@@ -447,6 +447,19 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 
 ---
 
+### Feature: Core analytics events (app_opened, signup/signin, identify)
+
+**Automated:** `test/core/analytics/session_tracker_test.dart`, `analytics_listener_test.dart`, `tracking_plan_parity_test.dart` (every registry event is fired somewhere in `lib/`), `auth_repository_impl_test.dart` (method + timestamps mapping).
+
+**Manual on a device with `--dart-define=ANALYTICS_IN_DEV=true`, Firebase Analytics DebugView:**
+- [ ] Cold start: `app_opened` (`is_cold_start: true`); background and resume: `app_opened` (`false`).
+- [ ] Brand-new account via Google / Apple / phone: one `signup_completed` with the right `method`; user properties `signup_date`, `signup_method`, `app_version`, `platform` appear.
+- [ ] Sign out and sign back in with an existing account: one `signin_completed`; no `signup_completed`.
+- [ ] Kill and relaunch while signed in: `app_opened` + identify, but no `signin_completed`.
+- [ ] After sign-out, new events carry no user id (`reset`).
+
+---
+
 ### Feature: Private vs public profile
 
 **Automated:** `firebase/rules-test/users_profiles.rules.test.cjs` (7 cases, emulator); `test/features/user/data/*` (DTO split, merge, public age self-heal, no dob/gender in the public doc); `firebase/functions/test/profile_split.test.ts` (backfill split).

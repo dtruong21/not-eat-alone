@@ -48,6 +48,13 @@ Good: `habit_created`, `friends_tab_viewed`, `checkin_marked_done`.
 
 ## Identification strategy
 
+Where this is wired: `lib/core/analytics/analytics_listener.dart` (mounted above the router) + `session_tracker.dart`.
+
+- `app_opened` fires on cold start (`is_cold_start: true`) and on every resume from background (`false`).
+- On every auth state change to a signed-in user (including a session restored at startup) the tracker calls `identify(uid)` and sets `signup_date`, `signup_method`, `app_version`, `platform`. On sign-out it calls `reset()`.
+- `signup_completed` fires once when a **brand-new account** signs in (Firebase account created and first signed in within 10 s of each other); `signin_completed` when an **existing** account completes a fresh sign-in (last sign-in within 2 minutes). A session simply restored at app start fires neither. A cold start within 2 minutes of a sign-in can repeat `signin_completed` once — accepted.
+- The sign-up counts at account creation, not at the end of onboarding (age gate / profile); `profile_completed` marks the end of onboarding.
+
 - Anonymous users get a stable anonymous ID from the analytics SDK (Firebase Analytics).
 - On sign-up, call `identify(uid)` with the Firebase Auth uid. Analytics merges anonymous events into the identified profile.
 - On sign-out, call `reset()` so the device doesn't continue attributing events to the prior user.
@@ -112,10 +119,10 @@ Sparse — only properties that drive segmentation or are needed for cross-event
 
 | Property | When set | Type | Use |
 |---|---|---|---|
-| `signup_date` | On `signup_completed` | ISO date string | Cohort analysis |
-| `signup_method` | On `signup_completed` | `'email' \| 'google' \| 'apple' \| 'phone' \| 'anonymous'` | Auth-channel cohorts |
-| `app_version` | On `app_opened` | semver string | Roll out / regression tracking |
-| `platform` | On `app_opened` | `'ios' \| 'android' \| 'web'` | Platform-specific issues |
+| `signup_date` | On `identify` (every session start / sign-in) | ISO date string | Cohort analysis |
+| `signup_method` | On `identify` (sign-in method of the current session) | `'email' \| 'google' \| 'apple' \| 'phone' \| 'anonymous'` | Auth-channel cohorts |
+| `app_version` | On `identify` (every session start / sign-in) | semver string | Roll out / regression tracking |
+| `platform` | On `identify` (every session start / sign-in) | `'ios' \| 'android' \| 'web'` | Platform-specific issues |
 
 ---
 

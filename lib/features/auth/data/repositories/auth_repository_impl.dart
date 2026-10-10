@@ -43,8 +43,33 @@ class AuthRepositoryImpl implements AuthRepository {
   final firebase_auth.FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
 
-  AuthUser? _mapUser(firebase_auth.User? u) =>
-      u == null ? null : AuthUser(uid: u.uid);
+  AuthUser? _mapUser(firebase_auth.User? u) {
+    if (u == null) return null;
+    AuthMethod? method;
+    DateTime? createdAt;
+    DateTime? lastSignInAt;
+    try {
+      for (final info in u.providerData) {
+        method = switch (info.providerId) {
+          'google.com' => AuthMethod.google,
+          'apple.com' => AuthMethod.apple,
+          'phone' => AuthMethod.phone,
+          _ => method,
+        };
+      }
+      createdAt = u.metadata.creationTime;
+      lastSignInAt = u.metadata.lastSignInTime;
+    } on Object {
+      // Analytics-only metadata: a partially populated user must never break
+      // sign-in. The uid is all the rest of the app needs.
+    }
+    return AuthUser(
+      uid: u.uid,
+      method: method,
+      createdAt: createdAt,
+      lastSignInAt: lastSignInAt,
+    );
+  }
 
   /// Forwards `FirebaseAuth.authStateChanges()`, mapped to [AuthUser] —
   /// emits whenever the signed in user changes (sign-in, sign-out).
