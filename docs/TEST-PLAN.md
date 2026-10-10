@@ -81,7 +81,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Visual + a11y
 
 - [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`).
-- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — **FAIL (harness)**: sign-in, sheets, chat, see `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` and `docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md`
+- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — **FAIL (harness)**: sign-in, sheets, chat, see `docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md` and `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md`
 - [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one.
 
 ### Design system (UX plan 16a) — automated, `test/core/design/`
@@ -147,7 +147,7 @@ Related PRD entry: `docs/PRD.md § Auth`
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1, fixed) — private/public split; rules tests in `firebase/rules-test/`
 - `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed)
-- `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
+- `docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
 
 ---
 
@@ -299,7 +299,7 @@ Related PRD entry: `docs/PRD.md § Chat`
 - [ ] `matches/{matchId}/messages/{id}` and `matches/{matchId}/reads/{uid}` are readable/writable only by `match.hostId`/`match.guestId` (participants array) — verify a third user is denied both read and write via emulator.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
+- `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
 - `docs/bugs/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
 
@@ -444,6 +444,18 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Large text sizes
+
+**Automated (real Nunito font, 360x640):** `signin_screen_text_scale_edge_test` (1.0/1.5/2.0x, both themes), `sheets_keyboard_edge_test` (rating + report: keyboard, 1.5x, 2.0x), `age_gate_text_scale_test` (1.5/2.0x, button reachable by scrolling), `chat_screen_edge_test` (keyboard open keeps the thread readable; 1.5x no overflow).
+
+**Manual on a device at the largest system font (Android 2.0x / iOS Larger Accessibility Sizes):**
+- [ ] Sign-in: all three buttons readable, labels wrap, nothing clipped.
+- [ ] Age gate: scrolls; Continue reachable.
+- [ ] Rating / report sheets: open the keyboard, the field and Submit stay reachable (scroll).
+- [ ] Chat after the meal time: with the keyboard open the tips and rating card are hidden and the thread is usable; with it closed they show and scroll if tall.
 
 ---
 

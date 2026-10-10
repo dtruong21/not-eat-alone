@@ -141,57 +141,68 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Confirm your date of birth',
-                textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(
-                  color: colors.onSurface,
-                  fontWeight: WarmPlayfulType.h1Weight,
-                ),
+          // Centered when it fits; scrolls at large text sizes / small screens.
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Confirm your date of birth',
+                    textAlign: TextAlign.center,
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: WarmPlayfulType.h1Weight,
+                    ),
+                  ),
+                  const SizedBox(height: WarmPlayfulSpacing.s2),
+                  Text(
+                    'You must be 18 or older to use Convyve.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: context.wp.muted,
+                    ),
+                  ),
+                  const SizedBox(height: WarmPlayfulSpacing.s6),
+                  OutlinedButton(
+                    onPressed: isSubmitting ? null : _pickDate,
+                    child: Text(
+                      selected == null
+                          ? 'Select date of birth'
+                          : _formatDate(selected),
+                    ),
+                  ),
+                  const SizedBox(height: WarmPlayfulSpacing.s5),
+                  if (hasError) ...[
+                    Text(
+                      'Something went wrong — please try again.',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.error,
+                      ),
+                    ),
+                    const SizedBox(height: WarmPlayfulSpacing.s4),
+                  ],
+                  FilledButton(
+                    onPressed: (selected == null || isSubmitting)
+                        ? null
+                        : _submit,
+                    style: loadingFilledStyle(context, isLoading: isSubmitting),
+                    child: isSubmitting
+                        ? SizedBox(
+                            height: WarmPlayfulSpacing.s4,
+                            width: WarmPlayfulSpacing.s4,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colors.onPrimary,
+                            ),
+                          )
+                        : const Text('Continue'),
+                  ),
+                ],
               ),
-              const SizedBox(height: WarmPlayfulSpacing.s2),
-              Text(
-                'You must be 18 or older to use Convyve.',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
-              ),
-              const SizedBox(height: WarmPlayfulSpacing.s6),
-              OutlinedButton(
-                onPressed: isSubmitting ? null : _pickDate,
-                child: Text(
-                  selected == null
-                      ? 'Select date of birth'
-                      : _formatDate(selected),
-                ),
-              ),
-              const SizedBox(height: WarmPlayfulSpacing.s5),
-              if (hasError) ...[
-                Text(
-                  'Something went wrong — please try again.',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.error),
-                ),
-                const SizedBox(height: WarmPlayfulSpacing.s4),
-              ],
-              FilledButton(
-                onPressed: (selected == null || isSubmitting) ? null : _submit,
-                style: loadingFilledStyle(context, isLoading: isSubmitting),
-                child: isSubmitting
-                    ? SizedBox(
-                        height: WarmPlayfulSpacing.s4,
-                        width: WarmPlayfulSpacing.s4,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colors.onPrimary,
-                        ),
-                      )
-                    : const Text('Continue'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

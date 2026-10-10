@@ -164,10 +164,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // Open bug: docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md
+  // Fixed: docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md
   // The screen pins the safety-tips card (and, after the meal, the post-meal
-  // card) above the thread in a non-scrolling Column. Un-skip when fixed.
-  const bug = true;
+  // card) above the thread in a non-scrolling Column.
 
   testWidgets('360x640, keyboard open: no overflow, thread stays readable', (
     tester,
@@ -182,7 +181,7 @@ void main() {
         .getSize(find.byKey(const Key('chat_messages_list')))
         .height;
     expect(listHeight, greaterThanOrEqualTo(120));
-  }, skip: bug);
+  });
 
   testWidgets('360x800, 1.5x text, keyboard open, post-meal card shown', (
     tester,
@@ -196,7 +195,7 @@ void main() {
       pastMeal: true,
     );
     expect(tester.takeException(), isNull);
-  }, skip: bug);
+  });
 
   testWidgets('360x800, keyboard open, post-meal card: thread stays readable', (
     tester,
@@ -213,7 +212,7 @@ void main() {
         .getSize(find.byKey(const Key('chat_messages_list')))
         .height;
     expect(listHeight, greaterThanOrEqualTo(120), reason: '$listHeight dp');
-  }, skip: bug);
+  });
 
   testWidgets('360x640, 1.5x text, no keyboard: no overflow', (tester) async {
     await pump(

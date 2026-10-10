@@ -253,7 +253,9 @@ class _AuthButton extends StatelessWidget {
                 Icon(icon),
                 const SizedBox(width: WarmPlayfulSpacing.s2),
               ],
-              Text(label),
+              // Flexible so a long label (large text scale) wraps instead of
+              // overflowing the button.
+              Flexible(child: Text(label, textAlign: TextAlign.center)),
             ],
           );
 
@@ -264,9 +266,6 @@ class _AuthButton extends StatelessWidget {
         child: child,
       );
     }
-    return OutlinedButton(
-      onPressed: onPressed,
-      child: child,
-    );
+    return OutlinedButton(onPressed: onPressed, child: child);
   }
 }

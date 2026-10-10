@@ -119,6 +119,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             otherReadProvider((matchId: widget.matchId, otherUid: otherUid)),
           );
 
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return Scaffold(
       appBar: AppBar(
         title: otherUid != null
@@ -138,33 +140,52 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (otherUid != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  WarmPlayfulSpacing.s4,
-                  WarmPlayfulSpacing.s4,
-                  WarmPlayfulSpacing.s4,
-                  0,
-                ),
-                child: PostMealCard(
-                  matchId: widget.matchId,
-                  targetUid: otherUid,
+            // The post-meal prompt and safety tips are informational: hide them
+            // while the keyboard is open (they would leave the thread a sliver
+            // or push the composer off-screen) and never let them take more
+            // than ~40% of the body (they scroll at large text sizes).
+            if (!keyboardOpen)
+              Flexible(
+                flex: 0,
+                child: LayoutBuilder(
+                  builder: (context, constraints) => ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.4,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          if (otherUid != null)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                WarmPlayfulSpacing.s4,
+                                WarmPlayfulSpacing.s4,
+                                WarmPlayfulSpacing.s4,
+                                0,
+                              ),
+                              child: PostMealCard(
+                                matchId: widget.matchId,
+                                targetUid: otherUid,
+                              ),
+                            ),
+                          const Padding(
+                            padding: EdgeInsets.all(WarmPlayfulSpacing.s4),
+                            child: SafetyTipsCard(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-              child: const SafetyTipsCard(),
-            ),
             Expanded(
               child: messagesAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stackTrace) => Center(
                   child: Text(
                     'Something went wrong — please try again.',
                     textAlign: TextAlign.center,
-                    style:
-                        textTheme.bodyMedium?.copyWith(color: colors.error),
+                    style: textTheme.bodyMedium?.copyWith(color: colors.error),
                   ),
                 ),
                 data: (messages) {
@@ -190,7 +211,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     itemBuilder: (context, index) {
                       final message = ordered[index];
                       final mine = myUid != null && message.senderId == myUid;
-                      final showSeen = mine &&
+                      final showSeen =
+                          mine &&
                           message.id == myLatestId &&
                           _isSeenBy(message, otherReadAsync.value);
                       return Padding(
@@ -226,8 +248,9 @@ class _ChatAppBarTitle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final user = ref.watch(userDocProvider(otherUid)).value;
-    final photoUrl =
-        (user?.photoUrls.isNotEmpty ?? false) ? user!.photoUrls.first : null;
+    final photoUrl = (user?.photoUrls.isNotEmpty ?? false)
+        ? user!.photoUrls.first
+        : null;
 
     return Row(
       children: [
