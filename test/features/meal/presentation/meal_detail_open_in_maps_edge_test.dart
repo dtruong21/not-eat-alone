@@ -546,6 +546,7 @@ void main() {
     for (final scenario in [
       (scale: 2.0, womenOnly: false),
       (scale: 1.5, womenOnly: true),
+      (scale: 2.0, womenOnly: true),
     ]) {
       testWidgets('very long name at ${scenario.scale}x, '
           'womenOnly=${scenario.womenOnly}, 320dp phone', (tester) async {
@@ -559,6 +560,9 @@ void main() {
         );
 
         expect(tester.takeException(), isNull);
+        if (scenario.womenOnly) {
+          expect(find.byKey(const Key('women_only_badge')), findsOneWidget);
+        }
         await tester.ensureVisible(find.byKey(_buttonKey));
         await tester.pump();
         final card = tester.getRect(find.byKey(_cardKey));

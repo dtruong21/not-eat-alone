@@ -16,15 +16,15 @@ Flutter SDK pinned to **3.47.4** via `.fvmrc`. Dart SDK comes from Flutter. All 
 | `firebase_auth` | Anonymous + email + OAuth. Anonymous-to-real linking preserves the uid. |
 | `cloud_firestore` | Primary datastore. Wrapped exclusively in each feature's `data/repositories/*_repository_impl.dart` — see §2a. |
 | `cloud_functions` | Server-side callables (cascade-deletes, server validation). |
-| `firebase_analytics` | First-party funnels. Kept thin — PostHog carries product analytics. |
+| `firebase_analytics` | Product analytics — events from `lib/core/analytics/events.dart` (the only analytics sink for now; no budget for a second tool). |
+| `firebase_crashlytics` | Crash reporting (collection off in debug). The only crash/error tool for now. |
 | `flutter_riverpod` + `riverpod_annotation` | State + code-gen providers (`@riverpod`). |
 | `go_router` | Single source of truth for routing. Used with `go_router_builder` for typed routes. |
 | `freezed_annotation` + `json_annotation` | Sealed-class models with `fromJson` / `toJson`. |
 | (no `google_fonts`) | Nunito is bundled as an asset (`assets/fonts/`, OFL licence registered in `bootstrap`): no runtime download (GDPR, offline, fidelity). |
 | `lucide_icons` | Line icons across all three design systems. |
 | `flutter_animate` | Declarative one-shot animations; pairs with token motion specs. |
-| `posthog_flutter` | Product analytics — events from `lib/core/analytics/events.dart`. |
-| `sentry_flutter` | Crash + perf reporting. Independent of product analytics. |
+| ~~`posthog_flutter`~~, ~~`sentry_flutter`~~ | **Not used** — no budget yet. Firebase Analytics + Crashlytics cover analytics and crashes. Revisit (and re-add behind the existing `lib/core/analytics/client.dart` seam) when funnels/session replay or performance tracing are needed. |
 | `flutter_dotenv` | Loads `.env` at runtime. Bundled in the app — values here are NOT secret. |
 
 ### Dev
@@ -50,7 +50,7 @@ Codemagic is the CI/CD platform — see `codemagic.yaml`. No EAS analog, no mana
 
 ```
 lib/
-  main.dart                          entry — Firebase + PostHog + Sentry + ProviderScope + router
+  main.dart                          entry — Firebase (Analytics, Crashlytics, App Check) + ProviderScope + router
   core/
     firebase/                        cross-cutting Firebase infra only (NOT per-collection repos)
       firebase_client.dart           flavor-aware db + auth getters

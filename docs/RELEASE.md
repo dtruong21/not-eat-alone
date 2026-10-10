@@ -69,6 +69,7 @@ Once Blaze is upgraded, functions deploy automatically via CI on every `develop`
 - `onRequestUpdated` — push to guest on approve/deny
 - `onMessageCreated` — push to other chat participant
 - `postMealReminder` — hourly Pub/Sub, sends "rate your meal" nudges
+- `mealReminder` — every 15 minutes, sends the T-24h and T-2h pre-meal pushes (`mealReminderDefault` / `mealReminderStage`)
 - `onRatingCreated` — computes rolling ratings aggregate on target user
 
 If you need to deploy manually (or this is your first time):
@@ -327,6 +328,7 @@ For **release** (Play Store signing):
    const privacyPolicyUrl = 'https://your-domain/privacy';
    const termsOfServiceUrl = 'https://your-domain/terms';
    ```
+   - Also set `supportEmail` in the same file to a mailbox you actually monitor (currently the placeholder `support@convyve.com`). It is shown in Settings → Contact support and must match the Support URL in the store listings.
    - Both URLs must be HTTPS and accessible to real users (not `localhost`)
    - App Store + Play Store verify these before approval
 
@@ -595,8 +597,6 @@ Once tagged + deployed:
 
 After v1.0.0 ships:
 
-- **Ratings GDPR completeness:** Account deletion does not yet purge `ratings` (where the user is the rater or target). Add this to `deleteAccount` Cloud Function after feedback from privacy review.
-- **Pre-meal reminders:** Scheduled nudges 1–2 hours before meal time (non-goal for v1, deferred pending user feedback)
 - **Comments on ratings:** Users can add short text; add moderation queue if spam surfaces
 - **Edit/delete ratings:** Allow up to 24h to withdraw a rating
 - **Live map integration:** Place card shows restaurant on map (setup steps in Phase 3.1 §9; v1 uses list-only discovery)

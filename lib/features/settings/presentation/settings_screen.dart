@@ -2,7 +2,7 @@
 ///
 /// Owns the app's destructive/account actions (moved out of
 /// `profile_edit_screen`, which stays focused on editing profile fields):
-/// legal links, account deletion, sign-out, and the app version footer.
+/// support contact, legal links, account deletion, sign-out, and the app version footer.
 library;
 
 import 'dart:async';
@@ -36,6 +36,25 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _openUrl(String url) async {
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  /// Opens the mail app addressed to support. The address is also the tile
+  /// subtitle, so a user with no mail app can still read and copy it.
+  Future<void> _contactSupport(BuildContext context) async {
+    final uri = Uri.parse('mailto:$supportEmail?subject=Convyve%20support');
+    var opened = false;
+    try {
+      opened = await launchUrl(uri);
+    } on Object {
+      opened = false;
+    }
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't open your mail app. Write to $supportEmail"),
+        ),
+      );
+    }
   }
 
   Future<bool> _confirmDeleteAccount(BuildContext context) async {
@@ -125,6 +144,15 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s3),
           children: [
+            const _SectionHeader('Support'),
+            ListTile(
+              key: const Key('settings_contact_support'),
+              leading: const Icon(Icons.mail_outline_rounded),
+              title: const Text('Contact support'),
+              subtitle: const Text(supportEmail),
+              onTap: () => unawaited(_contactSupport(context)),
+            ),
+            const Divider(),
             const _SectionHeader('Legal'),
             ListTile(
               key: const Key('settings_privacy_policy'),

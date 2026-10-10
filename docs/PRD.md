@@ -10,7 +10,11 @@ People want to try new restaurants but often won't go alone. Convyve lets someon
 
 ## Target user
 
-{{Who specifically. Not "everyone." A concrete persona.}}
+**Primary:** adults (18+) in Paris who want to try a specific restaurant but don't want to go alone — people who would happily share a table with a stranger if it is in a public place, at a fixed time, with someone the host chose to approve.
+
+**Also served:** women who want women-only meals (self-declared in v1); newcomers to the city who have the appetite but not the dining company yet.
+
+*Working hypothesis from the v1 design — to be validated with the first soft-launch testers (see Open questions).*
 
 ## Pillars
 
@@ -21,29 +25,45 @@ Every MVP feature must serve one of these. Anything else gets cut to post-MVP. R
 Every match is organized around trying a specific restaurant, not browsing people.
 
 **Features:**
-- [ ] Open restaurant in Maps (meal detail) — see Feature specs
-- [ ] {{Feature 2}}
+- [x] Create a meal: restaurant (real Places search, Paris), date/time, optional note
+- [x] Discovery: list of open, future meals near you
+- [x] Meal detail: restaurant, host, time, note
+- [x] Open restaurant in Maps (meal detail) — see Feature specs (built; real-device check pending)
+- [ ] Embedded map / discovery map — post-MVP (see backlog)
 
 ### Pillar 2 — Low-pressure
 
 A public restaurant at a fixed time keeps first meetings light, not a loaded date.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Strictly 1:1 meals at a public restaurant at a fixed time
+- [x] Request to join (optional message) → host approves or denies → chat opens on match
+- [x] Post-meal: confirm show-up and rate
+- [x] Push notifications: new request, approved/denied, new message, post-meal rating prompt
+- [x] Pre-meal reminders: push 24h and 2h before a matched meal — see Feature specs
 
 ### Pillar 3 — Trust & safety
 
 Joiners are approval-gated, women-only meals exist, and block/report is always on.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Host approves every join — no auto-match
+- [x] Women-only meals (self-declared gender in v1)
+- [x] Block and report (user, meal, message)
+- [x] 18+ gate; sign-in with phone, Apple or Google
+- [x] Safety-tips card
+- [x] Account deletion
+- [x] Contact support (Settings; address shown in-app)
+- [ ] Profanity / image moderation (Cloud Function) — not built; deferred by decision (see Open questions)
 
 ### Pillar 4 — Liquidity over reach
 
 Depth in one city (Paris) beats thin coverage everywhere.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Paris-only soft launch (location fallback to Paris center; restaurant search limited to a Paris bounding box)
+- [x] Dismissible "Coming soon in Paris" notice for first-time users
+- [ ] Geofence expansion / "expand search" prompt — post-MVP
 
 ## Feature specs
 
@@ -93,12 +113,40 @@ As a guest who was approved for a meal, I want to open the restaurant in my maps
 
 ---
 
+### Feature: Meal reminders (T-24h and T-2h)
+Pillar: 2 — Low-pressure (reduces no-shows, which protects Pillar 1 and the liquidity of Pillar 4)
+Status: in-MVP
+
+**Verdict:** The smallest version that still cuts no-shows is two server-sent pushes to the two people of a matched meal. No new screens, no settings, no per-user preferences, no in-app inbox; tapping the push opens the match chat, where they can coordinate. Reuses the existing push pipeline and the `push_opened` event.
+
+**User story:**
+As a host or guest with a matched meal, I want a reminder the day before and a couple of hours before so that I remember to show up and can message my match if something changes.
+
+**Acceptance criteria:**
+- [ ] Both participants of a `matched` meal get one push ~24h before (window 22–24h) and one ~2h before (window 1–2h) the meal time. Meals matched inside a window get that reminder at the next run; a meal matched later than a window's start never gets the stale reminder.
+- [ ] Each reminder is sent at most once per meal (idempotency flag on the meal); a scheduler retry or overlap never duplicates it. A lost reminder is preferred over a duplicate.
+- [ ] Content: title "Your meal is today/tomorrow" (24h) or "Your meal is coming up" (2h); body "<restaurant> at <HH:mm>" in Paris time (v1 is Paris-only), restaurant name truncated. No other PII.
+- [ ] Tap opens the match chat (`/chats/:mealId`) and fires `push_opened` with `type: 'meal_reminder'`.
+- [ ] Cancelled, open (unmatched) and already-past meals get nothing.
+- [ ] Empty: a user with no registered device token is skipped silently. Offline: delivery is FCM's job (delivered when the device is back). Error: a failing send for one participant or meal is logged and does not block the rest of the run.
+- [ ] Runs for both databases (`(default)` and `stage`).
+
+**Out of scope (cut from this feature):**
+- User-configurable reminder times or an opt-out toggle beyond the OS notification permission.
+- Email/SMS reminders, calendar invites, "add to calendar".
+- Reminders to people with pending (unapproved) requests.
+- Time-zone handling beyond Paris.
+
+---
+
 ## Out of scope for MVP (post-MVP backlog)
 
 Things deliberately deferred. Anything that lives here cannot be argued back into MVP without an explicit re-scoping discussion.
 
-- Embedded map / restaurant pin in the app (Maps SDK Android + iOS, restricted keys; setup steps preserved in `docs/RELEASE.md` Phase 3.1 §9). Revisit after v1 if users report trouble finding venues.
-- {{Item 2}}
+- Embedded map / restaurant pin in the app and a discovery map (Maps SDK Android + iOS, restricted keys; setup steps preserved in `docs/RELEASE.md` Phase 3.1 §9). Revisit after v1 if users report trouble finding venues.
+- Swipe-on-people matching, group meals, restaurant reservations, restaurant partnerships, extra gender-preference filters (v2+; from the v1 design non-goals).
+- Monetization — v1 is free; ads/subscription later.
+- Comments on ratings, edit/delete ratings.
 
 ## Constraints
 
@@ -111,5 +159,8 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 
 Track here. Resolve before implementation, never during.
 
-- [ ] {{Question 1}}
-- [ ] {{Question 2}}
+- [ ] **Scope tension.** The approved v1 design (`docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md`) calls v1 "a complete, polished product" with a discovery map and Maps SDK; this PRD's rule zero says v1 is a minimum. Current call: list-only discovery + "Open in Maps" link-out, embedded map post-MVP. Confirm or re-scope before launch.
+- [x] **Moderation — decided 2026-10-09: ship the Paris soft launch without automated profanity/image moderation.** Mitigations in v1: host approves every join, report (user/meal/message) and block are always available, 18+ phone-verified accounts, small soft-launch audience. Revisit before any geo-expansion or after the first reported abuse. **Risk to watch:** Apple (Guideline 1.2) and Google Play user-generated-content rules expect a way to filter objectionable content as well as report/block and published contact info; a reviewer may reject the build. If so, the smallest fix is a server-side blocklist check on chat messages and profile text, not image moderation.
+- [x] **Reminders — decided 2026-10-09: build the T-24h / T-2h meal reminders into v1** (no-show risk is the main liveness risk; see Feature specs).
+- [x] **North-star metric — defined 2026-10-09:** weekly completed meals (see `docs/TRACKING-PLAN.md`). Targets to be set after four weeks of soft-launch data.
+- [ ] **Persona.** Validate the target user with the first 20 beta testers (who they are, why they'd join a stranger's meal).

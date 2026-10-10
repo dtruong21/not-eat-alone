@@ -13,3 +13,5 @@
 **Frequency:** always under those conditions.
 
 **Hypothesis:** `_WomenOnlyBadge` has a non-flexible fixed padding + unconstrained Text; at 2.0x the badge's intrinsic width exceeds the row once `Expanded` has shrunk the name to its minimum. Wrap the badge in `Flexible` or move it below the name when `MediaQuery.textScalerOf(context)` is large.
+
+**Status:** Fixed — `_RestaurantHeader` stacks the badge below the name above 1.5x text scale (side by side at normal sizes); 2.0x/320dp/long-name case added to `meal_detail_open_in_maps_edge_test.dart`.

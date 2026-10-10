@@ -36,7 +36,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Data + time
 
 - [ ] Timezone math. Date-keyed data must respect local TZ, not UTC.
-- [ ] Date rollover at midnight — "today" advances without manual refresh.
+- [ ] Date rollover at midnight — "today" advances without manual refresh. — **FAIL (code)**, see `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md`
 - [ ] DST transition — math still correct on clock-change days.
 - [ ] Long strings (≥1000 chars) in text fields don't crash.
 - [ ] Long lists (≥100 items) render without dropped frames.
@@ -44,7 +44,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Network
 
-- [ ] Offline write queues (toggle airplane mode mid-action).
+- [ ] Offline write queues (toggle airplane mode mid-action). — **FAIL (code)**: UI awaits the server ack, see `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md`
 - [ ] Reconnect syncs queued writes.
 - [ ] Slow network throttle (Network Link Conditioner / Android emulator throttle) doesn't break UI.
 - [ ] Firestore cache renders previously-fetched data on cold offline launch.
@@ -52,8 +52,8 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Auth
 
 - [ ] Anonymous → real-account linking preserves uid + data.
-- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped).
-- [ ] Account deletion cascade leaves zero orphan docs.
+- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped). — **FAIL (code)**, see `docs/bugs/2026-10-09-providers-survive-sign-out.md`
+- [ ] Account deletion cascade leaves zero orphan docs. — gap: a deleted guest strands the host's matched meal, see `docs/bugs/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reports are retained by design, undocumented)
 - [ ] Token refresh works after 1h+ idle.
 
 ### Permissions
@@ -70,18 +70,18 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Memory + perf
 
 - [ ] 5 min of typical use → no obvious memory growth (DevTools memory tab).
-- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes.
+- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes. — **FAIL (code)**, see `docs/bugs/2026-10-09-providers-survive-sign-out.md`
 
 ### Security
 
-- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator).
+- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; **FAIL for `users/{uid}` (open read incl. dob)**, see `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`
 - [ ] `.env` is gitignored — `git log --all -p -- .env` returns nothing.
-- [ ] No `cloud_firestore` imports outside `lib/core/firebase/` (`grep -r "package:cloud_firestore" lib/ --include="*.dart" | grep -v "lib/core/firebase"` returns nothing).
+- [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
 
 ### Visual + a11y
 
 - [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`).
-- [ ] Dynamic type at 200% (`MediaQueryData.textScaleFactor`) doesn't truncate critical text.
+- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — **FAIL (harness)**: sign-in, sheets, chat, see `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` and `docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md`
 - [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one.
 
 ### Design system (UX plan 16a) — automated, `test/core/design/`
@@ -159,7 +159,9 @@ Related PRD entry: `docs/PRD.md § Auth`
 - Phone: APNs auth key (iOS), Android SHA-256 + Play Integrity not yet registered.
 
 **Known issues:**
-- none filed
+- `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1) — contradicts the "Non-owner cannot read" edge case above
+- `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed)
+- `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
 
 ---
 
@@ -187,7 +189,8 @@ Related PRD entry: `docs/PRD.md § Profile`
 - Firebase **Storage not yet enabled** on the project — click "Get Started" in the console, then `firebase deploy --only storage`. Until then, `upload()` I/O is unverified (only path-building + delete are unit-tested).
 
 **Known issues:**
-- none filed
+- `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed) — each photo add rewrites the user doc and resets navigation
+- `docs/bugs/2026-10-09-profile-photos-uploaded-unresized.md` (P2, inferred)
 
 ---
 
@@ -210,10 +213,11 @@ Related PRD entry: `docs/PRD.md § Meals`
 
 **Deferred (needs the Google API key — 30-day GCP wait):**
 - Real **Places API** restaurant search (currently a fake 20-restaurant Paris list behind `RestaurantSearchRepository` — swap one datasource).
-- **Map preview** of the restaurant (list-first now; map added with the same keyed task).
+- **Map preview** of the restaurant (embedded map is post-MVP; "Open in Maps" link-out shipped). Real Places search shipped via the `searchRestaurants` callable (stale "fake list" note above).
 
 **Known issues:**
-- none filed
+- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
+- `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
 
 ---
 
@@ -237,10 +241,11 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - [ ] Empty state ("No meals near you yet") when nothing matches.
 
 **Deferred (needs the Google API key — 30-day GCP wait):**
-- **Map view** of the feed (list-first now; map added with the same keyed task as Places).
+- **Map view** of the feed (post-MVP, see PRD).
 
 **Known issues:**
-- none filed
+- `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
+- `docs/bugs/2026-10-09-location-fix-has-no-timeout.md` (P2)
 
 ---
 
@@ -273,14 +278,14 @@ Related PRD entry: `docs/PRD.md § Matching`
   - A disabled Approve on a past meal carries a tooltip and a semantics hint ("Meal time has passed").
   - Unmounting the tile mid-flight (approve or deny) neither throws nor loses the snackbar (widget-tested).
 - [ ] Discovery app-bar inbox badge (`pendingRequestCountProvider`) shows the live pending count and hides itself at 0 (unit-tested in `discovery_inbox_badge_test.dart`).
-- [ ] Women-only meals are unaffected by the request/match flow — the existing discovery-time gender filter is untouched; requests/matches carry no gender logic of their own.
+- [ ] Women-only meals are unaffected by the request/match flow — the existing discovery-time gender filter is untouched; requests/matches carry no gender logic of their own. (Rules sweep 2026-10-09: a man cannot request a women-only meal; women-only meals are still *readable* by any signed-in user, see the rules-hardening bug.)
 - [ ] `join_requested` / `request_approved` / `request_denied` / `match_created` all fire from the controller layer (`create_request_controller.dart`, `inbox_action_controller.dart`), never inline in widgets.
 
 **Manual rules note:**
 - [ ] Firestore rules (`firebase/firestore.rules`) restrict `requests/{id}` writes to the guest (create, pending only) and the host (status transition pending→approved/denied only); `matches/{mealId}` is host/guest-readable, write-restricted to the approve transaction. Verify via Rules Playground or emulator — a non-host cannot approve/deny another host's request, and a non-participant cannot read a match doc.
 
 **Known issues:**
-- none filed
+- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline
 
 ---
 
@@ -308,7 +313,9 @@ Related PRD entry: `docs/PRD.md § Chat`
 - [ ] `matches/{matchId}/messages/{id}` and `matches/{matchId}/reads/{uid}` are readable/writable only by `match.hostId`/`match.guestId` (participants array) — verify a third user is denied both read and write via emulator.
 
 **Known issues:**
-- none filed
+- `docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
+- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
+- `docs/bugs/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
 
 ---
 
@@ -346,8 +353,11 @@ Related PRD entry: `docs/PRD.md § Safety`
 - Live account deletion via UI (requires **Blaze plan**; current callable requires manual backend trigger or custom Cloud Function for email verification).
 
 **Known issues:**
-- Account deletion is via callable, not full UI flow yet (user has to call the backend; email confirmation Flow deferred pending Blaze).
+- Stale text above: Settings -> Delete account (single confirm dialog, no re-auth) ships and the callable also deletes the Storage prefix; see `docs/bugs/2026-10-09-docs-contradict-code.md`.
+- `docs/bugs/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (P2)
+- `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md` (P3)
 - Block detection is possible via direct Firestore inspection (silent-block mirror not yet implemented).
+- Store-UGC risk (decided, not a bug): no automated moderation and no operator workflow for `reports` (create-only, nobody reads them); Apple 1.2 / Play UGC reviewers may ask for one.
 
 ---
 
@@ -373,7 +383,8 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 - Live end-to-end delivery is unverified pending **Blaze plan** upgrade (Cloud Functions can't deploy on Spark), an **APNs auth key** (iOS push), and registering the **Android SHA-256** fingerprint — all user homework, tracked in `docs/CICD.md` / build-state memory. Until then, the Functions triggers are unit/integration-tested in isolation (`firebase/functions/test/`) but not exercised against a real device.
 
 **Known issues:**
-- none filed
+- `docs/bugs/2026-10-09-minor-polish-and-ci-gaps.md` (P3) — foreground banner while the chat is open, token-refresh error handling
+- Route mapper covers every type the server sends (`request`, `request_update`, `message`, `rate`, `meal_reminder`); guarded by `test/features/notifications/data/push_type_contract_test.dart`.
 
 ---
 
@@ -407,7 +418,8 @@ Related PRD entry: `docs/PRD.md § Ratings`
 - [ ] Scheduled `postMealReminder` function runs hourly and sends a notification to non-notified participants (requires Blaze + Cloud Scheduler; emulator cannot run scheduled triggers).
 
 **Known issues:**
-- The post-meal push-notification tap handler (type `'rate'`) does not yet have a deep-link case in the Dart mapper; the in-app post-meal card in chat is the primary path to rating.
+- Stale text: the `'rate'` tap handler exists (opens the match chat). Several edge-case lines above (overwrite on second rating, `completed` after both rate, nudge after rating) do not match the code, see `docs/bugs/2026-10-09-docs-contradict-code.md`.
+- `docs/bugs/2026-10-09-minor-polish-and-ci-gaps.md` (P3) — the rate prompt fires at meal start
 - Live aggregate updates + scheduled push notification delivery require the project to be on **Blaze** plan; if still on Spark, Functions deploy fails and rating aggregates/pushes are non-functional.
 
 ---
@@ -423,7 +435,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] **iOS (real device + Simulator):** tap opens Apple Maps at the restaurant with the name as the pin label; Maps is foregrounded (no in-app browser, no Safari bounce). Verify that `ll` + `q` drops a pin at the exact lat/lng labelled with the name, rather than running a name search that snaps to a different nearby POI.
 - [ ] **Android (real device + Emulator with Google Play):** tap opens Google Maps at the pin with the name as the label. With a second geo handler installed (e.g. Waze), the system chooser appears and both work.
 - [ ] Returning to Convyve (back / app switcher) lands on the unchanged meal detail; the button is immediately usable again.
-- [ ] `directions_opened` fires once per tap, no properties (verified in code via log-sink tests). **Still to do manually:** see it in PostHog debug view AND Firebase Analytics DebugView (not verifiable without a device).
+- [ ] `directions_opened` fires once per tap, no properties (verified in code via log-sink tests). **Still to do manually:** see it in the Firebase Analytics DebugView (not verifiable without a device).
 
 **Edge cases (specific to this feature):**
 - [ ] Coordinates `0,0`, out of range, or NaN: button hidden, address still shown. *(Automated.)*
@@ -435,7 +447,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Double-tap / rapid tap: exactly one launch and one `directions_opened`; guard releases after success, `false`, and a throwing launcher. *(Automated.)*
 - [ ] Failed launch (`false`): snackbar "Couldn't open Maps", button stays enabled, event already counted (intent). *(Automated.)*
 - [ ] Analytics sink failure never blocks the hand-off. *(Automated.)*
-- [ ] Leave the screen while a launch is in flight: no snackbar on an unmounted screen. *(Automated.)* Leave the screen while the `track()` await is in flight: **BUG** `2026-10-09-open-in-maps-ref-after-dispose` (test skipped until fixed).
+- [ ] Leave the screen while a launch is in flight: no snackbar on an unmounted screen. *(Automated.)* Leave the screen while the `track()` await is in flight: fixed, see `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md`.
 - [ ] Offline / airplane mode: button still launches the maps app; Convyve shows no connectivity error. Maps app owns its offline state. *(Manual.)*
 - [ ] Background app mid-launch / kill Maps and return: Convyve state unchanged, no crash. *(Manual.)*
 - [ ] Accessibility: TalkBack/VoiceOver announce one button "Open <name> in Maps" (no duplicate "Open in Maps" announcement); semantics tap action launches once; target >= 48dp at 2.0x. *(Semantics automated; screen-reader pass manual.)*
@@ -444,8 +456,41 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Coordinate precision: very small values (|lat| or |lng| < 1e-6) would stringify in scientific notation (`1e-7`). Not a real restaurant case; noted, not guarded.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed)
-- `docs/bugs/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card)
+- `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
+- `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Meal reminders (T-24h / T-2h)
+
+**Automated:** `firebase/functions/test/reminders.test.ts` (windows, flags, Paris-time formatting across DST, today/tomorrow label, payload content, truncation); `push_route_mapper_test.dart` (tap → `/chats/:mealId`).
+
+**Manual on the `stage` flavor (real device, two accounts, deployed `mealReminderStage`):**
+- [ ] Matched meal ~23h ahead: both phones get "Your meal is tomorrow — <restaurant> at HH:mm" within ~15 min; no second copy on later runs.
+- [ ] Matched meal ~90 min ahead: both get "Your meal is coming up"; a meal 3h ahead gets nothing yet.
+- [ ] Tap the push (app killed / background / foreground): opens the match chat; `push_opened` with `type: meal_reminder` in DebugView.
+- [ ] Meal matched with 30 min to go: no "tomorrow" reminder ever sent.
+- [ ] Cancelled or unmatched meal inside a window: nothing sent.
+- [ ] One participant has no device token / revoked permission: the other still gets it; no function error loop.
+- [ ] Meal across the DST change (last Sunday of October): time in the push matches Paris wall-clock.
+- [ ] Check the meal doc after: `reminder24hSent` / `reminder2hSent` set.
+- [ ] Post-meal "How was it?" push: tap opens the match chat with the rating card at the top.
+
+---
+
+### Feature: Meal reminders — sweep result 2026-10-09
+
+Server side verified against the Firestore emulator for BOTH databases (`(default)` and `stage`) by running the compiled `mealReminder` handler with a stubbed sender: matched meals inside 22–24h and 1–2h get one push per participant (host only when no guest), meals at 3h / 30min / 21h / past / cancelled / open get nothing, flags `reminder24hSent` / `reminder2hSent` are set, a second run sends nothing, a meal with `reminder24hSent` already set still gets the 2h reminder. Client rules: no client can write the reminder flags and they do not affect the approve transaction. Open: `docs/bugs/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reminders for a meal whose guest deleted their account). Device items above remain NOT VERIFIED.
+
+---
+
+## QA sweep log
+
+### 2026-10-09 (develop @ 8cf1b41) — pre-store-submission code-side sweep
+
+Baseline: `flutter test` 477 passed / 3 skipped (the TZ-gated tests, run separately under `TZ=Pacific/Kiritimati`: green); after the additions below 503 passed / 19 skipped (16 bug-linked); `flutter analyze`: 0 errors, 0 warnings (624 infos); functions `npm test` 31/31, `npm run build`, `npm run lint` clean (Node 22.22). Added tests (all green; bug-linked cases are skipped until fixed): `test/core/routing/router_stability_test.dart`, `test/core/auth_transition_state_test.dart`, `test/core/analytics/tracking_plan_parity_test.dart`, `test/core/location/location_service_timeout_edge_test.dart`, `test/features/chat/presentation/chat_screen_edge_test.dart`, `test/features/chat/presentation/widgets/message_composer_offline_edge_test.dart`, `test/features/auth/presentation/signin_screen_text_scale_edge_test.dart`, `test/features/safety/presentation/sheets_keyboard_edge_test.dart`, `test/features/meal/application/discovery_clock_edge_test.dart`, `test/features/notifications/data/push_type_contract_test.dart`, helper `test/helpers/load_app_fonts.dart` (widget tests render the Ahem font unless Nunito is loaded; use it for any layout/overflow test).
+
+Bugs filed: see `docs/bugs/` (2 P1, 9 P2, 3 P3). Everything marked device/emulator in this plan stays NOT VERIFIED until run locally.
 
 ---
 

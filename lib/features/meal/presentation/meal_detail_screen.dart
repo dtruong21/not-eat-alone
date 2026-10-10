@@ -84,23 +84,7 @@ class MealDetailScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              meal.restaurant.name,
-                              style: textTheme.titleMedium?.copyWith(
-                                color: colors.onSurface,
-                                fontWeight: WarmPlayfulType.h2Weight,
-                              ),
-                            ),
-                          ),
-                          if (meal.womenOnly) ...[
-                            const SizedBox(width: WarmPlayfulSpacing.s2),
-                            _WomenOnlyBadge(textTheme: textTheme),
-                          ],
-                        ],
-                      ),
+                      _RestaurantHeader(meal: meal),
                       const SizedBox(height: WarmPlayfulSpacing.s1),
                       Text(
                         meal.restaurant.address,
@@ -180,6 +164,53 @@ class _MealSafetyActions extends ConsumerWidget {
       secondaryReportLabel: 'Report host',
       blockUid: isHost ? null : meal.hostId,
       blockLabel: 'Block host',
+    );
+  }
+}
+
+/// Text scale above which the "Women only" badge drops below the name so a
+/// long name and the badge never fight for one row.
+const _stackBadgeTextScale = 1.5;
+
+/// Restaurant name with the optional "Women only" badge: side by side at
+/// normal text sizes, stacked at large accessibility sizes (no overflow).
+class _RestaurantHeader extends StatelessWidget {
+  const _RestaurantHeader({required this.meal});
+
+  final Meal meal;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final name = Text(
+      meal.restaurant.name,
+      style: textTheme.titleMedium?.copyWith(
+        color: theme.colorScheme.onSurface,
+        fontWeight: WarmPlayfulType.h2Weight,
+      ),
+    );
+    if (!meal.womenOnly) return name;
+
+    final badge = _WomenOnlyBadge(textTheme: textTheme);
+    final stacked =
+        MediaQuery.textScalerOf(context).scale(1) > _stackBadgeTextScale;
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          name,
+          const SizedBox(height: WarmPlayfulSpacing.s2),
+          badge,
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: name),
+        const SizedBox(width: WarmPlayfulSpacing.s2),
+        badge,
+      ],
     );
   }
 }
