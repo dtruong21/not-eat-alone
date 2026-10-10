@@ -9,6 +9,8 @@ import 'package:not_eat_alone/core/notifications/push_listener.dart';
 import 'package:not_eat_alone/core/routing/router.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
+import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
+import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
@@ -119,6 +121,27 @@ void main() {
     await emit(tester, u: _user(ageVerified: false, ratingCount: 3));
 
     expect(identical(container.read(routerProvider), first), isTrue);
+  });
+
+  testWidgets('/auth/phone without a PhoneVerifyArgs extra falls back to the '
+      'sign-in screen instead of crashing', (tester) async {
+    await pumpApp(tester);
+    final router = container.read(routerProvider)..go('/auth/phone');
+    await tester.pump();
+    await tester.pump();
+    // The location really is /auth/phone (signed out may stay there), so the
+    // sign-in screen on show comes from the builder fallback.
+    expect(location(), '/auth/phone');
+    expect(find.byType(PhoneVerifyScreen), findsNothing);
+    expect(find.byType(SigninScreen), findsOneWidget);
+
+    router.go('/auth/phone', extra: 'a-bare-verification-id');
+    await tester.pump();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(location(), '/auth/phone');
+    expect(find.byType(PhoneVerifyScreen), findsNothing);
+    expect(find.byType(SigninScreen), findsOneWidget);
   });
 
   testWidgets('redirect re-runs on sign-in, ageVerified and sign-out', (

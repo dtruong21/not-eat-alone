@@ -50,6 +50,7 @@ dependencies:
   flutter_dotenv: ^6.0.1
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.2.0
+  clock: ^1.1.2
   crypto: ^3.0.7
   firebase_storage: ^13.6.0
   image_picker: ^1.2.3

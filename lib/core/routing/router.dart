@@ -35,6 +35,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/routing/app_shell.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_screen.dart';
 import 'package:not_eat_alone/features/auth/presentation/signin_screen.dart';
 import 'package:not_eat_alone/features/chat/presentation/chat_list_screen.dart';
@@ -195,9 +196,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: _phoneVerifyPath,
-        builder: (context, state) => PhoneVerifyScreen(
-          verificationId: state.extra! as String,
-        ),
+        builder: (context, state) {
+          final args = state.extra;
+          if (args is! PhoneVerifyArgs) {
+            // Deep link / app restart on this path (`extra` doesn't survive
+            // process death) — the verification id is gone; start over.
+            return const SigninScreen();
+          }
+          return PhoneVerifyScreen(args: args);
+        },
       ),
       GoRoute(
         path: _ageGatePath,

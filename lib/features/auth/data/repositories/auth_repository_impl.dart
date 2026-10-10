@@ -19,10 +19,17 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+
+/// `FirebaseAuthException` codes that mean "wrong or expired SMS code".
+const _invalidSmsCodes = {
+  'invalid-verification-code',
+  'invalid-verification-id',
+  'session-expired',
+};
 
 /// Repository for all sign-in flows (Google, Apple, phone) and session state.
 ///
@@ -129,7 +136,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   /// Confirms the SMS code the user received for [verificationId], signing
-  /// them in.
+  /// them in. A rejected/expired code throws [InvalidSmsCodeException]; every
+  /// other failure propagates as-is.
   @override
   Future<void> confirmSmsCode({
     required String verificationId,
@@ -139,7 +147,14 @@ class AuthRepositoryImpl implements AuthRepository {
       verificationId: verificationId,
       smsCode: smsCode,
     );
-    await _firebaseAuth.signInWithCredential(credential);
+    try {
+      await _firebaseAuth.signInWithCredential(credential);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (_invalidSmsCodes.contains(e.code)) {
+        throw const InvalidSmsCodeException();
+      }
+      rethrow;
+    }
   }
 
   /// Signs out of both FirebaseAuth and google_sign_in.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -40,8 +41,16 @@ void main() {
     required GlobalKey<ProfileFormState> formKey,
     required AppUser user,
     FakeProfileController? controller,
+    double? width,
+    double textScale = 1,
   }) async {
     ProfileFormData? captured;
+    if (width != null) {
+      tester.view
+        ..physicalSize = Size(width, 568)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -51,6 +60,12 @@ void main() {
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
           home: Scaffold(
             body: SingleChildScrollView(
               child: ProfileForm(
@@ -206,4 +221,212 @@ void main() {
       expect(controller.removedPhotoUrl, url);
     },
   );
+
+  testWidgets('missingFields lists what is still needed, in screen order', (
+    tester,
+  ) async {
+    final captured = await pumpForm(
+      tester,
+      formKey: GlobalKey<ProfileFormState>(),
+      user: _user(),
+    );
+    expect(captured!.missingFields, [
+      'a photo',
+      'your name',
+      'how you identify',
+    ]);
+
+    const complete = ProfileFormData(
+      name: 'Ada',
+      gender: Gender.woman,
+      bio: null,
+      photoCount: 1,
+    );
+    expect(complete.missingFields, isEmpty);
+    expect(
+      const ProfileFormData(
+        name: '  ',
+        gender: Gender.man,
+        bio: null,
+        photoCount: 2,
+      ).missingFields,
+      ['your name'],
+    );
+  });
+
+  testWidgets('the add-photo tile is labelled, with an onSurface icon', (
+    tester,
+  ) async {
+    await pumpForm(
+      tester,
+      formKey: GlobalKey<ProfileFormState>(),
+      user: _user(),
+    );
+    final tile = find.byKey(const Key('add_photo_tile'));
+    expect(
+      find.descendant(of: tile, matching: find.text('Add photo')),
+      findsOneWidget,
+    );
+    final icon = tester.widget<Icon>(
+      find.descendant(of: tile, matching: find.byType(Icon)),
+    );
+    expect(icon.color, Theme.of(tester.element(tile)).colorScheme.onSurface);
+    expect(tester.getSize(tile).height, greaterThanOrEqualTo(48));
+    expect(
+      tester.getSemantics(tile),
+      matchesSemantics(
+        label: 'Add photo',
+        isButton: true,
+        hasTapAction: true,
+        hasFocusAction: true,
+        hasEnabledState: true,
+        isEnabled: true,
+        isFocusable: true,
+      ),
+    );
+  });
+
+  testWidgets('the busy add-photo tile shows an onSurface spinner', (
+    tester,
+  ) async {
+    final controller = _SlowController();
+    final formKey = GlobalKey<ProfileFormState>();
+    await pumpForm(
+      tester,
+      formKey: formKey,
+      user: _user(),
+      controller: controller,
+    );
+    formKey.currentState!.debugInjectPickedBytes(Uint8List.fromList([1]));
+    await tester.tap(find.byKey(const Key('add_photo_tile')));
+    await tester.pump();
+    await tester.pump();
+
+    final spinner = tester.widget<CircularProgressIndicator>(
+      find.descendant(
+        of: find.byKey(const Key('add_photo_tile')),
+        matching: find.byType(CircularProgressIndicator),
+      ),
+    );
+    expect(
+      spinner.color,
+      Theme.of(tester.element(find.byType(ProfileForm))).colorScheme.onSurface,
+    );
+    expect(
+      tester.getSemantics(find.byKey(const Key('add_photo_tile'))).label,
+      'Uploading photo',
+    );
+    controller.release();
+    await tester.pump();
+    await tester.pump();
+  });
+
+  testWidgets('every remove button has a 44pt hit area and a 24pt visual', (
+    tester,
+  ) async {
+    await pumpForm(
+      tester,
+      formKey: GlobalKey<ProfileFormState>(),
+      user: _user(
+        photoUrls: const [
+          'https://example.com/1.jpg',
+          'https://example.com/2.jpg',
+          'https://example.com/3.jpg',
+        ],
+      ),
+    );
+
+    expect(find.byTooltip('Remove photo'), findsNWidgets(3));
+    final buttons = find.byType(IconButton);
+    expect(buttons, findsNWidgets(3));
+    final rects = <Rect>[];
+    for (final button in buttons.evaluate().map(
+      (e) => find.byWidget(e.widget),
+    )) {
+      final size = tester.getSize(button);
+      expect(size.width, greaterThanOrEqualTo(44));
+      expect(size.height, greaterThanOrEqualTo(44));
+      rects.add(tester.getRect(button));
+      expect(
+        tester.getSemantics(button),
+        // IconButton.tooltip: the tooltip text is the node's accessible name
+        // (the engine reads it as the label).
+        matchesSemantics(
+          tooltip: 'Remove photo',
+          isButton: true,
+          hasTapAction: true,
+          hasFocusAction: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isFocusable: true,
+        ),
+      );
+    }
+    // Hit areas stay inside their own thumbnail: no overlap between buttons.
+    for (var i = 0; i < rects.length; i++) {
+      for (var j = i + 1; j < rects.length; j++) {
+        expect(rects[i].overlaps(rects[j]), isFalse);
+      }
+    }
+
+    final visual = tester.getSize(
+      find.ancestor(
+        of: find.byIcon(Icons.close).first,
+        matching: find.byType(CircleAvatar),
+      ),
+    );
+    expect(visual, const Size(24, 24));
+  });
+
+  test("the field scroll padding is larger than Flutter's default", () {
+    expect(
+      kProfileFieldScrollPadding.bottom,
+      greaterThan(const EdgeInsets.all(20).bottom),
+    );
+  });
+
+  testWidgets('name and bio fields leave room to scroll above the keyboard', (
+    tester,
+  ) async {
+    await pumpForm(
+      tester,
+      formKey: GlobalKey<ProfileFormState>(),
+      user: _user(),
+    );
+    for (final key in const ['profile_name_field', 'profile_bio_field']) {
+      final field = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(Key(key)),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(field.scrollPadding, kProfileFieldScrollPadding, reason: key);
+    }
+  });
+
+  testWidgets('no overflow at 320 px and 2.0x text', (tester) async {
+    await pumpForm(
+      tester,
+      formKey: GlobalKey<ProfileFormState>(),
+      user: _user(photoUrls: const ['https://example.com/1.jpg']),
+      width: 320,
+      textScale: 2,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+}
+
+/// Holds `addPhoto` open so the busy state can be observed.
+class _SlowController extends FakeProfileController {
+  final _gate = Completer<void>();
+
+  void release() => _gate.complete();
+
+  @override
+  Future<void> addPhoto(Uint8List bytes) async {
+    state = const AsyncLoading();
+    await _gate.future;
+    state = const AsyncData(null);
+  }
 }

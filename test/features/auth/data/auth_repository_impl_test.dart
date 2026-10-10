@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 
@@ -97,6 +98,41 @@ void main() {
         () => firebaseAuth.signInWithCredential(captureAny()),
       ).captured;
       expect(captured.single, isA<firebase_auth.PhoneAuthCredential>());
+    });
+
+    for (final code in [
+      'invalid-verification-code',
+      'invalid-verification-id',
+      'session-expired',
+    ]) {
+      test('confirmSmsCode maps $code to InvalidSmsCodeException', () {
+        when(() => firebaseAuth.signInWithCredential(any())).thenThrow(
+          firebase_auth.FirebaseAuthException(code: code),
+        );
+
+        expect(
+          repository.confirmSmsCode(
+            verificationId: 'verification-id',
+            smsCode: '123456',
+          ),
+          throwsA(isA<InvalidSmsCodeException>()),
+        );
+      });
+    }
+
+    test('confirmSmsCode rethrows any other error untouched', () {
+      final error = firebase_auth.FirebaseAuthException(
+        code: 'network-request-failed',
+      );
+      when(() => firebaseAuth.signInWithCredential(any())).thenThrow(error);
+
+      expect(
+        repository.confirmSmsCode(
+          verificationId: 'verification-id',
+          smsCode: '123456',
+        ),
+        throwsA(same(error)),
+      );
     });
 
     test('verifyPhone forwards to FirebaseAuth.verifyPhoneNumber', () async {

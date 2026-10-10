@@ -27,6 +27,7 @@ import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/util/age.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/onboarding/application/underage_notice_provider.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 part 'age_gate_controller.g.dart';
@@ -60,12 +61,26 @@ class AgeGateController extends _$AgeGateController {
         await analytics.track(const AgeGateFailed());
         state = const AsyncValue.loading();
         state = await AsyncValue.guard(() async {
-          await ref.read(authRepositoryProvider).signOut();
+          // Before signing out: the router then sends them to sign-in, whose
+          // banner explains why (this screen is unmounted by then).
+          final notice = ref.read(underageNoticeProvider.notifier)
+            ..set(value: true);
+          try {
+            await ref.read(authRepositoryProvider).signOut();
+          } on Object {
+            // Still signed in: a banner about being under 18 would greet
+            // this user's next (adult) sign-out.
+            notice.set(value: false);
+            rethrow;
+          }
           return const AgeGateState(blocked: true);
         });
         return;
       }
 
+      // A stale banner from an earlier under-18 attempt must not outlive an
+      // adult sign-in.
+      ref.read(underageNoticeProvider.notifier).set(value: false);
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
         final uid = ref.read(authRepositoryProvider).currentUser!.uid;
