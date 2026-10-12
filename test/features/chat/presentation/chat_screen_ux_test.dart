@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
@@ -15,6 +19,7 @@ import 'package:not_eat_alone/features/chat/application/chat_read_provider.dart'
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/chat/domain/repositories/chat_repository.dart';
 import 'package:not_eat_alone/features/chat/presentation/chat_screen.dart';
+import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/match.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
@@ -94,6 +99,8 @@ void main() {
     double keyboard = 0,
     double textScale = 1,
     Meal? meal,
+    Future<Meal?> Function()? mealLoader,
+    Stream<List<ChatMessage>> Function()? stream,
   }) async {
     tester.view
       ..devicePixelRatio = 1
@@ -130,10 +137,14 @@ void main() {
           chatListProvider.overrideWith((ref) => Stream.value(const [_item])),
           chatMessagesProvider('m1').overrideWith(
             (ref) =>
+                stream?.call() ??
                 Stream.value(messages ?? [for (var i = 0; i < 6; i++) _msg(i)]),
           ),
           otherReadProvider.overrideWith((ref, key) => Stream.value(null)),
-          matchMealProvider.overrideWith((ref, matchId) async => meal),
+          matchMealProvider.overrideWith(
+            (ref, matchId) =>
+                mealLoader != null ? mealLoader() : Future.value(meal),
+          ),
           myRatingProvider.overrideWith((ref, matchId) => Stream.value(null)),
         ],
         child: MaterialApp.router(
@@ -152,6 +163,11 @@ void main() {
     // Skeleton on screen: never pumpAndSettle (docs/MASTER-SPEC.md gotcha 6).
     await tester.pump(const Duration(milliseconds: 1));
     await tester.pump(const Duration(milliseconds: 1));
+    if (stream != null) {
+      // An error needs one more frame to replace the skeleton.
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+    }
   }
 
   group('safety tips banner (CHAT-01)', () {
@@ -308,5 +324,164 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  group('post-meal card and keyboard (audit P0)', () {
+    testWidgets(
+      '320x568, 2.0x, keyboard up, unrated past meal: a message and the '
+      'composer stay on screen, the card steps aside',
+      (tester) async {
+        await pump(
+          tester,
+          size: const Size(320, 568),
+          keyboard: 216,
+          textScale: 2,
+          meal: _meal(DateTime(2020)),
+        );
+        expect(tester.takeException(), isNull);
+
+        expect(find.byKey(const Key('post_meal_card')), findsNothing);
+        final bubble = find.byKey(const Key('message_bubble_msg5'));
+        expect(bubble.hitTestable(), findsOneWidget);
+        final composer = tester.getRect(
+          find.byKey(const Key('message_composer_field')),
+        );
+        expect(composer.bottom, lessThanOrEqualTo(568 - 216));
+        expect(tester.getRect(bubble).bottom, lessThanOrEqualTo(composer.top));
+      },
+    );
+
+    testWidgets(
+      '320x568, 2.0x, no keyboard, header + banner + composer + card: no '
+      'overflow, a message is still visible',
+      (tester) async {
+        await pump(
+          tester,
+          size: const Size(320, 568),
+          textScale: 2,
+          meal: _meal(DateTime(2020)),
+        );
+        expect(tester.takeException(), isNull);
+
+        expect(find.byKey(const Key('chat_meal_header')), findsOneWidget);
+        expect(find.byKey(const Key('safety_tips_banner')), findsOneWidget);
+        expect(
+          find.byKey(const Key('message_composer_field')).hitTestable(),
+          findsOneWidget,
+        );
+        expect(find.byType(MessageBubble).hitTestable(), findsWidgets);
+        // On this short viewport the prompt sits above the oldest message:
+        // the thread comes first, the prompt is a scroll away.
+        await tester.drag(
+          find.byKey(const Key('chat_messages_list')),
+          const Offset(0, 3000),
+        );
+        await tester.pump();
+        expect(find.byKey(const Key('post_meal_card')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    group('post_meal_prompt_shown fires once per chat', () {
+      late List<String> logged;
+
+      setUp(() {
+        logged = [];
+        analytics.debugSetForceSend(true);
+        analytics.debugSetLogSink((name, params) async => logged.add(name));
+      });
+      tearDown(analytics.debugResetAnalytics);
+
+      int shown() => logged.where((n) => n == 'post_meal_prompt_shown').length;
+
+      testWidgets('scrolling the card out of view and back does not re-fire', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          messages: [
+            for (var i = 0; i < 80; i++)
+              _msg(i, at: DateTime(2027, 1, 5, 9).add(Duration(hours: i))),
+          ],
+          meal: _meal(DateTime(2020)),
+        );
+        expect(find.byKey(const Key('post_meal_card')), findsOneWidget);
+        expect(shown(), 1);
+
+        final list = find.byKey(const Key('chat_messages_list'));
+        // Fling to the oldest messages (a reversed list: drag down), far
+        // enough that the card is well outside the cache extent...
+        for (var i = 0; i < 6; i++) {
+          await tester.drag(list, const Offset(0, 3000));
+          await tester.pump();
+        }
+        expect(
+          find.byKey(const Key('message_bubble_msg0')).hitTestable(),
+          findsOneWidget,
+        );
+        // ...and back down to it.
+        for (var i = 0; i < 6; i++) {
+          await tester.drag(list, const Offset(0, -3000));
+          await tester.pump();
+        }
+
+        expect(find.byKey(const Key('post_meal_card')), findsOneWidget);
+        expect(shown(), 1);
+      });
+
+      testWidgets('the keyboard going up and down does not re-fire', (
+        tester,
+      ) async {
+        await pump(tester, meal: _meal(DateTime(2020)));
+        expect(shown(), 1);
+
+        tester.view.viewInsets = const FakeViewPadding(bottom: 216);
+        await tester.pump();
+        await tester.pump();
+        expect(find.byKey(const Key('post_meal_card')), findsNothing);
+        tester.view.viewInsets = FakeViewPadding.zero;
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.byKey(const Key('post_meal_card')), findsOneWidget);
+        expect(shown(), 1);
+      });
+    });
+  });
+
+  group('meal header: loading and unavailable states', () {
+    testWidgets('absent (and no spinner) while the meal is loading', (
+      tester,
+    ) async {
+      final never = Completer<Meal?>();
+      await pump(tester, mealLoader: () => never.future);
+      expect(find.byKey(const Key('chat_meal_header')), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('absent for a cancelled match even if a meal is known', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        meal: _meal(DateTime.now().add(const Duration(days: 3))),
+        stream: () =>
+            Stream<List<ChatMessage>>.error(Exception('permission-denied')),
+      );
+      expect(find.textContaining('no longer available'), findsOneWidget);
+      expect(find.byKey(const Key('chat_meal_header')), findsNothing);
+      expect(find.byKey(const Key('safety_tips_banner')), findsNothing);
+    });
+  });
+
+  testWidgets('a thread that failed to load shows Retry and no composer', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      stream: () => Stream<List<ChatMessage>>.error(StateError('boom')),
+    );
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.byKey(const Key('message_composer_field')), findsNothing);
   });
 }
