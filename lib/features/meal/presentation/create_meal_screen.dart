@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/meal/application/create_meal_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
@@ -236,20 +237,12 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s4),
               ],
-              FilledButton(
+              AppButton(
+                label: 'Create meal',
+                loadingLabel: 'Creating…',
+                isLoading: isSubmitting,
                 key: const Key('create_meal_submit_button'),
                 onPressed: (_dateTime == null || isSubmitting) ? null : _submit,
-                style: loadingFilledStyle(context, isLoading: isSubmitting),
-                child: isSubmitting
-                    ? SizedBox(
-                        height: WarmPlayfulSpacing.s4,
-                        width: WarmPlayfulSpacing.s4,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colors.onPrimary,
-                        ),
-                      )
-                    : const Text('Create meal'),
               ),
             ],
           ),

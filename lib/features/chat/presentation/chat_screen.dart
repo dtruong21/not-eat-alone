@@ -21,6 +21,9 @@ import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
+import 'package:not_eat_alone/core/design/widgets/error_state.dart';
+import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/chat/application/chat_controller.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
@@ -87,10 +90,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
     final myUid = ref.watch(authStateProvider).value?.uid;
     final chatItems =
         ref.watch(chatListProvider).value ?? const <ChatListItem>[];
@@ -185,41 +184,40 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: messagesAsync.when(
                 // Riverpod auto-retries a failed stream: keep showing the error.
                 skipLoadingOnReload: true,
-                loading: () => const Center(child: CircularProgressIndicator()),
-                // Every read under a deleted match is denied, so an error here
-                // means the chat is gone (cancelled / account deleted).
-                error: (error, stackTrace) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'This chat is no longer available — the meal was '
-                          'cancelled.',
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyMedium,
+                loading: () => const SkeletonMessages(),
+                error: (error, stackTrace) => !_isChatGone(error)
+                    ? ErrorState(
+                        onRetry: () => ref.invalidate(
+                          chatMessagesProvider(widget.matchId),
                         ),
-                        const SizedBox(height: WarmPlayfulSpacing.s3),
-                        FilledButton(
-                          key: const Key('chat_unavailable_back_button'),
-                          onPressed: () => context.go('/chats'),
-                          child: const Text('Back to chats'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                data: (messages) {
-                  if (messages.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Say hi \u{1F44B}',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: context.wp.muted,
+                      )
+                    // Every read under a deleted match is denied: the chat is
+                    // gone (cancelled / account deleted).
+                    : Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'This chat is no longer available — the meal was '
+                                'cancelled.',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: WarmPlayfulSpacing.s3),
+                              FilledButton(
+                                key: const Key('chat_unavailable_back_button'),
+                                onPressed: () => context.go('/chats'),
+                                child: const Text('Back to chats'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    );
+                data: (messages) {
+                  if (messages.isEmpty) {
+                    return const EmptyState(title: 'Say hi \u{1F44B}');
                   }
 
                   final myLatestId = _myLatestMessageId(messages, myUid);
@@ -252,7 +250,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
             ),
-            if (!messagesAsync.hasError)
+            if (!(messagesAsync.hasError && _isChatGone(messagesAsync.error!)))
               MessageComposer(matchId: widget.matchId),
           ],
         ),
@@ -312,3 +310,8 @@ class _ChatAppBarTitle extends ConsumerWidget {
     );
   }
 }
+
+/// Rules answer every read under a cancelled / deleted match with
+/// permission-denied (the participant check `get()`s a missing document).
+bool _isChatGone(Object error) =>
+    error.toString().contains('permission-denied');

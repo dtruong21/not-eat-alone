@@ -83,8 +83,11 @@ void main() {
       await pumpScreen(tester, screenKey: screenKey);
 
       final button = tester.widget<FilledButton>(
-        find.byKey(const Key('create_meal_submit_button')),
-      );
+      find.descendant(
+        of: find.byKey(const Key('create_meal_submit_button')),
+        matching: find.byType(FilledButton),
+      ),
+    );
       expect(button.onPressed, isNull);
     },
   );

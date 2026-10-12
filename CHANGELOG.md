@@ -30,8 +30,12 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - Restaurant search now finds real restaurants across Paris (previously a fixed list of 20); results update shortly after you stop typing.
 - The request inbox now shows which meal each request is for (restaurant and time), marks requests whose meal time has passed (Approve is disabled, Deny still works), and confirms every Approve or Deny with a message, with a Chat shortcut after approving (the approve message dismisses itself after a few seconds).
 
+- A feed that can't load now shows a "Couldn't load this" message with a Try again button (Discover, requests, chats, chat messages, restaurant search).
+
 ### Changed
 
+- Lists show placeholder cards while they load (Discover, requests, chats, chat messages, restaurant search) instead of a spinner, and error and empty screens share one design.
+- Dates and times are now 24-hour with the day before the month, and read "Today 20:30" or "Tomorrow 12:30" for the next two days (for example "Sat 10 Oct, 20:00"); chat times show as "20:30".
 - Secondary text, hints and icons are darker and easier to read (they were as pale as the card outlines); error text and the Deny button are a deeper brick red that is readable on the cream page.
 - Buttons now have a clear hierarchy: the main action is coral with a dark brown label, secondary actions are outlined with a dark label, and switches and segmented controls have visible outlines when off. A button that is working keeps its colour and shows a visible spinner.
 - Cards (meals, chats, requests, restaurants) now stand out from the page with a soft shadow and a slightly deeper peach; your own chat messages use a warm peach bubble and snackbars are readable in dark mode.
@@ -45,6 +49,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 ### Fixed
 - Chat of a cancelled meal / deleted account now says "This chat is no longer available" with a way back, instead of a generic error; no more false crash reports from it.
 
+- Editing your profile (for example adding a photo) no longer sends you back to Discover or empties the form you were filling in.
 - Large photos from modern phone cameras can now be added to your profile (they are resized before upload), and profile pictures use less memory so feeds scroll more smoothly.
 - If the person you matched with deletes their account, you are told: a host's meal opens up again for someone else to join, and a guest is told the meal was cancelled. Meals no longer sit as "matched" with nobody coming.
 - Discover no longer spins forever when your phone can't get a location fix; it falls back to your last known position, or Paris, after a few seconds.

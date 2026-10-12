@@ -149,6 +149,9 @@ Future<ProviderContainer> _mount(WidgetTester tester) async {
 Future<void> _settle(WidgetTester tester) async {
   await tester.pump();
   await tester.pump();
+  // Skeletons' flutter_animate leaves a never-cancelled timer (MASTER-SPEC gotcha 6).
+  await tester.pump(const Duration(milliseconds: 1));
+  await tester.pump(const Duration(milliseconds: 1));
   // Firebase-backed screens we don't stub may throw while building.
   while (tester.takeException() != null) {}
 }

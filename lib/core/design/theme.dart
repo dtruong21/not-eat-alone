@@ -275,7 +275,7 @@ ThemeData buildTheme(Brightness brightness) {
       indicatorColor: accent,
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
-          size: 24,
+          size: WarmPlayfulSize.icon,
           color: states.contains(WidgetState.selected) ? onAccent : muted,
         ),
       ),
@@ -586,20 +586,4 @@ class WarmPlayfulExtensions extends ThemeExtension<WarmPlayfulExtensions> {
 extension WarmPlayfulContext on BuildContext {
   WarmPlayfulExtensions get wp =>
       Theme.of(this).extension<WarmPlayfulExtensions>()!;
-}
-
-/// Style for a [FilledButton] whose label is swapped for a spinner while
-/// [isLoading]: keeps the enabled coral fill (the button is disabled, so
-/// taps are ignored) so the spinner stays visible.
-// ponytail: stop-gap until the shared AppButton (UX plan 16b) owns loading.
-ButtonStyle? loadingFilledStyle(
-  BuildContext context, {
-  required bool isLoading,
-}) {
-  if (!isLoading) return null;
-  final scheme = Theme.of(context).colorScheme;
-  return FilledButton.styleFrom(
-    disabledBackgroundColor: scheme.primary,
-    disabledForegroundColor: scheme.onPrimary,
-  );
 }

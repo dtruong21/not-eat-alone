@@ -73,8 +73,9 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
-    await tester.pump();
+    // Skeleton on screen while loading: never pumpAndSettle (MASTER-SPEC 6).
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
   }
 
   testWidgets('opening the chat of a deleted match raises no uncaught error', (

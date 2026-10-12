@@ -106,7 +106,10 @@ void main() {
     await pumpDetail(tester);
 
     final button = tester.widget<FilledButton>(
-      find.byKey(const Key('meal_detail_request_to_join_button')),
+      find.descendant(
+        of: find.byKey(const Key('meal_detail_request_to_join_button')),
+        matching: find.byType(FilledButton),
+      ),
     );
 
     expect(find.text('Request to join'), findsOneWidget);

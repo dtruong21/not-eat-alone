@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 
 class PhoneVerifyScreen extends ConsumerStatefulWidget {
@@ -120,19 +121,11 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s4),
               ],
-              FilledButton(
+              AppButton(
+                label: 'Verify',
+                loadingLabel: 'Verifying…',
+                isLoading: _isSubmitting,
                 onPressed: _isSubmitting ? null : _verify,
-                style: loadingFilledStyle(context, isLoading: _isSubmitting),
-                child: _isSubmitting
-                    ? SizedBox(
-                        height: WarmPlayfulSpacing.s4,
-                        width: WarmPlayfulSpacing.s4,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colors.onPrimary,
-                        ),
-                      )
-                    : const Text('Verify'),
               ),
             ],
           ),

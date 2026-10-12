@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/presentation/widgets/profile_form.dart';
 
@@ -92,19 +93,11 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 const SizedBox(height: WarmPlayfulSpacing.s6),
                 ProfileForm(onChanged: _onFormChanged),
                 const SizedBox(height: WarmPlayfulSpacing.s5),
-                FilledButton(
+                AppButton(
+                  label: 'Continue',
+                  loadingLabel: 'Saving…',
+                  isLoading: isSubmitting,
                   onPressed: (isValid && !isSubmitting) ? _continue : null,
-                  style: loadingFilledStyle(context, isLoading: isSubmitting),
-                  child: isSubmitting
-                      ? SizedBox(
-                          height: WarmPlayfulSpacing.s4,
-                          width: WarmPlayfulSpacing.s4,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colors.onPrimary,
-                          ),
-                        )
-                      : const Text('Continue'),
                 ),
               ],
             ),

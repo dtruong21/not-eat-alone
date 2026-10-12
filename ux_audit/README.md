@@ -107,12 +107,13 @@ error state. One deliberately malformed doc per feed (`seedMalformed` in
 `support/world.dart`: a message without `text`, a pending request, a match and
 an open Paris meal each without their required fields) makes the repository
 stream throw `RepositoryParseException`, which the screens render as "Something
-went wrong - please try again." No change to the app. All four are written
+went wrong - please try again." (from plan 16b: the shared `ErrorState`, "Couldn't
+load this" with a Try again button). No change to the app. All four are written
 together: Riverpod 3 retries a failed provider (10 times, back-off up to 6.4 s,
 about 40 s) and shows the loading state in between, so the error only stays on
 screen once the retries are exhausted; the test waits for that once (up to 90 s)
-and then visits the four screens. The error text has no retry button or other
-affordance: that is what the audit sees. There is no offline UI in the app, so
+and then visits the four screens. Before plan 16b the error text had no retry button or other
+affordance, which is what the audit saw (`16a-*` captures). There is no offline UI in the app, so
 there is no offline state to photograph.
 
 ## In-flight states
@@ -137,7 +138,7 @@ loop is doing, and the host thaws on exit. Nothing in the app is changed.
 | `05_phone_verify_in_flight` (Auth), `03_signin_phone_waiting` (Auth) | Auth emulator |
 | `37_create_meal_in_flight`, `54_requests_approve_in_flight`, `55_requests_deny_in_flight`, `66_chat_send_pending`, `70_chat_report_in_flight`, `75_rating_sheet_in_flight`, `60_chats_loading` | Firestore emulator |
 | `25_discover_refreshing` | nothing (the refresh indicator is held by pumping a fixed time) |
-| `20_discover_loading` | Firestore emulator, frozen after the viewer's own doc has arrived and before the feed's meal query is answered |
+| `20_discover_loading` (a skeleton list since plan 16b, was a spinner) | Firestore emulator, frozen after the viewer's own doc has arrived and before the feed's meal query is answered |
 
 What the in-flight shots show is worth reading rather than assuming:
 `03_signin_phone_waiting` has **no** indicator (the button spinner is gone as soon
@@ -196,11 +197,12 @@ Everything else is tapped and typed in the real UI. These are not:
 
 ## App behaviours found while building the harness (for the audit)
 
-- Any change of the signed-in user's own `users/{uid}` doc rebuilds the router
-  (`routerProvider` watches `currentUserDocProvider`), which resets the
-  navigation stack to Discover and drops in-progress form state. Seen when the
-  profile photo was added during profile setup (the form emptied) and when the
-  viewer's gender was flipped on a meal-detail screen.
+- FIXED in plan 16b (kept as history): any change of the signed-in user's own
+  `users/{uid}` doc used to rebuild the router, which reset the navigation stack
+  to Discover and dropped in-progress form state (profile photo added during
+  profile setup emptied the form; gender flipped on a meal-detail screen). The
+  router is now built once; step `16_profile_setup_ready` prints
+  `UXCHECK router: ... kept its input after a user-doc write: true|false`.
 - A rejected join request leaves no error: the button that listens for the
   failure is replaced by the optimistic "Requested" state and back (shot 49).
 - `verifyPhoneNumber` returns as soon as the request is dispatched, so the

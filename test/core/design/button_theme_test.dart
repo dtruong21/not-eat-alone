@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
-
-double contrastRatio(Color a, Color b) {
-  final la = a.computeLuminance();
-  final lb = b.computeLuminance();
-  return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
-}
+import '../../support/contrast.dart';
 
 void main() {
   for (final b in Brightness.values) {
@@ -147,53 +142,6 @@ void main() {
   }
 
   for (final b in Brightness.values) {
-    testWidgets('in-flight spinner is visible on the button fill ($b)', (
-      tester,
-    ) async {
-      late ColorScheme scheme;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildTheme(b),
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                scheme = Theme.of(context).colorScheme;
-                return FilledButton(
-                  onPressed: null,
-                  style: loadingFilledStyle(context, isLoading: true),
-                  child: CircularProgressIndicator(color: scheme.onPrimary),
-                );
-              },
-            ),
-          ),
-        ),
-      );
-      expect(
-        loadingFilledStyle(
-          tester.element(find.byType(FilledButton)),
-          isLoading: false,
-        ),
-        isNull,
-      );
-      final fill = tester
-          .widget<Material>(
-            find
-                .descendant(
-                  of: find.byType(FilledButton),
-                  matching: find.byType(Material),
-                )
-                .first,
-          )
-          .color!;
-      expect(fill, scheme.primary);
-      final spinner = tester.widget<CircularProgressIndicator>(
-        find.byType(CircularProgressIndicator),
-      );
-      expect(contrastRatio(spinner.color!, fill), greaterThanOrEqualTo(3));
-    });
-  }
-
-  for (final b in Brightness.values) {
     group('components that used secondaryContainer ($b)', () {
       final theme = buildTheme(b);
       final scheme = theme.colorScheme;
@@ -228,7 +176,7 @@ void main() {
         expect(sel.color, wp.onAccent);
         expect(unsel.color, wp.muted);
         expect(
-          contrastRatio(wp.onAccent, scheme.primary),
+          contrast(wp.onAccent, scheme.primary),
           greaterThanOrEqualTo(4.5),
         );
       });

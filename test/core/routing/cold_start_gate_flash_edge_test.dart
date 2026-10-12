@@ -83,6 +83,9 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
+    // Skeletons' flutter_animate leaves a never-cancelled timer (MASTER-SPEC gotcha 6).
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
     while (tester.takeException() != null) {}
     return container
         .read(routerProvider)

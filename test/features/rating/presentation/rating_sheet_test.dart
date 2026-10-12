@@ -72,7 +72,10 @@ void main() {
     await pumpSheet(tester);
 
     final button = tester.widget<FilledButton>(
-      find.byKey(const Key('rating_submit_button')),
+      find.descendant(
+        of: find.byKey(const Key('rating_submit_button')),
+        matching: find.byType(FilledButton),
+      ),
     );
     expect(button.onPressed, isNull);
   });
@@ -87,8 +90,11 @@ void main() {
       await tester.pump();
 
       final enabledButton = tester.widget<FilledButton>(
-        find.byKey(const Key('rating_submit_button')),
-      );
+      find.descendant(
+        of: find.byKey(const Key('rating_submit_button')),
+        matching: find.byType(FilledButton),
+      ),
+    );
       expect(enabledButton.onPressed, isNotNull);
 
       await tester.tap(find.byKey(const Key('rating_submit_button')));

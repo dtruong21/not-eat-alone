@@ -19,6 +19,8 @@ import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
+import '../../../support/contrast.dart';
+
 class MockUserRepository extends Mock implements UserRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
@@ -139,11 +141,7 @@ void main() {
       expect((badge.decoration! as BoxDecoration).color, wp.peach);
       final text = tester.widget<Text>(find.text('Women only'));
       expect(text.style!.color, wp.onAccent);
-      final la = wp.onAccent.computeLuminance();
-      final lb = wp.peach.computeLuminance();
-      final ratio = (la > lb ? la + 0.05 : lb + 0.05) /
-          (la > lb ? lb + 0.05 : la + 0.05);
-      expect(ratio, greaterThanOrEqualTo(4.5));
+      expect(contrast(wp.onAccent, wp.peach), greaterThanOrEqualTo(4.5));
     });
   }
 
@@ -152,7 +150,10 @@ void main() {
     await pumpWith(tester, viewerUid: 'guest1', request: null);
 
     final button = tester.widget<FilledButton>(
-      find.byKey(const Key('meal_detail_request_to_join_button')),
+      find.descendant(
+        of: find.byKey(const Key('meal_detail_request_to_join_button')),
+        matching: find.byType(FilledButton),
+      ),
     );
     expect(find.text('Request to join'), findsOneWidget);
     expect(button.onPressed, isNotNull);
@@ -236,8 +237,11 @@ void main() {
       );
 
       final button = tester.widget<FilledButton>(
-        find.byKey(const Key('meal_detail_request_to_join_button')),
-      );
+      find.descendant(
+        of: find.byKey(const Key('meal_detail_request_to_join_button')),
+        matching: find.byType(FilledButton),
+      ),
+    );
       expect(find.text('Request to join'), findsOneWidget);
       expect(button.onPressed, isNotNull);
       expect(
@@ -296,8 +300,11 @@ void main() {
       );
 
       final button = tester.widget<FilledButton>(
-        find.byKey(const Key('meal_detail_request_to_join_button')),
-      );
+      find.descendant(
+        of: find.byKey(const Key('meal_detail_request_to_join_button')),
+        matching: find.byType(FilledButton),
+      ),
+    );
       expect(button.onPressed, isNotNull);
     },
   );
