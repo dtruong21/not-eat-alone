@@ -121,6 +121,33 @@ void main() {
     expect(data(3).flagsCollection.isSelected, Tristate.isFalse);
   });
 
+  testWidgets('comment field closes the keyboard with Done', (tester) async {
+    await pump(tester);
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('rating_comment_field')),
+    );
+    expect(field.textInputAction, TextInputAction.done);
+  });
+
+  for (final b in Brightness.values) {
+    testWidgets('comment field has a visible edge on the sheet ($b)', (
+      tester,
+    ) async {
+      final theme = await pump(tester, brightness: b);
+      final field = tester.widget<TextField>(
+        find.byKey(const Key('rating_comment_field')),
+      );
+      final edge =
+          (field.decoration!.enabledBorder! as OutlineInputBorder).borderSide;
+      expect(edge.style, BorderStyle.solid);
+      expect(edge.width, 1);
+      expect(
+        contrast(edge.color, theme.bottomSheetTheme.backgroundColor!),
+        greaterThanOrEqualTo(3),
+      );
+    });
+  }
+
   testWidgets('long name at 320 px / 2.0x does not overflow', (tester) async {
     await pump(
       tester,

@@ -98,6 +98,9 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
     final button = AppButton(
       key: Key('unblock_button_${widget.uid}'),
       label: 'Unblock',
+      // Several rows say 'Unblock': screen readers need to know who.
+      semanticLabel: 'Unblock $name',
+      loadingLabel: 'Unblocking…',
       variant: AppButtonVariant.outlined,
       expand: false,
       maxLines: 1,

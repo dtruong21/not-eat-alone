@@ -167,6 +167,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
               enabled: !isSubmitting,
               maxLines: 3,
               maxLength: 200,
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 hintText: 'Add a comment (optional)',
                 // The sheet and the field share a fill: draw the edge.

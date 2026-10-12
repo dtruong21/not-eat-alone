@@ -325,13 +325,16 @@ class _SectionHeader extends StatelessWidget {
         WarmPlayfulSpacing.s4,
         WarmPlayfulSpacing.s2,
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: WarmPlayfulType.captionSize,
-          height: WarmPlayfulType.captionHeight,
-          fontWeight: WarmPlayfulType.captionWeight,
-          color: context.wp.muted,
+      child: Semantics(
+        header: true,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: WarmPlayfulType.captionSize,
+            height: WarmPlayfulType.captionHeight,
+            fontWeight: WarmPlayfulType.captionWeight,
+            color: context.wp.muted,
+          ),
         ),
       ),
     );

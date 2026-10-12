@@ -94,6 +94,30 @@ void main() {
     expect(find.byType(SkeletonList), findsNothing);
   });
 
+  testWidgets('each Unblock button is announced with the person\'s name', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    final gate = Completer<void>();
+    when(() => blocks.unblock('me', 'a')).thenAnswer((_) => gate.future);
+    await pump(tester);
+    ids.add({'a', 'b'});
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(find.bySemanticsLabel('Unblock Bastien'), findsOneWidget);
+    expect(find.bySemanticsLabel('Unblock Giulia'), findsOneWidget);
+
+    // In flight: one disabled node announcing the loading label, not both.
+    await tester.tap(find.byKey(const Key('unblock_button_a')));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(find.bySemanticsLabel('Unblocking…'), findsWidgets);
+    expect(find.bySemanticsLabel('Unblock Bastien'), findsNothing);
+    gate.complete();
+    await tester.pump(const Duration(milliseconds: 1));
+    handle.dispose();
+  });
+
   testWidgets('a profile that no longer exists is Unknown user', (
     tester,
   ) async {

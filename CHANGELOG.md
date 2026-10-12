@@ -36,6 +36,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 ### Changed
 
 - Settings is now grouped into Account (Edit profile, your phone number, Sign out), Safety, Notifications (iPhone), Legal (with open-source licences) and About, with Delete account last. New Blocked people screen to see and unblock people you blocked, and a Safety tips screen.
+- At large text sizes the "Rate <name>" button under the chat's rating prompt moves below the text instead of squeezing it, and screen readers now say "Unblock <name>", "Approving…" / "Denying…" and read Settings group titles as headings.
 - The rating prompt in a chat now scrolls with the messages instead of being pinned above them, your message clears from the box as soon as you send it (and comes back if it could not be sent), and the Chats list shows the restaurant and time of each meal, with a "Find a meal" button when you have no chats yet. A chat whose messages fail to load now shows only the retry button.
 - Lists show placeholder cards while they load (Discover, requests, chats, chat messages, restaurant search) instead of a spinner, and error and empty screens share one design.
 - Dates and times are now 24-hour with the day before the month, and read "Today 20:30" or "Tomorrow 12:30" for the next two days (for example "Sat 10 Oct, 20:00"); chat times show as "20:30".

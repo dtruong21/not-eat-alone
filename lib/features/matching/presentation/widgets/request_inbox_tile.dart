@@ -135,6 +135,7 @@ class RequestInboxTile extends ConsumerWidget {
         child: AppButton(
           key: Key('request_inbox_approve_button_${request.id}'),
           label: 'Approve',
+          loadingLabel: 'Approving…',
           expand: false,
           maxLines: 1,
           isLoading: pendingAction == InboxAction.approve,
@@ -153,6 +154,7 @@ class RequestInboxTile extends ConsumerWidget {
       child: AppButton(
         key: Key('request_inbox_deny_button_${request.id}'),
         label: 'Deny',
+        loadingLabel: 'Denying…',
         variant: AppButtonVariant.text,
         expand: false,
         maxLines: 1,
@@ -209,8 +211,11 @@ class RequestInboxTile extends ConsumerWidget {
                           fontWeight: WarmPlayfulType.h2Weight,
                         ),
                       ),
-                      const SizedBox(height: WarmPlayfulSpacing.s1),
-                      RatingBadge(uid: request.guestId),
+                      // The badge is empty until the guest doc loads: no gap then.
+                      if (guest != null) ...[
+                        const SizedBox(height: WarmPlayfulSpacing.s1),
+                        RatingBadge(uid: request.guestId),
+                      ],
                       if (meal != null) ...[
                         const SizedBox(height: WarmPlayfulSpacing.s1),
                         Column(

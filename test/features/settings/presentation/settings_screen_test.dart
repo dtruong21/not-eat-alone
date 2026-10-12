@@ -364,6 +364,21 @@ void main() {
 
     double top(WidgetTester tester, Finder f) => tester.getTopLeft(f).dy;
 
+    testWidgets('section titles are semantic headers', (tester) async {
+      final handle = tester.ensureSemantics();
+      tall(tester);
+      await pumpRouted(tester);
+
+      for (final title in ['Account', 'Safety', 'Legal', 'About']) {
+        expect(
+          tester.getSemantics(find.text(title)),
+          matchesSemantics(label: title, isHeader: true),
+          reason: title,
+        );
+      }
+      handle.dispose();
+    });
+
     testWidgets('groups appear in order with Delete account last', (
       tester,
     ) async {

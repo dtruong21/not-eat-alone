@@ -1186,6 +1186,7 @@ Future<void> _captureInboxInFlight(WidgetTester tester, UxWorld world) async {
       find.byKey(Key('request_inbox_approve_button_$darioRequest')),
       '54_requests_approve_in_flight',
       freeze: 'firestore',
+      mustShow: _spinner,
     );
     await _settle(tester);
     await _clearSnackBars(tester);
@@ -1197,6 +1198,7 @@ Future<void> _captureInboxInFlight(WidgetTester tester, UxWorld world) async {
       find.byKey(Key('request_inbox_deny_button_$faridPastRequest')),
       '55_requests_deny_in_flight',
       freeze: 'firestore',
+      mustShow: _spinner,
     );
     await _settle(tester);
     await _clearSnackBars(tester);

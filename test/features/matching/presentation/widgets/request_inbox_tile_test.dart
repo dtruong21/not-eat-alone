@@ -31,6 +31,7 @@ import 'package:not_eat_alone/features/matching/domain/repositories/request_repo
 import 'package:not_eat_alone/features/matching/presentation/widgets/request_inbox_tile.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
@@ -538,6 +539,8 @@ void main() {
 
       expect(_approveButton(tester).onPressed, isNull);
       expect(_denyButton(tester).onPressed, isNull);
+      // Busy is announced as progress, not just 'Approve'.
+      expect(find.text('Approving…'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(const Key('request_inbox_approve_button_m1_guest1')),
@@ -639,6 +642,7 @@ void main() {
       await tester.tap(find.text('Deny'));
       await tester.pump();
 
+      expect(find.text('Denying…'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(const Key('request_inbox_deny_button_m1_guest1')),
@@ -698,6 +702,17 @@ void main() {
         expect((hi + 0.05) / (lo + 0.05), greaterThanOrEqualTo(4.5));
       });
     }
+
+    testWidgets('no badge (and no gap for it) while the guest doc loads', (
+      tester,
+    ) async {
+      when(
+        () => userRepository.watch('guest1'),
+      ).thenAnswer((_) => const Stream.empty());
+      await pumpTile(tester);
+
+      expect(find.byType(RatingBadge), findsNothing);
+    });
 
     testWidgets('the guest RatingBadge renders under the name', (tester) async {
       when(() => userRepository.watch('guest1')).thenAnswer(
@@ -811,10 +826,11 @@ void main() {
         expect(r.left, greaterThanOrEqualTo(tileRect.left));
         expect(r.right, lessThanOrEqualTo(tileRect.right));
       }
+      // OverflowBar stacks upwards: Approve (primary) on top of Deny.
       expect(
-        approve.bottom <= deny.top || deny.bottom <= approve.top,
-        isTrue,
-        reason: 'stacked vertically, not side by side',
+        approve.bottom,
+        lessThanOrEqualTo(deny.top),
+        reason: 'stacked vertically with Approve on top',
       );
       expect(find.text('Approve'), findsOneWidget);
       expect(find.text('Deny'), findsOneWidget);

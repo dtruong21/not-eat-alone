@@ -152,4 +152,15 @@ void main() {
     expect(find.byIcon(Icons.mark_email_unread_outlined), findsNothing);
     expect(find.byIcon(Icons.mark_email_unread), findsNothing);
   });
+
+  testWidgets('the selected Requests tab shows the filled inbox icon', (
+    tester,
+  ) async {
+    await _pumpShell(tester, pending: 0);
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Requests'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.inbox), findsOneWidget);
+    expect(find.byIcon(Icons.inbox_outlined), findsNothing);
+  });
 }

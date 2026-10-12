@@ -1,7 +1,20 @@
+// Mocks of the sealed Firestore Query types are the only way to observe the
+// query shape (fake_cloud_firestore accepts any shape).
+// ignore_for_file: subtype_of_sealed_class
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'package:not_eat_alone/features/safety/data/repositories/block_repository_impl.dart';
+
+class _MockFirestore extends Mock implements FirebaseFirestore {}
+
+class _MockCollection extends Mock
+    implements CollectionReference<Map<String, dynamic>> {}
+
+class _MockQuery extends Mock implements Query<Map<String, dynamic>> {}
 
 void main() {
   late FakeFirebaseFirestore db;
@@ -61,6 +74,30 @@ void main() {
       await sub.cancel();
       expect(emissions.first, {'x'});
       expect(emissions.last, isEmpty);
+    });
+
+    // fake_cloud_firestore accepts any query shape, but the `blocks` rule
+    // (`request.auth.uid in resource.data.pair`) only lets production prove
+    // `pair array-contains uid`: a `blockerUid ==` query would be denied.
+    test('queries by `pair` array-contains (the only shape the rules allow)', () {
+      final firestore = _MockFirestore();
+      final collection = _MockCollection();
+      final query = _MockQuery();
+      when(() => firestore.collection('blocks')).thenReturn(collection);
+      when(
+        () => collection.where('pair', arrayContains: 'me'),
+      ).thenReturn(query);
+      when(query.snapshots).thenAnswer((_) => const Stream.empty());
+
+      BlockRepositoryImpl(firestore: firestore).watchBlockedByMe('me');
+
+      verify(() => collection.where('pair', arrayContains: 'me')).called(1);
+      verifyNever(
+        () => collection.where(
+          any(),
+          isEqualTo: any(named: 'isEqualTo'),
+        ),
+      );
     });
   });
 }

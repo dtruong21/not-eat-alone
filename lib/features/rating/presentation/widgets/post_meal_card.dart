@@ -69,6 +69,39 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
         .value
         ?.displayName;
 
+    // Large text: the button drops below the text, full width, instead of
+    // squeezing title and label into half a row each (same 1.3x switch as
+    // the blocked-people rows).
+    final stacked = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final prompt = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'How was your meal?',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: WarmPlayfulType.h2Weight,
+          ),
+        ),
+        const SizedBox(height: WarmPlayfulSpacing.s1),
+        Text(
+          'It only takes a moment.',
+          style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
+        ),
+      ],
+    );
+    Widget rateButton({required bool expand}) => AppButton(
+      key: const Key('post_meal_card_rate_button'),
+      label: targetName != null ? 'Rate $targetName' : 'Rate',
+      expand: expand,
+      onPressed: () => showRatingSheet(
+        context,
+        matchId: widget.matchId,
+        targetUid: widget.targetUid,
+        partnerName: targetName,
+      ),
+    );
+
     return Card(
       key: const Key('post_meal_card'),
       color: colors.surfaceContainer,
@@ -77,44 +110,25 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: stacked
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'How was your meal?',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: WarmPlayfulType.h2Weight,
-                    ),
-                  ),
-                  const SizedBox(height: WarmPlayfulSpacing.s1),
-                  Text(
-                    'It only takes a moment.',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: context.wp.muted,
-                    ),
-                  ),
+                  prompt,
+                  const SizedBox(height: WarmPlayfulSpacing.s3),
+                  rateButton(expand: true),
+                ],
+              )
+            : Row(
+                children: [
+                  // 3:2, not 1:1: the title keeps its line at 360 px and the
+                  // button only wraps its label (never the title and the
+                  // label both).
+                  Expanded(flex: 3, child: prompt),
+                  const SizedBox(width: WarmPlayfulSpacing.s3),
+                  Flexible(flex: 2, child: rateButton(expand: false)),
                 ],
               ),
-            ),
-            const SizedBox(width: WarmPlayfulSpacing.s3),
-            Flexible(
-              child: AppButton(
-                key: const Key('post_meal_card_rate_button'),
-                label: targetName != null ? 'Rate $targetName' : 'Rate',
-                expand: false,
-                onPressed: () => showRatingSheet(
-                  context,
-                  matchId: widget.matchId,
-                  targetUid: widget.targetUid,
-                  partnerName: targetName,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

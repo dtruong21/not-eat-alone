@@ -125,6 +125,17 @@ class SafetyActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the profiles that titles may name: `userDocProvider` is
+    // autoDispose, so without a watcher `_nameOf`'s read would start a fresh
+    // load (name unavailable) unless some other widget (chat title, meal
+    // detail's RatingBadge) happened to watch the same uid.
+    for (final uid in {
+      if (reportTargetType == 'user') reportTargetId,
+      if (secondaryReportTargetType == 'user') ?secondaryReportTargetId,
+      ?blockUid,
+    }) {
+      ref.watch(userDocProvider(uid));
+    }
     return PopupMenuButton<_SafetyAction>(
       key: const Key('safety_actions_menu'),
       icon: const Icon(Icons.more_vert_rounded),

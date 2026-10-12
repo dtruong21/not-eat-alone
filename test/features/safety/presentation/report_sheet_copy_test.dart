@@ -95,7 +95,12 @@ void main() {
       );
     });
 
-    testWidgets('selected reason label is readable ($b)', (tester) async {
+    // Regression guard: Flutter paints a selected ChoiceChip's label with the
+    // chip theme's secondaryLabelStyle (onAccent); this fails if the theme or
+    // the chip stops doing that and the label ends up unreadable on the fill.
+    testWidgets('selected reason label contrasts with its fill ($b)', (
+      tester,
+    ) async {
       final theme = await pump(tester, brightness: b);
       await tester.tap(find.byKey(const Key('report_reason_chip_spam')));
       await tester.pumpAndSettle();

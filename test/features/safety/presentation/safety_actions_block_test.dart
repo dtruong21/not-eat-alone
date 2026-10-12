@@ -22,6 +22,8 @@ void main() {
     WidgetTester tester, {
     String? name,
     Brightness brightness = Brightness.light,
+    bool neverLoads = false,
+    bool listenElsewhere = true,
   }) async {
     final theme = buildTheme(brightness);
     await tester.pumpWidget(
@@ -30,9 +32,13 @@ void main() {
           authRepositoryProvider.overrideWithValue(_MockAuth()),
           reportRepositoryProvider.overrideWithValue(_MockReports()),
           userDocProvider('them').overrideWith(
-            (ref) => Stream.value(
-              name == null ? null : AppUser(uid: 'them', displayName: name),
-            ),
+            (ref) => neverLoads
+                ? const Stream<AppUser?>.empty()
+                : Stream.value(
+                    name == null
+                        ? null
+                        : AppUser(uid: 'them', displayName: name),
+                  ),
           ),
         ],
         child: MaterialApp(
@@ -47,10 +53,12 @@ void main() {
         ),
       ),
     );
-    // Let the name stream emit, as it already has once chat shows the title.
-    ProviderScope.containerOf(
-      tester.element(find.byType(SafetyActions)),
-    ).listen(userDocProvider('them'), (_, _) {});
+    if (listenElsewhere) {
+      // As when chat shows the title / meal detail shows the RatingBadge.
+      ProviderScope.containerOf(
+        tester.element(find.byType(SafetyActions)),
+      ).listen(userDocProvider('them'), (_, _) {});
+    }
     await tester.pump();
     return theme;
   }
@@ -94,5 +102,20 @@ void main() {
     await pump(tester, name: 'Bastien');
     await choose(tester, 'safety_actions_report_item');
     expect(find.text('Report Bastien'), findsOneWidget);
+  });
+
+  testWidgets('profile still loading: fallback copy right away', (
+    tester,
+  ) async {
+    await pump(tester, neverLoads: true);
+    await choose(tester, 'safety_actions_block_item');
+    expect(find.text('Block this person?'), findsOneWidget);
+  });
+
+  testWidgets('names the person with no other widget watching the profile '
+      '(meal detail without its RatingBadge)', (tester) async {
+    await pump(tester, name: 'Bastien', listenElsewhere: false);
+    await choose(tester, 'safety_actions_block_item');
+    expect(find.text('Block Bastien?'), findsOneWidget);
   });
 }

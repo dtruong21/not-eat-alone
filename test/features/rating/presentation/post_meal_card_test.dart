@@ -62,7 +62,10 @@ void main() {
             child: child!,
           ),
           home: const Scaffold(
-            body: PostMealCard(matchId: 'm1', targetUid: 'them'),
+            // Scrollable like the chat list: the card takes its natural height.
+            body: SingleChildScrollView(
+              child: PostMealCard(matchId: 'm1', targetUid: 'them'),
+            ),
           ),
         ),
       ),
@@ -95,4 +98,48 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('post_meal_card_rate_button')), findsOneWidget);
   });
+
+  double cardHeight(WidgetTester tester) =>
+      tester.getSize(find.byKey(const Key('post_meal_card'))).height;
+
+  /// A single line of [style] is under 2 em high; two lines are over.
+  bool isOneLine(WidgetTester tester, String text, TextStyle style) =>
+      tester.getSize(find.text(text)).height < style.fontSize! * 2;
+
+  // Heights before the layout fix (measured with the 1:1 Row, name 'Bastien'):
+  // 108 at 360 px, 126 at 320 px, 358 at 320 px / 2.0x.
+  testWidgets('360 px: title on one line, card no taller than before', (
+    tester,
+  ) async {
+    await pump(tester, name: 'Bastien');
+    expect(
+      isOneLine(
+        tester,
+        'How was your meal?',
+        buildTheme(Brightness.light).textTheme.titleMedium!,
+      ),
+      isTrue,
+    );
+    expect(cardHeight(tester), lessThanOrEqualTo(108));
+  });
+
+  testWidgets('320 px: card shorter than before', (tester) async {
+    await pump(tester, name: 'Bastien', size: const Size(320, 640));
+    expect(tester.takeException(), isNull);
+    expect(cardHeight(tester), lessThanOrEqualTo(126));
+  });
+
+  for (final name in ['Bastien', 'Maximilian-Alexander von Hohenzollern']) {
+    testWidgets('320 px / 2.0x ($name): button drops below, card clearly '
+        'shorter than before (358)', (tester) async {
+      await pump(tester, name: name, scale: 2, size: const Size(320, 640));
+      expect(tester.takeException(), isNull);
+      final text = tester.getRect(find.text('How was your meal?'));
+      final button = tester.getRect(
+        find.byKey(const Key('post_meal_card_rate_button')),
+      );
+      expect(button.top, greaterThanOrEqualTo(text.bottom));
+      expect(cardHeight(tester), lessThan(358));
+    });
+  }
 }

@@ -154,13 +154,6 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                   ChoiceChip(
                     key: Key('report_reason_chip_${entry.key}'),
                     label: Text(entry.value),
-                    // The theme's label is dark brown, unreadable on the
-                    // dark-mode coral fill; onAccent is made for it.
-                    labelStyle: _reason == entry.key
-                        ? textTheme.bodySmall?.copyWith(
-                            color: context.wp.onAccent,
-                          )
-                        : null,
                     selected: _reason == entry.key,
                     onSelected: isSubmitting
                         ? null
