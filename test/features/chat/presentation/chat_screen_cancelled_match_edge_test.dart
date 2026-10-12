@@ -24,9 +24,9 @@ class _MockChat extends Mock implements ChatRepository {}
 /// "You're in!" / reminder push, or a chat that was open when it happened)
 /// must end in a clear "no longer available" state without an uncaught
 /// error, because uncaught async errors are reported to Crashlytics as FATAL.
-/// Bug: docs/bugs/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md
+/// Bug: docs/bugs/closed/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md
 const _bug =
-    'docs/bugs/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md';
+    'docs/bugs/closed/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md';
 
 void main() {
   late _MockAuth auth;
@@ -64,9 +64,7 @@ void main() {
           // The match no longer appears in the user's chat list.
           chatListProvider.overrideWith((ref) => Stream.value(const [])),
           chatMessagesProvider('m1').overrideWith(
-            (ref) => Stream<List<Never>>.error(
-              Exception('permission-denied'),
-            ),
+            (ref) => Stream<List<Never>>.error(Exception('permission-denied')),
           ),
         ],
         child: MaterialApp(
@@ -75,8 +73,9 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
-    await tester.pump();
+    // Skeleton on screen while loading: never pumpAndSettle (MASTER-SPEC 6).
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
   }
 
   testWidgets('opening the chat of a deleted match raises no uncaught error', (
@@ -84,15 +83,25 @@ void main() {
   ) async {
     await pump(tester);
     expect(tester.takeException(), isNull, reason: _bug);
-  }, skip: true); // open bug: see _bug
+  });
+
+  testWidgets('a deleted match says the chat is no longer available', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.textContaining('no longer available'), findsOneWidget);
+    expect(
+      find.byKey(const Key('chat_unavailable_back_button')),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('a deleted match no longer offers the composer', (tester) async {
     await pump(tester);
-    while (tester.takeException() != null) {}
     expect(
       find.byKey(const Key('message_composer_send_button')),
       findsNothing,
       reason: 'every send would be PERMISSION_DENIED. $_bug',
     );
-  }, skip: true); // open bug: see _bug
+  });
 }

@@ -130,10 +130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: otherUid == null
             ? null
             : [
-                LeaveMatchAction(
-                  matchId: widget.matchId,
-                  otherUid: otherUid,
-                ),
+                LeaveMatchAction(matchId: widget.matchId, otherUid: otherUid),
                 SafetyActions(
                   reportTargetType: 'user',
                   reportTargetId: otherUid,
@@ -185,11 +182,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             Expanded(
               child: messagesAsync.when(
+                // Riverpod auto-retries a failed stream: keep showing the error.
+                skipLoadingOnReload: true,
                 loading: () => const SkeletonMessages(),
-                error: (error, stackTrace) => ErrorState(
-                  onRetry: () =>
-                      ref.invalidate(chatMessagesProvider(widget.matchId)),
-                ),
+                error: (error, stackTrace) => !_isChatGone(error)
+                    ? ErrorState(
+                        onRetry: () => ref.invalidate(
+                          chatMessagesProvider(widget.matchId),
+                        ),
+                      )
+                    // Every read under a deleted match is denied: the chat is
+                    // gone (cancelled / account deleted).
+                    : Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'This chat is no longer available — the meal was '
+                                'cancelled.',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: WarmPlayfulSpacing.s3),
+                              FilledButton(
+                                key: const Key('chat_unavailable_back_button'),
+                                onPressed: () => context.go('/chats'),
+                                child: const Text('Back to chats'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                 data: (messages) {
                   if (messages.isEmpty) {
                     return const EmptyState(title: 'Say hi \u{1F44B}');
@@ -225,7 +250,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
             ),
-            MessageComposer(matchId: widget.matchId),
+            if (!(messagesAsync.hasError && _isChatGone(messagesAsync.error!)))
+              MessageComposer(matchId: widget.matchId),
           ],
         ),
       ),
@@ -253,10 +279,11 @@ class _ChatAppBarTitle extends ConsumerWidget {
           radius: WarmPlayfulSpacing.s4,
           backgroundColor: colors.surfaceContainerHighest,
           backgroundImage: photoUrl != null
-                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s4)
-                  : null,
-              onBackgroundImageError:
-                  photoUrl != null ? ignoreAvatarImageError : null,
+              ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s4)
+              : null,
+          onBackgroundImageError: photoUrl != null
+              ? ignoreAvatarImageError
+              : null,
           child: photoUrl == null
               ? Icon(
                   Icons.person_rounded,
@@ -283,3 +310,8 @@ class _ChatAppBarTitle extends ConsumerWidget {
     );
   }
 }
+
+/// Rules answer every read under a cancelled / deleted match with
+/// permission-denied (the participant check `get()`s a missing document).
+bool _isChatGone(Object error) =>
+    error.toString().contains('permission-denied');

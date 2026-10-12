@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:not_eat_alone/core/util/queued_write.dart';
@@ -22,9 +24,9 @@ class ChatController extends _$ChatController {
       state = await AsyncValue.guard(() async {
         final uid = ref.read(authRepositoryProvider).currentUser!.uid;
         await settleOrQueue(
-          ref.read(chatRepositoryProvider).sendMessage(
-                matchId: matchId, senderId: uid, text: text,
-              ),
+          ref
+              .read(chatRepositoryProvider)
+              .sendMessage(matchId: matchId, senderId: uid, text: text),
         );
         await analytics.track(const MessageSent());
       });
@@ -35,6 +37,15 @@ class ChatController extends _$ChatController {
 
   Future<void> markRead(String matchId) async {
     final uid = ref.read(authRepositoryProvider).currentUser!.uid;
-    await ref.read(chatRepositoryProvider).markRead(matchId: matchId, uid: uid);
+    try {
+      await ref
+          .read(chatRepositoryProvider)
+          .markRead(matchId: matchId, uid: uid);
+    } on Object catch (error) {
+      // Best-effort: the match may be gone (cancelled / account deleted), in
+      // which case rules deny the write. Never surface it as an uncaught
+      // (fatal) error.
+      developer.log('markRead failed', name: 'chat', error: error);
+    }
   }
 }
