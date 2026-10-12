@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/main_common.dart';
 
@@ -172,8 +173,8 @@ void main() {
 
     final approve = find.byKey(Key('request_inbox_approve_button_$requestId'));
     final deny = find.byKey(Key('request_inbox_deny_button_$requestId'));
-    expect(tester.widget<FilledButton>(approve).onPressed, isNull);
-    expect(tester.widget<OutlinedButton>(deny).onPressed, isNotNull);
+    expect(tester.widget<AppButton>(approve).onPressed, isNull);
+    expect(tester.widget<AppButton>(deny).onPressed, isNotNull);
 
     await tester.tap(deny);
     await _settle(tester);
@@ -239,7 +240,7 @@ void main() {
     expect(find.byKey(Key('request_inbox_past_chip_$requestId')), findsNothing);
 
     final approve = find.byKey(Key('request_inbox_approve_button_$requestId'));
-    expect(tester.widget<FilledButton>(approve).onPressed, isNotNull);
+    expect(tester.widget<AppButton>(approve).onPressed, isNotNull);
     await tester.tap(approve);
     await _settle(tester);
 
