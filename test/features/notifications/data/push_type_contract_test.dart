@@ -22,6 +22,8 @@ void main() {
       'message',
       'rate',
       'meal_reminder',
+      'match_left',
+      'meal_cancelled',
     });
   });
 

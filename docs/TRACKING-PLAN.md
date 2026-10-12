@@ -102,10 +102,11 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `chat_opened` | User opens a match's chat thread | — (No PII) | Chat engagement |
 | `message_sent` | User sends a chat message | — (No PII) | Chat engagement, messages per match |
 | `push_permission_granted` | OS notification-permission prompt is resolved (on registration attempt) | `granted: bool` (No PII — the device token is never sent as a property) | Push opt-in rate |
-| `push_opened` | User taps a push notification and the app opens/routes from it | `type: string` (push route type, e.g. `'match'`, `'message'`, `'meal_reminder'`) (No PII) | Push engagement, re-engagement funnel |
+| `push_opened` | User taps a push notification and the app opens/routes from it | `type: string` (push route type: `'message'`, `'request'`, `'request_update'`, `'rate'`, `'meal_reminder'`, `'match_left'`, `'meal_cancelled'`) (No PII) | Push engagement, re-engagement funnel |
 | `user_blocked` | User blocks another user | — (No PII) | Safety, block rate |
 | `user_reported` | User submits a report against a user, meal, or message | `target_type: string` (category — `'user'` \| `'meal'` \| `'message'`; No PII, no uid/target id) | Safety, report rate |
 | `account_deletion_requested` | User confirms account deletion from profile | — (No PII) | Account deletion rate, churn signal |
+| `meal_cancelled` | A host cancels, or a guest withdraws from, a matched meal ("Can't make it" in the chat) | `role: 'host' \| 'guest'` (No PII) | Show-up rate, cancellations per matched meal |
 | `post_meal_prompt_shown` | The post-meal rating prompt is shown for a completed match | — (No PII) | Rating prompt reach, funnel start |
 | `meal_rated` | User submits a rating for the other participant of a match | `stars: int` (1-5), `showed_up: bool` (No PII) | Rating completion rate, no-show rate |
 

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/features/chat/data/repositories/chat_repository_impl.dart';
@@ -34,6 +35,27 @@ void main() {
       () => repo.sendMessage(matchId: 'm1', senderId: 'u1', text: '   '),
       throwsA(anything),
     );
+  });
+
+  test('watchLastMessage emits only the newest message (or null)', () async {
+    expect(await repo.watchLastMessage('m1').first, isNull);
+
+    for (final text in ['first', 'second', 'third']) {
+      await db.collection('matches').doc('m1').collection('messages').add({
+        'matchId': 'm1',
+        'senderId': 'u1',
+        'text': text,
+        'createdAt': Timestamp.fromDate(
+          DateTime.utc(2026, 10, 1, 12).add(
+            Duration(minutes: ['first', 'second', 'third'].indexOf(text)),
+          ),
+        ),
+      });
+    }
+
+    final last = await repo.watchLastMessage('m1').first;
+
+    expect(last?.text, 'third');
   });
 
   test('watchMessages streams oldest-first', () async {

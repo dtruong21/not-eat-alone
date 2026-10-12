@@ -1,0 +1,36 @@
+# Weekly, grouped update PRs so dependency drift shows up as small reviewable
+# changes instead of a big-bang upgrade (e.g. the Node 20 -> 22 deadline).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /firebase/functions
+    schedule:
+      interval: weekly
+    groups:
+      functions-deps:
+        patterns: ['*']
+    # firebase-functions v7 is a breaking upgrade: do it deliberately, not via a bot PR.
+    ignore:
+      - dependency-name: firebase-functions
+        update-types: ['version-update:semver-major']
+  - package-ecosystem: npm
+    directory: /firebase/rules-test
+    schedule:
+      interval: weekly
+    groups:
+      rules-test-deps:
+        patterns: ['*']
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      pub-minor-patch:
+        update-types: ['minor', 'patch']

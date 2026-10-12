@@ -16,3 +16,5 @@
 **Frequency:** always.
 
 **Hypothesis:** `reports`: `keys().hasOnly([...])` + `reason.size() <= 500`. `messages`: `createdAt == request.time`. `ratings`: `keys().hasOnly(['id','matchId','raterUid','targetUid','stars','showedUp','comment','createdAt'])`. Storage: `env in ['stage','prod']`. Add `enforceAppCheck: true` to `deleteAccount` once App Check enforcement is switched on.
+
+**Status:** Fixed — rules: `reports` (whitelisted keys, reason <= 500, targetId <= 128), `messages` (whitelisted keys, `createdAt == request.time`), `ratings` (whitelisted keys, server `createdAt`; no client `aggregated`), Storage `env in [stage, prod]`; `deleteAccount` enforces App Check and only accepts `(default)`/`stage`. Tests: `firebase/rules-test/hardening.rules.test.cjs`. Accepted as-is: women-only meals are readable by any signed-in user (hiding is client-side; requests stay rule-gated by gender). Storage rule has no emulator test.

@@ -13,3 +13,5 @@
 **Frequency:** always for matched meals at deletion time.
 
 **Hypothesis:** In `delete_account.ts`, before deleting matches, query `meals where guestId == uid and status == 'matched'` and set them to `open` (clear `guestId`, clear `reminder24hSent/reminder2hSent/postMealNotified`) if still in the future, else `cancelled`; send the host a push ("Your match left Convyve"). Add the `cancelled` check to `mealReminder` (already filtered by `status == matched`). Add the case to `test/deletion_plan.test.ts`. Also add the missing guest-side notification for host deletion.
+
+**Status:** Fixed — `deleteAccount` first releases matched meals (`releaseMatchedMeals`): a departing GUEST reopens the host's future meal (status `open`, `guestId` cleared, reminder/post-meal flags cleared so reminders restart) or cancels it if the time has passed, and the host gets a `match_left` push; a departing HOST notifies the matched guest of a future meal (`meal_cancelled`) before the meals are deleted. Pure rules in `lib/matched_meals.ts` (unit-tested); behaviour verified on the Firestore emulator; pushes route to `/discover`. Push failures never block deletion.

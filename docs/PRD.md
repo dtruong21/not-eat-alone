@@ -41,6 +41,7 @@ A public restaurant at a fixed time keeps first meetings light, not a loaded dat
 - [x] Post-meal: confirm show-up and rate
 - [x] Push notifications: new request, approved/denied, new message, post-meal rating prompt
 - [x] Pre-meal reminders: push 24h and 2h before a matched meal — see Feature specs
+- [x] "Can't make it": cancel or withdraw from a matched meal — see Feature specs
 
 ### Pillar 3 — Trust & safety
 
@@ -166,8 +167,35 @@ As a person on Convyve, I want other users to see only my name, photo, bio, age 
 - Server-side age or identity verification (ID check, document upload) — v1 stays self-attested behind phone sign-in.
 - Hiding the 18+ gate from the owner's own device, or tamper-proof age (the owner can still lie about age before verification).
 - Age bands/ranges instead of exact age; per-field visibility settings; showing profiles only to matched users.
-- Other rule-hardening gaps from the same QA sweep (report payload limits, server-set message timestamps) — tracked in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`.
+- Other rule-hardening gaps from the same QA sweep (report payload limits, server-set message timestamps) — tracked in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`.
 - Changing women-only enforcement logic.
+
+---
+
+### Feature: Can't make it — cancel or withdraw from a matched meal
+Pillar: 2 — Low-pressure (the main no-show lever; also keeps meals from sitting `matched` with nobody coming)
+Status: in-MVP, smallest version: **matched, future meals only, from the match chat**
+
+**Verdict:** Plans change. Without a way out, the only alternatives are a silent no-show or a chat message that the app doesn't act on. The smallest version that closes the loop is one action in the place both people already coordinate: the match chat. Cancelling or withdrawing from an *unmatched* open meal is cut: it expires on its own, never reaches Discover once past, and would need a new "my meals" screen.
+
+**User story:**
+As the host or the guest of a matched meal, I want to say "I can't make it" so that the other person knows and isn't left waiting, and the meal doesn't stay matched with nobody coming.
+
+**Acceptance criteria:**
+- [ ] The chat shows a "Can't make it" action only while its meal is `matched` and in the future.
+- [ ] **Host** confirms -> the meal becomes `cancelled`, the match chat is closed, the guest gets a push ("The host cancelled this meal") that opens Discover.
+- [ ] **Guest** confirms -> the meal reopens (`open`, guest cleared, reminder flags reset so it gets fresh reminders when matched again), the guest's request and the match chat are removed, the host gets a push ("Your match withdrew - your meal is open again") that opens Discover.
+- [ ] Done by a server callable (`cancelMatchedMeal`); clients cannot change a matched meal themselves (rules unchanged). App Check enforced; only a participant of a `matched`, future meal can call it.
+- [ ] A confirmation dialog states the consequence for the other person; "Keep meal" dismisses without any change.
+- [ ] After success: snackbar "Meal cancelled." / "You've withdrawn." and navigation to the Chats tab.
+- [ ] Analytics: `meal_cancelled` with `role: 'host' | 'guest'` (in `docs/TRACKING-PLAN.md` first); no PII.
+- [ ] Empty: no action when the meal is not matched, already past, or still loading. Offline: the action fails fast with "Couldn't cancel. Check your connection and try again." (it is not queued - the other person must really be told). Error: same snackbar, the dialog closes, nothing changes.
+- [ ] Idempotent/safe: calling it twice, or after the other person already left, returns a clear error and changes nothing.
+
+**Out of scope (cut from this feature):**
+- Cancelling or withdrawing from unmatched open meals; a "my meals" screen.
+- Reasons, penalties/reputation effects, undo, re-matching the same pair, cancelling after the meal time.
+- Notifying people whose requests were denied or pending; editing a meal.
 
 ---
 
@@ -192,7 +220,7 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 Track here. Resolve before implementation, never during.
 
 - [ ] **Scope tension.** The approved v1 design (`docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md`) calls v1 "a complete, polished product" with a discovery map and Maps SDK; this PRD's rule zero says v1 is a minimum. Current call: list-only discovery + "Open in Maps" link-out, embedded map post-MVP. Confirm or re-scope before launch.
-- [x] **Moderation — decided 2026-10-09: ship the Paris soft launch without automated profanity/image moderation.** Mitigations in v1: host approves every join, report (user/meal/message) and block are always available, 18+ phone-verified accounts, small soft-launch audience. Revisit before any geo-expansion or after the first reported abuse. **Risk to watch:** Apple (Guideline 1.2) and Google Play user-generated-content rules expect a way to filter objectionable content as well as report/block and published contact info; a reviewer may reject the build. If so, the smallest fix is a server-side blocklist check on chat messages and profile text, not image moderation.
+- [x] **Moderation — decided 2026-10-09: ship the Paris soft launch without automated profanity/image moderation.** Mitigations in v1: host approves every join, report (user/meal/message) and block are always available, a self-declared 18+ age gate behind phone / Apple / Google sign-in (age is not independently verified), small soft-launch audience. Revisit before any geo-expansion or after the first reported abuse. **Risk to watch:** Apple (Guideline 1.2) and Google Play user-generated-content rules expect a way to filter objectionable content as well as report/block and published contact info; a reviewer may reject the build. If so, the smallest fix is a server-side blocklist check on chat messages and profile text, not image moderation.
 - [x] **Reminders — decided 2026-10-09: build the T-24h / T-2h meal reminders into v1** (no-show risk is the main liveness risk; see Feature specs).
 - [x] **North-star metric — defined 2026-10-09:** weekly completed meals (see `docs/TRACKING-PLAN.md`). Targets to be set after four weeks of soft-launch data.
 - [ ] **Persona.** Validate the target user with the first 20 beta testers (who they are, why they'd join a stranger's meal).

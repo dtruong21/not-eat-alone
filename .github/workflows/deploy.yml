@@ -1,84 +1,27 @@
-name: Deploy
+name: Release
 
-# Continuous delivery for the Firebase backend + GitHub releases.
+# Publishes a GitHub Release when a v* tag is pushed (tags live only on main).
 #
-# - Push to develop / main  -> deploy Firestore rules+indexes, Storage rules,
-#   and Cloud Functions to the single `not-eat-alone` project (shared across
-#   the (default) and stage databases). develop is the integration deploy;
-#   main re-asserts at release.
-# - Push of a v* tag        -> publish a GitHub Release (tags live only on main).
-#
-# Cloud Functions (region europe-west1) require the project to be on the
-# Firebase Blaze (pay-as-you-go) plan to deploy — see docs/CICD.md. If the
-# project is still on Spark, this step will fail even with valid credentials.
-#
-# Requires repo secret FIREBASE_SERVICE_ACCOUNT (a Firebase deploy service
-# account JSON, with the Cloud Functions Admin role in addition to the rules
-# roles). Until the secret is set, the deploy job exits green with a notice.
+# The Firebase backend deploy is NOT here any more: it runs from ci.yml after
+# the CI gate is green (see deploy-firebase.yml and docs/CICD.md).
 
 on:
   push:
-    branches:
-      - develop
-      - main
     tags:
       - 'v*'
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
-  deploy-firebase:
-    name: Deploy Firebase backend
-    # Only for branch pushes (not tag pushes).
-    if: startsWith(github.ref, 'refs/heads/')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check for deploy credentials
-        id: guard
-        env:
-          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          if [ -z "$SA" ]; then
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Deploy skipped::FIREBASE_SERVICE_ACCOUNT secret not set — skipping Firebase deploy."
-          else
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Setup Node
-        if: steps.guard.outputs.present == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Write service account
-        if: steps.guard.outputs.present == 'true'
-        env:
-          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          printf '%s' "$SA" > "$RUNNER_TEMP/firebase-sa.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
-
-      - name: Install functions deps
-        if: steps.guard.outputs.present == 'true'
-        run: npm --prefix firebase/functions ci
-
-      - name: Deploy Firestore + Storage + Functions
-        if: steps.guard.outputs.present == 'true'
-        run: |
-          npx --yes firebase-tools@13 deploy \
-            --only firestore,storage,functions \
-            --project not-eat-alone \
-            --non-interactive
-
   github-release:
     name: Publish GitHub Release
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:

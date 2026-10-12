@@ -312,6 +312,29 @@ English, 24-hour clock, day before month, always in the viewer's LOCAL time (`li
 
 Added via `/design`.
 
+### Chat — "Can't make it" action
+
+**Screen:** Chat (`/chats/:matchId`) app bar. No new screen or route.
+**Purpose:** Let the host or guest of a matched, future meal withdraw cleanly. PRD: "Can't make it - cancel or withdraw from a matched meal". Analytics: `meal_cancelled`.
+
+**Layout:** a trailing `IconButton` (Material `Icons.event_busy_outlined`, tooltip "Can't make it") in the app bar `actions`, left of the existing safety menu. Tap opens an `AlertDialog`:
+- Title: host "Cancel this meal?" / guest "Withdraw from this meal?"
+- Body: host "<name> will be told and the meal will be removed." / guest "<name> will be told and the meal will open up again for others."
+- Actions: `TextButton` "Keep meal" (default/dismiss) and a destructive `TextButton` "Cancel meal" / "Withdraw" (`colorScheme.error` label, matching the Delete-account dialog).
+
+**Widgets:** reused `IconButton`, `AlertDialog`, `ScaffoldMessenger` snackbar; no new tokens.
+
+**States**
+- Hidden: meal not `matched`, time passed, or the meal is still loading/missing.
+- Confirming: dialog above. While the callable runs the destructive button shows a small spinner and is disabled (same pattern as other in-flight buttons); dialog cannot be dismissed by tapping outside.
+- Success: dialog closes, snackbar "Meal cancelled." / "You've withdrawn.", navigate to `/chats`.
+- Error/offline: dialog closes, snackbar "Couldn't cancel. Check your connection and try again."; chat unchanged.
+- Dark mode and large text: theme colors only; the dialog wraps at 2.0x and scrolls if needed.
+
+**Accessibility:** icon button has `tooltip` (read by screen readers) as "Can't make it", >= 48dp; dialog title is announced; destructive action is a text label, not color alone.
+
+---
+
 ### Meal detail — "Open in Maps" action
 
 **Screen:** Meal detail (restaurant card addition). No new screen.

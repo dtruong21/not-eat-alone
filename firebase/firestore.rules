@@ -294,7 +294,11 @@ service cloud.firestore {
 
       match /messages/{messageId} {
         allow read: if matchParticipant(matchId);
+        // `createdAt` is the server time (orders the thread and drives "Seen"),
+        // never a client-chosen value.
         allow create: if isSignedIn()
+                      && request.resource.data.keys().hasOnly(['matchId', 'senderId', 'text', 'createdAt'])
+                      && request.resource.data.createdAt == request.time
                       && request.resource.data.senderId == request.auth.uid
                       && request.resource.data.text is string
                       && request.resource.data.text.size() > 0
@@ -324,9 +328,18 @@ service cloud.firestore {
     }
 
     match /reports/{reportId} {
+      // Whitelisted keys and a size cap: a report is a small structured record,
+      // not a free-form blob (the app writes exactly these keys).
       allow create: if isSignedIn()
+                    && request.resource.data.keys().hasOnly(['reporterId', 'targetType', 'targetId', 'reason', 'status', 'createdAt'])
                     && request.resource.data.reporterId == request.auth.uid
-                    && request.resource.data.targetType in ['user', 'meal', 'message'];
+                    && request.resource.data.targetType in ['user', 'meal', 'message']
+                    && request.resource.data.targetId is string
+                    && request.resource.data.targetId.size() <= 128
+                    && (!('reason' in request.resource.data)
+                        || request.resource.data.reason == null
+                        || (request.resource.data.reason is string
+                            && request.resource.data.reason.size() <= 500));
       allow read, update, delete: if false;
     }
 
@@ -347,6 +360,11 @@ service cloud.firestore {
       // Doc id pinned to `{matchId}_{callerUid}` (the id the app writes): one
       // rating per rater per match, and no squatting another rater's id.
       allow create: if isSignedIn()
+                    // Exactly the keys the app writes: no client-set `aggregated`
+                    // (the aggregation function's idempotency flag) or other extras,
+                    // and a server `createdAt`.
+                    && request.resource.data.keys().hasOnly(['id', 'matchId', 'raterUid', 'targetUid', 'stars', 'showedUp', 'comment', 'createdAt'])
+                    && request.resource.data.createdAt == request.time
                     && ratingId == request.resource.data.matchId + '_' + request.auth.uid
                     && request.resource.data.raterUid == request.auth.uid
                     && request.resource.data.raterUid != request.resource.data.targetUid
