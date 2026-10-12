@@ -10,8 +10,8 @@
 /// women-only meals for non-women viewers, so this is a defensive
 /// double-check, not new logic).
 ///
-/// Carries the sign-out action (moved from the old `PlaceholderHome`) and
-/// the "Create a meal" entry point into meal creation (`/meals/new`).
+/// Carries the "Create a meal" entry point into meal creation (`/meals/new`)
+/// as both the FAB and the empty state's action. Sign-out lives in Settings.
 /// Pull-to-refresh invalidates [locationProvider] — [discoveryControllerProvider]
 /// watches it, so a fresh location re-runs the geohash-scoped query.
 library;
@@ -28,16 +28,15 @@ import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
 import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
-import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
 import 'package:not_eat_alone/features/meal/presentation/widgets/paris_notice.dart';
-import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
@@ -45,10 +44,18 @@ import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 String _formatDistance(double distanceMeters) =>
     '${(distanceMeters / 1000).toStringAsFixed(1)} km';
 
-class DiscoveryScreen extends ConsumerWidget {
+class DiscoveryScreen extends ConsumerStatefulWidget {
   const DiscoveryScreen({super.key});
 
-  Future<void> _onRefresh(WidgetRef ref) async {
+  @override
+  ConsumerState<DiscoveryScreen> createState() => _DiscoveryScreenState();
+}
+
+class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
+  // Per session only: remembering it across launches needs shared_preferences.
+  bool _noticeDismissed = false;
+
+  Future<void> _onRefresh() async {
     ref
       ..invalidate(locationProvider)
       ..invalidate(discoveryControllerProvider);
@@ -58,107 +65,122 @@ class DiscoveryScreen extends ConsumerWidget {
     await ref.read(locationProvider.future);
   }
 
-  /// Best-effort token cleanup before sign-out: a failure here (offline,
-  /// Firestore rules edge case, etc.) must never block the user from signing
-  /// out — a stale token doc means, at worst, one failed push send later.
-  ///
-  /// Mirrors `settings_screen.dart`'s `_signOut` (unregister token, track
-  /// `SignoutCompleted`, sign out) so the sign-out analytics event fires
-  /// regardless of which entry point the user taps.
-  Future<void> _onSignOut(WidgetRef ref) async {
-    // `authRepository.currentUser` (synchronous) rather than
-    // `authStateProvider.value` — the latter is a `StreamProvider` that may
-    // still be `AsyncLoading` (uid `null`) at the moment of the tap if
-    // nothing else has watched it yet to prime the stream subscription.
-    // Everything is read from `ref` BEFORE the first await: this is a
-    // `ConsumerWidget`, so `ref` is bound to the element and reading it after
-    // an await throws if the widget unmounted meanwhile (e.g. the unregister
-    // call below changing what the screen shows). The captured repository /
-    // notifier stay usable for the rest of the flow.
-    final auth = ref.read(authRepositoryProvider);
-    final push = ref.read(pushRegistrationControllerProvider.notifier);
-    final uid = auth.currentUser?.uid;
-    if (uid != null) {
-      try {
-        await push.unregister(uid);
-      } on Exception {
-        // Ignored — see doc comment above.
-      }
-    }
-    await analytics.track(const SignoutCompleted());
-    await auth.signOut();
-  }
-
-  Future<void> _onTapMeal(BuildContext context, DiscoverableMeal item) async {
+  Future<void> _onTapMeal(DiscoverableMeal item) async {
     await analytics.track(MealOpened(womenOnly: item.meal.womenOnly));
-    if (!context.mounted) return;
+    if (!mounted) return;
     await context.push('/meals/detail', extra: item.meal);
   }
 
+  void _createMeal() => unawaited(context.push('/meals/new'));
+
+  Widget _notice() =>
+      ParisNotice(onDismiss: () => setState(() => _noticeDismissed = true));
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final state = ref.watch(discoveryControllerProvider);
     final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
 
-    final contentBody = state.when(
-      loading: () => const SkeletonList(),
-      error: (error, stackTrace) => ErrorState(
-        // Same path as pull-to-refresh: also re-reads the location, so a
-        // cached upstream error cannot make Try again a dead button.
-        onRetry: () => unawaited(_onRefresh(ref)),
-      ),
-      data: (meals) => meals.isEmpty
-          ? const EmptyState(
-              icon: Icons.restaurant_rounded,
-              title: 'No meals near you yet',
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: meals.length,
-              separatorBuilder: (context, index) =>
-                  const SizedBox(height: WarmPlayfulSpacing.s3),
-              itemBuilder: (context, index) {
-                final item = meals[index];
-                return _MealCard(
-                  key: Key('discovery_meal_card_${item.meal.id}'),
-                  item: item,
-                  showWomenOnlyBadge:
-                      item.meal.womenOnly && viewerGender == Gender.woman,
-                  onTap: () => _onTapMeal(context, item),
-                );
-              },
-            ),
-    );
-
-    final body = Column(
+    // Loading / empty / error: the shared state widget under the notice.
+    Widget stateBody(Widget child) => Column(
       children: [
-        const ParisNotice(),
-        Expanded(child: contentBody),
+        if (!_noticeDismissed)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              WarmPlayfulSpacing.s4,
+              WarmPlayfulSpacing.s4,
+              WarmPlayfulSpacing.s4,
+              0,
+            ),
+            child: _notice(),
+          ),
+        Expanded(child: child),
       ],
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(FlavorConfig.current.appTitle),
-        actions: [
-          IconButton(
-            key: const Key('discovery_sign_out_button'),
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () => _onSignOut(ref),
+    final body = state.when(
+      loading: () => stateBody(const SkeletonList()),
+      error: (error, stackTrace) => stateBody(
+        ErrorState(
+          // Same path as pull-to-refresh: also re-reads the location, so a
+          // cached upstream error cannot make Try again a dead button.
+          onRetry: () => unawaited(_onRefresh()),
+        ),
+      ),
+      data: (meals) {
+        if (meals.isEmpty) {
+          return stateBody(
+            EmptyState(
+              icon: Icons.restaurant_rounded,
+              title: 'No meals nearby yet',
+              message: 'Be the first: host a meal and someone will join.',
+              action: AppButton(
+                key: const Key('discovery_empty_create_button'),
+                label: 'Create a meal',
+                onPressed: _createMeal,
+              ),
+            ),
+          );
+        }
+        final lead = _noticeDismissed ? 0 : 1;
+        final count = meals.length + lead;
+        return ListView.builder(
+          // Clears the extended FAB so the last card is never hidden by it.
+          padding: const EdgeInsets.fromLTRB(
+            WarmPlayfulSpacing.s4,
+            WarmPlayfulSpacing.s4,
+            WarmPlayfulSpacing.s4,
+            WarmPlayfulSize.actionHeight + WarmPlayfulSpacing.s8,
           ),
-        ],
-      ),
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: count,
+          itemBuilder: (context, index) {
+            final Widget child;
+            if (index < lead) {
+              child = _notice();
+            } else {
+              final item = meals[index - lead];
+              child = _MealCard(
+                key: Key('discovery_meal_card_${item.meal.id}'),
+                item: item,
+                showWomenOnlyBadge:
+                    item.meal.womenOnly && viewerGender == Gender.woman,
+                onTap: () => unawaited(_onTapMeal(item)),
+              );
+            }
+            return index == count - 1
+                ? child
+                : Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: WarmPlayfulSpacing.s3,
+                    ),
+                    child: child,
+                  );
+          },
+        );
+      },
+    );
+
+    final isEmpty = state.when(
+      data: (meals) => meals.isEmpty,
+      loading: () => false,
+      error: (error, stackTrace) => false,
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: Text(FlavorConfig.current.appTitle)),
       body: SafeArea(
-        child: RefreshIndicator(onRefresh: () => _onRefresh(ref), child: body),
+        child: RefreshIndicator(onRefresh: _onRefresh, child: body),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('discovery_create_meal_button'),
-        onPressed: () => context.push('/meals/new'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Create a meal'),
-      ),
+      // The empty state has its own Create a meal button: no second one.
+      floatingActionButton: isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              key: const Key('discovery_create_meal_button'),
+              onPressed: _createMeal,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Create a meal'),
+            ),
     );
   }
 }
@@ -196,31 +218,33 @@ class _MealCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              // Wrap, not Row: at large text scales the badge drops under
+              // the name instead of overflowing.
+              Wrap(
+                spacing: WarmPlayfulSpacing.s2,
+                runSpacing: WarmPlayfulSpacing.s1,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Expanded(
-                    child: Text(
-                      meal.restaurant.name,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: WarmPlayfulType.h2Weight,
-                      ),
+                  Text(
+                    meal.restaurant.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: WarmPlayfulType.h2Weight,
                     ),
                   ),
-                  if (showWomenOnlyBadge) ...[
-                    const SizedBox(width: WarmPlayfulSpacing.s2),
-                    const _WomenOnlyBadge(),
-                  ],
+                  if (showWomenOnlyBadge) const _WomenOnlyBadge(),
                 ],
               ),
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
-                formatMealDateTime(meal.dateTime),
-                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
-              ),
-              const SizedBox(height: WarmPlayfulSpacing.s1),
-              Text(
-                _formatDistance(item.distanceMeters),
+                '${formatMealDateTime(meal.dateTime)} · '
+                '${_formatDistance(item.distanceMeters)}',
+                // Two lines: at large text the distance wraps instead of
+                // being cut off.
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s3),
@@ -306,9 +330,13 @@ class _HostInfo extends ConsumerWidget {
                   : null,
             ),
             const SizedBox(width: WarmPlayfulSpacing.s2),
-            Text(
-              host?.displayName ?? 'Host',
-              style: textTheme.bodyMedium?.copyWith(color: colors.onSurface),
+            Flexible(
+              child: Text(
+                host?.displayName ?? 'Host',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodyMedium?.copyWith(color: colors.onSurface),
+              ),
             ),
           ],
         );

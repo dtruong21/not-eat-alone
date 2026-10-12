@@ -88,7 +88,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(Brightness.light),
-        home: const Scaffold(body: ParisNotice()),
+        home: Scaffold(body: ParisNotice(onDismiss: () {})),
       ),
     );
     expect(

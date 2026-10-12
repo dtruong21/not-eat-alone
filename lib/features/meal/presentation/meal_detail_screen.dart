@@ -4,38 +4,28 @@
 /// (photo/name/derived age/bio via `UserRepository.watch(hostId)`),
 /// date/time, note (if any), and a "Women only" badge when applicable.
 ///
-/// Carries the live "Request to join" control (`_RequestAction`), driven by
-/// `mealRequestStateProvider(meal.id)`: enabled "Request to join" when the
-/// viewer has no request yet, disabled "Requested" while pending, a
-/// "Matched!" banner once approved, disabled "Not selected" once denied, and
-/// nothing (a "Your meal" chip) when the viewer is the host — a host never
-/// requests their own meal. A non-woman viewer on a women-only meal instead
-/// sees a disabled button with a "This meal is women-only." note.
+/// The request control lives in the pinned [MealActionBar] (bottom bar), not
+/// in the scroll body.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
-import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
-import 'package:not_eat_alone/features/matching/application/create_request_controller.dart';
-import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
-import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
 import 'package:not_eat_alone/features/meal/application/maps_launcher_provider.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/features/meal/presentation/widgets/meal_action_bar.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
-import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
 class MealDetailScreen extends ConsumerWidget {
   const MealDetailScreen({required this.meal, super.key});
@@ -53,6 +43,7 @@ class MealDetailScreen extends ConsumerWidget {
         title: const Text('Meal details'),
         actions: [_MealSafetyActions(meal: meal)],
       ),
+      bottomNavigationBar: MealActionBar(meal: meal),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
@@ -117,8 +108,6 @@ class MealDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s3),
               _HostBlock(hostId: meal.hostId),
-              const SizedBox(height: WarmPlayfulSpacing.s6),
-              _RequestAction(meal: meal),
             ],
           ),
         ),
@@ -127,11 +116,10 @@ class MealDetailScreen extends ConsumerWidget {
   }
 }
 
-/// The app bar's safety menu for meal detail — always offers reporting the
-/// meal, and (only when the viewer isn't the meal's own host) also reporting
-/// and blocking the host. Reporting a user is otherwise only reachable from
-/// chat, post-match, so this is the only pre-match safety entry point for a
-/// bad host seen in discovery.
+/// The app bar's safety menu for meal detail — reporting the meal and
+/// reporting/blocking the host; hidden when the viewer is the meal's host.
+/// Reporting a user is otherwise only reachable from chat, post-match, so this
+/// is the only pre-match safety entry point for a bad host seen in discovery.
 class _MealSafetyActions extends ConsumerWidget {
   const _MealSafetyActions({required this.meal});
 
@@ -140,16 +128,19 @@ class _MealSafetyActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewerUid = ref.watch(authStateProvider).value?.uid;
-    final isHost = viewerUid != null && viewerUid == meal.hostId;
+    // Nothing to report or block on your own meal.
+    if (viewerUid != null && viewerUid == meal.hostId) {
+      return const SizedBox.shrink();
+    }
 
     return SafetyActions(
       reportTargetType: 'meal',
       reportTargetId: meal.id,
-      reportLabel: isHost ? 'Report' : 'Report this meal',
-      secondaryReportTargetType: isHost ? null : 'user',
-      secondaryReportTargetId: isHost ? null : meal.hostId,
+      reportLabel: 'Report this meal',
+      secondaryReportTargetType: 'user',
+      secondaryReportTargetId: meal.hostId,
       secondaryReportLabel: 'Report host',
-      blockUid: isHost ? null : meal.hostId,
+      blockUid: meal.hostId,
       blockLabel: 'Block host',
     );
   }
@@ -322,282 +313,6 @@ class _HostBlock extends ConsumerWidget {
           ],
         );
       },
-    );
-  }
-}
-
-/// The live "Request to join" control. Switches on whether the viewer is the
-/// meal's host (read via [authStateProvider]) and, if not, on
-/// [mealRequestStateProvider]'s `AsyncValue<JoinRequest?>` for this meal — a
-/// host never requests their own meal, so that case short-circuits before
-/// touching the request stream at all. A non-woman viewer on a
-/// [Meal.womenOnly] meal is blocked next, client-side, before ever touching
-/// the request stream — mirrors the women-only check the Firestore rules
-/// enforce server-side on `requests/{id}` create.
-class _RequestAction extends ConsumerWidget {
-  const _RequestAction({required this.meal});
-
-  final Meal meal;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final viewerUid = ref.watch(authStateProvider).value?.uid;
-    if (viewerUid != null && viewerUid == meal.hostId) {
-      return const _YourMealChip();
-    }
-
-    final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
-    if (meal.womenOnly && viewerGender != Gender.woman) {
-      return const _WomenOnlyGuard();
-    }
-
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final requestState = ref.watch(mealRequestStateProvider(meal.id));
-
-    return requestState.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Column(
-        children: [
-          Text(
-            'Something went wrong — please try again.',
-            textAlign: TextAlign.center,
-            style: textTheme.bodyMedium?.copyWith(color: colors.error),
-          ),
-          const SizedBox(height: WarmPlayfulSpacing.s2),
-          TextButton(
-            key: const Key('meal_detail_request_retry_button'),
-            onPressed: () => ref.invalidate(mealRequestStateProvider(meal.id)),
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
-      data: (request) {
-        if (request == null) {
-          return _RequestToJoinButton(meal: meal);
-        }
-        return switch (request.status) {
-          RequestStatus.pending => _RequestedState(
-            colors: colors,
-            textTheme: textTheme,
-          ),
-          RequestStatus.approved => _MatchedBanner(
-            colors: colors,
-            textTheme: textTheme,
-            // matchId == mealId: `matches/{mealId}` is the hand-off doc
-            // Plan 6's approve transaction writes (see `docs/PRD.md §
-            // Matching`), so the meal's own id is the chat route param.
-            mealId: meal.id,
-          ),
-          RequestStatus.denied => _NotSelectedState(
-            colors: colors,
-            textTheme: textTheme,
-          ),
-        };
-      },
-    );
-  }
-}
-
-/// Enabled "Request to join" button; disables itself and shows a spinner
-/// while [createRequestControllerProvider] is submitting, and surfaces a
-/// SnackBar if the write fails — the button re-enabling on its own isn't
-/// feedback enough.
-class _RequestToJoinButton extends ConsumerWidget {
-  const _RequestToJoinButton({required this.meal});
-
-  final Meal meal;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Error transition (loading -> error): guarded on that edge so this
-    // fires exactly once per failed submit, never on every rebuild.
-    ref.listen<AsyncValue<void>>(createRequestControllerProvider, (
-      previous,
-      next,
-    ) {
-      if (previous?.isLoading == true && next.hasError) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Couldn't send your request. Try again."),
-          ),
-        );
-      }
-    });
-
-    final isSubmitting = ref.watch(createRequestControllerProvider).isLoading;
-
-    return AppButton(
-      label: 'Request to join',
-      loadingLabel: 'Sending request…',
-      isLoading: isSubmitting,
-      key: const Key('meal_detail_request_to_join_button'),
-      onPressed: isSubmitting
-          ? null
-          : () => ref
-                .read(createRequestControllerProvider.notifier)
-                .request(meal),
-    );
-  }
-}
-
-/// Disabled "Requested" button + a "Waiting for the host" hint — rendered
-/// while the viewer's request on this meal is [RequestStatus.pending].
-class _RequestedState extends StatelessWidget {
-  const _RequestedState({required this.colors, required this.textTheme});
-
-  final ColorScheme colors;
-  final TextTheme textTheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        FilledButton(
-          key: const Key('meal_detail_requested_button'),
-          onPressed: null,
-          child: const Text('Requested'),
-        ),
-        const SizedBox(height: WarmPlayfulSpacing.s1),
-        Text(
-          'Waiting for the host',
-          textAlign: TextAlign.center,
-          style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
-        ),
-      ],
-    );
-  }
-}
-
-/// "Matched!" banner — rendered once the viewer's request on this meal is
-/// [RequestStatus.approved]. Tapping it deep-links into the chat for this
-/// match (`matchId == mealId`, see `router.dart`'s `/chats/:matchId`).
-class _MatchedBanner extends StatelessWidget {
-  const _MatchedBanner({
-    required this.colors,
-    required this.textTheme,
-    required this.mealId,
-  });
-
-  final ColorScheme colors;
-  final TextTheme textTheme;
-  final String mealId;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: colors.tertiaryContainer,
-      borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-      child: InkWell(
-        key: const Key('meal_detail_matched_banner'),
-        borderRadius: BorderRadius.circular(WarmPlayfulRadius.lg),
-        onTap: () => context.push('/chats/$mealId'),
-        child: Padding(
-          padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-          child: Column(
-            children: [
-              Text(
-                'Matched!',
-                style: textTheme.titleMedium?.copyWith(
-                  color: colors.onTertiaryContainer,
-                  fontWeight: WarmPlayfulType.h2Weight,
-                ),
-              ),
-              const SizedBox(height: WarmPlayfulSpacing.s1),
-              Text(
-                'Tap to start chatting',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colors.onTertiaryContainer,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Disabled "Not selected" button — rendered once the viewer's request on
-/// this meal is [RequestStatus.denied].
-class _NotSelectedState extends StatelessWidget {
-  const _NotSelectedState({required this.colors, required this.textTheme});
-
-  final ColorScheme colors;
-  final TextTheme textTheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton(
-      key: const Key('meal_detail_not_selected_button'),
-      onPressed: null,
-      child: const Text('Not selected'),
-    );
-  }
-}
-
-/// Disabled request button + note shown when a non-woman viewer opens a
-/// [Meal.womenOnly] meal — a client-side mirror of the women-only check the
-/// Firestore rules enforce server-side on `requests/{id}` create.
-class _WomenOnlyGuard extends StatelessWidget {
-  const _WomenOnlyGuard();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Column(
-      children: [
-        FilledButton(
-          key: const Key('meal_detail_women_only_disabled_button'),
-          onPressed: null,
-          child: const Text('Request to join'),
-        ),
-        const SizedBox(height: WarmPlayfulSpacing.s1),
-        Text(
-          'This meal is women-only.',
-          key: const Key('meal_detail_women_only_note'),
-          textAlign: TextAlign.center,
-          style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
-        ),
-      ],
-    );
-  }
-}
-
-/// Subtle chip shown instead of a request button when the viewer is the
-/// meal's host — a host never requests their own meal.
-class _YourMealChip extends StatelessWidget {
-  const _YourMealChip();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Container(
-        key: const Key('meal_detail_your_meal_chip'),
-        padding: const EdgeInsets.symmetric(
-          horizontal: WarmPlayfulSpacing.s3,
-          vertical: WarmPlayfulSpacing.s2,
-        ),
-        decoration: BoxDecoration(
-          color: colors.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
-        ),
-        child: Text(
-          'Your meal',
-          style: textTheme.bodySmall?.copyWith(
-            color: context.wp.muted,
-            fontWeight: WarmPlayfulType.captionWeight,
-          ),
-        ),
-      ),
     );
   }
 }

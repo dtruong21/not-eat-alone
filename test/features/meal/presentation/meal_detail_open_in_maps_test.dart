@@ -75,6 +75,9 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
+    // Drains the bar skeleton's zero-length animate timer (never pumpAndSettle
+    // with a skeleton on screen).
+    await tester.pump(const Duration(milliseconds: 50));
   }
 
   testWidgets('shows the action for a meal with real coordinates', (

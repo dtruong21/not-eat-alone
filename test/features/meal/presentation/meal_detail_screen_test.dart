@@ -85,6 +85,9 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
+    // Drains the bar skeleton's zero-length animate timer (never pumpAndSettle
+    // with a skeleton on screen).
+    await tester.pump(const Duration(milliseconds: 50));
   }
 
   testWidgets('renders restaurant name and address', (tester) async {
@@ -130,17 +133,11 @@ void main() {
     },
   );
 
-  testWidgets(
-    'host viewing their own meal sees no "Report host" / "Block host"',
-    (tester) async {
-      await pumpDetail(tester, viewerUid: 'host1');
+  testWidgets('host viewing their own meal sees no safety menu', (
+    tester,
+  ) async {
+    await pumpDetail(tester, viewerUid: 'host1');
 
-      await tester.tap(find.byKey(const Key('safety_actions_menu')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Report'), findsOneWidget);
-      expect(find.text('Report host'), findsNothing);
-      expect(find.text('Block host'), findsNothing);
-    },
-  );
+    expect(find.byKey(const Key('safety_actions_menu')), findsNothing);
+  });
 }

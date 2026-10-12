@@ -22,6 +22,12 @@ class MockAccountRepository extends Mock implements AccountRepository {}
 
 class MockPushRepository extends Mock implements PushRepository {}
 
+MockPushRepository _quietPushRepository() {
+  final push = MockPushRepository();
+  when(() => push.unregisterCurrentToken(any())).thenAnswer((_) async {});
+  return push;
+}
+
 void main() {
   late MockAuthRepository authRepository;
   late MockAccountRepository accountRepository;
@@ -49,8 +55,10 @@ void main() {
           ),
           authRepositoryProvider.overrideWithValue(authRepository),
           accountRepositoryProvider.overrideWithValue(accountRepository),
-          if (pushRepository != null)
-            pushRepositoryProvider.overrideWithValue(pushRepository),
+          // Always overridden: the real repository needs a Firebase app.
+          pushRepositoryProvider.overrideWithValue(
+            pushRepository ?? _quietPushRepository(),
+          ),
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
@@ -101,6 +109,101 @@ void main() {
     },
   );
 
+  testWidgets('sign out asks first: cancel does nothing', (tester) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.byKey(const Key('settings_sign_out')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign out?'), findsOneWidget);
+    verifyNever(() => authRepository.signOut());
+
+    await tester.tap(find.byKey(const Key('settings_sign_out_cancel')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign out?'), findsNothing);
+    verifyNever(() => authRepository.signOut());
+  });
+
+  testWidgets('confirming sign-out unregisters the push token of the signed-in '
+      'user exactly once, then signs out', (tester) async {
+    final pushRepository = MockPushRepository();
+    when(() => pushRepository.unregisterCurrentToken(any()))
+        .thenAnswer((_) async {});
+    when(() => authRepository.currentUser)
+        .thenReturn(const AuthUser(uid: 'u1'));
+    await pumpSettings(tester, pushRepository: pushRepository);
+
+    await tester.tap(find.byKey(const Key('settings_sign_out')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('settings_sign_out_confirm')));
+    await tester.pump();
+    await tester.pump();
+
+    verify(() => pushRepository.unregisterCurrentToken('u1')).called(1);
+    verify(() => authRepository.signOut()).called(1);
+  });
+
+  testWidgets('confirming the sign-out dialog signs out once, no spinner', (
+    tester,
+  ) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.byKey(const Key('settings_sign_out')));
+    await tester.pumpAndSettle();
+    expect(find.byType(FilledButton), findsOneWidget);
+    await tester.tap(find.byKey(const Key('settings_sign_out_confirm')));
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    verify(() => authRepository.signOut()).called(1);
+  });
+
+  testWidgets(
+    'screen unmounting while the confirm dialog is open: confirming still '
+    'signs out (repository read before the dialog), no exception',
+    (tester) async {
+      final pushRepository = MockPushRepository();
+      when(() => pushRepository.unregisterCurrentToken(any()))
+          .thenAnswer((_) async {});
+      when(() => authRepository.currentUser)
+          .thenReturn(const AuthUser(uid: 'u1'));
+      final showSettings = ValueNotifier(true);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appVersionProvider.overrideWith((ref) async => 'v1'),
+            authRepositoryProvider.overrideWithValue(authRepository),
+            accountRepositoryProvider.overrideWithValue(accountRepository),
+            pushRepositoryProvider.overrideWithValue(pushRepository),
+          ],
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light),
+            home: ValueListenableBuilder<bool>(
+              valueListenable: showSettings,
+              builder: (context, show, _) =>
+                  show ? const SettingsScreen() : const SizedBox(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('settings_sign_out')));
+      await tester.pumpAndSettle();
+
+      // The dialog route outlives the screen (e.g. a session redirect).
+      showSettings.value = false;
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('settings_sign_out_confirm')));
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      verify(() => pushRepository.unregisterCurrentToken('u1')).called(1);
+      verify(() => authRepository.signOut()).called(1);
+    },
+  );
+
   testWidgets(
     'sign out survives the screen unmounting while the token unregister is '
     'in flight (no ref read after the await) and still signs out',
@@ -115,6 +218,8 @@ void main() {
       await pumpSettings(tester, pushRepository: pushRepository);
 
       await tester.tap(find.byKey(const Key('settings_sign_out')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('settings_sign_out_confirm')));
       await tester.pump();
 
       // Unmount the whole tree (disposing the screen's ref) mid-flight.

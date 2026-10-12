@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
@@ -119,6 +120,9 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
+    // Drains the bar skeleton's zero-length animate timer (never pumpAndSettle
+    // with a skeleton on screen).
+    await tester.pump(const Duration(milliseconds: 50));
   }
 
   for (final b in Brightness.values) {
@@ -159,29 +163,29 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('pending request -> disabled "Requested" + host hint',
+  testWidgets('pending request -> disabled "Requested" + waiting status',
       (tester) async {
     await pumpWith(tester, viewerUid: 'guest1', request: _pendingRequest);
 
-    final button = tester.widget<FilledButton>(
+    final button = tester.widget<AppButton>(
       find.byKey(const Key('meal_detail_requested_button')),
     );
     expect(find.text('Requested'), findsOneWidget);
     expect(button.onPressed, isNull);
-    expect(find.text('Waiting for the host'), findsOneWidget);
+    expect(find.text('Waiting for the host to reply.'), findsOneWidget);
   });
 
-  testWidgets('approved request -> "Matched!" banner', (tester) async {
+  testWidgets('approved request -> "Open chat" button', (tester) async {
     await pumpWith(tester, viewerUid: 'guest1', request: _approvedRequest);
 
-    expect(find.text('Matched!'), findsOneWidget);
-    expect(find.text('Tap to start chatting'), findsOneWidget);
+    expect(find.text('Open chat'), findsOneWidget);
+    expect(find.text("You're matched. Say hi!"), findsOneWidget);
   });
 
   testWidgets('denied request -> disabled "Not selected"', (tester) async {
     await pumpWith(tester, viewerUid: 'guest1', request: _deniedRequest);
 
-    final button = tester.widget<FilledButton>(
+    final button = tester.widget<AppButton>(
       find.byKey(const Key('meal_detail_not_selected_button')),
     );
     expect(find.text('Not selected'), findsOneWidget);
@@ -195,7 +199,7 @@ void main() {
       find.byKey(const Key('meal_detail_request_to_join_button')),
       findsNothing,
     );
-    expect(find.text('Your meal'), findsOneWidget);
+    expect(find.text('This is your meal'), findsOneWidget);
   });
 
   testWidgets(
@@ -209,7 +213,7 @@ void main() {
         viewerGender: Gender.man,
       );
 
-      final button = tester.widget<FilledButton>(
+      final button = tester.widget<AppButton>(
         find.byKey(const Key('meal_detail_women_only_disabled_button')),
       );
       expect(button.onPressed, isNull);
@@ -217,7 +221,7 @@ void main() {
         find.byKey(const Key('meal_detail_women_only_note')),
         findsOneWidget,
       );
-      expect(find.text('This meal is women-only.'), findsOneWidget);
+      expect(find.text('Only women can join this meal.'), findsOneWidget);
       expect(
         find.byKey(const Key('meal_detail_request_to_join_button')),
         findsNothing,
@@ -287,6 +291,8 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
+      // Drains the bar skeleton's zero-length animate timer.
+      await tester.pump(const Duration(milliseconds: 50));
 
       await tester.tap(
         find.byKey(const Key('meal_detail_request_to_join_button')),

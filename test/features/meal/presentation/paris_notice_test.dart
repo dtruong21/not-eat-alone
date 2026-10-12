@@ -4,15 +4,20 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/meal/presentation/widgets/paris_notice.dart';
 
 void main() {
-  testWidgets('renders the Paris notice message', (tester) async {
+  var dismissed = 0;
+
+  Future<void> pumpNotice(WidgetTester tester) async {
+    dismissed = 0;
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(Brightness.light),
-        home: const Scaffold(
-          body: ParisNotice(),
-        ),
+        home: Scaffold(body: ParisNotice(onDismiss: () => dismissed++)),
       ),
     );
+  }
+
+  testWidgets('renders the Paris notice message', (tester) async {
+    await pumpNotice(tester);
 
     expect(
       find.text("Convyve is Paris-only for now — we're just getting started here."),
@@ -20,31 +25,14 @@ void main() {
     );
   });
 
-  testWidgets('tapping close dismisses the notice for the session',
-      (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(Brightness.light),
-        home: const Scaffold(
-          body: ParisNotice(),
-        ),
-      ),
-    );
+  testWidgets('close has a Dismiss tooltip and calls onDismiss', (
+    tester,
+  ) async {
+    await pumpNotice(tester);
 
-    // Message is visible initially
-    expect(
-      find.text("Convyve is Paris-only for now — we're just getting started here."),
-      findsOneWidget,
-    );
-
-    // Tap the close icon
+    expect(find.byTooltip('Dismiss'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.close_rounded));
-    await tester.pumpAndSettle();
 
-    // Message is gone (SizedBox.shrink renders nothing)
-    expect(
-      find.text("Convyve is Paris-only for now — we're just getting started here."),
-      findsNothing,
-    );
+    expect(dismissed, 1);
   });
 }

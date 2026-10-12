@@ -34,6 +34,23 @@ const mealMinLead = Duration(minutes: 5);
 bool isMealTimeFarEnough(DateTime picked, {DateTime? now}) =>
     !picked.isBefore((now ?? DateTime.now()).add(mealMinLead));
 
+/// Default meal time: one hour from [now], rounded UP to the next :00 or :30
+/// (so "11:01" never shows up). Always at least [mealMinLead] after [now].
+DateTime nextMealSlot(DateTime now) {
+  final t = now.add(const Duration(hours: 1));
+  final floor = DateTime(t.year, t.month, t.day, t.hour, t.minute ~/ 30 * 30);
+  // DateTime() normalises minute 60 into the next hour / day.
+  return floor.isBefore(t)
+      ? DateTime(
+          floor.year,
+          floor.month,
+          floor.day,
+          floor.hour,
+          floor.minute + 30,
+        )
+      : floor;
+}
+
 class CreateMealScreen extends ConsumerStatefulWidget {
   const CreateMealScreen({required this.restaurant, super.key});
 
@@ -66,7 +83,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
-    final initial = _dateTime ?? now.add(const Duration(hours: 1));
+    final initial = _dateTime ?? nextMealSlot(now);
 
     final pickedDate = await showDatePicker(
       context: context,
@@ -79,6 +96,11 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
     final pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
+      // Match the 24 h format the app shows (formatMealDateTime).
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
     );
     if (pickedTime == null || !mounted) return;
 
@@ -128,9 +150,13 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
     ) {
       if (previous?.isLoading == true && next.hasValue && !next.hasError) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Meal created!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Meal posted. You'll get requests in the Requests tab.",
+            ),
+          ),
+        );
         context.go('/discover');
       }
     });
@@ -199,6 +225,9 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                 maxLines: 3,
                 minLines: 2,
                 enabled: !isSubmitting,
+                scrollPadding: const EdgeInsets.only(
+                  bottom: WarmPlayfulSize.keyboardReveal,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Note (optional)',
                   alignLabelWithHint: true,

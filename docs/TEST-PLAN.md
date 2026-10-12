@@ -127,6 +127,23 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 - [ ] **Android phone auto-verification.** On a real Android device whose SIM receives the SMS (or an instant-verification test number): Firebase can call `verificationCompleted` without ever calling `codeSent`. In the code, `AuthRepositoryImpl.verifyPhone` then signs in with the credential (`signInWithCredential`, not awaited) and does not call the screen back, so the sign-in screen keeps its "Sending code…" spinner until the router leaves it (signed in -> age gate or Discover). Expected: the spinner stays, then the app moves on; no code screen is shown. If `signInWithCredential` fails, nothing is reported either: the spinner stays until the 60 s timeout shows "Something went wrong — please try again." Check both and decide whether the failure should be surfaced (not changed in 17a).
 - [ ] **Focusing fields scrolls Continue into view (real device).** Profile setup on a small iPhone and a mid-size Android with the software keyboard: tap Name, then Bio, type a few lines: Bio's caret stays visible and Continue (plus the "Still needed" line) can be reached without dismissing the keyboard; repeat with the largest text size. Widget tests simulate the keyboard inset only.
 
+### Discover, meal detail, create meal, restaurant search (UX plan 17b) — automated
+
+- [x] `test/features/meal/presentation/meal_action_bar_test.dart` — every viewer state (own, women-only, loading, load error, none, pending, approved, denied) renders its label, key and status copy; the bar has exactly the same height in all of them at 1.0x, 1.3x and 2.0x text on 320 x 568 (no overflow, no button label ellipsized or clipped, scroll body at least 220 px); the status line is one live-region node whose label is the full sentence; "Open chat" opens `/chats/{mealId}`; a failed request shows the "Couldn't send your request. Try again." snackbar even though the button was swapped for "Requested", and "This meal is no longer open." when the error is `MealNoLongerOpenException`. `meal_detail_button_test.dart` — request flow through the screen. `test/core/design/widgets/app_button_test.dart` — `maxLines` and the loading label.
+- [x] `test/features/meal/presentation/discovery_screen_test.dart`, `paris_notice_test.dart` — card anatomy (one `<when> · <distance>` line, `Wrap` for the badge), the last card clears the FAB, empty state with its Create-a-meal action, long names ellipsize at 320 px / 2.0x while the meta text wraps to two lines (distance kept), no FAB on the empty state (one Create-a-meal button), the notice scrolls with the list and is shown above loading / empty / error, dismissal keeps the state. `settings_screen_test.dart` — sign-out is confirmed in a dialog, unregisters the push token (`unregisterCurrentToken(uid)` exactly once, mutation-checked) and signs out, also when the screen unmounts while the dialog is open.
+- [x] `test/features/meal/presentation/create_meal_screen_test.dart` — `nextMealSlot` (now + 1 h rounded UP to :00 / :30, seconds, midnight; never before now + 1 h and less than 30 min later), the time picker opens on a slot and is 24 h, the success snackbar "Meal posted. You'll get requests in the Requests tab.", the note field's `scrollPadding` is `WarmPlayfulSize.keyboardReveal` (mutation-checked), Create meal reachable at 320 x 568 / 2.0x text with the keyboard up.
+- [x] `test/features/meal/presentation/restaurant_search_screen_test.dart` — "No restaurants to show yet." for an empty list before any query, "No restaurant called “<query>”. Try another name." after one, wrapped inside the margins at 320 px.
+- [ ] Manual: `make ux-capture` before/after comparison (see `docs/ux/17b-verification.md`).
+
+**Manual QA steps for 17b (cannot run headless; user-run on a device):**
+
+- [ ] **VoiceOver, action bar status.** Meal detail with VoiceOver on: Request to join is a button; double-tap: the spinner replaces the label, VoiceOver announces "Sending request…" as a disabled button; when the host approves (admin write or second device) the status "You're matched. Say hi!" is announced by itself and "Open chat" is focusable. Swipe to the status line: the whole sentence is read as one node even when it is cut with an ellipsis on screen.
+- [ ] **Action bar at large text (real device).** Set the largest text size on a small iPhone and a mid-size Android: "Request to join", "Sending request…", "This is your meal", "Open chat", "Not selected" are shown whole (they may wrap to two lines), the bar keeps one height between states and the page above it still scrolls.
+- [ ] **Open in Maps still works.** From the restaurant card above the pinned bar: tap "Open in Maps", the maps app opens on the venue (the card moved up, the button is unchanged); no snackbar.
+- [ ] **Pull-to-refresh in the empty and error states.** Discover with no meals nearby (and with the network off for the error state): pull down: the spinner shows, the empty / error state stays (no crash), and Try again behaves like a pull.
+- [ ] **Notice and FAB.** Dismiss the Paris notice: it is gone until the next launch (per session by design). Scroll to the end of a long feed: the last card is fully visible above "Create a meal". With no meals nearby there is one "Create a meal" button (in the empty state), not two.
+- [ ] **Rejected request.** Open a meal, have the host (or an admin write) match it, then tap Request to join: the snackbar "Couldn't send your request. Try again." appears, about one second after the tap. (The specific "This meal is no longer open." copy never shows yet: `createRequest` wraps every failure; follow-up.)
+
 ---
 
 ## Feature checklists
@@ -256,7 +273,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - [ ] **Women-only meals hidden** from non-women viewers; visible (with badge) to women.
 - [ ] Location denied/error → Paris center; feed still works.
 - [ ] geohash prefix query (precision 4 ~Paris cell) + client distance sort; any signed-in user can READ meals + host profiles (rules opened; writes still owner-only).
-- [ ] Empty state ("No meals near you yet") when nothing matches.
+- [ ] Empty state ("No meals nearby yet") when nothing matches.
 
 **Deferred (post-MVP, see PRD):** map view of the feed.
 
@@ -275,14 +292,14 @@ Status: active
 Related PRD entry: `docs/PRD.md § Matching`
 
 **Golden path:**
-- [ ] From meal detail, a signed-in non-host guest taps "Request to join" → a `requests/{mealId_guestId}` doc is written (`status: pending`) → button becomes disabled "Requested" with a "Waiting for the host" hint.
+- [ ] From meal detail, a signed-in non-host guest taps "Request to join" → a `requests/{mealId_guestId}` doc is written (`status: pending`) → the pinned action bar's button becomes a disabled "Requested" with the status line "Waiting for the host to reply."
 - [ ] The host opens the discovery app-bar inbox (`/requests`) → sees the pending request as a tile (guest photo/name/derived age) with **Approve** and **Deny** actions, and under the guest's label the meal the request is for (restaurant on its own line, ellipsized; date/time on the next, in the viewer's local time), with Deny/Approve on a second row. While the meal is loading, errored or missing the line is simply absent and the tile works as before. (Meal line: widget-tested in `request_inbox_tile_test.dart` groups "meal line"; E2E in `inbox_feedback_test.dart`.)
-- [ ] Host taps **Approve** → a client transaction locks the meal (`status` leaves `open`), creates a `matches/{mealId}` doc, marks this request `approved`, and denies every other pending request on the same meal ("sibling" denials) → the approved guest's meal-detail button flips to a "Matched!" banner; denied guests see "Not selected".
+- [ ] Host taps **Approve** → a client transaction locks the meal (`status` leaves `open`), creates a `matches/{mealId}` doc, marks this request `approved`, and denies every other pending request on the same meal ("sibling" denials) → the approved guest's action bar flips to an enabled "Open chat" button with the status line "You're matched. Say hi!"; denied guests see a disabled "Not selected" with "The host chose someone else."
 - [ ] A second guest who requests the now-locked meal is rejected (request creation blocked once the meal is no longer `open`).
 - [ ] `matches/{mealId}` is the hand-off doc Plan 7 (chat) reads from.
 
 **Edge cases (specific to this feature):**
-- [ ] A host cannot request their own meal — meal-detail shows a "Your meal" chip instead of a request button, no request stream touched.
+- [ ] A host cannot request their own meal — the action bar shows a disabled "This is your meal" button with "See requests in the Requests tab." instead of a request button, no request stream touched.
 - [ ] Requesting a non-`open` meal (already matched/cancelled/completed) is rejected client + rules side.
 - [ ] Denied requests are terminal — no re-request, no state flip back to pending.
 - [ ] Approving a request whose meal raced shut (approved by a concurrent transaction first) throws `MealNoLongerOpenException`; the inbox surfaces a SnackBar ("This meal is no longer open.") instead of crashing, and does not deny/approve anything. (Widget-tested, both with the tile still mounted and removed mid-flight; not E2E.)
@@ -316,7 +333,7 @@ Status: active
 Related PRD entry: `docs/PRD.md § Chat`
 
 **Golden path:**
-- [ ] Host approves a request → guest's meal-detail "Matched!" banner is tappable → pushes `/chats/{mealId}` straight into the new chat.
+- [ ] Host approves a request → guest's meal-detail "Open chat" button (key `meal_detail_matched_banner`) → pushes `/chats/{mealId}` straight into the new chat.
 - [ ] Chats tab (`/chats`) lists every match as a row (other participant photo/name, last-message preview, relative time); tapping a row opens `/chats/:matchId`.
 - [ ] Chat screen: app bar shows the other participant's name/photo (looked up via `chatListProvider`); sending a message via the composer writes to `matches/{matchId}/messages` and appears immediately (mine, right-aligned).
 - [ ] The other participant, viewing the same match in a second session, sees the message arrive in realtime (left-aligned) and the sender's bubble flips to "Seen" once the other participant opens the chat (`reads/{uid}.lastReadAt` compared to the message's `createdAt`).
@@ -352,7 +369,7 @@ Related PRD entry: `docs/PRD.md § Safety`
 - [ ] Blocked user attempts to request a meal from the blocker → `noBlockBetween` rule rejects (`create_request_controller` displays "User not available").
 - [ ] Blocked user sends a chat message → `noBlockBetween` rule rejects in `matches/{matchId}/messages` create.
 - [ ] Report a user/meal/message → a `reports/{id}` doc is written (create-only, contains reporterId, targetType, targetId, reason) → Firestore records the report (no immediate action on client).
-- [ ] Non-woman user requests a women-only meal → meal-detail shows "Women only — you don't qualify" (client guard) and the rule rejects the create if the guard fails.
+- [ ] Non-woman user requests a women-only meal → the action bar shows a disabled "Women only" button with "Only women can join this meal." (client guard) and the rule rejects the create if the guard fails.
 - [ ] Woman user requests a women-only meal → request succeeds (rules allow).
 - [ ] Account deletion: tap Settings → Delete account → one confirmation dialog (no re-authentication, no success dialog) → `deleteAccount` callable is invoked → automatic sign-out → user + profile docs, meals, requests, matches, ratings, photos and the Auth account are purged by the Cloud Function. Matched meals are released first (see "Account deletion with a matched meal"). Reports the user filed or that target them are retained for safety.
 

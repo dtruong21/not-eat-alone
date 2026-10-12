@@ -1,37 +1,35 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
 import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
+import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
-import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/discovery_screen.dart';
-import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
-import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
+import '../../../helpers/load_app_fonts.dart';
+
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class MockUserRepository extends Mock implements UserRepository {}
-
-class MockPushRepository extends Mock implements PushRepository {}
 
 const _restaurant = Restaurant(
   placeId: 'p1',
@@ -54,17 +52,21 @@ final _discoverableMeal = DiscoverableMeal(meal: _meal, distanceMeters: 1234);
 
 final _host = AppUser(
   uid: 'host1',
-  dob: DateTime(1990, 1, 1),
+  dob: DateTime(1990),
   displayName: 'Alex',
 );
 
 AppUser _viewer(Gender gender) => AppUser(
       uid: 'viewer1',
-      dob: DateTime(1995, 1, 1),
+      dob: DateTime(1995),
       gender: gender,
     );
 
 void main() {
+  // Real glyph widths: with Ahem every glyph is 1 em and the wrap checks at
+  // large text mean nothing.
+  setUpAll(loadAppFonts);
+
   late MockAuthRepository authRepository;
   late MockUserRepository userRepository;
   var locationCalls = 0;
@@ -74,11 +76,6 @@ void main() {
     locationCalls = 0;
     authRepository = MockAuthRepository();
     userRepository = MockUserRepository();
-    when(() => authRepository.signOut()).thenAnswer((_) async {});
-    // Read by `_onSignOut` to look up the uid for token cleanup — signed
-    // out here by default so the unregister branch is skipped and most
-    // tests stay focused on their own concern.
-    when(() => authRepository.currentUser).thenReturn(null);
     when(() => userRepository.watch('host1'))
         .thenAnswer((_) => Stream.value(_host));
   });
@@ -88,7 +85,6 @@ void main() {
     List<DiscoverableMeal> meals = const [],
     Stream<List<DiscoverableMeal>> Function()? mealsStream,
     Gender? viewerGender,
-    PushRepository? pushRepository,
     Brightness brightness = Brightness.light,
   }) async {
     final router = GoRouter(
@@ -97,6 +93,10 @@ void main() {
         GoRoute(
           path: '/',
           builder: (context, state) => const DiscoveryScreen(),
+        ),
+        GoRoute(
+          path: '/meals/new',
+          builder: (context, state) => const Scaffold(body: Text('new-meal')),
         ),
         GoRoute(
           path: '/meals/detail',
@@ -123,8 +123,6 @@ void main() {
           currentUserDocProvider.overrideWith(
             (ref) => Stream.value(_viewer(viewerGender ?? Gender.man)),
           ),
-          if (pushRepository != null)
-            pushRepositoryProvider.overrideWithValue(pushRepository),
         ],
         child: MaterialApp.router(
           theme: buildTheme(brightness),
@@ -151,14 +149,8 @@ void main() {
     await pumpDiscovery(tester, meals: [_discoverableMeal]);
 
     expect(find.text(_restaurant.name), findsOneWidget);
-    expect(find.text('1.2 km'), findsOneWidget);
+    expect(find.textContaining('1.2 km'), findsOneWidget);
     expect(find.text('Alex'), findsOneWidget);
-  });
-
-  testWidgets('an empty meal list renders the empty state', (tester) async {
-    await pumpDiscovery(tester);
-
-    expect(find.text('No meals near you yet'), findsOneWidget);
   });
 
   testWidgets('"Women only" badge shows for a woman viewer', (tester) async {
@@ -220,96 +212,6 @@ void main() {
     expect(find.text('detail:${_meal.id}'), findsOneWidget);
   });
 
-  testWidgets('tapping sign out calls AuthRepository.signOut', (
-    tester,
-  ) async {
-    await pumpDiscovery(tester, meals: [_discoverableMeal]);
-
-    await tester.tap(find.byKey(const Key('discovery_sign_out_button')));
-    await tester.pump();
-
-    verify(() => authRepository.signOut()).called(1);
-  });
-
-  testWidgets(
-    'sign out unregisters the push token for the current uid before '
-    'signing out',
-    (tester) async {
-      final pushRepository = MockPushRepository();
-      when(() => pushRepository.unregisterCurrentToken(any()))
-          .thenAnswer((_) async {});
-      // Signed in as 'viewer1' — `_onSignOut` reads this uid off
-      // `authRepository.currentUser` to unregister the right token before
-      // signing out.
-      when(() => authRepository.currentUser)
-          .thenReturn(const AuthUser(uid: 'viewer1'));
-
-      await pumpDiscovery(
-        tester,
-        meals: [_discoverableMeal],
-        pushRepository: pushRepository,
-      );
-
-      await tester.tap(find.byKey(const Key('discovery_sign_out_button')));
-      await tester.pump();
-      await tester.pump();
-
-      verifyInOrder([
-        () => pushRepository.unregisterCurrentToken('viewer1'),
-        () => authRepository.signOut(),
-      ]);
-    },
-  );
-
-  testWidgets('sign out fires the SignoutCompleted analytics event', (
-    tester,
-  ) async {
-    analytics.debugSetForceSend(true);
-    final calls = <String>[];
-    analytics.debugSetLogSink((name, params) async {
-      calls.add(name);
-    });
-    addTearDown(analytics.debugResetAnalytics);
-
-    await pumpDiscovery(tester, meals: [_discoverableMeal]);
-
-    await tester.tap(find.byKey(const Key('discovery_sign_out_button')));
-    await tester.pump();
-
-    expect(calls, contains('signout_completed'));
-  });
-
-  testWidgets(
-    'sign out survives the screen unmounting while the token unregister is '
-    'in flight (no ref read after the await) and still signs out',
-    (tester) async {
-      final gate = Completer<void>();
-      final pushRepository = MockPushRepository();
-      when(() => pushRepository.unregisterCurrentToken(any()))
-          .thenAnswer((_) => gate.future);
-      when(() => authRepository.currentUser)
-          .thenReturn(const AuthUser(uid: 'viewer1'));
-
-      await pumpDiscovery(
-        tester,
-        meals: [_discoverableMeal],
-        pushRepository: pushRepository,
-      );
-
-      await tester.tap(find.byKey(const Key('discovery_sign_out_button')));
-      await tester.pump();
-
-      // Unmount the whole tree (disposing the screen's ref) mid-flight.
-      await tester.pumpWidget(const SizedBox());
-      gate.complete();
-      await tester.pump();
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-      verify(() => authRepository.signOut()).called(1);
-    },
-  );
-
   testWidgets('loading shows a skeleton list, not a spinner', (tester) async {
     await pumpDiscovery(
       tester,
@@ -320,13 +222,212 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
-  testWidgets('empty feed shows the EmptyState with the same words', (
+  testWidgets('empty feed: invites to host; button goes where the FAB goes', (
     tester,
   ) async {
     await pumpDiscovery(tester);
 
     expect(find.byType(EmptyState), findsOneWidget);
-    expect(find.text('No meals near you yet'), findsOneWidget);
+    expect(find.text('No meals nearby yet'), findsOneWidget);
+    expect(
+      find.text('Be the first: host a meal and someone will join.'),
+      findsOneWidget,
+    );
+    expect(find.byType(AppButton), findsOneWidget);
+    await tester.pumpAndSettle(); // the FAB animates out once the feed is empty
+    // One Create a meal button, not two: the FAB is hidden for an empty feed.
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('Create a meal'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('discovery_empty_create_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('new-meal'), findsOneWidget);
+  });
+
+  testWidgets('the app bar has no sign-out button (it lives in Settings)', (
+    tester,
+  ) async {
+    await pumpDiscovery(tester, meals: [_discoverableMeal]);
+
+    expect(find.byKey(const Key('discovery_sign_out_button')), findsNothing);
+    expect(find.byTooltip('Sign out'), findsNothing);
+  });
+
+  testWidgets('a card has ONE muted meta text: when · how far', (tester) async {
+    await pumpDiscovery(tester, meals: [_discoverableMeal]);
+
+    final meta = tester.widget<Text>(
+      find.text('${formatMealDateTime(_meal.dateTime)} · 1.2 km'),
+    );
+    final wp = buildTheme(Brightness.light).extension<WarmPlayfulExtensions>()!;
+    expect(meta.maxLines, 2);
+    expect(meta.overflow, TextOverflow.ellipsis);
+    expect(meta.style!.color, wp.muted);
+    expect(find.text('1.2 km'), findsNothing);
+  });
+
+  testWidgets('long names ellipsize at 320 px / 2.0x text: no overflow', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(320, 800)
+      ..devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    when(() => userRepository.watch('host1')).thenAnswer(
+      (_) =>
+          Stream.value(_host.copyWith(displayName: 'Emilia Vasquez-Hernandez')),
+    );
+    final long = _meal.copyWith(
+      restaurant: _restaurant.copyWith(
+        name: 'Le Petit Café du Coin des Amis Réunis de la Rue Oberkampf',
+      ),
+    );
+
+    await pumpDiscovery(
+      tester,
+      meals: [DiscoverableMeal(meal: long, distanceMeters: 1300)],
+      viewerGender: Gender.woman,
+    );
+
+    expect(tester.takeException(), isNull);
+    final name = tester.widget<Text>(find.text(long.restaurant.name));
+    expect(name.maxLines, 2);
+    expect(name.overflow, TextOverflow.ellipsis);
+    final host = tester.widget<Text>(find.text('Emilia Vasquez-Hernandez'));
+    expect(host.maxLines, 1);
+    expect(host.overflow, TextOverflow.ellipsis);
+
+    // The meta wraps to a second line instead of cutting the distance.
+    final whenText = formatMealDateTime(long.dateTime);
+    final metaFinder = find.textContaining(whenText);
+    final meta = tester.widget<Text>(metaFinder);
+    expect(meta.data, '$whenText · 1.3 km');
+    expect(
+      tester.renderObject<RenderParagraph>(metaFinder).didExceedMaxLines,
+      isFalse,
+    );
+    expect(
+      tester.getRect(metaFinder).left,
+      greaterThanOrEqualTo(
+        tester.getRect(find.byKey(Key('discovery_meal_card_${long.id}'))).left,
+      ),
+    );
+  });
+
+  testWidgets('the last card scrolls fully above the Create a meal button', (
+    tester,
+  ) async {
+    final meals = [
+      for (var i = 0; i < 6; i++)
+        DiscoverableMeal(
+          meal: _meal.copyWith(id: 'm$i'),
+          distanceMeters: 1000.0 + i,
+        ),
+    ];
+    await pumpDiscovery(tester, meals: meals);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -5000));
+    await tester.pumpAndSettle();
+
+    final last = tester.getRect(
+      find.byKey(const Key('discovery_meal_card_m5')),
+    );
+    final fab = tester.getRect(
+      find.byKey(const Key('discovery_create_meal_button')),
+    );
+    expect(last.bottom, lessThanOrEqualTo(fab.top));
+  });
+
+  group('Paris notice', () {
+    const noticeKey = Key('paris_notice_card');
+
+    testWidgets('is the first item of the list and scrolls away', (
+      tester,
+    ) async {
+      final meals = [
+        for (var i = 0; i < 6; i++)
+          DiscoverableMeal(meal: _meal.copyWith(id: 'm$i'), distanceMeters: 1),
+      ];
+      await pumpDiscovery(tester, meals: meals);
+
+      expect(
+        tester.getTopLeft(find.byKey(noticeKey)).dy,
+        lessThan(
+          tester.getTopLeft(find.byKey(const Key('discovery_meal_card_m0'))).dy,
+        ),
+      );
+
+      await tester.drag(find.byType(ListView), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(noticeKey), findsNothing);
+    });
+
+    testWidgets('close is a 48 px target with a Dismiss tooltip; dismisses', (
+      tester,
+    ) async {
+      await pumpDiscovery(tester, meals: [_discoverableMeal]);
+
+      final size = tester.getSize(
+        find.byKey(const Key('paris_notice_close_button')),
+      );
+      expect(size.width, greaterThanOrEqualTo(WarmPlayfulSize.minTap));
+      expect(size.height, greaterThanOrEqualTo(WarmPlayfulSize.minTap));
+      expect(find.byTooltip('Dismiss'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('paris_notice_close_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(noticeKey), findsNothing);
+      expect(find.text(_restaurant.name), findsOneWidget);
+    });
+
+    testWidgets('stays above the empty state; dismissing keeps the state', (
+      tester,
+    ) async {
+      await pumpDiscovery(tester);
+
+      expect(find.byKey(noticeKey), findsOneWidget);
+      expect(find.byType(EmptyState), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('paris_notice_close_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(noticeKey), findsNothing);
+      expect(find.byType(EmptyState), findsOneWidget);
+    });
+
+    testWidgets('stays above the error state; dismissing keeps the state', (
+      tester,
+    ) async {
+      await pumpDiscovery(
+        tester,
+        mealsStream: () =>
+            Stream<List<DiscoverableMeal>>.error(StateError('x')),
+      );
+
+      expect(find.byKey(noticeKey), findsOneWidget);
+      expect(find.byType(ErrorState), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('paris_notice_close_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(noticeKey), findsNothing);
+      expect(find.byType(ErrorState), findsOneWidget);
+    });
+
+    testWidgets('stays above the loading skeleton', (tester) async {
+      await pumpDiscovery(
+        tester,
+        mealsStream: () => const Stream<List<DiscoverableMeal>>.empty(),
+      );
+
+      expect(find.byKey(noticeKey), findsOneWidget);
+      expect(find.byType(SkeletonList), findsOneWidget);
+    });
   });
 
   testWidgets('error shows ErrorState; Try again re-fetches the feed', (

@@ -46,6 +46,9 @@ class _RestaurantSearchScreenState
     extends ConsumerState<RestaurantSearchScreen> {
   final _queryController = TextEditingController();
   Timer? _debounce;
+  // The query the shown results answer (not the live field text, which runs
+  // ahead of the 400 ms debounce).
+  String _searchedQuery = '';
 
   @override
   void dispose() {
@@ -62,6 +65,7 @@ class _RestaurantSearchScreenState
 
   void _onQueryChanged(String value) {
     _debounce?.cancel();
+    setState(() => _searchedQuery = value.trim());
     unawaited(
       ref.read(restaurantSearchControllerProvider.notifier).search(value),
     );
@@ -96,9 +100,20 @@ class _RestaurantSearchScreenState
       final restaurants = state.value ?? const <Restaurant>[];
       resultsBody = restaurants.isEmpty
           ? Center(
-              child: Text(
-                'No matches',
-                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: WarmPlayfulSpacing.s4,
+                ),
+                child: Text(
+                  _searchedQuery.isEmpty
+                      ? 'No restaurants to show yet.'
+                      : 'No restaurant called \u201c$_searchedQuery\u201d. '
+                            'Try another name.',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: context.wp.muted,
+                  ),
+                ),
               ),
             )
           : ListView.separated(

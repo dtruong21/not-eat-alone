@@ -45,6 +45,10 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - The phone code screen scrolls (so Verify can be reached at large text sizes and with the keyboard up), shows the number the code went to with a "Change" button and a back arrow, and submits by itself after the sixth digit. A wrong code is explained on the field ("That code didn't work. Check it or resend."), and "Resend code" counts down 30 seconds before it can be used.
 - Under-18 date of birth: you are now told why you were signed out ("You must be 18 or older to use Convyve.") on the sign-in screen. The date-of-birth picker opens on the year, and the age gate scrolls at large text sizes.
 - Profile setup: the "Add photo" tile is labelled, the remove-photo button on a photo is easy to hit, and a line under Continue says what is still missing ("Still needed: a photo and your name.").
+- Meal detail: the request button is now pinned to the bottom of the screen with a short status under it ("Waiting for the host to reply.", "You're matched. Say hi!", "The host chose someone else."); it keeps one size in every state, follows your text size setting, and an approved request shows an "Open chat" button.
+- Discover: each meal card shows its date and distance on one line, the last card is no longer hidden behind the "Create a meal" button, a long date wraps instead of hiding the distance, and an empty list explains itself with a single "Create a meal" button. The Paris-only notice now scrolls away with the list and stays dismissed until you restart the app. Sign out moved to Settings, with a confirmation.
+- Creating a meal starts the time on the next half hour at least an hour ahead (24-hour clock), the confirmation says where requests will show up, and the form fits large text sizes with the keyboard open.
+- Restaurant search says "No restaurants to show yet." instead of "No matches" before you type, and names your query when nothing matches.
 
 ### Security
 
@@ -53,6 +57,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 ### Fixed
 - Chat of a cancelled meal / deleted account now says "This chat is no longer available" with a way back, instead of a generic error; no more false crash reports from it.
 
+- A join request that the server refuses (for example the meal was just matched) now shows "Couldn't send your request. Try again." instead of nothing.
 - The phone number is now sent as a clean international number (no spaces, and the leading 0 of a French number such as "+33 06 12 34 56 78" is dropped; a French number with the wrong number of digits is refused before anything is sent).
 - A wrong SMS code and a network problem are no longer shown with the same message, and a late "code sent" from a timed-out attempt no longer opens a second code screen.
 - Profile form: Continue is no longer hidden by the keyboard while you type your bio, and large text no longer overflows the profile setup, age gate, sign-in or code screens.

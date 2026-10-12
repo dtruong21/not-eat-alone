@@ -14,17 +14,77 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
+import 'package:not_eat_alone/features/meal/application/restaurant_providers.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/features/meal/domain/repositories/restaurant_search_repository.dart';
 import 'package:not_eat_alone/features/meal/presentation/discovery_screen.dart';
+import 'package:not_eat_alone/main_common.dart' show NotEatAloneApp;
 
 import '../integration_test/support/app_harness.dart';
 import '../integration_test/support/auth.dart';
 import '../integration_test/support/emulator_admin.dart';
 import 'support/handoff.dart';
 import 'support/world.dart';
+
+/// Restaurant search served from a fixed list: the real one is a Places-backed
+/// callable whose `PLACES_API_KEY` secret the emulator cannot read.
+class _FixedRestaurantSearch implements RestaurantSearchRepository {
+  static const _all = <Restaurant>[
+    Restaurant(
+      placeId: 'fake_001',
+      name: 'Le Comptoir du Relais',
+      address: "9 Carrefour de l'Odéon, 75006 Paris",
+      lat: 48.8512,
+      lng: 2.3387,
+    ),
+    Restaurant(
+      placeId: 'fake_002',
+      name: 'Bouillon Chartier',
+      address: '7 Rue du Faubourg Montmartre, 75009 Paris',
+      lat: 48.8718,
+      lng: 2.3433,
+    ),
+    Restaurant(
+      placeId: 'fake_003',
+      name: 'Le Baratin',
+      address: '3 Rue Jouye-Rouve, 75020 Paris',
+      lat: 48.8736,
+      lng: 2.3871,
+    ),
+    Restaurant(
+      placeId: 'fake_004',
+      name: 'Café de Flore',
+      address: '172 Boulevard Saint-Germain, 75006 Paris',
+      lat: 48.8541,
+      lng: 2.3326,
+    ),
+    Restaurant(
+      placeId: 'fake_005',
+      name: "L'As du Fallafel",
+      address: '34 Rue des Rosiers, 75004 Paris',
+      lat: 48.8575,
+      lng: 2.3592,
+    ),
+    Restaurant(
+      placeId: 'fake_007',
+      name: 'Chez Georges',
+      address: '1 Rue du Mail, 75002 Paris',
+      lat: 48.8668,
+      lng: 2.3407,
+    ),
+  ];
+
+  @override
+  Future<List<Restaurant>> search(String query) async {
+    final q = query.trim().toLowerCase();
+    return _all.where((r) => r.name.toLowerCase().contains(q)).toList();
+  }
+}
 
 /// Name of the screen state being photographed (for the overflow log).
 String _current = 'boot';
@@ -390,6 +450,21 @@ void main() {
     _answerPushPermissionPrompt(tester);
 
     await pumpApp(tester);
+    // `bootstrap` runs the app in a plain ProviderScope with no overrides, and
+    // lib/ must not change for the harness: swap in a fresh scope (new key =
+    // new state) that serves restaurant search from the fixed list.
+    await tester.pumpWidget(
+      ProviderScope(
+        key: UniqueKey(),
+        overrides: [
+          restaurantSearchRepositoryProvider.overrideWithValue(
+            _FixedRestaurantSearch(),
+          ),
+        ],
+        child: const NotEatAloneApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
     // A previous run's session can survive in the simulator keychain even
     // though the emulator was reset: always start from signed out.
     await signOutTestUser();
@@ -572,7 +647,7 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
   });
 
   await _step(tester, '21_discover_empty', () async {
-    await _pumpUntilFound(tester, find.text('No meals near you yet'));
+    await _pumpUntilFound(tester, find.text('No meals nearby yet'));
     await _snap(tester, '21_discover_empty');
   });
 
@@ -629,6 +704,16 @@ Future<void> _captureDiscover(WidgetTester tester, UxWorld world) async {
     await _settle(tester);
     await _snap(tester, '23_discover_scrolled');
     await tester.drag(feed.first, const Offset(0, 2000));
+    await _settle(tester);
+  });
+
+  // The very end of the list: the last card must be fully visible above the
+  // create-meal button (DISC-03).
+  await _step(tester, '23b_discover_scrolled_end', () async {
+    await tester.drag(feed.first, const Offset(0, -6000));
+    await _settle(tester);
+    await _snap(tester, '23b_discover_scrolled_end');
+    await tester.drag(feed.first, const Offset(0, 6000));
     await _settle(tester);
   });
 
@@ -744,7 +829,7 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
     unawaited(_router(tester).push('/meals/detail', extra: world.ownMeal));
     await _pumpUntilFound(
       tester,
-      find.byKey(const Key('meal_detail_your_meal_chip')),
+      find.byKey(const Key('meal_detail_your_meal_button')),
     );
     await _snap(tester, '48_meal_detail_own');
   });
@@ -765,15 +850,22 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
       tester,
       find.byKey(const Key('meal_detail_request_to_join_button')),
     );
-    // The server rejects the write. The button that listens for the failure is
-    // swapped out by latency compensation (optimistic "Requested") and back,
-    // so no error message is shown: photograph what the user is left with.
+    // The server rejects the write. The bar (always mounted) listens for the
+    // failure and shows a snackbar (the generic "Couldn't send your request.
+    // Try again.": createRequest wraps every failure, so the specific "no
+    // longer open" copy never shows). The snackbar lasts 4 s: photograph it as
+    // soon as it appears, not after a fixed wait.
     final end = DateTime.now().add(const Duration(seconds: 6));
-    while (DateTime.now().isBefore(end)) {
+    while (DateTime.now().isBefore(end) &&
+        find.byType(SnackBar).evaluate().isEmpty) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    await _settle(tester);
+    // Let the snackbar finish sliding in (fixed pumps: it has no settle).
+    await tester.pump(const Duration(milliseconds: 600));
     await _snap(tester, '49_meal_detail_request_rejected');
+    // The snackbar outlives the route and would cover the create-meal button
+    // (step 30) at large text.
+    await _clearSnackBars(tester);
   });
   await _recover(tester);
 }
@@ -796,7 +888,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
       find.byKey(const Key('restaurant_search_field')),
       'zzzz',
     );
-    await _pumpUntilFound(tester, find.text('No matches'));
+    await _pumpUntilFound(tester, find.textContaining('No restaurant called'));
     await _snap(tester, '31_restaurant_search_no_matches');
   });
 
@@ -855,7 +947,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
   await _step(tester, '26_discover_meal_created', () async {
     await _pumpUntilFound(
       tester,
-      find.text('Meal created!'),
+      find.textContaining('Meal posted.'),
       timeout: const Duration(seconds: 60),
     );
     await _snap(tester, '26_discover_meal_created');
@@ -1047,9 +1139,11 @@ Future<void> _captureProfileAndSettings(WidgetTester tester) async {
 
   await _step(tester, '83_settings', () async {
     await _tap(tester, find.byKey(const Key('profile_settings_button')));
+    // The first row, not the version line at the bottom: the list is lazy and
+    // the version is not built until scrolled to (at large text).
     await _pumpUntilFound(
       tester,
-      find.byKey(const Key('settings_app_version')),
+      find.byKey(const Key('settings_contact_support')),
     );
     await _snap(tester, '83_settings');
   });

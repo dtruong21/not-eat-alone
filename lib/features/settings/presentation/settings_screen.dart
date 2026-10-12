@@ -18,7 +18,9 @@ import 'package:not_eat_alone/core/config/legal_urls.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
-import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
+import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
+import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
+import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
 import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
 
 /// The app's display version + build number, e.g. "v1.1.0 (build 2)".
@@ -55,6 +57,37 @@ class SettingsScreen extends ConsumerWidget {
         ),
       );
     }
+  }
+
+  Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
+    // Read before the await: `ref` must not be used once the screen may have
+    // unmounted, and a confirmed sign-out still completes in that case.
+    final auth = ref.read(authRepositoryProvider);
+    // The plain repository, not `pushRegistrationControllerProvider.notifier`:
+    // that controller is autoDispose with no listener, so it is gone by the
+    // time the dialog is confirmed and `unregister` would throw (swallowed
+    // below), leaving the FCM token registered to the signed-out account.
+    final push = ref.read(pushRepositoryProvider);
+    final uid = auth.currentUser?.uid;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign out?'),
+        actions: [
+          TextButton(
+            key: const Key('settings_sign_out_cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('settings_sign_out_confirm'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) await _signOut(auth, push, uid);
   }
 
   Future<bool> _confirmDeleteAccount(BuildContext context) async {
@@ -106,21 +139,16 @@ class SettingsScreen extends ConsumerWidget {
     // user to /auth/signin automatically — no navigation needed here.
   }
 
-  /// Best-effort token cleanup before sign-out — mirrors
-  /// `discovery_screen.dart`'s `_onSignOut`: a failure here must never block
-  /// the user from signing out.
-  Future<void> _signOut(WidgetRef ref) async {
-    // Everything is read from `ref` BEFORE the first await: this is a
-    // `ConsumerWidget`, so `ref` is bound to the element and reading it after
-    // an await throws if the widget unmounted meanwhile (e.g. the unregister
-    // call below changing what the screen shows). The captured repository /
-    // notifier stay usable for the rest of the flow.
-    final auth = ref.read(authRepositoryProvider);
-    final push = ref.read(pushRegistrationControllerProvider.notifier);
-    final uid = auth.currentUser?.uid;
+  /// Best-effort token cleanup before sign-out: a failure here must never
+  /// block the user from signing out.
+  Future<void> _signOut(
+    AuthRepository auth,
+    PushRepository push,
+    String? uid,
+  ) async {
     if (uid != null) {
       try {
-        await push.unregister(uid);
+        await push.unregisterCurrentToken(uid);
       } on Exception {
         // Ignored — see doc comment above.
       }
@@ -172,7 +200,7 @@ class SettingsScreen extends ConsumerWidget {
               key: const Key('settings_sign_out'),
               leading: const Icon(Icons.logout_rounded),
               title: const Text('Sign out'),
-              onTap: () => unawaited(_signOut(ref)),
+              onTap: () => unawaited(_confirmSignOut(context, ref)),
             ),
             ListTile(
               key: const Key('settings_delete_account'),

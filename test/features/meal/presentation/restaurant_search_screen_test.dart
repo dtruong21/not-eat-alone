@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_search_controller.dart';
@@ -138,13 +139,64 @@ void main() {
     },
   );
 
-  testWidgets('an empty result set renders "No matches"', (tester) async {
+  testWidgets('an empty list before any query says there is nothing to show '
+      'yet, not "No matches"', (tester) async {
     await _pumpScreen(
       tester,
       controller: () => FakeRestaurantSearchController(const []),
     );
 
-    expect(find.text('No matches'), findsOneWidget);
+    expect(find.text('No restaurants to show yet.'), findsOneWidget);
+    expect(find.text('No matches'), findsNothing);
+  });
+
+  testWidgets('a long no-match query wraps inside the margins at 320 px', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(320, 568)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _pumpScreen(
+      tester,
+      controller: () => FakeRestaurantSearchController(const []),
+    );
+
+    const query = 'a restaurant with a very long name nobody has heard of';
+    await tester.enterText(
+      find.byKey(const Key('restaurant_search_field')),
+      query,
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final rect = tester.getRect(find.textContaining('No restaurant called'));
+    // Screen padding (s4) plus the text's own horizontal padding (s4).
+    expect(rect.left, greaterThanOrEqualTo(WarmPlayfulSpacing.s4 * 2));
+    expect(rect.right, lessThanOrEqualTo(320 - WarmPlayfulSpacing.s4 * 2));
+    // Wrapped onto several lines.
+    expect(rect.height, greaterThan(40));
+  });
+
+  testWidgets('a typed query with no results names the query and a next '
+      'step', (tester) async {
+    await _pumpScreen(
+      tester,
+      controller: () => FakeRestaurantSearchController(const []),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('restaurant_search_field')),
+      'zzzz',
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(
+      find.text('No restaurant called \u201czzzz\u201d. Try another name.'),
+      findsOneWidget,
+    );
+    expect(find.text('No matches'), findsNothing);
   });
 
   testWidgets('tapping a row fires restaurant_selected and navigates to '

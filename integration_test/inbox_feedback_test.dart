@@ -99,7 +99,7 @@ Future<void> _boot(WidgetTester tester) async {
 /// With the host session signed in, waits for the authed Discover feed, then
 /// opens the Requests tab.
 Future<void> _openRequestsTab(WidgetTester tester) async {
-  final discoverMarker = find.byKey(const Key('discovery_create_meal_button'));
+  final discoverMarker = discoverFeedMarker();
   await _pumpUntilFound(tester, discoverMarker);
   expect(
     discoverMarker,

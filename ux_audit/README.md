@@ -77,6 +77,16 @@ blank).
 - **Fonts:** Nunito is a bundled asset (`assets/fonts/`) applied to every text
   style, so there is no font download to wait for.
 - The app boots once per process, so every cell is its own `flutter drive` run.
+- **Restaurant search** (shots 30-33, 36-37) is served from a fixed list of six
+  Paris restaurants (`_FixedRestaurantSearch` in `capture_test.dart`), not the
+  real Places-backed `searchRestaurants` callable: that callable needs a
+  `PLACES_API_KEY` secret the Firebase emulator cannot read, so every search
+  would fail. `bootstrap` runs the app in a plain `ProviderScope` with no
+  overrides, and `lib/` must not change for the harness, so right after boot the
+  test re-pumps `NotEatAloneApp` in a fresh `ProviderScope` that overrides
+  `restaurantSearchRepositoryProvider` (name contains, case-insensitive; `zzzz`
+  matches nothing). The screen's 400 ms debounce is covered by the bounded
+  `_pumpUntilFound` waits on the expected result text.
 - A native alert that gets stuck on a simulator (rare) needs
   `xcrun simctl shutdown/boot` of that device.
 
@@ -89,7 +99,7 @@ Numbering is by screen, not capture order; names sort in flow order. 67 per cell
 |---|---|---|
 | 01-07 | Sign-in, phone code | `01_signin`, `02_signin_phone_error` (hint on the field), `03_signin_phone_waiting` ("Sending code…" spinner), `04_phone_verify`, `05_phone_verify_in_flight` (6th digit auto-submits), `06_phone_verify_error`, `07_phone_verify_resent` (waits out the 30 s cooldown, taps Resend) |
 | 10-16 | Age gate, profile setup | `10_age_gate`, `11_age_gate_picker`, `12_age_gate_under18_selected`, `13_signin_underage_notice` (the sign-in screen after an under-18 submit), `14_profile_setup_empty`, `15_profile_setup_filled`, `16_profile_setup_ready` |
-| 20-26 | Discover | `20_discover_loading`, `21_discover_empty`, `22_discover_data` (Paris notice shown), `23_discover_scrolled`, `24_discover_notice_dismissed`, `25_discover_refreshing` (pull to refresh), `26_discover_meal_created` (confirmation snackbar) |
+| 20-26 | Discover | `20_discover_loading`, `21_discover_empty`, `22_discover_data` (Paris notice shown), `23_discover_scrolled`, `23b_discover_scrolled_end` (list end: the last card clears the create-meal button), `24_discover_notice_dismissed`, `25_discover_refreshing` (pull to refresh), `26_discover_meal_created` (confirmation snackbar) |
 | 30-37 | Create a meal | `30_restaurant_search`, `31_restaurant_search_no_matches`, `32_restaurant_search_filtered`, `33_create_meal_empty`, `34_create_meal_date_picker`, `35_create_meal_time_picker`, `36_create_meal_filled`, `37_create_meal_in_flight` |
 | 40-49 | Meal detail | `40_meal_detail_open` (idle "Request to join"), `42_meal_detail_requested`, `43_meal_detail_matched`, `44_meal_detail_not_selected`, `45_meal_detail_women_only` (as a woman), `46_meal_detail_women_only_disabled` (as a man), `47_meal_detail_menu` (report/block), `48_meal_detail_own`, `49_meal_detail_request_rejected` |
 | 51-55 | Requests inbox | `51_requests_empty`, `52_requests_data` (two pending, one past-meal chip), `53_requests_scrolled`, `54_requests_approve_in_flight`, `55_requests_deny_in_flight` |
@@ -157,7 +167,7 @@ Everything else is tapped and typed in the real UI. These are not:
 | 44 `not_selected` | A seeded `denied` request | Same |
 | 46 `women_only_disabled` | Sign in as Dario (a man) and push `/meals/detail` with the seeded women-only meal | Discover hides women-only meals from men. Flipping the viewer's gender while the screen is open does not work either, see "App behaviours found" |
 | 48 `own` | Push `/meals/detail` with the viewer's own seeded meal | Discover excludes own meals and there is no "my meals" list: this state has no UI path |
-| 49 `request_rejected` | The meal is set to `matched` by an admin write after the detail screen loaded it, then the viewer taps "Request to join"; the rules reject it | A stale screen; the server rejects the write |
+| 49 `request_rejected` | The meal is set to `matched` by an admin write after the detail screen loaded it, then the viewer taps "Request to join"; the rules reject it and the bar shows a snackbar | A stale screen; the server rejects the write |
 | 16 `profile_setup_ready` | An admin write adds a photo URL to the new user | The photo picker is a native sheet the harness cannot drive |
 | 02, 04, 06 (sign-in / code) | Real UI against the Auth emulator (an implausible number, refused by the app itself; a valid one, accepted without an SMS; a wrong code) | none |
 
@@ -203,8 +213,11 @@ Everything else is tapped and typed in the real UI. These are not:
   profile setup emptied the form; gender flipped on a meal-detail screen). The
   router is now built once; step `16_profile_setup_ready` prints
   `UXCHECK router: ... kept its input after a user-doc write: true|false`.
-- A rejected join request leaves no error: the button that listens for the
-  failure is replaced by the optimistic "Requested" state and back (shot 49).
+- FIXED in plan 17b (kept as history): a rejected join request used to leave
+  no error (the button that listened for the failure was replaced by the
+  optimistic "Requested" state and back). The action bar now listens and shows a
+  snackbar (shot 49, taken as soon as it appears). `createRequest` wraps every
+  failure, so only the generic "Couldn't send your request. Try again." shows.
 - FIXED in plan 17a (kept as history): `verifyPhoneNumber` returns as soon as the
   request is dispatched, so the "Send code" spinner used to vanish before the
   code screen appeared (shot 03). The sign-in screen now holds the spinner until
