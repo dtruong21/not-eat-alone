@@ -31,13 +31,17 @@ import 'package:not_eat_alone/features/chat/application/chat_messages_provider.d
 import 'package:not_eat_alone/features/chat/application/chat_read_provider.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
+import 'package:not_eat_alone/features/chat/presentation/group_messages.dart';
+import 'package:not_eat_alone/features/chat/presentation/widgets/chat_meal_header.dart';
+import 'package:not_eat_alone/features/chat/presentation/widgets/day_separator.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/leave_match_action.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_composer.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/post_meal_card.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
+import 'package:not_eat_alone/features/safety/presentation/safety_tips_sheet.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
-import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_card.dart';
+import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_banner.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 String? _otherUidFor(List<ChatListItem> items, String matchId) {
@@ -77,6 +81,9 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
+  /// The safety banner is hidden for this chat only; not persisted.
+  bool _safetyDismissed = false;
+
   @override
   void initState() {
     super.initState();
@@ -121,6 +128,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           );
 
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final chatGone =
+        messagesAsync.hasError && _isChatGone(messagesAsync.error!);
 
     return Scaffold(
       appBar: AppBar(
@@ -142,43 +151,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // The post-meal prompt and safety tips are informational: hide them
-            // while the keyboard is open (they would leave the thread a sliver
-            // or push the composer off-screen) and never let them take more
-            // than ~40% of the body (they scroll at large text sizes).
-            if (!keyboardOpen)
-              Flexible(
-                flex: 0,
-                child: LayoutBuilder(
-                  builder: (context, constraints) => ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.sizeOf(context).height * 0.4,
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          if (otherUid != null)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                WarmPlayfulSpacing.s4,
-                                WarmPlayfulSpacing.s4,
-                                WarmPlayfulSpacing.s4,
-                                0,
-                              ),
-                              child: PostMealCard(
-                                matchId: widget.matchId,
-                                targetUid: otherUid,
-                              ),
-                            ),
-                          const Padding(
-                            padding: EdgeInsets.all(WarmPlayfulSpacing.s4),
-                            child: SafetyTipsCard(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+            // The meal header and safety banner are informational: hide them
+            // while the keyboard is open so the thread keeps its room. The
+            // post-meal prompt scrolls with the messages instead.
+            if (!keyboardOpen) ChatMealHeader(matchId: widget.matchId),
+            if (!keyboardOpen && !_safetyDismissed && !chatGone)
+              SafetyTipsBanner(
+                onOpen: () => showSafetyTipsSheet(context),
+                onDismiss: () => setState(() => _safetyDismissed = true),
               ),
             Expanded(
               child: messagesAsync.when(
@@ -216,33 +196,71 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ),
                       ),
                 data: (messages) {
+                  final postMealCard = otherUid == null
+                      ? null
+                      : PostMealCard(
+                          matchId: widget.matchId,
+                          targetUid: otherUid,
+                        );
                   if (messages.isEmpty) {
-                    return const EmptyState(title: 'Say hi \u{1F44B}');
+                    return Column(
+                      children: [
+                        if (postMealCard != null && !keyboardOpen)
+                          Padding(
+                            padding: const EdgeInsets.all(
+                              WarmPlayfulSpacing.s4,
+                            ),
+                            child: postMealCard,
+                          ),
+                        const Expanded(
+                          child: EmptyState(title: 'Say hi \u{1F44B}'),
+                        ),
+                      ],
+                    );
                   }
 
                   final myLatestId = _myLatestMessageId(messages, myUid);
-                  final ordered = messages.reversed.toList(growable: false);
+                  // Newest first (the list is reversed); a day separator
+                  // therefore comes after the first message of its day.
+                  final ordered = groupMessages(
+                    messages,
+                    now: DateTime.now(),
+                  ).reversed.toList(growable: false);
+                  // Index 0 sits just above the composer: the post-meal prompt
+                  // follows the latest message and scrolls away with it.
+                  final offset = postMealCard == null ? 0 : 1;
 
                   return ListView.builder(
                     key: const Key('chat_messages_list'),
                     reverse: true,
                     padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-                    itemCount: ordered.length,
+                    itemCount: ordered.length + offset,
                     itemBuilder: (context, index) {
-                      final message = ordered[index];
+                      if (postMealCard != null && index == 0) {
+                        return postMealCard;
+                      }
+                      final entry = ordered[index - offset];
+                      if (entry is DaySeparatorEntry) {
+                        return DaySeparator(label: entry.label);
+                      }
+                      entry as MessageEntry;
+                      final message = entry.message;
                       final mine = myUid != null && message.senderId == myUid;
                       final showSeen =
                           mine &&
                           message.id == myLatestId &&
                           _isSeenBy(message, otherReadAsync.value);
                       return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: WarmPlayfulSpacing.s3,
+                        padding: EdgeInsets.only(
+                          bottom: entry.endsRun
+                              ? WarmPlayfulSpacing.s3
+                              : WarmPlayfulSpacing.s1,
                         ),
                         child: MessageBubble(
                           message: message,
                           mine: mine,
                           showSeen: showSeen,
+                          showTimestamp: entry.endsRun,
                         ),
                       );
                     },
@@ -250,8 +268,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
             ),
-            if (!(messagesAsync.hasError && _isChatGone(messagesAsync.error!)))
-              MessageComposer(matchId: widget.matchId),
+            if (!chatGone) MessageComposer(matchId: widget.matchId),
           ],
         ),
       ),

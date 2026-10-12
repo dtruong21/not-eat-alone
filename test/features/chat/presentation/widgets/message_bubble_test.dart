@@ -49,4 +49,29 @@ void main() {
     expect(find.text('hi'), findsOneWidget);
     expect(find.textContaining(RegExp(r'\d{2}:\d{2}')), findsNothing);
   });
+
+  testWidgets('showTimestamp: false hides the time but keeps the text', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: Scaffold(
+          body: MessageBubble(
+            message: ChatMessage(
+              id: 'c',
+              matchId: 'm1',
+              senderId: 'me',
+              text: 'hello',
+              createdAt: DateTime(2027, 1, 5, 19, 30),
+            ),
+            mine: true,
+            showTimestamp: false,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('hello'), findsOneWidget);
+    expect(find.text('19:30'), findsNothing);
+  });
 }

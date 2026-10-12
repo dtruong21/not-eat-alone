@@ -21,6 +21,7 @@ import 'package:not_eat_alone/features/safety/application/block_providers.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
 import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
 import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
+import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
 import 'package:not_eat_alone/features/settings/presentation/settings_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
@@ -113,6 +114,8 @@ Future<ProviderContainer> _mount(WidgetTester tester) async {
       matchRepositoryProvider.overrideWithValue(matches),
       authRepositoryProvider.overrideWithValue(auth),
       blockedUserIdsProvider.overrideWith((ref) => Stream.value(<String>{})),
+      // The chat's meal header reads the meal; no Firebase in this test.
+      matchMealProvider.overrideWith((ref, matchId) async => null),
       authStateProvider.overrideWith(
         (ref) => Stream.value(const AuthUser(uid: 'u1')),
       ),

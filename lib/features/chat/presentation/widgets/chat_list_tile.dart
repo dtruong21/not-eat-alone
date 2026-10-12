@@ -13,6 +13,7 @@ import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
 import 'package:not_eat_alone/features/chat/application/chat_messages_provider.dart';
+import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 /// "1m" / "2h" / "3d" / falls back to a short date beyond a week — kept as a
@@ -49,6 +50,8 @@ class ChatListTile extends ConsumerWidget {
 
     final user = ref.watch(userDocProvider(item.otherUid)).value;
     final lastMessage = ref.watch(lastMessageProvider(item.match.id)).value;
+    // Absent until loaded (or if the meal is gone): no spinner, no empty line.
+    final meal = ref.watch(matchMealProvider(item.match.id)).value;
     final myUid = ref.watch(authStateProvider).value?.uid;
 
     final preview = lastMessage?.text ?? 'Say hi \u{1F44B}';
@@ -96,11 +99,25 @@ class ChatListTile extends ConsumerWidget {
                   children: [
                     Text(
                       name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: textTheme.bodyMedium?.copyWith(
                         color: colors.onSurface,
                         fontWeight: WarmPlayfulType.h2Weight,
                       ),
                     ),
+                    if (meal != null) ...[
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      Text(
+                        '${meal.restaurant.name} · '
+                        '${formatMealDateTime(meal.dateTime)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: context.wp.muted,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: WarmPlayfulSpacing.s1),
                     Text(
                       preview,
@@ -126,13 +143,16 @@ class ChatListTile extends ConsumerWidget {
                     ),
                   if (unread) ...[
                     const SizedBox(height: WarmPlayfulSpacing.s1),
-                    Container(
-                      key: Key('chat_list_tile_unread_${item.match.id}'),
-                      width: WarmPlayfulSpacing.s2,
-                      height: WarmPlayfulSpacing.s2,
-                      decoration: BoxDecoration(
-                        color: colors.primary,
-                        shape: BoxShape.circle,
+                    Semantics(
+                      label: 'Unread',
+                      child: Container(
+                        key: Key('chat_list_tile_unread_${item.match.id}'),
+                        width: WarmPlayfulSpacing.s2,
+                        height: WarmPlayfulSpacing.s2,
+                        decoration: BoxDecoration(
+                          color: colors.primary,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
                   ],

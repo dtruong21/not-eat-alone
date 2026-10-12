@@ -1,15 +1,17 @@
 /// Chats tab (`/chats`) — the signed-in user's matches as a chat list.
 ///
 /// Body switches on [chatListProvider]: loading skeleton, error + retry,
-/// empty "match on a meal to start talking" hint, or a list of
+/// empty "No chats yet" state with a Find a meal action, or a list of
 /// [ChatListTile]s. Each tile owns its own row-level watches (other
 /// participant + last message); this screen only renders the shell.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
 import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
@@ -32,9 +34,14 @@ class ChatListScreen extends ConsumerWidget {
               ErrorState(onRetry: () => ref.invalidate(chatListProvider)),
           data: (items) {
             if (items.isEmpty) {
-              return const EmptyState(
+              return EmptyState(
                 icon: Icons.chat_bubble_outline_rounded,
-                title: 'No chats yet — match on a meal to start talking',
+                title: 'No chats yet',
+                message: 'Match on a meal to start talking.',
+                action: AppButton(
+                  label: 'Find a meal',
+                  onPressed: () => context.go('/discover'),
+                ),
               );
             }
             return ListView.separated(

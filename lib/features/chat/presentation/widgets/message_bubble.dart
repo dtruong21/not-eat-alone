@@ -15,12 +15,17 @@ class MessageBubble extends StatelessWidget {
     required this.message,
     required this.mine,
     this.showSeen = false,
+    this.showTimestamp = true,
     super.key,
   });
 
   final ChatMessage message;
   final bool mine;
   final bool showSeen;
+
+  /// Whether to print the send time under the bubble (the last bubble of a run
+  /// only; see `groupMessages`).
+  final bool showTimestamp;
 
   @override
   Widget build(BuildContext context) {
@@ -58,12 +63,13 @@ class MessageBubble extends StatelessWidget {
               style: textTheme.bodyMedium?.copyWith(color: textColor),
             ),
           ),
-          const SizedBox(height: WarmPlayfulSpacing.s1),
-          if (message.createdAt != null)
+          if (showTimestamp && message.createdAt != null) ...[
+            const SizedBox(height: WarmPlayfulSpacing.s1),
             Text(
               formatClockTime(message.createdAt!),
               style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
             ),
+          ],
           if (showSeen)
             Text(
               'Seen',

@@ -195,6 +195,88 @@ void main() {
     });
   });
 
+  group('formatDayLabel', () {
+    test('same calendar day reads Today, whatever the time', () {
+      expect(formatDayLabel(DateTime(2026, 10, 9, 0, 1), now: now), 'Today');
+      expect(formatDayLabel(DateTime(2026, 10, 9, 23, 59), now: now), 'Today');
+    });
+    test('the previous calendar day reads Yesterday', () {
+      expect(formatDayLabel(DateTime(2026, 10, 8, 23, 59), now: now), 'Yesterday');
+      expect(
+        formatDayLabel(
+          DateTime(2026, 12, 31, 10),
+          now: DateTime(2027, 1, 1, 0, 5),
+        ),
+        'Yesterday',
+      );
+    });
+    test('older days use weekday, day and month, no year in the same year', () {
+      expect(formatDayLabel(DateTime(2026, 10, 5, 8), now: now), 'Mon 5 Oct');
+      expect(formatDayLabel(DateTime(2026, 1, 1, 8), now: now), 'Thu 1 Jan');
+    });
+    test('a different year appends the year', () {
+      expect(
+        formatDayLabel(DateTime(2025, 12, 31, 8), now: now),
+        'Wed 31 Dec 2025',
+      );
+    });
+    test('a time ahead of now (clock skew) still reads Today', () {
+      expect(formatDayLabel(DateTime(2026, 10, 9, 15, 0, 30), now: now), 'Today');
+    });
+    test('a UTC instant is placed on its LOCAL calendar day', () {
+      final utc = DateTime.utc(2026, 10, 9, 23, 30);
+      final shifted = _shifted(utc);
+      final sameDay = DateTime(shifted.year, shifted.month, shifted.day, 12);
+      final dayAfter = DateTime(shifted.year, shifted.month, shifted.day + 1, 9);
+      expect(formatDayLabel(utc, now: sameDay), 'Today');
+      expect(formatDayLabel(utc, now: dayAfter), 'Yesterday');
+    });
+  });
+
+  // DST: a "day" is 23 or 25 hours long here, so a Duration-based comparison
+  // would be off by one. Run with TZ=America/Los_Angeles.
+  group(
+    'under TZ=America/Los_Angeles (DST)',
+    skip: Platform.environment['TZ'] == 'America/Los_Angeles'
+        ? false
+        : 'run with TZ=America/Los_Angeles',
+    () {
+      test('Yesterday across the 25 h fall-back day', () {
+        // 1 Nov 2026 has 25 hours: 00:30 on the 1st is 23.75 h before 00:15
+        // on the 2nd by the clock, but still "Yesterday" by the calendar.
+        expect(
+          formatDayLabel(
+            DateTime(2026, 11, 1, 0, 30),
+            now: DateTime(2026, 11, 2, 0, 15),
+          ),
+          'Yesterday',
+        );
+      });
+      test('Yesterday across the 23 h spring-forward day', () {
+        expect(
+          formatDayLabel(
+            DateTime(2027, 3, 13, 23, 45),
+            now: DateTime(2027, 3, 14, 23, 30),
+          ),
+          'Yesterday',
+        );
+        expect(
+          formatDayLabel(
+            DateTime(2027, 3, 14, 0, 30),
+            now: DateTime(2027, 3, 14, 23, 30),
+          ),
+          'Today',
+        );
+      });
+      test('a UTC instant lands on the Pacific calendar day', () {
+        // 03:30Z on 2 Nov is 20:30 PST on 1 Nov.
+        final utc = DateTime.utc(2026, 11, 2, 3, 30);
+        expect(formatDayLabel(utc, now: DateTime(2026, 11, 1, 22)), 'Today');
+        expect(formatDayLabel(utc, now: DateTime(2026, 11, 2, 9)), 'Yesterday');
+      });
+    },
+  );
+
   // Hard literals, only meaningful under a known zone. CI's non-UTC step sets
   // TZ=Pacific/Kiritimati (UTC+14, no DST), so 23:30Z lands on the next day.
   group(
@@ -224,6 +306,17 @@ void main() {
         expect(
           formatMealDateTime(instant, now: DateTime(2026, 1, 1, 9)),
           'Tomorrow 13:30',
+        );
+      });
+      test('formatDayLabel puts 23:30Z on 2 Jan, local', () {
+        expect(formatDayLabel(instant, now: DateTime(2026, 1, 2, 9)), 'Today');
+        expect(
+          formatDayLabel(instant, now: DateTime(2026, 1, 3, 9)),
+          'Yesterday',
+        );
+        expect(
+          formatDayLabel(instant, now: DateTime(2026, 1, 9, 9)),
+          'Fri 2 Jan',
         );
       });
       test('formatMealDateTime rolls over to Fri 2 Jan', () {

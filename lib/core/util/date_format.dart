@@ -51,6 +51,29 @@ String formatMealDateTime(DateTime value, {DateTime? now}) {
       '${_monthAbbreviation(local.month)}$year, ${_clock(local)}';
 }
 
+/// Labels the calendar day of [value] for a chat's day separator: "Today",
+/// "Yesterday", otherwise "Mon 5 Oct" (with the year, "Wed 31 Dec 2025", only
+/// when it differs from [now]'s year).
+///
+/// Local calendar days, compared on UTC midnights so a DST change never makes
+/// a day 23 or 25 hours long. A day at or after [now]'s (clock skew on a
+/// message that was just sent) reads "Today". [now] defaults to
+/// `DateTime.now()` and exists for tests.
+String formatDayLabel(DateTime value, {DateTime? now}) {
+  final local = value.toLocal();
+  final today = (now ?? DateTime.now()).toLocal();
+  final dayDelta = DateTime.utc(
+    today.year,
+    today.month,
+    today.day,
+  ).difference(DateTime.utc(local.year, local.month, local.day)).inDays;
+  if (dayDelta <= 0) return 'Today';
+  if (dayDelta == 1) return 'Yesterday';
+  final year = local.year == today.year ? '' : ' ${local.year}';
+  return '${_weekdayAbbreviations[local.weekday - 1]} ${local.day} '
+      '${_monthAbbreviation(local.month)}$year';
+}
+
 /// Formats [value] as a 24-hour clock time, e.g. "20:30", in the viewer's
 /// local time (chat timestamps come out of the data layer as UTC
 /// `DateTime`s; a local value's `toLocal()` is itself).
