@@ -40,12 +40,12 @@ class AppShell extends ConsumerWidget {
             icon: Badge(
               isLabelVisible: pending > 0,
               label: Text('$pending'),
-              child: const Icon(Icons.mark_email_unread_outlined),
+              child: const Icon(Icons.inbox_outlined),
             ),
             selectedIcon: Badge(
               isLabelVisible: pending > 0,
               label: Text('$pending'),
-              child: const Icon(Icons.mark_email_unread),
+              child: const Icon(Icons.inbox),
             ),
             label: 'Requests',
           ),

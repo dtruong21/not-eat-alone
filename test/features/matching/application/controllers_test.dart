@@ -10,6 +10,7 @@ import 'package:not_eat_alone/features/matching/application/create_request_contr
 import 'package:not_eat_alone/features/matching/application/inbox_action_controller.dart';
 import 'package:not_eat_alone/features/matching/application/request_providers.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
+import 'package:not_eat_alone/features/matching/domain/inbox_action.dart';
 import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/repositories/request_repository.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
@@ -164,6 +165,63 @@ void main() {
       final state = container.read(inboxActionControllerProvider);
       expect(state.hasError, isTrue);
       expect(result, same(failure));
+    });
+
+    test('inboxPendingProvider tracks the in-flight request id + action and '
+        'clears on success and on failure', () async {
+      final gate = Completer<void>();
+      when(() => requestRepository.approve(any()))
+          .thenAnswer((_) => gate.future);
+      expect(container.read(inboxPendingProvider), isEmpty);
+
+      final inFlight = container
+          .read(inboxActionControllerProvider.notifier)
+          .approve(_request);
+      expect(
+        container.read(inboxPendingProvider),
+        {_request.id: InboxAction.approve},
+      );
+      gate.completeError(StateError('denied'));
+      await inFlight;
+      expect(container.read(inboxPendingProvider), isEmpty);
+
+      await container
+          .read(inboxActionControllerProvider.notifier)
+          .deny(_request);
+      expect(container.read(inboxPendingProvider), isEmpty);
+    });
+
+    test('two requests in flight are tracked independently', () async {
+      const other = JoinRequest(
+        id: 'meal_1_guest_2',
+        mealId: 'meal_1',
+        guestId: 'guest_2',
+        hostId: 'host_1',
+      );
+      final gateA = Completer<void>();
+      final gateB = Completer<void>();
+      when(() => requestRepository.approve(_request))
+          .thenAnswer((_) => gateA.future);
+      when(() => requestRepository.deny(other))
+          .thenAnswer((_) => gateB.future);
+      final controller = container.read(inboxActionControllerProvider.notifier);
+
+      final a = controller.approve(_request);
+      final b = controller.deny(other);
+      expect(container.read(inboxPendingProvider), {
+        _request.id: InboxAction.approve,
+        other.id: InboxAction.deny,
+      });
+
+      gateA.complete();
+      await a;
+      expect(
+        container.read(inboxPendingProvider),
+        {other.id: InboxAction.deny},
+      );
+      gateB.complete();
+      await b;
+      expect(container.read(inboxPendingProvider), isEmpty);
     });
 
     test('deny() goes loading, then data', () async {

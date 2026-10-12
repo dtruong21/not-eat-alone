@@ -142,4 +142,14 @@ void main() {
     expect(badge.isLabelVisible, isTrue);
     expect(find.text('3'), findsWidgets);
   });
+
+  testWidgets('the Requests tab uses the inbox icon, not the unread-mail one', (
+    tester,
+  ) async {
+    await _pumpShell(tester, pending: 0);
+
+    expect(find.byIcon(Icons.inbox_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.mark_email_unread_outlined), findsNothing);
+    expect(find.byIcon(Icons.mark_email_unread), findsNothing);
+  });
 }

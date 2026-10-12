@@ -4,8 +4,9 @@
 /// Watches `userDocProvider(request.guestId)` for the guest's photo/name/
 /// derived age (own loading/error tolerated — falls back to a placeholder
 /// row rather than blocking the whole tile), and drives Approve/Deny through
-/// `inboxActionControllerProvider`. Both buttons disable while that
-/// controller is submitting. Also watches `requestMealProvider` to show which
+/// `inboxActionControllerProvider`. While THIS request's action is in flight
+/// (`inboxPendingProvider`) both its buttons disable and the pressed one
+/// shows a spinner; other tiles stay usable. Also watches `requestMealProvider` to show which
 /// meal the request is for (restaurant + date/time) and, once that meal's
 /// time has passed, a chip plus a disabled Approve. While the meal is
 /// loading, errored or missing the tile behaves as if it did not know about
@@ -22,11 +23,13 @@ import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/matching/application/inbox_action_controller.dart';
 import 'package:not_eat_alone/features/matching/application/request_meal_provider.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
 import 'package:not_eat_alone/features/matching/presentation/widgets/inbox_action_message.dart';
+import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 const _pastMealLabel = 'Meal time has passed';
@@ -108,7 +111,11 @@ class RequestInboxTile extends ConsumerWidget {
             if (guestAge != null) guestAge,
           ].join(', ');
 
-    final isSubmitting = ref.watch(inboxActionControllerProvider).isLoading;
+    // Busy only for THIS request (the controller's own state is shared).
+    final pendingAction = ref.watch(
+      inboxPendingProvider.select((p) => p[request.id]),
+    );
+    final isBusy = pendingAction != null;
 
     // Loading / error / missing meal all collapse to `null`: the tile just
     // omits the meal line and leaves Approve enabled.
@@ -120,15 +127,38 @@ class RequestInboxTile extends ConsumerWidget {
       fontWeight: WarmPlayfulType.captionWeight,
     );
 
-    final approveButton = FilledButton(
-      key: Key('request_inbox_approve_button_${request.id}'),
-      onPressed: isSubmitting || isPast ? null : () => _approve(context, ref),
-      // The hint lives INSIDE the button so it merges into the button's own
-      // semantics node (a Semantics wrapper outside it would be a separate
-      // node) and screen readers say why Approve is disabled.
-      child: isPast
-          ? Semantics(hint: _pastMealLabel, child: const Text('Approve'))
-          : const Text('Approve'),
+    // The hint lives on a Semantics wrapping the button so screen readers say
+    // why Approve is disabled.
+    final approveButton = MergeSemantics(
+      child: Semantics(
+        hint: isPast ? _pastMealLabel : null,
+        child: AppButton(
+          key: Key('request_inbox_approve_button_${request.id}'),
+          label: 'Approve',
+          expand: false,
+          maxLines: 1,
+          isLoading: pendingAction == InboxAction.approve,
+          onPressed: isBusy || isPast ? null : () => _approve(context, ref),
+        ),
+      ),
+    );
+    // Deliberate: danger-coloured quiet action next to the primary Approve.
+    final denyButton = TextButtonTheme(
+      data: TextButtonThemeData(
+        // `merge`: this style wins, the app's text-button theme fills the gaps.
+        style: TextButton.styleFrom(
+          foregroundColor: context.wp.dangerText,
+        ).merge(theme.textButtonTheme.style),
+      ),
+      child: AppButton(
+        key: Key('request_inbox_deny_button_${request.id}'),
+        label: 'Deny',
+        variant: AppButtonVariant.text,
+        expand: false,
+        maxLines: 1,
+        isLoading: pendingAction == InboxAction.deny,
+        onPressed: isBusy ? null : () => _deny(context, ref),
+      ),
     );
 
     return Material(
@@ -150,10 +180,15 @@ class RequestInboxTile extends ConsumerWidget {
                   radius: WarmPlayfulSpacing.s5,
                   backgroundColor: colors.surfaceContainerHighest,
                   backgroundImage: photoUrl != null
-                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s5)
-                  : null,
-              onBackgroundImageError:
-                  photoUrl != null ? ignoreAvatarImageError : null,
+                      ? avatarImage(
+                          context,
+                          photoUrl,
+                          radius: WarmPlayfulSpacing.s5,
+                        )
+                      : null,
+                  onBackgroundImageError: photoUrl != null
+                      ? ignoreAvatarImageError
+                      : null,
                   child: photoUrl == null
                       ? Icon(
                           Icons.person_rounded,
@@ -174,6 +209,8 @@ class RequestInboxTile extends ConsumerWidget {
                           fontWeight: WarmPlayfulType.h2Weight,
                         ),
                       ),
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      RatingBadge(uid: request.guestId),
                       if (meal != null) ...[
                         const SizedBox(height: WarmPlayfulSpacing.s1),
                         Column(
@@ -228,22 +265,16 @@ class RequestInboxTile extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: WarmPlayfulSpacing.s3),
-            // Wrap: at narrow widths / large text the buttons stack, not overflow.
-            Wrap(
-              alignment: WrapAlignment.end,
+            // Stacks (Approve on top) when the pair does not fit, at narrow
+            // widths / large text, instead of overflowing.
+            OverflowBar(
+              alignment: MainAxisAlignment.end,
+              overflowAlignment: OverflowBarAlignment.end,
+              overflowDirection: VerticalDirection.up,
               spacing: WarmPlayfulSpacing.s2,
-              runSpacing: WarmPlayfulSpacing.s2,
+              overflowSpacing: WarmPlayfulSpacing.s2,
               children: [
-                OutlinedButton(
-                  key: Key('request_inbox_deny_button_${request.id}'),
-                  onPressed: isSubmitting ? null : () => _deny(context, ref),
-                  // Deliberate: danger-coloured secondary action.
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: context.wp.dangerText,
-                    side: BorderSide(color: context.wp.dangerText),
-                  ),
-                  child: const Text('Deny'),
-                ),
+                denyButton,
                 if (isPast)
                   Tooltip(message: _pastMealLabel, child: approveButton)
                 else
