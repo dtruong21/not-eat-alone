@@ -36,7 +36,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Data + time
 
 - [ ] Timezone math. Date-keyed data must respect local TZ, not UTC.
-- [ ] Date rollover at midnight — "today" advances without manual refresh. — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md`
+- [ ] Date rollover at midnight — "today" advances without manual refresh. — re-verified 2026-10-12 (code): fixed, `discovery_clock_edge_test.dart` drops started meals by timer (see `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md`); on-device NOT VERIFIED HERE
 - [ ] DST transition — math still correct on clock-change days.
 - [ ] Long strings (≥1000 chars) in text fields don't crash.
 - [ ] Long lists (≥100 items) render without dropped frames.
@@ -44,7 +44,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Network
 
-- [ ] Offline write queues (toggle airplane mode mid-action). — **FAIL (code)**: UI awaits the server ack, see `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md`
+- [ ] Offline write queues (toggle airplane mode mid-action). — re-verified 2026-10-12: chat, create meal, request, rating use `settleOrQueue` (fixed, `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md`); **FAIL (code)** for Report and Block, which still await the server: `docs/bugs/2026-10-12-report-and-block-spin-forever-offline.md`; airplane mode NOT VERIFIED HERE
 - [ ] Reconnect syncs queued writes.
 - [ ] Slow network throttle (Network Link Conditioner / Android emulator throttle) doesn't break UI.
 - [ ] Firestore cache renders previously-fetched data on cold offline launch.
@@ -52,8 +52,8 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Auth
 
 - [ ] Anonymous → real-account linking preserves uid + data.
-- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped). — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`
-- [ ] Account deletion cascade leaves zero orphan docs. — gap: a deleted guest strands the host's matched meal, see `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reports are retained by design, undocumented)
+- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped). — re-verified 2026-10-12: providers fixed (`docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`); the on-disk Firestore cache is not cleared (P3 in `docs/bugs/2026-10-12-minor-findings-second-sweep.md`)
+- [ ] Account deletion cascade leaves zero orphan docs. — re-verified 2026-10-12 against the Firestore emulator (`firebase/functions/test-emulator/state_machine.test.cjs`): a guest leaving reopens a future meal / cancels a past one, flags cleared (`docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md`); non-atomic window: `docs/bugs/2026-10-12-cancel-meal-can-leave-a-stale-match-that-blocks-rematching.md`; Storage + Auth deletion NOT VERIFIED HERE
 - [ ] Token refresh works after 1h+ idle.
 
 ### Permissions
@@ -63,26 +63,26 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Lifecycle
 
-- [ ] Cold start (after force-kill) reaches the right screen within 3s on mid-tier Android.
+- [ ] Cold start (after force-kill) reaches the right screen within 3s on mid-tier Android. — timing NOT VERIFIED HERE; **FAIL (code)** for the screen itself: sign-in / age gate flash while the session or user doc loads, `docs/bugs/2026-10-12-router-flashes-signin-and-age-gate-while-session-loads.md`
 - [ ] Background → foreground after 10+ min doesn't crash or duplicate state.
-- [ ] Deep link cold-opens app to the linked screen (go_router `initialLocation` path).
+- [ ] Deep link cold-opens app to the linked screen (go_router `initialLocation` path). — **FAIL (code)** for push taps: chat opens with no back navigation, `docs/bugs/2026-10-12-push-tap-strands-user-in-chat-without-back.md`
 
 ### Memory + perf
 
 - [ ] 5 min of typical use → no obvious memory growth (DevTools memory tab).
-- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes. — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`
+- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes. — re-verified 2026-10-12: per-user family providers auto-dispose; `hostInboxProvider`, `blockedUserIdsProvider`, `chatListProvider`, `currentUserDocProvider` and the discovery feed are app-lifetime by design and re-subscribe on auth change (`docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`)
 
 ### Security
 
-- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`
+- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) and again 2026-10-12 (`hardening`, `users_profiles`, new `client_write_shapes`: 19 passed, 3 skipped for open bugs `docs/bugs/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md`, `docs/bugs/2026-10-12-requests-rule-lets-a-guest-break-the-hosts-inbox.md`, `docs/bugs/2026-10-12-minor-findings-second-sweep.md`) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`
 - [ ] `.env` is gitignored — `git log --all -p -- .env` returns nothing.
 - [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/closed/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
 
 ### Visual + a11y
 
-- [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`).
-- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — **FAIL (harness)**: sign-in, sheets, chat, see `docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md` and `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md`
-- [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one.
+- [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`). — NOT VERIFIED HERE: only meal detail, buttons and contrast tokens have dark-mode tests; no per-screen goldens
+- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — re-verified 2026-10-12 (harness, real Nunito): sign-in, sheets, age gate, chat pass (`docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md`, `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md`); other screens and a real device NOT VERIFIED HERE
+- [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one. — **FAIL (code)**: rating stars, chat send, Paris notice close, add-photo tile have no accessible name: `docs/bugs/2026-10-12-icon-only-controls-have-no-screen-reader-label.md` (`test/core/a11y/`); screen-reader pass NOT VERIFIED HERE
 
 ### Design system (UX plan 16a) — automated, `test/core/design/`
 
@@ -148,6 +148,7 @@ Related PRD entry: `docs/PRD.md § Auth`
 - `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1, fixed) — private/public split; rules tests in `firebase/rules-test/`
 - `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed)
 - `docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
+- `docs/bugs/2026-10-12-router-flashes-signin-and-age-gate-while-session-loads.md` (P2, open)
 
 ---
 
@@ -202,6 +203,8 @@ Related PRD entry: `docs/PRD.md § Meals`
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
+- `docs/bugs/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open) — the `meals` rule accepts `restaurant: {}`
+- `docs/bugs/2026-10-12-minor-findings-second-sweep.md` (P3) — restaurant search field/retry/billing nits
 
 ---
 
@@ -229,6 +232,9 @@ Related PRD entry: `docs/PRD.md § Discovery`
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
 - `docs/bugs/closed/2026-10-09-location-fix-has-no-timeout.md` (P2)
+- `docs/bugs/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open)
+- `docs/bugs/2026-10-12-feed-is-empty-for-any-device-outside-paris.md` (P2, open) — store-review risk
+- `docs/bugs/2026-10-12-seed-script-writes-legacy-users-shape.md` (P2, open) — the seed golden-path line above is currently untrue for host names/photos
 
 ---
 
@@ -268,7 +274,8 @@ Related PRD entry: `docs/PRD.md § Matching`
 - [ ] Firestore rules (`firebase/firestore.rules`) restrict `requests/{id}` writes to the guest (create, pending only) and the host (status transition pending→approved/denied only); `matches/{mealId}` is host/guest-readable, write-restricted to the approve transaction. Verify via Rules Playground or emulator — a non-host cannot approve/deny another host's request, and a non-participant cannot read a match doc.
 
 **Known issues:**
-- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline (re-verified fixed 2026-10-12)
+- `docs/bugs/2026-10-12-requests-rule-lets-a-guest-break-the-hosts-inbox.md` (P2, open)
 
 ---
 
@@ -299,6 +306,8 @@ Related PRD entry: `docs/PRD.md § Chat`
 - `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
 - `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
+- `docs/bugs/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md` (P2, open)
+- `docs/bugs/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open)
 
 ---
 
@@ -339,6 +348,8 @@ Related PRD entry: `docs/PRD.md § Safety`
 - Stale text above: Settings -> Delete account (single confirm dialog, no re-auth) ships and the callable also deletes the Storage prefix; see `docs/bugs/closed/2026-10-09-docs-contradict-code.md`.
 - `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (P2)
 - `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md` (P3)
+- `docs/bugs/2026-10-12-report-and-block-spin-forever-offline.md` (P2, open)
+- `docs/bugs/2026-10-12-minor-findings-second-sweep.md` (P3) — stale `docs-contradict-code` remnants, local cache not cleared on sign-out
 - Block detection is possible via direct Firestore inspection (silent-block mirror not yet implemented).
 - Store-UGC risk (decided, not a bug): no automated moderation and no operator workflow for `reports` (create-only, nobody reads them); Apple 1.2 / Play UGC reviewers may ask for one.
 
@@ -367,6 +378,7 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 
 **Known issues:**
 - `docs/bugs/2026-10-09-minor-polish-and-ci-gaps.md` (P3) — foreground banner while the chat is open, token-refresh error handling
+- `docs/bugs/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open) — tapped chat pushes use `go`, not `push`; the shell and this listener are disposed
 - Route mapper covers every type the server sends (`request`, `request_update`, `message`, `rate`, `meal_reminder`); guarded by `test/features/notifications/data/push_type_contract_test.dart`.
 
 ---
@@ -454,6 +466,8 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Airplane mode: confirm -> "Couldn't cancel. Check your connection and try again."; nothing changed.
 - [ ] `meal_cancelled` (role host/guest) appears in DebugView.
 
+**Re-verified 2026-10-12 (Firestore emulator, compiled functions: `firebase/functions/test-emulator/state_machine.test.cjs`; rules: `client_write_shapes.rules.test.cjs`):** guest withdraw reopens the meal, clears the three scheduler flags, removes request + chat, the same guest can re-request and be re-approved; host cancel ends in `cancelled` and is never reminded or completed; concurrent cancel from both sides lets exactly one win; after the meal time the cancel is refused and `postMealReminder` completes the meal once. Open: other person's open chat becomes an error (`docs/bugs/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md`), a crash between the transaction and the chat deletion blocks re-matching (`docs/bugs/2026-10-12-cancel-meal-can-leave-a-stale-match-that-blocks-rematching.md`), denied requesters cannot return (P3, minor findings).
+
 ---
 
 ### Feature: Rules hardening (reports, messages, ratings, storage)
@@ -464,6 +478,8 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Send a chat message, file a report, submit a rating: all still work from the app (the rules now expect exactly the keys/`serverTimestamp()` the app writes).
 - [ ] Upload a profile photo (Storage rule now requires env `stage|prod`).
 - [ ] Delete an account: still works with App Check on (`deleteAccount` now enforces it); register the debug token on dev devices first.
+
+**Re-verified 2026-10-12:** every repository write shape (message, rating with/without comment, report, meal, request, approve transaction, deny, sibling denies, reads, block/unblock, fcm token, age gate batch, profile batch, age self-heal) is accepted by the rules emulator and its keys are checked against the rules' `hasOnly` lists on every `flutter test` run (`test/core/firebase/rules_write_shape_contract_test.dart`). Gaps found: `meals.restaurant`, `requests` keys/`createdAt`, `profiles` field types, `reads`/`blocks` keys (see the two P1/P2 bug files above and `docs/bugs/2026-10-12-minor-findings-second-sweep.md`). Storage rules: reviewed, still NOT VERIFIED HERE (no emulator test).
 
 ---
 
@@ -559,6 +575,8 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Kill and relaunch while signed in: `app_opened` + identify, but no `signin_completed`.
 - [ ] After sign-out, new events carry no user id (`reset`).
 
+Re-verified 2026-10-12 (unit): the registry, the plan and the call sites agree and every event is fired from `lib/`; `AnalyticsListener` and `SessionTracker` behave as documented. P3 findings (duplicate `signup_completed` on a relaunch within 2 minutes, `discovery_viewed` re-fires on own-doc changes, provider pick) in `docs/bugs/2026-10-12-minor-findings-second-sweep.md`. DebugView NOT VERIFIED HERE.
+
 ---
 
 ### Feature: Private vs public profile
@@ -572,6 +590,8 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Delete an account: both `users/{uid}` and `profiles/{uid}` are gone; their meals/ratings behave as before.
 - [ ] Existing test accounts show correct names/photos after the backfill (dry-run first).
 - [ ] A person with no public profile shows a neutral placeholder, not an error.
+
+**Re-verified 2026-10-12:** owner writes on a legacy `users` doc are denied until the backfill ran (and pass after the Admin-SDK field removal the script performs); an old pre-split app build cannot write public fields or read `users/<other>` (breaks by design); `profiles/<missing>` resolves to not-found. Open: `docs/bugs/2026-10-12-cd-deploys-rules-before-profile-backfill.md` (P2: CD vs the section 1.5 order, rating loss window), `docs/bugs/2026-10-12-seed-script-writes-legacy-users-shape.md` (P2). The backfill itself (`backfill_profiles.js --apply`) NOT VERIFIED HERE (needs Admin credentials); its pure split is unit-tested.
 
 ---
 
@@ -596,6 +616,8 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 
 Server side verified against the Firestore emulator for BOTH databases (`(default)` and `stage`) by running the compiled `mealReminder` handler with a stubbed sender: matched meals inside 22–24h and 1–2h get one push per participant (host only when no guest), meals at 3h / 30min / 21h / past / cancelled / open get nothing, flags `reminder24hSent` / `reminder2hSent` are set, a second run sends nothing, a meal with `reminder24hSent` already set still gets the 2h reminder. Client rules: no client can write the reminder flags and they do not affect the approve transaction. Open: `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reminders for a meal whose guest deleted their account). Device items above remain NOT VERIFIED.
 
+**Re-verified 2026-10-12** with the compiled `mealReminder` / `postMealReminder` handlers against the Firestore emulator (`firebase/functions/test-emulator/state_machine.test.cjs`): flags set once, 24h and 2h independent, open/cancelled meals ignored, a withdrawn-then-reopened meal restarts. Race (non-transactional flag write) and duplicate-prompt notes are P3 in `docs/bugs/2026-10-12-minor-findings-second-sweep.md`.
+
 ---
 
 ## QA sweep log
@@ -605,6 +627,16 @@ Server side verified against the Firestore emulator for BOTH databases (`(defaul
 Baseline: `flutter test` 477 passed / 3 skipped (the TZ-gated tests, run separately under `TZ=Pacific/Kiritimati`: green); after the additions below 503 passed / 19 skipped (16 bug-linked); `flutter analyze`: 0 errors, 0 warnings (624 infos); functions `npm test` 31/31, `npm run build`, `npm run lint` clean (Node 22.22). Added tests (all green; bug-linked cases are skipped until fixed): `test/core/routing/router_stability_test.dart`, `test/core/auth_transition_state_test.dart`, `test/core/analytics/tracking_plan_parity_test.dart`, `test/core/location/location_service_timeout_edge_test.dart`, `test/features/chat/presentation/chat_screen_edge_test.dart`, `test/features/chat/presentation/widgets/message_composer_offline_edge_test.dart`, `test/features/auth/presentation/signin_screen_text_scale_edge_test.dart`, `test/features/safety/presentation/sheets_keyboard_edge_test.dart`, `test/features/meal/application/discovery_clock_edge_test.dart`, `test/features/notifications/data/push_type_contract_test.dart`, helper `test/helpers/load_app_fonts.dart` (widget tests render the Ahem font unless Nunito is loaded; use it for any layout/overflow test).
 
 Bugs filed: see `docs/bugs/` (2 P1, 9 P2, 3 P3). Everything marked device/emulator in this plan stays NOT VERIFIED until run locally.
+
+### 2026-10-12 (develop @ 979e5f2) - second code-side sweep before store submission
+
+Baseline: `flutter test` 575 passed / 3 skipped (the TZ-gated ones, green under `TZ=Pacific/Kiritimati`); functions `npm test` 52/52, `npm run build`, `npm run lint` clean; rules tests 10/10; `flutter analyze` 0 errors / 0 warnings; `actionlint` 1.7.7 clean on all three workflows. After the additions below: `flutter test` 588 passed / 17 skipped (14 skipped cases are open-bug regression tests, each names its bug file); rules tests 19 passed / 3 skipped (open bugs); emulator state-machine checks 7/7.
+
+Added tests: `firebase/rules-test/client_write_shapes.rules.test.cjs` (every repository write/query shape through the rules emulator, plus the legacy-doc, old-build and cancel/withdraw state-machine paths), `test/core/firebase/rules_write_shape_contract_test.dart` (repository writes vs the rules' `hasOnly` lists, runs in every `flutter test`), `firebase/functions/test-emulator/state_machine.test.cjs` (compiled functions vs the Firestore emulator; run command in the file header, not in CI), `test/core/routing/push_tap_back_stack_edge_test.dart`, `test/core/routing/cold_start_gate_flash_edge_test.dart`, `test/core/a11y/icon_only_controls_semantics_edge_test.dart`, `test/features/chat/presentation/chat_screen_cancelled_match_edge_test.dart`, `test/features/meal/application/discovery_outside_paris_edge_test.dart`, `test/features/meal/data/meal_repository_poison_edge_test.dart`, `test/features/matching/data/request_inbox_poison_edge_test.dart`, `test/features/safety/application/offline_safety_writes_edge_test.dart`. Every skipped case was run un-skipped first and failed for the stated reason, and each file has a passing harness/baseline case so the failure is not a harness artefact.
+
+Bugs filed (all `docs/bugs/2026-10-12-*.md`): 13 files: 2 P1 (`one-malformed-meal-breaks-discover-for-everyone`, `push-tap-strands-user-in-chat-without-back`), 9 P2, 2 P3. Closed bugs re-checked: all 16 hold except two leftovers re-filed as new files (`report-and-block-spin-forever-offline` for `awaited-writes-block-ui-offline`, and the docs remnants in `minor-findings-second-sweep` for `docs-contradict-code`).
+
+Not verifiable here (no device, console or credentials): everything marked NOT VERIFIED HERE above, the real `firebase deploy`, the backfill against real data, App Check enforcement, FCM delivery, DebugView, Storage rules, performance/memory, and the pre-release checklist items that need a signed build.
 
 ---
 
