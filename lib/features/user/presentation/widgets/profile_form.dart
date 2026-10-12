@@ -42,6 +42,19 @@ const _photoTileDecodeWidth = 480;
 const _maxNameLength = 40;
 const _maxBioLength = 300;
 
+/// Extra room below a focused field when the keyboard scrolls it into view,
+/// so the fields (and the button) under it stay visible too.
+const EdgeInsets kProfileFieldScrollPadding = EdgeInsets.fromLTRB(
+  WarmPlayfulSpacing.s5,
+  WarmPlayfulSpacing.s5,
+  WarmPlayfulSpacing.s5,
+  WarmPlayfulSize.keyboardReveal,
+);
+
+/// Visible diameter of the remove-photo badge; the tap area is [_removeHit].
+const double _removeBadge = WarmPlayfulSize.badge;
+const double _removeHit = WarmPlayfulSize.minTap;
+
 /// Snapshot of the form's current values, reported to the parent screen on
 /// every change via [ProfileForm.onChanged].
 @immutable
@@ -60,8 +73,15 @@ class ProfileFormData {
 
   /// True once the required set is satisfied: a non-blank name, a chosen
   /// gender, and at least one photo.
-  bool get isValid =>
-      name.trim().isNotEmpty && gender != null && photoCount > 0;
+  bool get isValid => missingFields.isEmpty;
+
+  /// Phrases for the required fields still unset, in screen order, ready to
+  /// drop into a sentence (e.g. "Still needed: a photo and your name.").
+  List<String> get missingFields => [
+    if (photoCount <= 0) 'a photo',
+    if (name.trim().isEmpty) 'your name',
+    if (gender == null) 'how you identify',
+  ];
 
   @override
   bool operator ==(Object other) =>
@@ -226,6 +246,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
           controller: _nameController,
           maxLength: _maxNameLength,
           textCapitalization: TextCapitalization.words,
+          scrollPadding: kProfileFieldScrollPadding,
           decoration: InputDecoration(
             labelText: 'Name',
             border: OutlineInputBorder(
@@ -260,6 +281,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
           controller: _bioController,
           maxLength: _maxBioLength,
           maxLines: 4,
+          scrollPadding: kProfileFieldScrollPadding,
           minLines: 3,
           decoration: InputDecoration(
             labelText: 'Bio',
@@ -348,17 +370,30 @@ class _PhotoThumbnail extends StatelessWidget {
           ),
         ),
         Positioned(
-          top: WarmPlayfulSpacing.s1,
-          right: WarmPlayfulSpacing.s1,
-          child: GestureDetector(
-            onTap: onRemove,
-            child: CircleAvatar(
-              radius: WarmPlayfulSpacing.s3,
-              backgroundColor: colors.surface,
-              child: Icon(
-                Icons.close,
-                size: WarmPlayfulSpacing.s4,
-                color: colors.onSurface,
+          top: 0,
+          right: 0,
+          child: IconButton(
+            onPressed: onRemove,
+            // Tooltip text doubles as the semantics label.
+            tooltip: 'Remove photo',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(
+              width: _removeHit,
+              height: _removeHit,
+            ),
+            icon: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(WarmPlayfulSpacing.s1),
+                child: CircleAvatar(
+                  radius: _removeBadge / 2,
+                  backgroundColor: colors.surface,
+                  child: Icon(
+                    Icons.close,
+                    size: WarmPlayfulSpacing.s4,
+                    color: colors.onSurface,
+                  ),
+                ),
               ),
             ),
           ),
@@ -378,35 +413,53 @@ class _AddPhotoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return Semantics(
-      button: true,
-      label: 'Add photo',
-      excludeSemantics: true,
-      onTap: onTap,
-      child: Material(
-        color: colors.surface,
+    return Material(
+      color: colors.surface,
+      borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              // Enabled control: the outline must reach 3:1 on the surface
-              // (outlineVariant is the divider token, ~1:1 there).
-              border: Border.all(color: context.wp.muted),
-              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-            ),
-            child: Center(
-              child: isBusy
-                  ? SizedBox(
-                      height: WarmPlayfulSpacing.s4,
-                      width: WarmPlayfulSpacing.s4,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colors.primary,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            // Enabled control: the outline must reach 3:1 on the surface
+            // (outlineVariant is the divider token, ~1:1 there).
+            border: Border.all(color: context.wp.muted),
+            borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+          ),
+          child: Semantics(
+            button: true,
+            enabled: onTap != null,
+            label: isBusy ? 'Uploading photo' : 'Add photo',
+            excludeSemantics: true,
+            child: Padding(
+              padding: const EdgeInsets.all(WarmPlayfulSpacing.s1),
+              // Scales the icon + label down together rather than overflowing
+              // the fixed-size grid cell at large text sizes (never up).
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isBusy)
+                      SizedBox(
+                        height: WarmPlayfulSpacing.s4,
+                        width: WarmPlayfulSpacing.s4,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colors.onSurface,
+                        ),
+                      )
+                    else
+                      Icon(Icons.add_a_photo_outlined, color: colors.onSurface),
+                    Text(
+                      'Add photo',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colors.onSurface,
                       ),
-                    )
-                  : Icon(Icons.add_a_photo_outlined, color: context.wp.muted),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

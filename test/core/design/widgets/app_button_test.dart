@@ -59,6 +59,24 @@ void main() {
         expect(size.width, 320);
       });
 
+      testWidgets('height overrides the per-variant default', (tester) async {
+        await tester.pumpWidget(
+          _host(
+            b,
+            AppButton(
+              label: 'Go',
+              variant: AppButtonVariant.outlined,
+              height: WarmPlayfulSize.actionHeight,
+              onPressed: () {},
+            ),
+          ),
+        );
+        expect(
+          tester.getSize(find.byType(OutlinedButton)).height,
+          WarmPlayfulSize.actionHeight,
+        );
+      });
+
       testWidgets('loading keeps the enabled fill, shows a visible spinner, '
           'swallows taps and keeps the size', (tester) async {
         var taps = 0;

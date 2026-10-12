@@ -16,6 +16,8 @@
 /// repository/analytics calls — lives in the controller.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,6 +60,9 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
       initialDate: initial.isAfter(_lastDate) ? _lastDate : initial,
       firstDate: _firstDate,
       lastDate: _lastDate,
+      initialDatePickerMode: DatePickerMode.year,
+      helpText: 'Your date of birth',
+      fieldLabelText: 'Date of birth',
     );
     if (picked != null) {
       setState(() => _selectedDate = picked);
@@ -121,14 +126,21 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
-          // Centered when it fits; scrolls at large text sizes / small screens.
-          child: Center(
-            child: SingleChildScrollView(
+        // Scrolls when text is large or the screen short; stays centred when
+        // it fits (minHeight = viewport, no IntrinsicHeight).
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: math.max(
+                  0,
+                  constraints.maxHeight - 2 * WarmPlayfulSpacing.s5,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     'Confirm your date of birth',

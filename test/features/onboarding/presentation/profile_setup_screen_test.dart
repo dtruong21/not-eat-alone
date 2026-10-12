@@ -34,8 +34,17 @@ void main() {
   Future<FakeProfileController> pumpScreen(
     WidgetTester tester, {
     List<String> photoUrls = const [],
+    double? width,
+    double height = 568,
+    double textScale = 1,
   }) async {
     final controller = FakeProfileController();
+    if (width != null) {
+      tester.view
+        ..physicalSize = Size(width, height)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -46,6 +55,12 @@ void main() {
         ],
         child: MaterialApp(
           theme: buildTheme(Brightness.light),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
           home: const ProfileSetupScreen(),
         ),
       ),
@@ -116,8 +131,7 @@ void main() {
         find.byKey(const Key('profile_name_field')),
         'Ada Lovelace',
       );
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Non-binary'));
       await tester.pump();
@@ -127,8 +141,7 @@ void main() {
         find.byKey(const Key('profile_bio_field')),
         'Hi there',
       );
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final continueButton = tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, 'Continue'),
@@ -146,4 +159,130 @@ void main() {
       expect(controller.completeSetupCall!.bio, 'Hi there');
     },
   );
+
+  testWidgets('the subtitle is the short copy', (tester) async {
+    await pumpScreen(tester);
+    expect(find.text("Name, photo and gender. That's it."), findsOneWidget);
+  });
+
+  testWidgets(
+    'while invalid, a live-region hint under Continue says what is missing',
+    (tester) async {
+      await pumpScreen(tester);
+
+      const hint = 'Still needed: a photo, your name and how you identify.';
+      expect(find.text(hint), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text(hint),
+          matching: find.byWidgetPredicate(
+            (w) => w is Semantics && w.properties.liveRegion == true,
+          ),
+        ),
+        findsOneWidget,
+      );
+      // Below the Continue button.
+      expect(
+        tester.getTopLeft(find.text(hint)).dy,
+        greaterThan(
+          tester
+              .getBottomLeft(find.widgetWithText(FilledButton, 'Continue'))
+              .dy,
+        ),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('profile_name_field')),
+        'Ada',
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(
+        find.text('Still needed: a photo and how you identify.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('the hint names the one missing field', (tester) async {
+    await pumpScreen(tester, photoUrls: const ['https://example.com/1.jpg']);
+    await tester.enterText(find.byKey(const Key('profile_name_field')), 'Ada');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Still needed: how you identify.'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('profile_name_field')), '');
+    await tester.tap(find.text('Woman'));
+    await tester.pumpAndSettle();
+    expect(find.text('Still needed: your name.'), findsOneWidget);
+  });
+
+  testWidgets('the hint names a missing photo on its own', (tester) async {
+    await pumpScreen(tester);
+    await tester.enterText(find.byKey(const Key('profile_name_field')), 'Ada');
+    await tester.tap(find.text('Woman'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Still needed: a photo.'), findsOneWidget);
+  });
+
+  testWidgets('the hint is hidden once the form is valid', (tester) async {
+    await pumpScreen(tester, photoUrls: const ['https://example.com/1.jpg']);
+    await tester.enterText(find.byKey(const Key('profile_name_field')), 'Ada');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Woman'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('Still needed'), findsNothing);
+  });
+
+  testWidgets('typing at the end of Bio keeps Continue above the keyboard', (
+    tester,
+  ) async {
+    // Short viewport + big text: Continue starts far below the keyboard line.
+    await pumpScreen(
+      tester,
+      width: 320,
+      height: 480,
+      textScale: 2,
+      photoUrls: const ['https://example.com/1.jpg'],
+    );
+    const keyboard = 200.0;
+    tester.view.viewInsets = const FakeViewPadding(bottom: keyboard);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pump();
+
+    final continueFinder = find.widgetWithText(FilledButton, 'Continue');
+    const visibleBottom = 480 - keyboard;
+    expect(
+      tester.getBottomLeft(continueFinder).dy,
+      greaterThan(visibleBottom),
+      reason: 'precondition: Continue starts below the keyboard line',
+    );
+
+    await tester.tap(find.byKey(const Key('profile_bio_field')));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('profile_bio_field')),
+      'Loves ramen and long dinners.',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getBottomLeft(continueFinder).dy,
+      lessThanOrEqualTo(visibleBottom),
+    );
+  });
+
+  testWidgets('no overflow at 320 px and 2.0x text', (tester) async {
+    await pumpScreen(
+      tester,
+      width: 320,
+      height: 640,
+      textScale: 2,
+      photoUrls: const ['https://example.com/1.jpg'],
+    );
+    expect(tester.takeException(), isNull);
+  });
 }

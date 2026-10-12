@@ -111,6 +111,13 @@ abstract final class WarmPlayfulSize {
   /// Diameter of the in-button loading spinner.
   static const double spinner = 20;
 
+  /// Diameter of the small circular badge on a thumbnail (remove-photo).
+  static const double badge = 24;
+
+  /// Room a focused text field asks for below it when the keyboard scrolls it
+  /// into view: an error line, a gap and a full-height action button.
+  static const double keyboardReveal = actionHeight * 3;
+
   /// Default icon size (navigation bar icons, theme `iconTheme`).
   static const double icon = 24;
 

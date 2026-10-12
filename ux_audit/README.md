@@ -82,13 +82,13 @@ blank).
 
 ## Shots
 
-Numbering is by screen, not capture order; names sort in flow order. 65 per cell
+Numbering is by screen, not capture order; names sort in flow order. 67 per cell (65 before plan 17a added `07` and `13`)
 (one file per name below, `<name>.png`).
 
 | Range | Screen | Shots |
 |---|---|---|
-| 01-06 | Sign-in, phone code | `01_signin`, `02_signin_phone_error`, `03_signin_phone_waiting`, `04_phone_verify`, `05_phone_verify_in_flight`, `06_phone_verify_error` |
-| 10-16 | Age gate, profile setup | `10_age_gate`, `11_age_gate_picker`, `12_age_gate_under18_selected`, `14_profile_setup_empty`, `15_profile_setup_filled`, `16_profile_setup_ready` |
+| 01-07 | Sign-in, phone code | `01_signin`, `02_signin_phone_error` (hint on the field), `03_signin_phone_waiting` ("Sending code…" spinner), `04_phone_verify`, `05_phone_verify_in_flight` (6th digit auto-submits), `06_phone_verify_error`, `07_phone_verify_resent` (waits out the 30 s cooldown, taps Resend) |
+| 10-16 | Age gate, profile setup | `10_age_gate`, `11_age_gate_picker`, `12_age_gate_under18_selected`, `13_signin_underage_notice` (the sign-in screen after an under-18 submit), `14_profile_setup_empty`, `15_profile_setup_filled`, `16_profile_setup_ready` |
 | 20-26 | Discover | `20_discover_loading`, `21_discover_empty`, `22_discover_data` (Paris notice shown), `23_discover_scrolled`, `24_discover_notice_dismissed`, `25_discover_refreshing` (pull to refresh), `26_discover_meal_created` (confirmation snackbar) |
 | 30-37 | Create a meal | `30_restaurant_search`, `31_restaurant_search_no_matches`, `32_restaurant_search_filtered`, `33_create_meal_empty`, `34_create_meal_date_picker`, `35_create_meal_time_picker`, `36_create_meal_filled`, `37_create_meal_in_flight` |
 | 40-49 | Meal detail | `40_meal_detail_open` (idle "Request to join"), `42_meal_detail_requested`, `43_meal_detail_matched`, `44_meal_detail_not_selected`, `45_meal_detail_women_only` (as a woman), `46_meal_detail_women_only_disabled` (as a man), `47_meal_detail_menu` (report/block), `48_meal_detail_own`, `49_meal_detail_request_rejected` |
@@ -135,14 +135,14 @@ loop is doing, and the host thaws on exit. Nothing in the app is changed.
 
 | In-flight shots | Frozen |
 |---|---|
-| `05_phone_verify_in_flight` (Auth), `03_signin_phone_waiting` (Auth) | Auth emulator |
+| `05_phone_verify_in_flight` (Auth; frozen BEFORE the code is typed, because the 6th digit submits by itself), `03_signin_phone_waiting` (Auth) | Auth emulator |
 | `37_create_meal_in_flight`, `54_requests_approve_in_flight`, `55_requests_deny_in_flight`, `66_chat_send_pending`, `70_chat_report_in_flight`, `75_rating_sheet_in_flight`, `60_chats_loading` | Firestore emulator |
 | `25_discover_refreshing` | nothing (the refresh indicator is held by pumping a fixed time) |
 | `20_discover_loading` (a skeleton list since plan 16b, was a spinner) | Firestore emulator, frozen after the viewer's own doc has arrived and before the feed's meal query is answered |
 
 What the in-flight shots show is worth reading rather than assuming:
-`03_signin_phone_waiting` has **no** indicator (the button spinner is gone as soon
-as the request is dispatched, before the code arrives); `54`/`55` have no
+`03_signin_phone_waiting` shows the "Sending code…" spinner since plan 17a (the sign-in
+screen holds it until `codeSent`; before, it had no indicator); `54`/`55` have no
 spinner either, only disabled buttons (and `55`'s tile may already be gone: the
 write is applied locally first).
 
@@ -159,7 +159,7 @@ Everything else is tapped and typed in the real UI. These are not:
 | 48 `own` | Push `/meals/detail` with the viewer's own seeded meal | Discover excludes own meals and there is no "my meals" list: this state has no UI path |
 | 49 `request_rejected` | The meal is set to `matched` by an admin write after the detail screen loaded it, then the viewer taps "Request to join"; the rules reject it | A stale screen; the server rejects the write |
 | 16 `profile_setup_ready` | An admin write adds a photo URL to the new user | The photo picker is a native sheet the harness cannot drive |
-| 02, 04, 06 (sign-in / code) | Real UI against the Auth emulator (a malformed number; a valid one, accepted without an SMS; a wrong code) | none |
+| 02, 04, 06 (sign-in / code) | Real UI against the Auth emulator (an implausible number, refused by the app itself; a valid one, accepted without an SMS; a wrong code) | none |
 
 ## Not captured
 
@@ -170,7 +170,7 @@ Everything else is tapped and typed in the real UI. These are not:
   state exists, so the blocked layout never reaches a frame. No seeded condition
   changes that order (it is all client-side, with no server round trip to hold,
   unlike the in-flight states), and showing it needs an app change. The nearest
-  states are `12_age_gate_under18_selected` and the sign-in screen it ends on.
+  states are `12_age_gate_under18_selected` and `13_signin_underage_notice`, the sign-in screen it ends on (with the banner since plan 17a).
 - **Age-gate Continue, profile-setup Continue, profile Save, and "Request to
   join" in flight**: the write is applied locally at once, which moves the router
   on (age gate -> profile setup, setup -> Discover, any user-doc change -> reset
@@ -205,8 +205,10 @@ Everything else is tapped and typed in the real UI. These are not:
   `UXCHECK router: ... kept its input after a user-doc write: true|false`.
 - A rejected join request leaves no error: the button that listens for the
   failure is replaced by the optimistic "Requested" state and back (shot 49).
-- `verifyPhoneNumber` returns as soon as the request is dispatched, so the
-  "Send code" spinner vanishes before the code screen appears (shot 03).
+- FIXED in plan 17a (kept as history): `verifyPhoneNumber` returns as soon as the
+  request is dispatched, so the "Send code" spinner used to vanish before the
+  code screen appeared (shot 03). The sign-in screen now holds the spinner until
+  `codeSent` / `onError`.
 - Nunito is applied to two text styles only (see Caveats).
 
 ## Last full matrix run (2026-10-06)
@@ -214,7 +216,7 @@ Everything else is tapped and typed in the real UI. These are not:
 `tool/ux_matrix.sh`: 8 cells, 65 distinct screenshots (including the four error
 states 90-93, which run in every cell), about 8 min per cell, no blank PNG
 (smallest > 100 kB). The 4 default-size cells hold all 65; the 4 `xxl` cells
-hold 64: `06_phone_verify_error` cannot be produced at the large text size,
+hold 64 (as of plan 17a `06_phone_verify_error` can be produced at xxl: the 6th digit submits by itself, see `docs/ux/17a-verification.md`): `06_phone_verify_error` could not be produced at the large text size,
 because the code screen's "Verify" button ends up behind the keyboard or off the
 screen (the screen does not scroll), so the wrong-code request is never sent.
 Logged per cell in `ux_audit/out/logs/<cell>.findings.txt`:
