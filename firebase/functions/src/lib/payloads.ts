@@ -57,3 +57,27 @@ export function buildMealReminder(
     data: { type: 'meal_reminder', reminder: kind, mealId },
   };
 }
+
+/** To the HOST when their matched guest deleted their account. */
+export function buildMatchLeft(reopened: boolean, mealId = ''): PushPayload {
+  return {
+    notification: {
+      title: 'Your match left Convyve',
+      body: reopened
+        ? 'Your meal is open again so someone else can join.'
+        : 'Your meal was cancelled.',
+    },
+    data: { type: 'match_left', mealId, reopened: String(reopened) },
+  };
+}
+
+/** To the matched GUEST when the host deleted their account (the meal is gone). */
+export function buildMealCancelled(mealId = ''): PushPayload {
+  return {
+    notification: {
+      title: 'Meal cancelled',
+      body: 'The host left Convyve, so this meal is cancelled.',
+    },
+    data: { type: 'meal_cancelled', mealId },
+  };
+}

@@ -53,7 +53,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 - [ ] Anonymous → real-account linking preserves uid + data.
 - [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped). — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`
-- [ ] Account deletion cascade leaves zero orphan docs. — gap: a deleted guest strands the host's matched meal, see `docs/bugs/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reports are retained by design, undocumented)
+- [ ] Account deletion cascade leaves zero orphan docs. — gap: a deleted guest strands the host's matched meal, see `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reports are retained by design, undocumented)
 - [ ] Token refresh works after 1h+ idle.
 
 ### Permissions
@@ -340,7 +340,7 @@ Related PRD entry: `docs/PRD.md § Safety`
 
 **Known issues:**
 - Stale text above: Settings -> Delete account (single confirm dialog, no re-auth) ships and the callable also deletes the Storage prefix; see `docs/bugs/2026-10-09-docs-contradict-code.md`.
-- `docs/bugs/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (P2)
+- `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (P2)
 - `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md` (P3)
 - Block detection is possible via direct Firestore inspection (silent-block mirror not yet implemented).
 - Store-UGC risk (decided, not a bug): no automated moderation and no operator workflow for `reports` (create-only, nobody reads them); Apple 1.2 / Play UGC reviewers may ask for one.
@@ -444,6 +444,18 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Account deletion with a matched meal
+
+**Automated:** `firebase/functions/test/matched_meals.test.ts` (future meal reopens + flags cleared; past meal cancelled; host-leaving notify rule; push payloads); `push_route_mapper_test.dart` and `push_type_contract_test.dart` (new push types have a client route). Behaviour of `releaseMatchedMeals` checked against the Firestore emulator (reopen, cancel, untouched others).
+
+**Manual on stage (two accounts, deployed functions):**
+- [ ] Host posts a meal, guest joins and is approved. Guest deletes the account: the host gets "Your match left Convyve", the meal is listed in Discover again (as another user) and gets fresh reminders when matched again; no reminder fires for the old match.
+- [ ] Same, but the meal time has passed: the host's meal is cancelled and no rating prompt arrives.
+- [ ] Host deletes the account with a matched future meal: the guest gets "Meal cancelled"; tapping it opens Discover.
+- [ ] Deletion still completes if a push fails (no device token).
 
 ---
 
@@ -551,7 +563,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 
 ### Feature: Meal reminders — sweep result 2026-10-09
 
-Server side verified against the Firestore emulator for BOTH databases (`(default)` and `stage`) by running the compiled `mealReminder` handler with a stubbed sender: matched meals inside 22–24h and 1–2h get one push per participant (host only when no guest), meals at 3h / 30min / 21h / past / cancelled / open get nothing, flags `reminder24hSent` / `reminder2hSent` are set, a second run sends nothing, a meal with `reminder24hSent` already set still gets the 2h reminder. Client rules: no client can write the reminder flags and they do not affect the approve transaction. Open: `docs/bugs/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reminders for a meal whose guest deleted their account). Device items above remain NOT VERIFIED.
+Server side verified against the Firestore emulator for BOTH databases (`(default)` and `stage`) by running the compiled `mealReminder` handler with a stubbed sender: matched meals inside 22–24h and 1–2h get one push per participant (host only when no guest), meals at 3h / 30min / 21h / past / cancelled / open get nothing, flags `reminder24hSent` / `reminder2hSent` are set, a second run sends nothing, a meal with `reminder24hSent` already set still gets the 2h reminder. Client rules: no client can write the reminder flags and they do not affect the approve transaction. Open: `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reminders for a meal whose guest deleted their account). Device items above remain NOT VERIFIED.
 
 ---
 
