@@ -19,6 +19,11 @@ PushRoute? mapPushData(Map<String, String?> data) {
       return mealId == null || mealId.isEmpty
           ? null
           : PushRoute('/chats/$mealId');
+    // The other person left Convyve: the match/chat is gone, so land on Discover
+    // (the host's reopened meal is listed there again for others).
+    case 'match_left':
+    case 'meal_cancelled':
+      return const PushRoute('/discover');
     case 'request':
       return const PushRoute('/requests');
     case 'request_update':

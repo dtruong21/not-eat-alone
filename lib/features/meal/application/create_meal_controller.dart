@@ -16,6 +16,7 @@ library;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:not_eat_alone/core/util/queued_write.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -54,7 +55,7 @@ class CreateMealController extends _$CreateMealController {
           note: note,
           womenOnly: womenOnly,
         );
-        await ref.read(mealRepositoryProvider).createMeal(meal);
+        await settleOrQueue(ref.read(mealRepositoryProvider).createMeal(meal));
         await analytics.track(MealCreated(womenOnly: womenOnly));
       });
     } finally {

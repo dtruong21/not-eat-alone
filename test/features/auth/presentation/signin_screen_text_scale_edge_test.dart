@@ -13,7 +13,7 @@ class _MockAuthRepository extends Mock implements AuthRepository {}
 
 /// QA sweep 2026-10-09: the sign-in buttons must hold up to 1.5x system text
 /// (project bar, docs/DESIGN.md) on a 360dp-wide phone, in both themes.
-/// Open bug: docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md
+/// Fixed: docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md
 void main() {
   setUpAll(loadAppFonts);
 
@@ -56,6 +56,11 @@ void main() {
     testWidgets('1.5x ${brightness.name}: no overflow', (tester) async {
       await pump(tester, scale: 1.5, brightness: brightness);
       expect(tester.takeException(), isNull);
-    }, skip: true); // BUG text-scale-overflow-signin-and-sheets (5.5px right)
+    });
+
+    testWidgets('2.0x ${brightness.name}: no overflow', (tester) async {
+      await pump(tester, scale: 2, brightness: brightness);
+      expect(tester.takeException(), isNull);
+    });
   }
 }

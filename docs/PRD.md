@@ -41,6 +41,7 @@ A public restaurant at a fixed time keeps first meetings light, not a loaded dat
 - [x] Post-meal: confirm show-up and rate
 - [x] Push notifications: new request, approved/denied, new message, post-meal rating prompt
 - [x] Pre-meal reminders: push 24h and 2h before a matched meal — see Feature specs
+- [x] "Can't make it": cancel or withdraw from a matched meal — see Feature specs
 
 ### Pillar 3 — Trust & safety
 
@@ -54,7 +55,7 @@ Joiners are approval-gated, women-only meals exist, and block/report is always o
 - [x] Safety-tips card
 - [x] Account deletion
 - [x] Contact support (Settings; address shown in-app)
-- [ ] Private vs public profile split — closes the P1 date-of-birth exposure (see Feature specs)
+- [x] Private vs public profile split — closes the P1 date-of-birth exposure (see Feature specs; **deploy order in `docs/RELEASE.md`**)
 - [ ] Profanity / image moderation (Cloud Function) — not built; deferred by decision (see Open questions)
 
 ### Pillar 4 — Liquidity over reach
@@ -150,24 +151,51 @@ Status: in-MVP (release blocker: QA P1 `docs/bugs/2026-10-09-users-collection-ex
 As a person on Convyve, I want other users to see only my name, photo, bio, age and rating so that my exact date of birth and gender are never exposed to strangers.
 
 **Acceptance criteria:**
-- [ ] Two documents per user: **public** `profiles/{uid}` (display name, photo URLs, bio, age in years, rating count/average) and **private** `users/{uid}` (date of birth, age-verified flag, gender, created-at). Nothing else is added.
-- [ ] Rules: any signed-in user may `get` a public profile; `list`/query on `profiles` is denied (no enumeration); only the owner may write their own public profile (never the rating fields, which only the `onRatingCreated` / deletion functions write). `users/{uid}` is readable and writable by the owner only; the rules themselves may still read it (e.g. women-only checks use `gender`). `fcmTokens` stays owner-only.
-- [ ] 18+ gate lock: once `ageVerified` is true, the owner can no longer change `dob` or `ageVerified`. Before it is true (age-gate retry) they can. Self-attestation remains the v1 trust model; stronger verification is out of scope and the privacy policy says so.
-- [ ] Age: other users see an age in years only. The owner's app keeps the public age correct (written on profile save and refreshed at sign-in when it differs from the date of birth). No month/day/year of birth is ever in a public document.
-- [ ] All screens that show another person (discovery, meal detail host block, request inbox, chat, rating badge) read the public profile; none reads another user's `users/{uid}`.
-- [ ] Existing accounts are backfilled once (script run per database) before the rules are deployed; account deletion also removes the public profile; rating aggregates move to the public profile (functions updated, aggregate math unchanged).
-- [ ] Empty: a person with no public profile yet (not backfilled / brand new) renders as a neutral placeholder name and avatar, never a crash or a blocked screen.
-- [ ] Offline: previously loaded profiles show from cache; no new loading state is introduced.
-- [ ] Error: a failed public-profile read shows the screen's existing error/placeholder state; it never exposes the private document as a fallback.
-- [ ] Rules tests (emulator): another user cannot read or list `users`, cannot list `profiles`, cannot write another's profile, cannot change `dob`/`ageVerified` after verification, cannot write rating fields; the owner can read/edit their own documents; women-only request rules still work.
-- [ ] `docs/legal/privacy.md` and the store privacy labels list exactly what is public (name, photos, bio, age, rating) and what is private (date of birth, gender).
+- [x] Two documents per user: **public** `profiles/{uid}` (display name, photo URLs, bio, age in years, rating count/average) and **private** `users/{uid}` (date of birth, age-verified flag, gender, created-at). Nothing else is added.
+- [x] Rules: any signed-in user may `get` a public profile; `list`/query on `profiles` is denied (no enumeration); only the owner may write their own public profile (never the rating fields, which only the `onRatingCreated` / deletion functions write). `users/{uid}` is readable and writable by the owner only; the rules themselves may still read it (e.g. women-only checks use `gender`). `fcmTokens` stays owner-only.
+- [x] 18+ gate lock: once `ageVerified` is true, the owner can no longer change `dob` or `ageVerified`. Before it is true (age-gate retry) they can. Self-attestation remains the v1 trust model; stronger verification is out of scope and the privacy policy says so.
+- [x] Age: other users see an age in years only. The owner's app keeps the public age correct (written on profile save and refreshed at sign-in when it differs from the date of birth). No month/day/year of birth is ever in a public document.
+- [x] All screens that show another person (discovery, meal detail host block, request inbox, chat, rating badge) read the public profile; none reads another user's `users/{uid}`.
+- [x] Existing accounts are backfilled (script `firebase/functions/scripts/backfill_profiles.js` — run per database BEFORE deploying the rules) once (script run per database) before the rules are deployed; account deletion also removes the public profile; rating aggregates move to the public profile (functions updated, aggregate math unchanged).
+- [x] Empty: a person with no public profile yet (not backfilled / brand new) renders as a neutral placeholder name and avatar, never a crash or a blocked screen.
+- [x] Offline: previously loaded profiles show from cache; no new loading state is introduced.
+- [x] Error: a failed public-profile read shows the screen's existing error/placeholder state; it never exposes the private document as a fallback.
+- [x] Rules tests (emulator) — `firebase/rules-test/`: another user cannot read or list `users`, cannot list `profiles`, cannot write another's profile, cannot change `dob`/`ageVerified` after verification, cannot write rating fields; the owner can read/edit their own documents; women-only request rules still work.
+- [x] `docs/legal/privacy.md` lists exactly what is public (name, photos, bio, age, rating) and what is private (date of birth, gender). **Still to do at submission:** the same wording in the App Store / Play privacy labels.
 
 **Out of scope (cut from this feature):**
 - Server-side age or identity verification (ID check, document upload) — v1 stays self-attested behind phone sign-in.
 - Hiding the 18+ gate from the owner's own device, or tamper-proof age (the owner can still lie about age before verification).
 - Age bands/ranges instead of exact age; per-field visibility settings; showing profiles only to matched users.
-- Other rule-hardening gaps from the same QA sweep (report payload limits, server-set message timestamps) — tracked in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`.
+- Other rule-hardening gaps from the same QA sweep (report payload limits, server-set message timestamps) — tracked in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`.
 - Changing women-only enforcement logic.
+
+---
+
+### Feature: Can't make it — cancel or withdraw from a matched meal
+Pillar: 2 — Low-pressure (the main no-show lever; also keeps meals from sitting `matched` with nobody coming)
+Status: in-MVP, smallest version: **matched, future meals only, from the match chat**
+
+**Verdict:** Plans change. Without a way out, the only alternatives are a silent no-show or a chat message that the app doesn't act on. The smallest version that closes the loop is one action in the place both people already coordinate: the match chat. Cancelling or withdrawing from an *unmatched* open meal is cut: it expires on its own, never reaches Discover once past, and would need a new "my meals" screen.
+
+**User story:**
+As the host or the guest of a matched meal, I want to say "I can't make it" so that the other person knows and isn't left waiting, and the meal doesn't stay matched with nobody coming.
+
+**Acceptance criteria:**
+- [ ] The chat shows a "Can't make it" action only while its meal is `matched` and in the future.
+- [ ] **Host** confirms -> the meal becomes `cancelled`, the match chat is closed, the guest gets a push ("The host cancelled this meal") that opens Discover.
+- [ ] **Guest** confirms -> the meal reopens (`open`, guest cleared, reminder flags reset so it gets fresh reminders when matched again), the guest's request and the match chat are removed, the host gets a push ("Your match withdrew - your meal is open again") that opens Discover.
+- [ ] Done by a server callable (`cancelMatchedMeal`); clients cannot change a matched meal themselves (rules unchanged). App Check enforced; only a participant of a `matched`, future meal can call it.
+- [ ] A confirmation dialog states the consequence for the other person; "Keep meal" dismisses without any change.
+- [ ] After success: snackbar "Meal cancelled." / "You've withdrawn." and navigation to the Chats tab.
+- [ ] Analytics: `meal_cancelled` with `role: 'host' | 'guest'` (in `docs/TRACKING-PLAN.md` first); no PII.
+- [ ] Empty: no action when the meal is not matched, already past, or still loading. Offline: the action fails fast with "Couldn't cancel. Check your connection and try again." (it is not queued - the other person must really be told). Error: same snackbar, the dialog closes, nothing changes.
+- [ ] Idempotent/safe: calling it twice, or after the other person already left, returns a clear error and changes nothing.
+
+**Out of scope (cut from this feature):**
+- Cancelling or withdrawing from unmatched open meals; a "my meals" screen.
+- Reasons, penalties/reputation effects, undo, re-matching the same pair, cancelling after the meal time.
+- Notifying people whose requests were denied or pending; editing a meal.
 
 ---
 
@@ -192,7 +220,7 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 Track here. Resolve before implementation, never during.
 
 - [ ] **Scope tension.** The approved v1 design (`docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md`) calls v1 "a complete, polished product" with a discovery map and Maps SDK; this PRD's rule zero says v1 is a minimum. Current call: list-only discovery + "Open in Maps" link-out, embedded map post-MVP. Confirm or re-scope before launch.
-- [x] **Moderation — decided 2026-10-09: ship the Paris soft launch without automated profanity/image moderation.** Mitigations in v1: host approves every join, report (user/meal/message) and block are always available, 18+ phone-verified accounts, small soft-launch audience. Revisit before any geo-expansion or after the first reported abuse. **Risk to watch:** Apple (Guideline 1.2) and Google Play user-generated-content rules expect a way to filter objectionable content as well as report/block and published contact info; a reviewer may reject the build. If so, the smallest fix is a server-side blocklist check on chat messages and profile text, not image moderation.
+- [x] **Moderation — decided 2026-10-09: ship the Paris soft launch without automated profanity/image moderation.** Mitigations in v1: host approves every join, report (user/meal/message) and block are always available, a self-declared 18+ age gate behind phone / Apple / Google sign-in (age is not independently verified), small soft-launch audience. Revisit before any geo-expansion or after the first reported abuse. **Risk to watch:** Apple (Guideline 1.2) and Google Play user-generated-content rules expect a way to filter objectionable content as well as report/block and published contact info; a reviewer may reject the build. If so, the smallest fix is a server-side blocklist check on chat messages and profile text, not image moderation.
 - [x] **Reminders — decided 2026-10-09: build the T-24h / T-2h meal reminders into v1** (no-show risk is the main liveness risk; see Feature specs).
 - [x] **North-star metric — defined 2026-10-09:** weekly completed meals (see `docs/TRACKING-PLAN.md`). Targets to be set after four weeks of soft-launch data.
 - [ ] **Persona.** Validate the target user with the first 20 beta testers (who they are, why they'd join a stranger's meal).

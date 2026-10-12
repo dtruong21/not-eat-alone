@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
@@ -27,19 +28,6 @@ import 'package:not_eat_alone/features/matching/application/request_meal_provide
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
 import 'package:not_eat_alone/features/matching/presentation/widgets/inbox_action_message.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
-
-/// Age in whole years for someone born on [dob], as of [now] (defaults to
-/// `DateTime.now()`). Duplicated from `meal_detail_screen.dart`'s
-/// `_ageFromDob` — both are small, presentation-only, private helpers.
-int _ageFromDob(DateTime dob, {DateTime? now}) {
-  final today = now ?? DateTime.now();
-  var age = today.year - dob.year;
-  final hadBirthday =
-      (today.month > dob.month) ||
-      (today.month == dob.month && today.day >= dob.day);
-  if (!hadBirthday) age -= 1;
-  return age;
-}
 
 const _pastMealLabel = 'Meal time has passed';
 const _snackBarDuration = Duration(seconds: 6);
@@ -112,9 +100,13 @@ class RequestInboxTile extends ConsumerWidget {
     final photoUrl = (guest != null && guest.photoUrls.isNotEmpty)
         ? guest.photoUrls.first
         : null;
+    final guestAge = guest?.ageYears;
     final label = guest == null
         ? 'Guest'
-        : '${guest.displayName ?? 'Guest'}, ${_ageFromDob(guest.dob)}';
+        : [
+            guest.displayName ?? 'Guest',
+            if (guestAge != null) guestAge,
+          ].join(', ');
 
     final isSubmitting = ref.watch(inboxActionControllerProvider).isLoading;
 
@@ -158,8 +150,10 @@ class RequestInboxTile extends ConsumerWidget {
                   radius: WarmPlayfulSpacing.s5,
                   backgroundColor: colors.surfaceContainerHighest,
                   backgroundImage: photoUrl != null
-                      ? NetworkImage(photoUrl)
-                      : null,
+                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s5)
+                  : null,
+              onBackgroundImageError:
+                  photoUrl != null ? ignoreAvatarImageError : null,
                   child: photoUrl == null
                       ? Icon(
                           Icons.person_rounded,

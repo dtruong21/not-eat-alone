@@ -37,6 +37,7 @@ Future<void> showReportSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     builder: (context) =>
         _ReportSheet(targetType: targetType, targetId: targetId),
   );
@@ -112,55 +113,59 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
         bottom:
             MediaQuery.of(context).viewInsets.bottom + WarmPlayfulSpacing.s5,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Report',
-            style: textTheme.titleMedium?.copyWith(
-              color: colors.onSurface,
-              fontWeight: WarmPlayfulType.h2Weight,
-            ),
-          ),
-          const SizedBox(height: WarmPlayfulSpacing.s4),
-          Wrap(
-            spacing: WarmPlayfulSpacing.s2,
-            runSpacing: WarmPlayfulSpacing.s2,
-            children: [
-              for (final entry in _reportReasons.entries)
-                ChoiceChip(
-                  key: Key('report_reason_chip_${entry.key}'),
-                  label: Text(entry.value),
-                  selected: _reason == entry.key,
-                  onSelected: isSubmitting
-                      ? null
-                      : (_) => setState(() => _reason = entry.key),
-                ),
-            ],
-          ),
-          const SizedBox(height: WarmPlayfulSpacing.s4),
-          TextField(
-            key: const Key('report_note_field'),
-            controller: _noteController,
-            enabled: !isSubmitting,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Add a note (optional)',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+      // Scrolls when the keyboard / large text leave less room than the
+      // content needs (otherwise the field and Submit end up hidden).
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Report',
+              style: textTheme.titleMedium?.copyWith(
+                color: colors.onSurface,
+                fontWeight: WarmPlayfulType.h2Weight,
               ),
             ),
-          ),
-          const SizedBox(height: WarmPlayfulSpacing.s4),
-          AppButton(
-            label: 'Submit',
-            loadingLabel: 'Submitting…',
-            isLoading: isSubmitting,
-            key: const Key('report_submit_button'),
-            onPressed: (_reason == null || isSubmitting) ? null : _submit,
-          ),
-        ],
+            const SizedBox(height: WarmPlayfulSpacing.s4),
+            Wrap(
+              spacing: WarmPlayfulSpacing.s2,
+              runSpacing: WarmPlayfulSpacing.s2,
+              children: [
+                for (final entry in _reportReasons.entries)
+                  ChoiceChip(
+                    key: Key('report_reason_chip_${entry.key}'),
+                    label: Text(entry.value),
+                    selected: _reason == entry.key,
+                    onSelected: isSubmitting
+                        ? null
+                        : (_) => setState(() => _reason = entry.key),
+                  ),
+              ],
+            ),
+            const SizedBox(height: WarmPlayfulSpacing.s4),
+            TextField(
+              key: const Key('report_note_field'),
+              controller: _noteController,
+              enabled: !isSubmitting,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Add a note (optional)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+                ),
+              ),
+            ),
+            const SizedBox(height: WarmPlayfulSpacing.s4),
+            AppButton(
+              label: 'Submit',
+              loadingLabel: 'Submitting…',
+              isLoading: isSubmitting,
+              key: const Key('report_submit_button'),
+              onPressed: (_reason == null || isSubmitting) ? null : _submit,
+            ),
+          ],
+        ),
       ),
     );
   }

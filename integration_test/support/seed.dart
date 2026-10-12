@@ -44,15 +44,19 @@ Future<void> seedUserProfile({
   String gender = 'woman',
   DateTime? dob,
 }) async {
+  // Private doc (owner-only): dob, age-verified, gender.
   await _db.collection('users').doc(uid).set({
     'uid': uid,
     'dob': Timestamp.fromDate(dob ?? DateTime(1995)),
     'ageVerified': true,
     'gender': gender,
+  });
+  // Public profile (what other users see): name, photos, age, rating.
+  await _db.collection('profiles').doc(uid).set({
+    'uid': uid,
     'displayName': 'Test User',
     'photoUrls': ['https://example.com/avatar.png'],
-    'ratingCount': 0,
-    'ratingAvg': 0,
+    'age': 30,
   });
 }
 

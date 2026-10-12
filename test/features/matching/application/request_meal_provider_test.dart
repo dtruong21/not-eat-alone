@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/matching/application/request_meal_provider.dart';
 import 'package:not_eat_alone/features/meal/application/meal_providers.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
@@ -32,7 +34,12 @@ void main() {
   setUp(() {
     repository = MockMealRepository();
     container = ProviderContainer(
-      overrides: [mealRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        mealRepositoryProvider.overrideWithValue(repository),
+        authStateProvider.overrideWith(
+          (ref) => Stream.value(const AuthUser(uid: 'me')),
+        ),
+      ],
     );
   });
 
@@ -41,6 +48,8 @@ void main() {
   test('delegates to MealRepository.getMeal', () async {
     when(() => repository.getMeal('meal_1')).thenAnswer((_) async => _meal);
 
+    final keep = container.listen(requestMealProvider('meal_1'), (_, _) {});
+    addTearDown(keep.close);
     final meal = await container.read(requestMealProvider('meal_1').future);
 
     expect(meal, _meal);
@@ -50,6 +59,8 @@ void main() {
   test('yields null when the meal does not exist', () async {
     when(() => repository.getMeal('gone')).thenAnswer((_) async => null);
 
+    final keep = container.listen(requestMealProvider('gone'), (_, _) {});
+    addTearDown(keep.close);
     expect(await container.read(requestMealProvider('gone').future), isNull);
   });
 

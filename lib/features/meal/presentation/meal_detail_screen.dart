@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
@@ -25,20 +26,6 @@ import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
-
-/// Age in whole years for someone born on [dob], as of [now] (defaults to
-/// `DateTime.now()`). Same birthday-not-yet-happened-this-year logic as
-/// `core/util/age.dart`'s `isAdult`, but returns the age itself rather than
-/// an 18+ boolean.
-int _ageFromDob(DateTime dob, {DateTime? now}) {
-  final today = now ?? DateTime.now();
-  var age = today.year - dob.year;
-  final hadBirthday =
-      (today.month > dob.month) ||
-      (today.month == dob.month && today.day >= dob.day);
-  if (!hadBirthday) age -= 1;
-  return age;
-}
 
 class MealDetailScreen extends ConsumerWidget {
   const MealDetailScreen({required this.meal, super.key});
@@ -274,7 +261,7 @@ class _HostBlock extends ConsumerWidget {
         final photoUrl = host.photoUrls.isNotEmpty
             ? host.photoUrls.first
             : null;
-        final age = _ageFromDob(host.dob);
+        final age = host.ageYears;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,7 +269,11 @@ class _HostBlock extends ConsumerWidget {
             CircleAvatar(
               radius: WarmPlayfulSpacing.s5,
               backgroundColor: colors.surfaceContainerHighest,
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+              backgroundImage: photoUrl != null
+                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s5)
+                  : null,
+              onBackgroundImageError:
+                  photoUrl != null ? ignoreAvatarImageError : null,
               child: photoUrl == null
                   ? Icon(
                       Icons.person_rounded,
@@ -297,7 +288,9 @@ class _HostBlock extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${host.displayName ?? 'Host'}, $age',
+                    age == null
+                        ? (host.displayName ?? 'Host')
+                        : '${host.displayName ?? 'Host'}, $age',
                     style: textTheme.bodyMedium?.copyWith(
                       color: colors.onSurface,
                       fontWeight: WarmPlayfulType.h2Weight,
