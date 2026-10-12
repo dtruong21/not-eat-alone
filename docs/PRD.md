@@ -10,7 +10,11 @@ People want to try new restaurants but often won't go alone. Convyve lets someon
 
 ## Target user
 
-{{Who specifically. Not "everyone." A concrete persona.}}
+**Primary:** adults (18+) in Paris who want to try a specific restaurant but don't want to go alone — people who would happily share a table with a stranger if it is in a public place, at a fixed time, with someone the host chose to approve.
+
+**Also served:** women who want women-only meals (self-declared in v1); newcomers to the city who have the appetite but not the dining company yet.
+
+*Working hypothesis from the v1 design — to be validated with the first soft-launch testers (see Open questions).*
 
 ## Pillars
 
@@ -21,29 +25,47 @@ Every MVP feature must serve one of these. Anything else gets cut to post-MVP. R
 Every match is organized around trying a specific restaurant, not browsing people.
 
 **Features:**
-- [ ] {{Feature 1}}
-- [ ] {{Feature 2}}
+- [x] Create a meal: restaurant (real Places search, Paris), date/time, optional note
+- [x] Discovery: list of open, future meals near you
+- [x] Meal detail: restaurant, host, time, note
+- [x] Open restaurant in Maps (meal detail) — see Feature specs (built; real-device check pending)
+- [ ] Embedded map / discovery map — post-MVP (see backlog)
 
 ### Pillar 2 — Low-pressure
 
 A public restaurant at a fixed time keeps first meetings light, not a loaded date.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Strictly 1:1 meals at a public restaurant at a fixed time
+- [x] Request to join (optional message) → host approves or denies → chat opens on match
+- [x] Post-meal: confirm show-up and rate
+- [x] Push notifications: new request, approved/denied, new message, post-meal rating prompt
+- [x] Pre-meal reminders: push 24h and 2h before a matched meal — see Feature specs
+- [x] "Can't make it": cancel or withdraw from a matched meal — see Feature specs
 
 ### Pillar 3 — Trust & safety
 
 Joiners are approval-gated, women-only meals exist, and block/report is always on.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Host approves every join — no auto-match
+- [x] Women-only meals (self-declared gender in v1)
+- [x] Block and report (user, meal, message)
+- [x] 18+ gate; sign-in with phone, Apple or Google
+- [x] Safety-tips card
+- [x] Account deletion
+- [x] Contact support (Settings; address shown in-app)
+- [x] Private vs public profile split — closes the P1 date-of-birth exposure (see Feature specs; **deploy order in `docs/RELEASE.md`**)
+- [ ] Profanity / image moderation (Cloud Function) — not built; deferred by decision (see Open questions)
 
 ### Pillar 4 — Liquidity over reach
 
 Depth in one city (Paris) beats thin coverage everywhere.
 
 **Features:**
-- [ ] {{Feature 1}}
+- [x] Paris-only soft launch (location fallback to Paris center; restaurant search limited to a Paris bounding box)
+- [x] Dismissible "Coming soon in Paris" notice for first-time users
+- [ ] Geofence expansion / "expand search" prompt — post-MVP
 
 ## Feature specs
 
@@ -67,14 +89,124 @@ As a {{user}}, I want {{capability}} so that {{outcome}}.
 - {{thing 1}}
 - {{thing 2}}
 
+### Feature: Open restaurant in Maps (meal detail)
+Pillar: 1 — Meal-first (supports 2 — Low-pressure)
+Status: in-MVP (reduced form: link-out only). The embedded map / pin is **post-MVP**.
+
+**Verdict:** The outcome that matters is "I can find the restaurant on the day." That needs a one-tap hand-off to the user's own maps app, not a map rendered inside Convyve. The link-out costs one row on the meal detail, uses `url_launcher` (already a dependency), and needs no Maps SDK, no API keys and no billing exposure. The embedded pin adds two restricted SDK keys, native setup on both platforms and ongoing cost for no extra outcome, so it is cut from v1.
+
+**User story:**
+As a guest who was approved for a meal, I want to open the restaurant in my maps app so that I can get there without copying the address by hand.
+
+**Acceptance criteria:**
+- [ ] Meal detail's restaurant card shows an "Open in Maps" action (only the existing restaurant card; no new section, no new route).
+- [ ] Tap opens the platform maps app at the restaurant's `lat/lng` with the restaurant name as label (Apple Maps on iOS, Google Maps URL/intent on Android). No API key involved.
+- [ ] Fires `directions_opened` (no PII, no coordinates) via the typed registry; event is in `docs/TRACKING-PLAN.md` first (`/track`).
+- [ ] Empty: if the meal has no usable coordinates (missing or 0,0, e.g. legacy meals), the action is hidden — the address text stays as today.
+- [ ] Loading: none (pure local hand-off; the card renders with the meal).
+- [ ] Offline: the action still launches the maps app (the hand-off is local); the maps app owns its own offline behavior.
+- [ ] Error: if no app can handle the URL, show a snackbar "Couldn't open Maps" and keep the screen state unchanged.
+- [ ] Accessibility: `Semantics` label "Open <restaurant name> in Maps", button role, ≥ 48dp target, readable in dark mode and at large text sizes.
+
+**Out of scope (cut from this feature):**
+- Embedded map or pin inside the app (`google_maps_flutter`), Maps SDK keys, native key injection.
+- Turn-by-turn directions, distance/ETA, "nearby" map discovery, live location sharing.
+- Showing a map on the discovery list or in the create-meal flow.
+
+---
+
+### Feature: Meal reminders (T-24h and T-2h)
+Pillar: 2 — Low-pressure (reduces no-shows, which protects Pillar 1 and the liquidity of Pillar 4)
+Status: in-MVP
+
+**Verdict:** The smallest version that still cuts no-shows is two server-sent pushes to the two people of a matched meal. No new screens, no settings, no per-user preferences, no in-app inbox; tapping the push opens the match chat, where they can coordinate. Reuses the existing push pipeline and the `push_opened` event.
+
+**User story:**
+As a host or guest with a matched meal, I want a reminder the day before and a couple of hours before so that I remember to show up and can message my match if something changes.
+
+**Acceptance criteria:**
+- [ ] Both participants of a `matched` meal get one push ~24h before (window 22–24h) and one ~2h before (window 1–2h) the meal time. Meals matched inside a window get that reminder at the next run; a meal matched later than a window's start never gets the stale reminder.
+- [ ] Each reminder is sent at most once per meal (idempotency flag on the meal); a scheduler retry or overlap never duplicates it. A lost reminder is preferred over a duplicate.
+- [ ] Content: title "Your meal is today/tomorrow" (24h) or "Your meal is coming up" (2h); body "<restaurant> at <HH:mm>" in Paris time (v1 is Paris-only), restaurant name truncated. No other PII.
+- [ ] Tap opens the match chat (`/chats/:mealId`) and fires `push_opened` with `type: 'meal_reminder'`.
+- [ ] Cancelled, open (unmatched) and already-past meals get nothing.
+- [ ] Empty: a user with no registered device token is skipped silently. Offline: delivery is FCM's job (delivered when the device is back). Error: a failing send for one participant or meal is logged and does not block the rest of the run.
+- [ ] Runs for both databases (`(default)` and `stage`).
+
+**Out of scope (cut from this feature):**
+- User-configurable reminder times or an opt-out toggle beyond the OS notification permission.
+- Email/SMS reminders, calendar invites, "add to calendar".
+- Reminders to people with pending (unapproved) requests.
+- Time-zone handling beyond Paris.
+
+---
+
+### Feature: Private vs public profile (close the date-of-birth exposure)
+Pillar: 3 — Trust & safety
+Status: in-MVP (release blocker: QA P1 `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`)
+
+**Verdict:** Today any signed-in account can read and list every `users/{uid}` doc: exact date of birth, gender, bio, photos, rating. For a dating-adjacent app launching in the EU this is not acceptable, and accepting it would also require a privacy-policy change and store privacy labels saying "date of birth visible to other users". Fixing it is cheaper than disclosing it, so it earns its way into v1. Smallest version: split what other people legitimately see from what only the owner (and the security rules) may read, and lock the age-gate fields. No new screens, no new features, no change to what users see.
+
+**User story:**
+As a person on Convyve, I want other users to see only my name, photo, bio, age and rating so that my exact date of birth and gender are never exposed to strangers.
+
+**Acceptance criteria:**
+- [x] Two documents per user: **public** `profiles/{uid}` (display name, photo URLs, bio, age in years, rating count/average) and **private** `users/{uid}` (date of birth, age-verified flag, gender, created-at). Nothing else is added.
+- [x] Rules: any signed-in user may `get` a public profile; `list`/query on `profiles` is denied (no enumeration); only the owner may write their own public profile (never the rating fields, which only the `onRatingCreated` / deletion functions write). `users/{uid}` is readable and writable by the owner only; the rules themselves may still read it (e.g. women-only checks use `gender`). `fcmTokens` stays owner-only.
+- [x] 18+ gate lock: once `ageVerified` is true, the owner can no longer change `dob` or `ageVerified`. Before it is true (age-gate retry) they can. Self-attestation remains the v1 trust model; stronger verification is out of scope and the privacy policy says so.
+- [x] Age: other users see an age in years only. The owner's app keeps the public age correct (written on profile save and refreshed at sign-in when it differs from the date of birth). No month/day/year of birth is ever in a public document.
+- [x] All screens that show another person (discovery, meal detail host block, request inbox, chat, rating badge) read the public profile; none reads another user's `users/{uid}`.
+- [x] Existing accounts are backfilled (script `firebase/functions/scripts/backfill_profiles.js` — run per database BEFORE deploying the rules) once (script run per database) before the rules are deployed; account deletion also removes the public profile; rating aggregates move to the public profile (functions updated, aggregate math unchanged).
+- [x] Empty: a person with no public profile yet (not backfilled / brand new) renders as a neutral placeholder name and avatar, never a crash or a blocked screen.
+- [x] Offline: previously loaded profiles show from cache; no new loading state is introduced.
+- [x] Error: a failed public-profile read shows the screen's existing error/placeholder state; it never exposes the private document as a fallback.
+- [x] Rules tests (emulator) — `firebase/rules-test/`: another user cannot read or list `users`, cannot list `profiles`, cannot write another's profile, cannot change `dob`/`ageVerified` after verification, cannot write rating fields; the owner can read/edit their own documents; women-only request rules still work.
+- [x] `docs/legal/privacy.md` lists exactly what is public (name, photos, bio, age, rating) and what is private (date of birth, gender). **Still to do at submission:** the same wording in the App Store / Play privacy labels.
+
+**Out of scope (cut from this feature):**
+- Server-side age or identity verification (ID check, document upload) — v1 stays self-attested behind phone sign-in.
+- Hiding the 18+ gate from the owner's own device, or tamper-proof age (the owner can still lie about age before verification).
+- Age bands/ranges instead of exact age; per-field visibility settings; showing profiles only to matched users.
+- Other rule-hardening gaps from the same QA sweep (report payload limits, server-set message timestamps) — tracked in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`.
+- Changing women-only enforcement logic.
+
+---
+
+### Feature: Can't make it — cancel or withdraw from a matched meal
+Pillar: 2 — Low-pressure (the main no-show lever; also keeps meals from sitting `matched` with nobody coming)
+Status: in-MVP, smallest version: **matched, future meals only, from the match chat**
+
+**Verdict:** Plans change. Without a way out, the only alternatives are a silent no-show or a chat message that the app doesn't act on. The smallest version that closes the loop is one action in the place both people already coordinate: the match chat. Cancelling or withdrawing from an *unmatched* open meal is cut: it expires on its own, never reaches Discover once past, and would need a new "my meals" screen.
+
+**User story:**
+As the host or the guest of a matched meal, I want to say "I can't make it" so that the other person knows and isn't left waiting, and the meal doesn't stay matched with nobody coming.
+
+**Acceptance criteria:**
+- [ ] The chat shows a "Can't make it" action only while its meal is `matched` and in the future.
+- [ ] **Host** confirms -> the meal becomes `cancelled`, the match chat is closed, the guest gets a push ("The host cancelled this meal") that opens Discover.
+- [ ] **Guest** confirms -> the meal reopens (`open`, guest cleared, reminder flags reset so it gets fresh reminders when matched again), the guest's request and the match chat are removed, the host gets a push ("Your match withdrew - your meal is open again") that opens Discover.
+- [ ] Done by a server callable (`cancelMatchedMeal`); clients cannot change a matched meal themselves (rules unchanged). App Check enforced; only a participant of a `matched`, future meal can call it.
+- [ ] A confirmation dialog states the consequence for the other person; "Keep meal" dismisses without any change.
+- [ ] After success: snackbar "Meal cancelled." / "You've withdrawn." and navigation to the Chats tab.
+- [ ] Analytics: `meal_cancelled` with `role: 'host' | 'guest'` (in `docs/TRACKING-PLAN.md` first); no PII.
+- [ ] Empty: no action when the meal is not matched, already past, or still loading. Offline: the action fails fast with "Couldn't cancel. Check your connection and try again." (it is not queued - the other person must really be told). Error: same snackbar, the dialog closes, nothing changes.
+- [ ] Idempotent/safe: calling it twice, or after the other person already left, returns a clear error and changes nothing.
+
+**Out of scope (cut from this feature):**
+- Cancelling or withdrawing from unmatched open meals; a "my meals" screen.
+- Reasons, penalties/reputation effects, undo, re-matching the same pair, cancelling after the meal time.
+- Notifying people whose requests were denied or pending; editing a meal.
+
 ---
 
 ## Out of scope for MVP (post-MVP backlog)
 
 Things deliberately deferred. Anything that lives here cannot be argued back into MVP without an explicit re-scoping discussion.
 
-- {{Item 1}}
-- {{Item 2}}
+- Embedded map / restaurant pin in the app and a discovery map (Maps SDK Android + iOS, restricted keys; setup steps preserved in `docs/RELEASE.md` Phase 3.1 §9). Revisit after v1 if users report trouble finding venues.
+- Swipe-on-people matching, group meals, restaurant reservations, restaurant partnerships, extra gender-preference filters (v2+; from the v1 design non-goals).
+- Monetization — v1 is free; ads/subscription later.
+- Comments on ratings, edit/delete ratings.
 
 ## Constraints
 
@@ -87,5 +219,8 @@ Things deliberately deferred. Anything that lives here cannot be argued back int
 
 Track here. Resolve before implementation, never during.
 
-- [ ] {{Question 1}}
-- [ ] {{Question 2}}
+- [ ] **Scope tension.** The approved v1 design (`docs/superpowers/specs/2026-09-18-not-eat-alone-v1-design.md`) calls v1 "a complete, polished product" with a discovery map and Maps SDK; this PRD's rule zero says v1 is a minimum. Current call: list-only discovery + "Open in Maps" link-out, embedded map post-MVP. Confirm or re-scope before launch.
+- [x] **Moderation — decided 2026-10-09: ship the Paris soft launch without automated profanity/image moderation.** Mitigations in v1: host approves every join, report (user/meal/message) and block are always available, a self-declared 18+ age gate behind phone / Apple / Google sign-in (age is not independently verified), small soft-launch audience. Revisit before any geo-expansion or after the first reported abuse. **Risk to watch:** Apple (Guideline 1.2) and Google Play user-generated-content rules expect a way to filter objectionable content as well as report/block and published contact info; a reviewer may reject the build. If so, the smallest fix is a server-side blocklist check on chat messages and profile text, not image moderation.
+- [x] **Reminders — decided 2026-10-09: build the T-24h / T-2h meal reminders into v1** (no-show risk is the main liveness risk; see Feature specs).
+- [x] **North-star metric — defined 2026-10-09:** weekly completed meals (see `docs/TRACKING-PLAN.md`). Targets to be set after four weeks of soft-launch data.
+- [ ] **Persona.** Validate the target user with the first 20 beta testers (who they are, why they'd join a stranger's meal).

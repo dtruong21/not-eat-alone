@@ -5,6 +5,10 @@ abstract class ChatRepository {
   /// Realtime messages for [matchId], oldest-first.
   Stream<List<ChatMessage>> watchMessages(String matchId);
 
+  /// Realtime NEWEST message of [matchId] (`null` when the thread is empty).
+  /// A `limit(1)` query for list previews.
+  Stream<ChatMessage?> watchLastMessage(String matchId);
+
   /// Append a text message (createdAt = serverTimestamp).
   Future<void> sendMessage({
     required String matchId,

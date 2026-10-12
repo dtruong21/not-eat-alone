@@ -33,7 +33,7 @@ If MVP and UX conflict, **cut the feature** — don't ship a half-quality versio
 
 ## 3. Analytics is first-class
 
-The tracking plan at `docs/TRACKING-PLAN.md` is the analytics PRD — every event the product fires lives there BEFORE the code is written. Add events with `/track <event>` (updates the doc AND `lib/core/analytics/events.dart`). Events carry no PII; the typed registry enforces this. Never call `FirebaseAnalytics`/`Posthog` directly — always go through the typed registry and the client in `lib/core/analytics/`.
+The tracking plan at `docs/TRACKING-PLAN.md` is the analytics PRD — every event the product fires lives there BEFORE the code is written. Add events with `/track <event>` (updates the doc AND `lib/core/analytics/events.dart`). Events carry no PII; the typed registry enforces this. Never call `FirebaseAnalytics` (or any other analytics SDK) directly — always go through the typed registry and the client in `lib/core/analytics/`.
 
 ## 4. QA gate
 

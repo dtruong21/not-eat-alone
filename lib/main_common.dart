@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:not_eat_alone/core/analytics/analytics_listener.dart';
 import 'package:not_eat_alone/core/config/emulator_config.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/font_license.dart';
@@ -74,11 +75,13 @@ class NotEatAloneApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    return MaterialApp.router(
-      title: FlavorConfig.current.appTitle,
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      routerConfig: router,
+    return AnalyticsListener(
+      child: MaterialApp.router(
+        title: FlavorConfig.current.appTitle,
+        theme: buildTheme(Brightness.light),
+        darkTheme: buildTheme(Brightness.dark),
+        routerConfig: router,
+      ),
     );
   }
 }

@@ -53,7 +53,19 @@ final initialPushMessageProvider =
 /// The navigation side effect for a tapped push, seamed so tests can assert
 /// on it with a spy instead of driving a live `GoRouter`.
 final pushNavigateProvider = Provider<void Function(String location)>(
-  (ref) => (location) => ref.read(routerProvider).go(location),
+  (ref) => (location) {
+    final router = ref.read(routerProvider);
+    // `/chats/:id` is a top-level route outside the shell: `go` alone would
+    // replace the whole stack (no back button, shell disposed). Land on the tab
+    // root first, then push the chat on top so back returns to the app.
+    if (location.startsWith('/chats/')) {
+      router
+        ..go('/chats')
+        ..push<void>(location);
+    } else {
+      router.go(location);
+    }
+  },
 );
 
 /// Wraps [child] (the shell body): shows a lightweight banner for foreground

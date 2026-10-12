@@ -69,6 +69,8 @@ Once Blaze is upgraded, functions deploy automatically via CI on every `develop`
 - `onRequestUpdated` — push to guest on approve/deny
 - `onMessageCreated` — push to other chat participant
 - `postMealReminder` — hourly Pub/Sub, sends "rate your meal" nudges
+- `cancelMatchedMeal` — callable (App Check enforced): host cancels / guest withdraws a matched, future meal
+- `mealReminder` — every 15 minutes, sends the T-24h and T-2h pre-meal pushes (`mealReminderDefault` / `mealReminderStage`)
 - `onRatingCreated` — computes rolling ratings aggregate on target user
 
 If you need to deploy manually (or this is your first time):
@@ -81,6 +83,21 @@ firebase deploy --only functions
 ```
 
 Verify in [Cloud Functions dashboard](https://console.cloud.google.com/functions?project=not-eat-alone&location=europe-west1) — all 5 functions should be green.
+
+---
+
+### 1.5 Private/public profile split — rollout order (once per database)
+
+The rules, the functions and the app all changed together (`users/{uid}` is now private; `profiles/{uid}` is the public profile). Existing accounts must be migrated and the pieces deployed in this order, for `(default)` and then `stage`:
+
+1. **Deploy functions:** `firebase deploy --only functions` (rating aggregate, message push names and account deletion now use `profiles/`).
+2. **Dry-run the backfill:** `cd firebase/functions && npm run build && node scripts/backfill_profiles.js --database "(default)"` (needs Admin credentials, e.g. `gcloud auth application-default login`). Check the output.
+3. **Apply it:** the same command with `--apply`. Idempotent; copies name/photos/bio/rating/age to `profiles/{uid}` and removes those fields from `users/{uid}`.
+4. **Deploy the rules:** `firebase deploy --only firestore:rules`. Doing this before step 3 makes existing `users` docs (which still hold public fields) un-updatable.
+5. **Ship the new app build** (older builds read the public fields from `users/` and will show blank profiles).
+6. **Verify:** as a second account, `getDoc(users/<other>)` and a `profiles` list query must fail; the profile screens still render; rate a meal and see the aggregate update on `profiles/{uid}`.
+
+Rules tests (needs Java): `cd firebase/rules-test && npm install && npm test`.
 
 ---
 
@@ -149,7 +166,7 @@ For **release** (Play Store signing):
 
 ### 3.1 Reuse an existing GCP project for Maps (no new project needed)
 
-**Current state:** Restaurant search is implemented end to end: `PlacesRestaurantSearchDataSource` (`lib/features/meal/data/datasources/`) → callable `searchRestaurants` (`firebase/functions/src/callable/search_restaurants.ts`) → Places API (New) Text Search, restricted to a Paris bounding box. `FakeRestaurantSearchDataSource` remains for tests (override `restaurantSearchRepositoryProvider`). **Remaining for you:** Maps-project keys + `PLACES_API_KEY` secret (steps 1–5), deploy + verify (below). Map view is not yet integrated (design deferred).
+**Current state:** Restaurant search is implemented end to end: `PlacesRestaurantSearchDataSource` (`lib/features/meal/data/datasources/`) → callable `searchRestaurants` (`firebase/functions/src/callable/search_restaurants.ts`) → Places API (New) Text Search, restricted to a Paris bounding box. `FakeRestaurantSearchDataSource` remains for tests (override `restaurantSearchRepositoryProvider`). **Remaining for you:** Maps-project keys + `PLACES_API_KEY` secret (steps 1–5), deploy + verify (below). Embedded map is post-MVP (v1 = "Open in Maps" link-out only, see PRD).
 
 **Decision:** Convyve consumes Maps Platform from an **existing GCP project you own** (the "Maps project"). A Maps key is just an API key bound to whichever project enabled the APIs — it does not need to live in the Firebase project. Billing, quota and API enablement all belong to the Maps project; nothing is linked to Firebase.
 
@@ -193,7 +210,7 @@ For **release** (Play Store signing):
 #### Action — in the Flutter app
 
 8. **Datasource swap** — ✅ done. `PlacesRestaurantSearchDataSource` maps the payload via `RestaurantDto` and throws `RepositoryReadException` / `RepositoryParseException`; the search field is debounced (400 ms) and the controller drops out-of-order responses. **Dev note:** debug builds need an App Check debug token registered (Phase 1.2) or the callable rejects them.
-9. **Map view (optional for v1, design deferred → `/design` first):** add `google_maps_flutter` to `pubspec.yaml`; embed it on the meal detail screen for the restaurant pin. Inject the native keys at build time — **never commit them**:
+9. **Map view — post-MVP (PRD: "Open restaurant in Maps").** v1 ships only an "Open in Maps" link-out on the meal detail (`url_launcher`, no keys). The embedded map below is deferred; do steps 1–3 for the Maps SDK keys only when it is re-scoped into a release. When it is: `/design` first, then: add `google_maps_flutter` to `pubspec.yaml`; embed it on the meal detail screen for the restaurant pin. Inject the native keys at build time — **never commit them**:
    - **Android:** put `MAPS_API_KEY=…` in `android/local.properties` (gitignored) and read it in `android/app/build.gradle.kts` via `manifestPlaceholders["MAPS_API_KEY"]`; `AndroidManifest.xml` gets `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}"/>`.
    - **iOS:** put `MAPS_API_KEY = …` in a gitignored `ios/Flutter/Secrets.xcconfig` (`#include?` it from `Debug/Release.xcconfig`), expose it through `Info.plist` (`$(MAPS_API_KEY)`) and call `GMSServices.provideAPIKey(...)` in `AppDelegate`.
    - **CI (GitHub Actions / Codemagic):** store both as encrypted secrets and write the files in a pre-build step. The unsigned PR-gate builds can use an empty key (map renders blank, build still passes).
@@ -327,6 +344,7 @@ For **release** (Play Store signing):
    const privacyPolicyUrl = 'https://your-domain/privacy';
    const termsOfServiceUrl = 'https://your-domain/terms';
    ```
+   - Also set `supportEmail` in the same file to a mailbox you actually monitor (currently the placeholder `support@convyve.com`). It is shown in Settings → Contact support and must match the Support URL in the store listings.
    - Both URLs must be HTTPS and accessible to real users (not `localhost`)
    - App Store + Play Store verify these before approval
 
@@ -595,8 +613,6 @@ Once tagged + deployed:
 
 After v1.0.0 ships:
 
-- **Ratings GDPR completeness:** Account deletion does not yet purge `ratings` (where the user is the rater or target). Add this to `deleteAccount` Cloud Function after feedback from privacy review.
-- **Pre-meal reminders:** Scheduled nudges 1–2 hours before meal time (non-goal for v1, deferred pending user feedback)
 - **Comments on ratings:** Users can add short text; add moderation queue if spam surfaces
 - **Edit/delete ratings:** Allow up to 24h to withdraw a rating
 - **Live map integration:** Place card shows restaurant on map (setup steps in Phase 3.1 §9; v1 uses list-only discovery)

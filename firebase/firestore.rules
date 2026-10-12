@@ -66,21 +66,34 @@ service cloud.firestore {
              && noBlockBetween(uid, uid == m.hostId ? m.guestId : m.hostId);
     }
 
-    // Per-user docs
+    // Allowed keys + age sanity for a public profile write.
+    function profileShapeOk() {
+      return request.resource.data.keys().hasOnly(['uid', 'displayName', 'photoUrls', 'bio', 'age', 'ratingSum', 'ratingCount', 'ratingAvg'])
+          && (!('age' in request.resource.data)
+              || (request.resource.data.age is int
+                  && request.resource.data.age >= 18
+                  && request.resource.data.age <= 120));
+    }
+
+    // Per-user PRIVATE doc: date of birth, age-verified flag, gender. Owner-only
+    // (the rules themselves may still `get()` it, e.g. women-only checks read
+    // `gender`). Once `ageVerified` is true, `dob` / `ageVerified` can never be
+    // rewritten — before that (age-gate retry) they can. The 18+ gate stays
+    // self-attested behind phone sign-in; this only stops rewriting it after.
     match /users/{uid} {
-      allow read: if isSignedIn();
+      allow read: if isOwner(uid);
       allow create: if isOwner(uid)
+                    && request.resource.data.keys().hasOnly(['uid', 'dob', 'ageVerified', 'createdAt', 'gender'])
                     && request.resource.data.uid == uid
                     && request.resource.data.dob is timestamp
-                    && request.resource.data.ageVerified is bool
-                    && request.resource.data.get('ratingSum', 0) == 0
-                    && request.resource.data.get('ratingCount', 0) == 0
-                    && request.resource.data.get('ratingAvg', 0) == 0;
+                    && request.resource.data.ageVerified is bool;
       allow update: if isOwner(uid)
-                    && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
-                    && request.resource.data.get('ratingCount', 0) == resource.data.get('ratingCount', 0)
-                    && request.resource.data.get('ratingAvg', 0) == resource.data.get('ratingAvg', 0);
-      allow delete: if false; // account deletion via Cloud Function later
+                    && request.resource.data.keys().hasOnly(['uid', 'dob', 'ageVerified', 'createdAt', 'gender'])
+                    && request.resource.data.uid == uid
+                    && (resource.data.get('ageVerified', false) != true
+                        || (request.resource.data.dob == resource.data.dob
+                            && request.resource.data.ageVerified == resource.data.ageVerified));
+      allow delete: if false; // account deletion via Cloud Function
 
       // Add subcollections here as you build features.
       // Each subcollection should have its own explicit allow/deny block.
@@ -93,6 +106,30 @@ service cloud.firestore {
       match /fcmTokens/{token} {
         allow read, write: if isOwner(uid);
       }
+    }
+
+    // Per-user PUBLIC profile: what other people are shown (name, photos, bio,
+    // age in years, rating aggregate). Any signed-in user may `get` ONE profile
+    // by uid; `list`/queries are denied so the table can't be enumerated. Only
+    // the owner writes it, and never the rating fields (the `onRatingCreated`
+    // / `deleteAccount` functions write those via the Admin SDK). No date of
+    // birth or gender is ever stored here.
+    match /profiles/{uid} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isOwner(uid)
+                    && profileShapeOk()
+                    && request.resource.data.uid == uid
+                    && request.resource.data.get('ratingSum', 0) == 0
+                    && request.resource.data.get('ratingCount', 0) == 0
+                    && request.resource.data.get('ratingAvg', 0) == 0;
+      allow update: if isOwner(uid)
+                    && profileShapeOk()
+                    && request.resource.data.uid == uid
+                    && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
+                    && request.resource.data.get('ratingCount', 0) == resource.data.get('ratingCount', 0)
+                    && request.resource.data.get('ratingAvg', 0) == resource.data.get('ratingAvg', 0);
+      allow delete: if false; // account deletion via Cloud Function
     }
 
     // The request being approved in the same transaction as a meal update:
@@ -152,6 +189,21 @@ service cloud.firestore {
                         || request.resource.data.guestId == null)
                     && request.resource.data.keys().hasOnly(['id', 'hostId', 'restaurant', 'dateTime', 'geohash', 'note', 'womenOnly', 'seats', 'status', 'guestId', 'createdAt'])
                     && request.resource.data.restaurant is map
+                    // Exactly the shape the app writes: a malformed restaurant would
+                    // make the doc unparseable and take Discover down for everyone.
+                    && request.resource.data.restaurant.keys().hasOnly(['placeId', 'name', 'address', 'lat', 'lng'])
+                    && request.resource.data.restaurant.placeId is string
+                    && request.resource.data.restaurant.placeId.size() <= 200
+                    && request.resource.data.restaurant.name is string
+                    && request.resource.data.restaurant.name.size() <= 200
+                    && request.resource.data.restaurant.address is string
+                    && request.resource.data.restaurant.address.size() <= 300
+                    && request.resource.data.restaurant.lat is number
+                    && request.resource.data.restaurant.lat >= -90
+                    && request.resource.data.restaurant.lat <= 90
+                    && request.resource.data.restaurant.lng is number
+                    && request.resource.data.restaurant.lng >= -180
+                    && request.resource.data.restaurant.lng <= 180
                     && request.resource.data.womenOnly is bool
                     && request.resource.data.seats is int
                     && (!('note' in request.resource.data)
@@ -257,7 +309,11 @@ service cloud.firestore {
 
       match /messages/{messageId} {
         allow read: if matchParticipant(matchId);
+        // `createdAt` is the server time (orders the thread and drives "Seen"),
+        // never a client-chosen value.
         allow create: if isSignedIn()
+                      && request.resource.data.keys().hasOnly(['matchId', 'senderId', 'text', 'createdAt'])
+                      && request.resource.data.createdAt == request.time
                       && request.resource.data.senderId == request.auth.uid
                       && request.resource.data.text is string
                       && request.resource.data.text.size() > 0
@@ -287,9 +343,18 @@ service cloud.firestore {
     }
 
     match /reports/{reportId} {
+      // Whitelisted keys and a size cap: a report is a small structured record,
+      // not a free-form blob (the app writes exactly these keys).
       allow create: if isSignedIn()
+                    && request.resource.data.keys().hasOnly(['reporterId', 'targetType', 'targetId', 'reason', 'status', 'createdAt'])
                     && request.resource.data.reporterId == request.auth.uid
-                    && request.resource.data.targetType in ['user', 'meal', 'message'];
+                    && request.resource.data.targetType in ['user', 'meal', 'message']
+                    && request.resource.data.targetId is string
+                    && request.resource.data.targetId.size() <= 128
+                    && (!('reason' in request.resource.data)
+                        || request.resource.data.reason == null
+                        || (request.resource.data.reason is string
+                            && request.resource.data.reason.size() <= 500));
       allow read, update, delete: if false;
     }
 
@@ -310,6 +375,11 @@ service cloud.firestore {
       // Doc id pinned to `{matchId}_{callerUid}` (the id the app writes): one
       // rating per rater per match, and no squatting another rater's id.
       allow create: if isSignedIn()
+                    // Exactly the keys the app writes: no client-set `aggregated`
+                    // (the aggregation function's idempotency flag) or other extras,
+                    // and a server `createdAt`.
+                    && request.resource.data.keys().hasOnly(['id', 'matchId', 'raterUid', 'targetUid', 'stars', 'showedUp', 'comment', 'createdAt'])
+                    && request.resource.data.createdAt == request.time
                     && ratingId == request.resource.data.matchId + '_' + request.auth.uid
                     && request.resource.data.raterUid == request.auth.uid
                     && request.resource.data.raterUid != request.resource.data.targetUid

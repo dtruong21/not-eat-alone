@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
@@ -46,6 +48,9 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(userRepository),
+          authStateProvider.overrideWith(
+            (ref) => Stream.value(const AuthUser(uid: 'host')),
+          ),
           requestMealProvider.overrideWith((ref, mealId) async => null),
           hostInboxProvider.overrideWith(
             (ref) => switch (hostInboxState) {
@@ -61,6 +66,9 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
+    await tester.pump();
+    // Per-user providers wait for the auth session to resolve.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1));
   }
@@ -110,6 +118,9 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(userRepository),
+          authStateProvider.overrideWith(
+            (ref) => Stream.value(const AuthUser(uid: 'host')),
+          ),
           requestMealProvider.overrideWith((ref, mealId) async => null),
           hostInboxProvider.overrideWith(
             (ref) => ++calls == 1

@@ -47,6 +47,19 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Stream<ChatMessage?> watchLastMessage(String matchId) {
+    return _messages(matchId)
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map(
+          (s) => s.docs.isEmpty
+              ? null
+              : _messageFromDoc(matchId, s.docs.first.id, s.docs.first.data()),
+        );
+  }
+
+  @override
   Future<void> sendMessage({
     required String matchId,
     required String senderId,

@@ -17,6 +17,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
+import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
@@ -25,26 +28,14 @@ import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/matching/application/create_request_controller.dart';
 import 'package:not_eat_alone/features/matching/application/meal_request_state_provider.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
+import 'package:not_eat_alone/features/meal/application/maps_launcher_provider.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
-
-/// Age in whole years for someone born on [dob], as of [now] (defaults to
-/// `DateTime.now()`). Same birthday-not-yet-happened-this-year logic as
-/// `core/util/age.dart`'s `isAdult`, but returns the age itself rather than
-/// an 18+ boolean.
-int _ageFromDob(DateTime dob, {DateTime? now}) {
-  final today = now ?? DateTime.now();
-  var age = today.year - dob.year;
-  final hadBirthday =
-      (today.month > dob.month) ||
-      (today.month == dob.month && today.day >= dob.day);
-  if (!hadBirthday) age -= 1;
-  return age;
-}
 
 class MealDetailScreen extends ConsumerWidget {
   const MealDetailScreen({required this.meal, super.key});
@@ -80,23 +71,7 @@ class MealDetailScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              meal.restaurant.name,
-                              style: textTheme.titleMedium?.copyWith(
-                                color: colors.onSurface,
-                                fontWeight: WarmPlayfulType.h2Weight,
-                              ),
-                            ),
-                          ),
-                          if (meal.womenOnly) ...[
-                            const SizedBox(width: WarmPlayfulSpacing.s2),
-                            _WomenOnlyBadge(textTheme: textTheme),
-                          ],
-                        ],
-                      ),
+                      _RestaurantHeader(meal: meal),
                       const SizedBox(height: WarmPlayfulSpacing.s1),
                       Text(
                         meal.restaurant.address,
@@ -104,6 +79,13 @@ class MealDetailScreen extends ConsumerWidget {
                           color: context.wp.muted,
                         ),
                       ),
+                      if (hasMapsLocation(meal.restaurant)) ...[
+                        const SizedBox(height: WarmPlayfulSpacing.s3),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: _OpenInMapsButton(restaurant: meal.restaurant),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -169,6 +151,53 @@ class _MealSafetyActions extends ConsumerWidget {
       secondaryReportLabel: 'Report host',
       blockUid: isHost ? null : meal.hostId,
       blockLabel: 'Block host',
+    );
+  }
+}
+
+/// Text scale above which the "Women only" badge drops below the name so a
+/// long name and the badge never fight for one row.
+const _stackBadgeTextScale = 1.5;
+
+/// Restaurant name with the optional "Women only" badge: side by side at
+/// normal text sizes, stacked at large accessibility sizes (no overflow).
+class _RestaurantHeader extends StatelessWidget {
+  const _RestaurantHeader({required this.meal});
+
+  final Meal meal;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final name = Text(
+      meal.restaurant.name,
+      style: textTheme.titleMedium?.copyWith(
+        color: theme.colorScheme.onSurface,
+        fontWeight: WarmPlayfulType.h2Weight,
+      ),
+    );
+    if (!meal.womenOnly) return name;
+
+    final badge = _WomenOnlyBadge(textTheme: textTheme);
+    final stacked =
+        MediaQuery.textScalerOf(context).scale(1) > _stackBadgeTextScale;
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          name,
+          const SizedBox(height: WarmPlayfulSpacing.s2),
+          badge,
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: name),
+        const SizedBox(width: WarmPlayfulSpacing.s2),
+        badge,
+      ],
     );
   }
 }
@@ -241,7 +270,7 @@ class _HostBlock extends ConsumerWidget {
         final photoUrl = host.photoUrls.isNotEmpty
             ? host.photoUrls.first
             : null;
-        final age = _ageFromDob(host.dob);
+        final age = host.ageYears;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,7 +278,11 @@ class _HostBlock extends ConsumerWidget {
             CircleAvatar(
               radius: WarmPlayfulSpacing.s5,
               backgroundColor: colors.surfaceContainerHighest,
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+              backgroundImage: photoUrl != null
+                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s5)
+                  : null,
+              onBackgroundImageError:
+                  photoUrl != null ? ignoreAvatarImageError : null,
               child: photoUrl == null
                   ? Icon(
                       Icons.person_rounded,
@@ -264,7 +297,9 @@ class _HostBlock extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${host.displayName ?? 'Host'}, $age',
+                    age == null
+                        ? (host.displayName ?? 'Host')
+                        : '${host.displayName ?? 'Host'}, $age',
                     style: textTheme.bodyMedium?.copyWith(
                       color: colors.onSurface,
                       fontWeight: WarmPlayfulType.h2Weight,
@@ -562,6 +597,61 @@ class _YourMealChip extends StatelessWidget {
             fontWeight: WarmPlayfulType.captionWeight,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Open in Maps" — secondary (outlined) action on the restaurant card.
+///
+/// Fires `directions_opened` on tap (intent), then hands off to the maps app.
+/// A launch already in flight swallows further taps; a failed launch shows a
+/// snackbar and leaves the button usable.
+class _OpenInMapsButton extends ConsumerStatefulWidget {
+  const _OpenInMapsButton({required this.restaurant});
+
+  final Restaurant restaurant;
+
+  @override
+  ConsumerState<_OpenInMapsButton> createState() => _OpenInMapsButtonState();
+}
+
+class _OpenInMapsButtonState extends ConsumerState<_OpenInMapsButton> {
+  bool _launching = false;
+
+  Future<void> _open() async {
+    if (_launching) return;
+    _launching = true;
+    try {
+      // Read before the first await: `ref` is unusable once the screen is
+      // popped while the analytics send is in flight.
+      final launch = ref.read(mapsLauncherProvider);
+      await analytics.track(const DirectionsOpened());
+      final opened = await launch(widget.restaurant);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Couldn't open Maps")));
+      }
+    } finally {
+      _launching = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // The visible label is excluded; one merged announcement carries the
+    // restaurant name and the tap action.
+    return Semantics(
+      button: true,
+      label: 'Open ${widget.restaurant.name} in Maps',
+      excludeSemantics: true,
+      onTap: _open,
+      child: OutlinedButton.icon(
+        key: const Key('meal_detail_open_in_maps_button'),
+        onPressed: _open,
+        icon: const Icon(Icons.place_outlined),
+        label: const Text('Open in Maps'),
       ),
     );
   }

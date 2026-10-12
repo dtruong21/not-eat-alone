@@ -57,7 +57,7 @@ v0.1.0 — {{Initial release}}
 
 - **Privacy policy URL**: {{from .env PRIVACY_URL}}
 - **Terms of service URL**: {{from .env TERMS_URL}}
-- **Support URL**: {{mailto: or your support page}}
+- **Support URL**: `mailto:` the `supportEmail` in `lib/core/config/legal_urls.dart` (placeholder `support@convyve.com` — confirm a monitored mailbox before submission), or a support page
 - **Marketing URL** (optional): {{landing page}}
 
 ---

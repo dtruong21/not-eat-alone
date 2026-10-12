@@ -36,7 +36,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Data + time
 
 - [ ] Timezone math. Date-keyed data must respect local TZ, not UTC.
-- [ ] Date rollover at midnight — "today" advances without manual refresh.
+- [ ] Date rollover at midnight — "today" advances without manual refresh. — re-verified 2026-10-12 (code): fixed, `discovery_clock_edge_test.dart` drops started meals by timer (see `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md`); on-device NOT VERIFIED HERE
 - [ ] DST transition — math still correct on clock-change days.
 - [ ] Long strings (≥1000 chars) in text fields don't crash.
 - [ ] Long lists (≥100 items) render without dropped frames.
@@ -44,7 +44,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Network
 
-- [ ] Offline write queues (toggle airplane mode mid-action).
+- [ ] Offline write queues (toggle airplane mode mid-action). — re-verified 2026-10-12: chat, create meal, request, rating use `settleOrQueue` (fixed, `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md`); **FAIL (code)** for Report and Block, which still await the server: `docs/bugs/2026-10-12-report-and-block-spin-forever-offline.md`; airplane mode NOT VERIFIED HERE
 - [ ] Reconnect syncs queued writes.
 - [ ] Slow network throttle (Network Link Conditioner / Android emulator throttle) doesn't break UI.
 - [ ] Firestore cache renders previously-fetched data on cold offline launch.
@@ -52,8 +52,8 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Auth
 
 - [ ] Anonymous → real-account linking preserves uid + data.
-- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped).
-- [ ] Account deletion cascade leaves zero orphan docs.
+- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped). — re-verified 2026-10-12: providers fixed (`docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`); the on-disk Firestore cache is not cleared (P3 in `docs/bugs/2026-10-12-minor-findings-second-sweep.md`)
+- [ ] Account deletion cascade leaves zero orphan docs. — re-verified 2026-10-12 against the Firestore emulator (`firebase/functions/test-emulator/state_machine.test.cjs`): a guest leaving reopens a future meal / cancels a past one, flags cleared (`docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md`); non-atomic window: `docs/bugs/2026-10-12-cancel-meal-can-leave-a-stale-match-that-blocks-rematching.md`; Storage + Auth deletion NOT VERIFIED HERE
 - [ ] Token refresh works after 1h+ idle.
 
 ### Permissions
@@ -63,26 +63,26 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Lifecycle
 
-- [ ] Cold start (after force-kill) reaches the right screen within 3s on mid-tier Android.
+- [ ] Cold start (after force-kill) reaches the right screen within 3s on mid-tier Android. — timing NOT VERIFIED HERE; **FAIL (code)** for the screen itself: sign-in / age gate flash while the session or user doc loads, `docs/bugs/2026-10-12-router-flashes-signin-and-age-gate-while-session-loads.md`
 - [ ] Background → foreground after 10+ min doesn't crash or duplicate state.
-- [ ] Deep link cold-opens app to the linked screen (go_router `initialLocation` path).
+- [ ] Deep link cold-opens app to the linked screen (go_router `initialLocation` path). — **FAIL (code)** for push taps: chat opens with no back navigation, `docs/bugs/closed/2026-10-12-push-tap-strands-user-in-chat-without-back.md`
 
 ### Memory + perf
 
 - [ ] 5 min of typical use → no obvious memory growth (DevTools memory tab).
-- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes.
+- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes. — re-verified 2026-10-12: per-user family providers auto-dispose; `hostInboxProvider`, `blockedUserIdsProvider`, `chatListProvider`, `currentUserDocProvider` and the discovery feed are app-lifetime by design and re-subscribe on auth change (`docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`)
 
 ### Security
 
-- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator).
+- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) and again 2026-10-12 (`hardening`, `users_profiles`, new `client_write_shapes`: 19 passed, 3 skipped for open bugs `docs/bugs/closed/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md`, `docs/bugs/2026-10-12-requests-rule-lets-a-guest-break-the-hosts-inbox.md`, `docs/bugs/2026-10-12-minor-findings-second-sweep.md`) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`
 - [ ] `.env` is gitignored — `git log --all -p -- .env` returns nothing.
-- [ ] No `cloud_firestore` imports outside `lib/core/firebase/` (`grep -r "package:cloud_firestore" lib/ --include="*.dart" | grep -v "lib/core/firebase"` returns nothing).
+- [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/closed/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
 
 ### Visual + a11y
 
-- [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`).
-- [ ] Dynamic type at 200% (`MediaQueryData.textScaleFactor`) doesn't truncate critical text.
-- [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one.
+- [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`). — NOT VERIFIED HERE: only meal detail, buttons and contrast tokens have dark-mode tests; no per-screen goldens
+- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — re-verified 2026-10-12 (harness, real Nunito): sign-in, sheets, age gate, chat pass (`docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md`, `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md`); other screens and a real device NOT VERIFIED HERE
+- [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one. — **FAIL (code)**: rating stars, chat send, Paris notice close, add-photo tile have no accessible name: `docs/bugs/closed/2026-10-12-icon-only-controls-have-no-screen-reader-label.md` (`test/core/a11y/`); screen-reader pass NOT VERIFIED HERE
 
 ### Design system (UX plan 16a) — automated, `test/core/design/`
 
@@ -168,7 +168,7 @@ Related PRD entry: `docs/PRD.md § Auth`
 - [ ] DOB exactly 18 today = allowed; one day short = blocked (unit-tested in `age_test.dart`).
 - [ ] DOB stored UTC-midnight — no timezone day-drift on read (unit-tested in `users_repository_test.dart`).
 - [ ] Malformed `users` doc surfaces `RepositoryParseException`, not a raw crash.
-- [ ] Non-owner cannot read/write another user's `users/{uid}` doc (Firestore rules).
+- [x] Non-owner cannot read/write another user's private `users/{uid}` doc; other users can `get` (not list) the public `profiles/{uid}` only (Firestore rules; `firebase/rules-test/`).
 - [ ] Redirect never loops across signin / age-gate / home / OTP (unit-tested in `redirect_test.dart`).
 
 **Pending native config (blocks live tests):**
@@ -176,7 +176,10 @@ Related PRD entry: `docs/PRD.md § Auth`
 - Phone: APNs auth key (iOS), Android SHA-256 + Play Integrity not yet registered.
 
 **Known issues:**
-- none filed
+- `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1, fixed) — private/public split; rules tests in `firebase/rules-test/`
+- `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed)
+- `docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
+- `docs/bugs/2026-10-12-router-flashes-signin-and-age-gate-while-session-loads.md` (P2, open)
 
 ---
 
@@ -204,7 +207,8 @@ Related PRD entry: `docs/PRD.md § Profile`
 - Firebase **Storage not yet enabled** on the project — click "Get Started" in the console, then `firebase deploy --only storage`. Until then, `upload()` I/O is unverified (only path-building + delete are unit-tested).
 
 **Known issues:**
-- none filed
+- `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed) — each photo add rewrites the user doc and resets navigation
+- `docs/bugs/closed/2026-10-09-profile-photos-uploaded-unresized.md` (P2, inferred)
 
 ---
 
@@ -225,12 +229,13 @@ Related PRD entry: `docs/PRD.md § Meals`
 - [ ] Deep-link/restart on `/meals/new/details` with no restaurant → falls back to search (no crash).
 - [ ] `seats` fixed at 1 (1:1); date/time is future-only.
 
-**Deferred (needs the Google API key — 30-day GCP wait):**
-- Real **Places API** restaurant search (currently a fake 20-restaurant Paris list behind `RestaurantSearchRepository` — swap one datasource).
-- **Map preview** of the restaurant (list-first now; map added with the same keyed task).
+**Shipped / deferred:** real Places search is live via the `searchRestaurants` callable (the fake 20-restaurant list remains only as a test double); an embedded map preview is post-MVP (the "Open in Maps" link-out shipped).
 
 **Known issues:**
-- none filed
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
+- `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
+- `docs/bugs/closed/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open) — the `meals` rule accepts `restaurant: {}`
+- `docs/bugs/2026-10-12-minor-findings-second-sweep.md` (P3) — restaurant search field/retry/billing nits
 
 ---
 
@@ -253,11 +258,14 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - [ ] geohash prefix query (precision 4 ~Paris cell) + client distance sort; any signed-in user can READ meals + host profiles (rules opened; writes still owner-only).
 - [ ] Empty state ("No meals near you yet") when nothing matches.
 
-**Deferred (needs the Google API key — 30-day GCP wait):**
-- **Map view** of the feed (list-first now; map added with the same keyed task as Places).
+**Deferred (post-MVP, see PRD):** map view of the feed.
 
 **Known issues:**
-- none filed
+- `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
+- `docs/bugs/closed/2026-10-09-location-fix-has-no-timeout.md` (P2)
+- `docs/bugs/closed/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open)
+- `docs/bugs/closed/2026-10-12-feed-is-empty-for-any-device-outside-paris.md` (P2, open) — store-review risk
+- `docs/bugs/2026-10-12-seed-script-writes-legacy-users-shape.md` (P2, open) — the seed golden-path line above is currently untrue for host names/photos
 
 ---
 
@@ -290,14 +298,15 @@ Related PRD entry: `docs/PRD.md § Matching`
   - A disabled Approve on a past meal carries a tooltip and a semantics hint ("Meal time has passed").
   - Unmounting the tile mid-flight (approve or deny) neither throws nor loses the snackbar (widget-tested).
 - [ ] Discovery app-bar inbox badge (`pendingRequestCountProvider`) shows the live pending count and hides itself at 0 (unit-tested in `discovery_inbox_badge_test.dart`).
-- [ ] Women-only meals are unaffected by the request/match flow — the existing discovery-time gender filter is untouched; requests/matches carry no gender logic of their own.
+- [ ] Women-only meals are unaffected by the request/match flow — the existing discovery-time gender filter is untouched; requests/matches carry no gender logic of their own. (Rules sweep 2026-10-09: a man cannot request a women-only meal; women-only meals are still *readable* by any signed-in user, see the rules-hardening bug.)
 - [ ] `join_requested` / `request_approved` / `request_denied` / `match_created` all fire from the controller layer (`create_request_controller.dart`, `inbox_action_controller.dart`), never inline in widgets.
 
 **Manual rules note:**
 - [ ] Firestore rules (`firebase/firestore.rules`) restrict `requests/{id}` writes to the guest (create, pending only) and the host (status transition pending→approved/denied only); `matches/{mealId}` is host/guest-readable, write-restricted to the approve transaction. Verify via Rules Playground or emulator — a non-host cannot approve/deny another host's request, and a non-participant cannot read a match doc.
 
 **Known issues:**
-- none filed
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline (re-verified fixed 2026-10-12)
+- `docs/bugs/2026-10-12-requests-rule-lets-a-guest-break-the-hosts-inbox.md` (P2, open)
 
 ---
 
@@ -325,7 +334,11 @@ Related PRD entry: `docs/PRD.md § Chat`
 - [ ] `matches/{matchId}/messages/{id}` and `matches/{matchId}/reads/{uid}` are readable/writable only by `match.hostId`/`match.guestId` (participants array) — verify a third user is denied both read and write via emulator.
 
 **Known issues:**
-- none filed
+- `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
+- `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
+- `docs/bugs/closed/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md` (P2, fixed)
+- `docs/bugs/closed/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open)
 
 ---
 
@@ -341,14 +354,14 @@ Related PRD entry: `docs/PRD.md § Safety`
 - [ ] Report a user/meal/message → a `reports/{id}` doc is written (create-only, contains reporterId, targetType, targetId, reason) → Firestore records the report (no immediate action on client).
 - [ ] Non-woman user requests a women-only meal → meal-detail shows "Women only — you don't qualify" (client guard) and the rule rejects the create if the guard fails.
 - [ ] Woman user requests a women-only meal → request succeeds (rules allow).
-- [ ] Account deletion: tap Settings → Delete account → confirmation dialog → password confirmation → `deleteAccount` callable is invoked → success dialog → sign-out → user profile + all data purged (Cloud Function processes the cascade).
+- [ ] Account deletion: tap Settings → Delete account → one confirmation dialog (no re-authentication, no success dialog) → `deleteAccount` callable is invoked → automatic sign-out → user + profile docs, meals, requests, matches, ratings, photos and the Auth account are purged by the Cloud Function. Matched meals are released first (see "Account deletion with a matched meal"). Reports the user filed or that target them are retained for safety.
 
 **Edge cases (specific to this feature):**
 - [ ] Blocking is bidirectional: if A blocks B, both A→B and B→A interactions are denied (rules verify both `blocks/{a}_{b}` and `blocks/{b}_{a}` do not exist).
 - [ ] Reports are create-only (no read/update/delete via client); Firestore rules reject any attempt.
 - [ ] Women-only meal rule enforces gender field read: a malformed user (missing gender) is treated as non-woman.
 - [ ] Block deletion: blocker can unblock via `blocks/{blockId}` delete (blockerUid check); blocked user cannot (rule rejects).
-- [ ] Deletion is cascading: deleteAccount callable deletes the user doc, all user-owned meals, all requests as guest, all matches as a participant, FCM tokens, profile pictures (deferred: Storage Rules + Function cleanup).
+- [ ] Deletion is cascading: deleteAccount callable deletes the user doc, all user-owned meals, all requests as guest, all matches as a participant, FCM tokens, the public profile doc, ratings in both directions, and profile pictures (Storage prefix `{env}/users/{uid}/`). Reports are intentionally retained.
 - [ ] After account deletion, all references to the deleted user's profile (name, photo) in persisted matches/messages are stale (no retroactive cleanup — acceptable for MVP).
 
 **Manual emulator verification (off-platform):**
@@ -363,8 +376,13 @@ Related PRD entry: `docs/PRD.md § Safety`
 - Live account deletion via UI (requires **Blaze plan**; current callable requires manual backend trigger or custom Cloud Function for email verification).
 
 **Known issues:**
-- Account deletion is via callable, not full UI flow yet (user has to call the backend; email confirmation Flow deferred pending Blaze).
+- Stale text above: Settings -> Delete account (single confirm dialog, no re-auth) ships and the callable also deletes the Storage prefix; see `docs/bugs/closed/2026-10-09-docs-contradict-code.md`.
+- `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (P2)
+- `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md` (P3)
+- `docs/bugs/2026-10-12-report-and-block-spin-forever-offline.md` (P2, open)
+- `docs/bugs/2026-10-12-minor-findings-second-sweep.md` (P3) — stale `docs-contradict-code` remnants, local cache not cleared on sign-out
 - Block detection is possible via direct Firestore inspection (silent-block mirror not yet implemented).
+- Store-UGC risk (decided, not a bug): no automated moderation and no operator workflow for `reports` (create-only, nobody reads them); Apple 1.2 / Play UGC reviewers may ask for one.
 
 ---
 
@@ -390,7 +408,9 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 - Live end-to-end delivery is unverified pending **Blaze plan** upgrade (Cloud Functions can't deploy on Spark), an **APNs auth key** (iOS push), and registering the **Android SHA-256** fingerprint — all user homework, tracked in `docs/CICD.md` / build-state memory. Until then, the Functions triggers are unit/integration-tested in isolation (`firebase/functions/test/`) but not exercised against a real device.
 
 **Known issues:**
-- none filed
+- `docs/bugs/2026-10-09-minor-polish-and-ci-gaps.md` (P3) — foreground banner while the chat is open, token-refresh error handling
+- `docs/bugs/closed/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open) — tapped chat pushes use `go`, not `push`; the shell and this listener are disposed
+- Route mapper covers every type the server sends (`request`, `request_update`, `message`, `rate`, `meal_reminder`); guarded by `test/features/notifications/data/push_type_contract_test.dart`.
 
 ---
 
@@ -403,7 +423,7 @@ Related PRD entry: `docs/PRD.md § Ratings`
 - [ ] After the meal `dateTime` has passed, the post-meal card ("How was your meal?") appears in the match's chat.
 - [ ] Tap the card → rating sheet appears with star picker (1–5), show-up toggle, and optional comment field.
 - [ ] Select stars + toggle show-up (true/false) + optionally type a comment (≤200 chars) → "Submit" writes a `ratings/{matchId}_{raterUid}` doc.
-- [ ] Both participants receive a post-meal nudge push notification (type `'rate'`) shortly after rating.
+- [ ] Both participants receive a post-meal "How was it?" push (type `'rate'`) from the hourly `postMealReminder` once the meal's start time has passed (up to an hour after it began), before anyone has rated. Tapping it opens the match chat with the rating card.
 - [ ] After rating, the target user's profile card shows a rating badge (⭐ count displayed, e.g. "⭐ 4.5 (12)").
 - [ ] The target user's `AppUser.ratingAvg` and `ratingCount` are updated by the `onRatingCreated` aggregate Function in realtime; their profile screen reflects the new aggregate.
 
@@ -412,10 +432,10 @@ Related PRD entry: `docs/PRD.md § Ratings`
 - [ ] A user cannot rate themselves — the rule rejects if `raterUid == targetUid`.
 - [ ] Star count must be 1–5 inclusive — submit disabled if outside range (client); rule rejects otherwise.
 - [ ] Comment is optional, but if present must be ≤200 chars (both client validation + rule check).
-- [ ] One rating per match per rater — a second attempt to rate the same match writes to the same doc (idempotent ID), overwriting the previous rating.
+- [ ] One rating per match per rater — the doc id is `{matchId}_{raterUid}` and ratings are create-only: a second attempt is rejected by the rules (no overwrite).
 - [ ] `AppUser.ratingCount` and `ratingAvg` are write-protected: client cannot write them directly (Firestore rules validate `ratingSum/ratingCount/ratingAvg` unchanged in user updates).
 - [ ] Scheduled post-meal push (`postMealReminder`, hourly Pub/Sub) is deduplicated via the `postMealNotified` flag; once sent, a meal does not re-notify its participants.
-- [ ] After both participants rate, the meal's `status` flips to `completed` by the scheduled Function.
+- [ ] `postMealReminder` marks a matched meal `completed` at its first hourly run after the meal time, whether or not anyone has rated.
 
 **Manual emulator/Blaze verification:**
 - [ ] Firestore rules reject a rating where `raterUid == targetUid` (write forbidden).
@@ -424,8 +444,230 @@ Related PRD entry: `docs/PRD.md § Ratings`
 - [ ] Scheduled `postMealReminder` function runs hourly and sends a notification to non-notified participants (requires Blaze + Cloud Scheduler; emulator cannot run scheduled triggers).
 
 **Known issues:**
-- The post-meal push-notification tap handler (type `'rate'`) does not yet have a deep-link case in the Dart mapper; the in-app post-meal card in chat is the primary path to rating.
+- `docs/bugs/2026-10-09-minor-polish-and-ci-gaps.md` (P3) — the rate prompt fires at meal start
 - Live aggregate updates + scheduled push notification delivery require the project to be on **Blaze** plan; if still on Spark, Functions deploy fails and rating aggregates/pushes are non-functional.
+
+---
+
+### Feature: Open in Maps (meal detail)
+
+Status: active
+Related PRD entry: `docs/PRD.md § Feature: Open restaurant in Maps (meal detail)` · design: `docs/DESIGN.md § Meal detail — "Open in Maps" action` · analytics: `directions_opened`
+Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `maps_launcher_uris_edge_test.dart`, `test/features/meal/presentation/meal_detail_open_in_maps_test.dart`, `meal_detail_open_in_maps_edge_test.dart`
+
+**Golden path:**
+- [ ] Meal detail for a restaurant with real coordinates shows "Open in Maps" (outlined, map-pin icon, left-aligned, intrinsic width) inside the restaurant card. *(Automated.)*
+- [ ] **iOS (real device + Simulator):** tap opens Apple Maps at the restaurant with the name as the pin label; Maps is foregrounded (no in-app browser, no Safari bounce). Verify that `ll` + `q` drops a pin at the exact lat/lng labelled with the name, rather than running a name search that snaps to a different nearby POI.
+- [ ] **Android (real device + Emulator with Google Play):** tap opens Google Maps at the pin with the name as the label. With a second geo handler installed (e.g. Waze), the system chooser appears and both work.
+- [ ] Returning to Convyve (back / app switcher) lands on the unchanged meal detail; the button is immediately usable again.
+- [ ] `directions_opened` fires once per tap, no properties (verified in code via log-sink tests). **Still to do manually:** see it in the Firebase Analytics DebugView (not verifiable without a device).
+
+**Edge cases (specific to this feature):**
+- [ ] Coordinates `0,0`, out of range, or NaN: button hidden, address still shown. *(Automated.)*
+- [ ] Android 11+ package visibility: `launchUrl` (not `canLaunchUrl`) is used, so no `<queries>` entry is needed; confirm on an Android 11+/14 device and on an emulator image WITHOUT Google Maps that `geo:` failing falls back to the https Google Maps URL (browser) and, with no handler at all, shows "Couldn't open Maps". *(URI order, false-vs-throw fallback automated via faked method channel.)*
+- [ ] iOS: no `LSApplicationQueriesSchemes` is required for https launches (only `canLaunchUrl` needs it). Confirm launch works from a release/TestFlight build with the Info.plist as committed.
+- [ ] Restaurant names with `&`, `#`, `%`, `+`, `=`, `?`, quotes, emoji, CJK, Cyrillic, Arabic, parentheses: apple `q` and geo label round-trip exactly (parentheses become spaces in the geo label). *(Automated.)* Manually spot-check one non-Latin and one `&` venue on each platform that the maps app shows the correct label.
+- [ ] 1000+ character restaurant name: URI stays valid; card does not overflow at 1.5x. *(Automated.)* Check whether the maps app truncates/refuses a very long `q` label on-device.
+- [ ] Viewer variants: guest (no request / pending / approved / denied / request-state loading / error), host viewing own meal, women-only meal as woman and non-woman viewer: button present and working in all. *(Automated.)*
+- [ ] Double-tap / rapid tap: exactly one launch and one `directions_opened`; guard releases after success, `false`, and a throwing launcher. *(Automated.)*
+- [ ] Failed launch (`false`): snackbar "Couldn't open Maps", button stays enabled, event already counted (intent). *(Automated.)*
+- [ ] Analytics sink failure never blocks the hand-off. *(Automated.)*
+- [ ] Leave the screen while a launch is in flight: no snackbar on an unmounted screen. *(Automated.)* Leave the screen while the `track()` await is in flight: fixed, see `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md`.
+- [ ] Offline / airplane mode: button still launches the maps app; Convyve shows no connectivity error. Maps app owns its offline state. *(Manual.)*
+- [ ] Background app mid-launch / kill Maps and return: Convyve state unchanged, no crash. *(Manual.)*
+- [ ] Accessibility: TalkBack/VoiceOver announce one button "Open <name> in Maps" (no duplicate "Open in Maps" announcement); semantics tap action launches once; target >= 48dp at 2.0x. *(Semantics automated; screen-reader pass manual.)*
+- [ ] RTL (Arabic/Hebrew locale): button aligns to the start (right) edge. *(Automated via `Directionality`; confirm with a real RTL locale.)*
+- [ ] Dark + light parity at 1.5x/2.0x text, 320dp wide. *(Automated, light 2.0x and dark 1.5x/2.0x.)*
+- [ ] Coordinate precision: very small values (|lat| or |lng| < 1e-6) would stringify in scientific notation (`1e-7`). Not a real restaurant case; noted, not guarded.
+
+**Known issues:**
+- `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
+- `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Can't make it (cancel / withdraw a matched meal)
+
+**Automated:** `firebase/functions/test/cancel_meal.test.ts` (who may cancel, matched + future only, host vs guest outcome, push wording); `leave_match_action_test.dart` (visibility, host/guest dialogs, keep, failure snackbar, 2.0x text); `leave_match_controller_test.dart` (success tracks `meal_cancelled` with the role, failure doesn't); `match_repository_impl_test.dart` (callable payload, error mapping). `applyCancel` checked against the Firestore emulator: host cancel -> `cancelled` + chat/messages gone; guest withdraw -> `open`, guest cleared, flags cleared, request + chat removed; second call, stranger, past meal and missing meal are rejected.
+
+**Manual on stage (two accounts, deployed `cancelMatchedMeal`, App Check token registered):**
+- [ ] Host: matched future meal -> chat -> "Can't make it" -> confirm: snackbar "Meal cancelled.", lands on Chats, the chat is gone; the guest gets "Meal cancelled - The host cancelled this meal" (tap opens Discover).
+- [ ] Guest: same -> "You've withdrawn."; the host gets "Your match withdrew" and the meal is in Discover again for another user; when someone else is approved the reminders start fresh.
+- [ ] The action is absent after the meal time (and the chat is only reachable for matched meals).
+- [ ] Airplane mode: confirm -> "Couldn't cancel. Check your connection and try again."; nothing changed.
+- [ ] `meal_cancelled` (role host/guest) appears in DebugView.
+
+**Re-verified 2026-10-12 (Firestore emulator, compiled functions: `firebase/functions/test-emulator/state_machine.test.cjs`; rules: `client_write_shapes.rules.test.cjs`):** guest withdraw reopens the meal, clears the three scheduler flags, removes request + chat, the same guest can re-request and be re-approved; host cancel ends in `cancelled` and is never reminded or completed; concurrent cancel from both sides lets exactly one win; after the meal time the cancel is refused and `postMealReminder` completes the meal once. Fixed: other person's open chat now shows "no longer available" (`docs/bugs/closed/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md`). Open: a crash between the transaction and the chat deletion blocks re-matching (`docs/bugs/2026-10-12-cancel-meal-can-leave-a-stale-match-that-blocks-rematching.md`), denied requesters cannot return (P3, minor findings).
+
+---
+
+### Feature: Rules hardening (reports, messages, ratings, storage)
+
+**Automated:** `firebase/rules-test/hardening.rules.test.cjs` (reports: key whitelist + size caps; messages: server `createdAt`, no extra keys; ratings: exact keys, no client `aggregated`, server `createdAt`). Run: `cd firebase/rules-test && npm install && npm test` (also a CI job).
+
+**Manual (stage, after deploying rules + functions):**
+- [ ] Send a chat message, file a report, submit a rating: all still work from the app (the rules now expect exactly the keys/`serverTimestamp()` the app writes).
+- [ ] Upload a profile photo (Storage rule now requires env `stage|prod`).
+- [ ] Delete an account: still works with App Check on (`deleteAccount` now enforces it); register the debug token on dev devices first.
+
+**Re-verified 2026-10-12:** every repository write shape (message, rating with/without comment, report, meal, request, approve transaction, deny, sibling denies, reads, block/unblock, fcm token, age gate batch, profile batch, age self-heal) is accepted by the rules emulator and its keys are checked against the rules' `hasOnly` lists on every `flutter test` run (`test/core/firebase/rules_write_shape_contract_test.dart`). Gaps found: `meals.restaurant`, `requests` keys/`createdAt`, `profiles` field types, `reads`/`blocks` keys (see the two P1/P2 bug files above and `docs/bugs/2026-10-12-minor-findings-second-sweep.md`). Storage rules: reviewed, still NOT VERIFIED HERE (no emulator test).
+
+---
+
+### Feature: Photo size and avatar decoding
+
+**Automated:** `test/core/design/avatar_image_test.dart` (decode width = radius x 2 x DPR, no upscaling; a failing photo raises no framework error).
+
+**Manual on a device:**
+- [ ] Add a photo from a 48-200 MP camera roll image: it uploads (no "profile error"); the Storage object is well under 8 MB (~1080 px).
+- [ ] Discover / Chats / inbox with ~20 hosts' photos scrolls smoothly on a mid-tier Android phone (DevTools memory stays flat).
+- [ ] Remove a photo then view the old profile elsewhere: the avatar shows the person icon, and Crashlytics gets no fatal image error.
+
+---
+
+### Feature: Account deletion with a matched meal
+
+**Automated:** `firebase/functions/test/matched_meals.test.ts` (future meal reopens + flags cleared; past meal cancelled; host-leaving notify rule; push payloads); `push_route_mapper_test.dart` and `push_type_contract_test.dart` (new push types have a client route). Behaviour of `releaseMatchedMeals` checked against the Firestore emulator (reopen, cancel, untouched others).
+
+**Manual on stage (two accounts, deployed functions):**
+- [ ] Host posts a meal, guest joins and is approved. Guest deletes the account: the host gets "Your match left Convyve", the meal is listed in Discover again (as another user) and gets fresh reminders when matched again; no reminder fires for the old match.
+- [ ] Same, but the meal time has passed: the host's meal is cancelled and no rating prompt arrives.
+- [ ] Host deletes the account with a matched future meal: the guest gets "Meal cancelled"; tapping it opens Discover.
+- [ ] Deletion still completes if a push fails (no device token).
+
+---
+
+### Feature: Location fix never hangs
+
+**Automated:** `test/core/location/location_service_timeout_edge_test.dart` (denied, error, never-arriving fix -> Paris within the timeout, last known position preferred, hanging last-known lookup, in-time fix).
+
+**Manual on a device:**
+- [ ] Location permission granted but no fix (airplane mode / indoors / emulator without a mock location): Discover leaves the spinner within ~10 s and shows the Paris feed.
+- [ ] Pull to refresh in that state does not hang again.
+- [ ] Permission denied: Paris feed immediately (unchanged). Granting later and pulling to refresh uses the real position.
+
+---
+
+### Feature: Sign-out drops per-user state
+
+**Automated:** `test/core/auth_transition_state_test.dart` (waits while auth resolves; no Firestore read when signed out; an unwatched profile closes its listener; sign-out then sign-in re-subscribes); `chat_repository_impl_test.dart` (`watchLastMessage` = newest only); chat list tests use `lastMessageProvider`.
+
+**Manual on a device:**
+- [ ] Sign in as A, open chats and a profile, sign out, sign in as B: no data or error from A's session appears (no stale profile, thread or "permission denied").
+- [ ] Chats tab with several matches: each row shows the last message; (DevTools/Firestore usage) it does not download every match's full history.
+- [ ] Sign out while a chat is open: lands on sign-in, no crash or red error flash.
+- Known follow-up: the open chat thread is still unbounded (`limit` + load-more not built).
+
+---
+
+### Feature: Large text sizes
+
+**Automated (real Nunito font, 360x640):** `signin_screen_text_scale_edge_test` (1.0/1.5/2.0x, both themes), `sheets_keyboard_edge_test` (rating + report: keyboard, 1.5x, 2.0x), `age_gate_text_scale_test` (1.5/2.0x, button reachable by scrolling), `chat_screen_edge_test` (keyboard open keeps the thread readable; 1.5x no overflow).
+
+**Manual on a device at the largest system font (Android 2.0x / iOS Larger Accessibility Sizes):**
+- [ ] Sign-in: all three buttons readable, labels wrap, nothing clipped.
+- [ ] Age gate: scrolls; Continue reachable.
+- [ ] Rating / report sheets: open the keyboard, the field and Submit stay reachable (scroll).
+- [ ] Chat after the meal time: with the keyboard open the tips and rating card are hidden and the thread is usable; with it closed they show and scroll if tall.
+
+---
+
+### Feature: Offline writes don't block the UI
+
+**Automated:** `test/core/util/queued_write_test.dart` (ack, rejection inside the grace period, pending past it = queued, late error swallowed); `message_composer_offline_edge_test.dart` (composer frees up); `create_meal_controller_test.dart` (never-acknowledged create settles).
+
+**Manual on a device (airplane mode):**
+- [ ] Chat: send a message; within ~3 s the field clears and a second message can be sent; both appear in the thread; after reconnecting they deliver once each (no duplicates).
+- [ ] Create meal / Request to join / Rate: after ~3 s the screen moves on instead of spinning; after reconnect the meal / request / rating appears server-side (check Firestore) and the host gets the push.
+- [ ] A write rejected by the rules while online (e.g. messaging someone who blocked you) still shows the error within 3 s.
+- Known trade-off: while offline the success snackbar ("Meal created!") appears even though delivery waits for the network; a rejection that only arrives after reconnect is logged, not shown.
+
+---
+
+### Feature: Discovery feed freshness
+
+**Automated:** `test/features/meal/application/discovery_clock_edge_test.dart` (a meal drops when its start passes with no new snapshot; only started meals drop; unchanged feed doesn't recount `discovery_viewed`); `meal_repository_impl_test.dart` (past meals excluded, soonest-first, capped at 100).
+
+**Manual:**
+- [ ] Leave Discover open past a listed meal's start time: it disappears without pulling or reopening.
+- [ ] Production data: the `status + dateTime` index is deployed (`firebase/firestore.indexes.json`), the Discover query succeeds (no "requires an index" error).
+- [ ] Known follow-up: cancelling a meal — `docs/bugs/closed/2026-10-10-no-way-to-cancel-a-meal.md`.
+
+---
+
+### Feature: Core analytics events (app_opened, signup/signin, identify)
+
+**Automated:** `test/core/analytics/session_tracker_test.dart`, `analytics_listener_test.dart`, `tracking_plan_parity_test.dart` (every registry event is fired somewhere in `lib/`), `auth_repository_impl_test.dart` (method + timestamps mapping).
+
+**Manual on a device with `--dart-define=ANALYTICS_IN_DEV=true`, Firebase Analytics DebugView:**
+- [ ] Cold start: `app_opened` (`is_cold_start: true`); background and resume: `app_opened` (`false`).
+- [ ] Brand-new account via Google / Apple / phone: one `signup_completed` with the right `method`; user properties `signup_date`, `signup_method`, `app_version`, `platform` appear.
+- [ ] Sign out and sign back in with an existing account: one `signin_completed`; no `signup_completed`.
+- [ ] Kill and relaunch while signed in: `app_opened` + identify, but no `signin_completed`.
+- [ ] After sign-out, new events carry no user id (`reset`).
+
+Re-verified 2026-10-12 (unit): the registry, the plan and the call sites agree and every event is fired from `lib/`; `AnalyticsListener` and `SessionTracker` behave as documented. P3 findings (duplicate `signup_completed` on a relaunch within 2 minutes, `discovery_viewed` re-fires on own-doc changes, provider pick) in `docs/bugs/2026-10-12-minor-findings-second-sweep.md`. DebugView NOT VERIFIED HERE.
+
+---
+
+### Feature: Private vs public profile
+
+**Automated:** `firebase/rules-test/users_profiles.rules.test.cjs` (7 cases, emulator); `test/features/user/data/*` (DTO split, merge, public age self-heal, no dob/gender in the public doc); `firebase/functions/test/profile_split.test.ts` (backfill split).
+
+**Manual (stage, after the rollout in `docs/RELEASE.md` §1.5):**
+- [ ] Sign up a new account: age gate -> profile setup works; a second account sees the first one's name/photo/age on a meal and in the request inbox and chat, with no crash.
+- [ ] A second account cannot read `users/<other>` or list `profiles` (Rules Playground / emulator).
+- [ ] After a rating lands, the aggregate appears on the rated person's profile badge.
+- [ ] Delete an account: both `users/{uid}` and `profiles/{uid}` are gone; their meals/ratings behave as before.
+- [ ] Existing test accounts show correct names/photos after the backfill (dry-run first).
+- [ ] A person with no public profile shows a neutral placeholder, not an error.
+
+**Re-verified 2026-10-12:** owner writes on a legacy `users` doc are denied until the backfill ran (and pass after the Admin-SDK field removal the script performs); an old pre-split app build cannot write public fields or read `users/<other>` (breaks by design); `profiles/<missing>` resolves to not-found. Open: `docs/bugs/2026-10-12-cd-deploys-rules-before-profile-backfill.md` (P2: CD vs the section 1.5 order, rating loss window), `docs/bugs/2026-10-12-seed-script-writes-legacy-users-shape.md` (P2). The backfill itself (`backfill_profiles.js --apply`) NOT VERIFIED HERE (needs Admin credentials); its pure split is unit-tested.
+
+---
+
+### Feature: Meal reminders (T-24h / T-2h)
+
+**Automated:** `firebase/functions/test/reminders.test.ts` (windows, flags, Paris-time formatting across DST, today/tomorrow label, payload content, truncation); `push_route_mapper_test.dart` (tap → `/chats/:mealId`).
+
+**Manual on the `stage` flavor (real device, two accounts, deployed `mealReminderStage`):**
+- [ ] Matched meal ~23h ahead: both phones get "Your meal is tomorrow — <restaurant> at HH:mm" within ~15 min; no second copy on later runs.
+- [ ] Matched meal ~90 min ahead: both get "Your meal is coming up"; a meal 3h ahead gets nothing yet.
+- [ ] Tap the push (app killed / background / foreground): opens the match chat; `push_opened` with `type: meal_reminder` in DebugView.
+- [ ] Meal matched with 30 min to go: no "tomorrow" reminder ever sent.
+- [ ] Cancelled or unmatched meal inside a window: nothing sent.
+- [ ] One participant has no device token / revoked permission: the other still gets it; no function error loop.
+- [ ] Meal across the DST change (last Sunday of October): time in the push matches Paris wall-clock.
+- [ ] Check the meal doc after: `reminder24hSent` / `reminder2hSent` set.
+- [ ] Post-meal "How was it?" push: tap opens the match chat with the rating card at the top.
+
+---
+
+### Feature: Meal reminders — sweep result 2026-10-09
+
+Server side verified against the Firestore emulator for BOTH databases (`(default)` and `stage`) by running the compiled `mealReminder` handler with a stubbed sender: matched meals inside 22–24h and 1–2h get one push per participant (host only when no guest), meals at 3h / 30min / 21h / past / cancelled / open get nothing, flags `reminder24hSent` / `reminder2hSent` are set, a second run sends nothing, a meal with `reminder24hSent` already set still gets the 2h reminder. Client rules: no client can write the reminder flags and they do not affect the approve transaction. Open: `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reminders for a meal whose guest deleted their account). Device items above remain NOT VERIFIED.
+
+**Re-verified 2026-10-12** with the compiled `mealReminder` / `postMealReminder` handlers against the Firestore emulator (`firebase/functions/test-emulator/state_machine.test.cjs`): flags set once, 24h and 2h independent, open/cancelled meals ignored, a withdrawn-then-reopened meal restarts. Race (non-transactional flag write) and duplicate-prompt notes are P3 in `docs/bugs/2026-10-12-minor-findings-second-sweep.md`.
+
+---
+
+## QA sweep log
+
+### 2026-10-09 (develop @ 8cf1b41) — pre-store-submission code-side sweep
+
+Baseline: `flutter test` 477 passed / 3 skipped (the TZ-gated tests, run separately under `TZ=Pacific/Kiritimati`: green); after the additions below 503 passed / 19 skipped (16 bug-linked); `flutter analyze`: 0 errors, 0 warnings (624 infos); functions `npm test` 31/31, `npm run build`, `npm run lint` clean (Node 22.22). Added tests (all green; bug-linked cases are skipped until fixed): `test/core/routing/router_stability_test.dart`, `test/core/auth_transition_state_test.dart`, `test/core/analytics/tracking_plan_parity_test.dart`, `test/core/location/location_service_timeout_edge_test.dart`, `test/features/chat/presentation/chat_screen_edge_test.dart`, `test/features/chat/presentation/widgets/message_composer_offline_edge_test.dart`, `test/features/auth/presentation/signin_screen_text_scale_edge_test.dart`, `test/features/safety/presentation/sheets_keyboard_edge_test.dart`, `test/features/meal/application/discovery_clock_edge_test.dart`, `test/features/notifications/data/push_type_contract_test.dart`, helper `test/helpers/load_app_fonts.dart` (widget tests render the Ahem font unless Nunito is loaded; use it for any layout/overflow test).
+
+Bugs filed: see `docs/bugs/` (2 P1, 9 P2, 3 P3). Everything marked device/emulator in this plan stays NOT VERIFIED until run locally.
+
+### 2026-10-12 (develop @ 979e5f2) - second code-side sweep before store submission
+
+Baseline: `flutter test` 575 passed / 3 skipped (the TZ-gated ones, green under `TZ=Pacific/Kiritimati`); functions `npm test` 52/52, `npm run build`, `npm run lint` clean; rules tests 10/10; `flutter analyze` 0 errors / 0 warnings; `actionlint` 1.7.7 clean on all three workflows. After the additions below: `flutter test` 588 passed / 17 skipped (14 skipped cases are open-bug regression tests, each names its bug file); rules tests 19 passed / 3 skipped (open bugs); emulator state-machine checks 7/7.
+
+Added tests: `firebase/rules-test/client_write_shapes.rules.test.cjs` (every repository write/query shape through the rules emulator, plus the legacy-doc, old-build and cancel/withdraw state-machine paths), `test/core/firebase/rules_write_shape_contract_test.dart` (repository writes vs the rules' `hasOnly` lists, runs in every `flutter test`), `firebase/functions/test-emulator/state_machine.test.cjs` (compiled functions vs the Firestore emulator; run command in the file header, not in CI), `test/core/routing/push_tap_back_stack_edge_test.dart`, `test/core/routing/cold_start_gate_flash_edge_test.dart`, `test/core/a11y/icon_only_controls_semantics_edge_test.dart`, `test/features/chat/presentation/chat_screen_cancelled_match_edge_test.dart`, `test/features/meal/application/discovery_outside_paris_edge_test.dart`, `test/features/meal/data/meal_repository_poison_edge_test.dart`, `test/features/matching/data/request_inbox_poison_edge_test.dart`, `test/features/safety/application/offline_safety_writes_edge_test.dart`. Every skipped case was run un-skipped first and failed for the stated reason, and each file has a passing harness/baseline case so the failure is not a harness artefact.
+
+Bugs filed (all `docs/bugs/2026-10-12-*.md`): 13 files: 2 P1 (`one-malformed-meal-breaks-discover-for-everyone`, `push-tap-strands-user-in-chat-without-back`), 9 P2, 2 P3. Closed bugs re-checked: all 16 hold except two leftovers re-filed as new files (`report-and-block-spin-forever-offline` for `awaited-writes-block-ui-offline`, and the docs remnants in `minor-findings-second-sweep` for `docs-contradict-code`).
+
+Not verifiable here (no device, console or credentials): everything marked NOT VERIFIED HERE above, the real `firebase deploy`, the backfill against real data, App Check enforcement, FCM delivery, DebugView, Storage rules, performance/memory, and the pre-release checklist items that need a signed build.
 
 ---
 

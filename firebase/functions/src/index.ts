@@ -4,8 +4,10 @@ import { makeRequestUpdated } from './triggers/request_updated';
 import { makeMessageCreated } from './triggers/message_created';
 import { makeRatingCreated } from './triggers/rating_created';
 import { makeDeleteAccount } from './callable/delete_account';
+import { makeCancelMatchedMeal } from './callable/cancel_matched_meal';
 import { makeSearchRestaurants } from './callable/search_restaurants';
 import { makePostMealReminder } from './scheduled/post_meal_reminder';
+import { makeMealReminder } from './scheduled/meal_reminder';
 
 initializeApp();
 
@@ -18,6 +20,9 @@ export const messageCreatedStage = makeMessageCreated('stage');
 export const ratingCreatedDefault = makeRatingCreated('(default)');
 export const ratingCreatedStage = makeRatingCreated('stage');
 export const deleteAccount = makeDeleteAccount();
+export const cancelMatchedMeal = makeCancelMatchedMeal();
 export const searchRestaurants = makeSearchRestaurants();
 export const postMealReminderDefault = makePostMealReminder('(default)');
 export const postMealReminderStage = makePostMealReminder('stage');
+export const mealReminderDefault = makeMealReminder('(default)');
+export const mealReminderStage = makeMealReminder('stage');

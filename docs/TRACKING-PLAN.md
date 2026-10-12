@@ -10,11 +10,15 @@ The analytics PRD. Every event in the product is defined here BEFORE it's instru
 
 The single number that, if it goes up, means the product is working.
 
-**NSM:** {{e.g. "Weekly active users who completed ≥1 check-in"}}
+**NSM:** Weekly completed meals — matched meals in Paris where at least one participant confirms the other showed up, per ISO week.
 
-**Why this one:** {{one sentence — what user behavior it captures}}
+**Why this one:** It is the product's promise delivered (two people actually ate together), and it only moves when supply (hosts), demand (requests), approval, and show-up all work — liquidity, trust, and low-pressure in one number.
 
-**How we'd compute it:** {{SQL-ish description of the query against the event stream}}
+**How we'd compute it:**
+- **Exact (Firestore, weekly query):** distinct `matchId` in `ratings` with `showedUp == true` and `createdAt` in the week. A meal counts once even when both people rate.
+- **Analytics proxy (dashboard):** count of `meal_rated` events with `showed_up = true`, divided by 2 (each completed meal usually yields two ratings). Events carry no ids by design, so this is an approximation; use the Firestore query for the reported figure.
+
+**Targets:** none yet — set them from the first four weeks of Paris soft-launch data. Until then, track the trend.
 
 ---
 
@@ -24,9 +28,10 @@ The dials that move the NSM. Resist the urge to track everything.
 
 | Metric | Definition | Why it matters |
 |---|---|---|
-| {{Activation rate}} | {{% of new signups who reach key moment within 24h}} | Leading indicator of NSM |
-| {{Retention W1}} | {{% of new users who return in week 1}} | Tells us we have product-market fit signal |
-| {{Feature adoption}} | {{% of WAU using feature X}} | Tells us which features earn their keep |
+| Activation rate | % of new signups (`signup_completed`) who fire `meal_created` or `join_requested` within 7 days | Did the new user reach the core loop, as a host or a guest? |
+| Request → match rate | `match_created` ÷ `join_requested`, weekly | Liquidity: are requests turning into meals? Low = too few hosts or slow approvals. |
+| Show-up rate | `meal_rated` with `showed_up = true` ÷ all `meal_rated`, weekly | No-shows are the main trust risk; reminders and ratings exist to move this. |
+| Retention W1 | % of new users with an `app_opened` in days 7–13 after `signup_completed` | Early signal that a first meal (or the hope of one) brings people back. |
 
 ---
 
@@ -43,7 +48,14 @@ Good: `habit_created`, `friends_tab_viewed`, `checkin_marked_done`.
 
 ## Identification strategy
 
-- Anonymous users get a stable anonymous ID from the analytics SDK (PostHog / Firebase Analytics).
+Where this is wired: `lib/core/analytics/analytics_listener.dart` (mounted above the router) + `session_tracker.dart`.
+
+- `app_opened` fires on cold start (`is_cold_start: true`) and on every resume from background (`false`).
+- On every auth state change to a signed-in user (including a session restored at startup) the tracker calls `identify(uid)` and sets `signup_date`, `signup_method`, `app_version`, `platform`. On sign-out it calls `reset()`.
+- `signup_completed` fires once when a **brand-new account** signs in (Firebase account created and first signed in within 10 s of each other); `signin_completed` when an **existing** account completes a fresh sign-in (last sign-in within 2 minutes). A session simply restored at app start fires neither. A cold start within 2 minutes of a sign-in can repeat `signin_completed` once — accepted.
+- The sign-up counts at account creation, not at the end of onboarding (age gate / profile); `profile_completed` marks the end of onboarding.
+
+- Anonymous users get a stable anonymous ID from the analytics SDK (Firebase Analytics).
 - On sign-up, call `identify(uid)` with the Firebase Auth uid. Analytics merges anonymous events into the identified profile.
 - On sign-out, call `reset()` so the device doesn't continue attributing events to the prior user.
 - Never send PII (email, name, content) as event properties. Reference by `user_id` only — joins happen at query time, not at send time.
@@ -82,6 +94,7 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `meal_created` | User finishes creating a meal (restaurant, time, optional note, women-only toggle) | `women_only: bool` | Meals created, women-only adoption |
 | `discovery_viewed` | Discovery feed loads or refreshes with a (possibly empty) result list | `count: int` (number of meals shown) | Discovery engagement, feed health |
 | `meal_opened` | User opens a meal's detail view from the discovery feed | `women_only: bool` | Meal engagement, women-only funnel |
+| `directions_opened` | User taps "Open in Maps" on the meal detail restaurant card | — (No PII, no coordinates) | Meal engagement, meal detail → directions funnel |
 | `join_requested` | Guest sends a request to join a meal | `women_only: bool` (No PII) | Request funnel, women-only adoption |
 | `request_approved` | Host approves a pending join request | — (No PII) | Request funnel, host responsiveness |
 | `request_denied` | Host denies a pending join request | — (No PII) | Request funnel |
@@ -89,10 +102,11 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `chat_opened` | User opens a match's chat thread | — (No PII) | Chat engagement |
 | `message_sent` | User sends a chat message | — (No PII) | Chat engagement, messages per match |
 | `push_permission_granted` | OS notification-permission prompt is resolved (on registration attempt) | `granted: bool` (No PII — the device token is never sent as a property) | Push opt-in rate |
-| `push_opened` | User taps a push notification and the app opens/routes from it | `type: string` (push route type, e.g. `'match'`, `'message'`) (No PII) | Push engagement, re-engagement funnel |
+| `push_opened` | User taps a push notification and the app opens/routes from it | `type: string` (push route type: `'message'`, `'request'`, `'request_update'`, `'rate'`, `'meal_reminder'`, `'match_left'`, `'meal_cancelled'`) (No PII) | Push engagement, re-engagement funnel |
 | `user_blocked` | User blocks another user | — (No PII) | Safety, block rate |
 | `user_reported` | User submits a report against a user, meal, or message | `target_type: string` (category — `'user'` \| `'meal'` \| `'message'`; No PII, no uid/target id) | Safety, report rate |
 | `account_deletion_requested` | User confirms account deletion from profile | — (No PII) | Account deletion rate, churn signal |
+| `meal_cancelled` | A host cancels, or a guest withdraws from, a matched meal ("Can't make it" in the chat) | `role: 'host' \| 'guest'` (No PII) | Show-up rate, cancellations per matched meal |
 | `post_meal_prompt_shown` | The post-meal rating prompt is shown for a completed match | — (No PII) | Rating prompt reach, funnel start |
 | `meal_rated` | User submits a rating for the other participant of a match | `stars: int` (1-5), `showed_up: bool` (No PII) | Rating completion rate, no-show rate |
 
@@ -106,10 +120,10 @@ Sparse — only properties that drive segmentation or are needed for cross-event
 
 | Property | When set | Type | Use |
 |---|---|---|---|
-| `signup_date` | On `signup_completed` | ISO date string | Cohort analysis |
-| `signup_method` | On `signup_completed` | `'email' \| 'google' \| 'apple' \| 'phone' \| 'anonymous'` | Auth-channel cohorts |
-| `app_version` | On `app_opened` | semver string | Roll out / regression tracking |
-| `platform` | On `app_opened` | `'ios' \| 'android' \| 'web'` | Platform-specific issues |
+| `signup_date` | On `identify` (every session start / sign-in) | ISO date string | Cohort analysis |
+| `signup_method` | On `identify` (sign-in method of the current session) | `'email' \| 'google' \| 'apple' \| 'phone' \| 'anonymous'` | Auth-channel cohorts |
+| `app_version` | On `identify` (every session start / sign-in) | semver string | Roll out / regression tracking |
+| `platform` | On `identify` (every session start / sign-in) | `'ios' \| 'android' \| 'web'` | Platform-specific issues |
 
 ---
 

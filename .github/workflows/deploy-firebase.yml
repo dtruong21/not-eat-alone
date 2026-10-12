@@ -1,0 +1,102 @@
+name: Deploy Firebase
+
+# Deploys Firestore rules + indexes, Storage rules and Cloud Functions to the
+# single `not-eat-alone` project (shared by the (default) and stage databases).
+#
+# Called by ci.yml AFTER the `CI OK` gate is green on a push to develop/main, so
+# a commit whose tests fail never reaches the backend. Also runnable by hand
+# (Actions -> Deploy Firebase -> Run workflow) to redeploy a branch without CI -
+# useful after a failed deploy or a secret fix; that path is deliberately NOT
+# gated.
+#
+# Cloud Functions (region europe-west1) require the Firebase Blaze plan - see
+# docs/CICD.md. Requires repo secret FIREBASE_SERVICE_ACCOUNT (a deploy service
+# account JSON with the Cloud Functions Admin role in addition to the rules
+# roles). Until the secret is set, the job exits green with a notice.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-firebase:
+    name: Deploy Firebase backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # One deploy at a time per branch, queued (never cancelled mid-flight).
+    concurrency:
+      group: deploy-firebase-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if a newer commit is already on the branch
+        # Two quick pushes can finish CI out of order; never let the older one
+        # overwrite the newer deploy. (Manual runs deploy what you selected.)
+        id: fresh
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          tip=$(git ls-remote origin "refs/heads/$REF_NAME" | cut -f1)
+          if [ "$tip" = "$GITHUB_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::$REF_NAME has moved on ($tip); a newer run deploys that commit."
+          fi
+
+      - name: Check for deploy credentials
+        id: guard
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::FIREBASE_SERVICE_ACCOUNT secret not set - skipping Firebase deploy."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Decide
+        id: decide
+        run: |
+          if [ "${{ steps.fresh.outputs.current }}" = "true" ] && [ "${{ steps.guard.outputs.present }}" = "true" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        if: steps.decide.outputs.go == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase/functions/package-lock.json
+
+      - name: Write service account
+        if: steps.decide.outputs.go == 'true'
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+
+      - name: Install functions deps
+        if: steps.decide.outputs.go == 'true'
+        run: npm --prefix firebase/functions ci
+
+      - name: Deploy Firestore + Storage + Functions
+        if: steps.decide.outputs.go == 'true'
+        run: |
+          npx --yes firebase-tools@13 deploy \
+            --only firestore,storage,functions \
+            --project not-eat-alone \
+            --non-interactive

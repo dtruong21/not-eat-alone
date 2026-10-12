@@ -7,6 +7,23 @@ PushRoute? mapPushData(Map<String, String?> data) {
     case 'message':
       final matchId = data['matchId'];
       return matchId == null ? null : PushRoute('/chats/$matchId');
+    case 'rate':
+      // The post-meal rating prompt (`PostMealCard`) lives at the top of the
+      // match chat, so the rate push lands there.
+      final matchId = data['matchId'];
+      return matchId == null || matchId.isEmpty
+          ? null
+          : PushRoute('/chats/$matchId');
+    case 'meal_reminder':
+      final mealId = data['mealId'];
+      return mealId == null || mealId.isEmpty
+          ? null
+          : PushRoute('/chats/$mealId');
+    // The other person left Convyve: the match/chat is gone, so land on Discover
+    // (the host's reopened meal is listed there again for others).
+    case 'match_left':
+    case 'meal_cancelled':
+      return const PushRoute('/discover');
     case 'request':
       return const PushRoute('/requests');
     case 'request_update':

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:not_eat_alone/core/config/legal_urls.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
@@ -125,4 +127,55 @@ void main() {
       verify(() => authRepository.signOut()).called(1);
     },
   );
+  group('Contact support', () {
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    testWidgets('shows the support address as published contact info', (
+      tester,
+    ) async {
+      await pumpSettings(tester);
+
+      expect(find.text('Contact support'), findsOneWidget);
+      expect(find.text(supportEmail), findsOneWidget);
+    });
+
+    testWidgets('tap opens a mailto link addressed to support', (tester) async {
+      final launched = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            launched.add(
+              (call.arguments as Map<Object?, Object?>)['url']! as String,
+            );
+            return true;
+          });
+      await pumpSettings(tester);
+
+      await tester.tap(find.byKey(const Key('settings_contact_support')));
+      await tester.pump();
+
+      expect(launched.single, startsWith('mailto:$supportEmail'));
+      expect(find.textContaining("Couldn't open your mail app"), findsNothing);
+    });
+
+    testWidgets('no mail app: snackbar tells the user the address', (
+      tester,
+    ) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async => false);
+      await pumpSettings(tester);
+
+      await tester.tap(find.byKey(const Key('settings_contact_support')));
+      await tester.pump();
+
+      expect(
+        find.text("Couldn't open your mail app. Write to $supportEmail"),
+        findsOneWidget,
+      );
+    });
+  });
 }

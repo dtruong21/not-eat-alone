@@ -2,13 +2,22 @@ name: CI
 
 # Quality gate for the gitflow model. Runs on every PR into a long-lived or
 # release/hotfix branch, and on the post-merge commit of develop/main before
-# deploy. Pins Flutter to the .fvmrc version. Generated files
-# (*.freezed.dart / *.g.dart) are git-ignored, so every job runs build_runner.
+# deploy.
 #
-# `.env` is git-ignored (real values never committed) but pubspec.yaml lists it
-# as an asset, so every job seeds it from the committed .env.example — otherwise
-# `flutter analyze` reports asset_does_not_exist (a fatal warning) and builds
-# fail on the missing asset.
+# Speed/cost levers (see docs/CICD.md):
+#   - `changes` classifies the diff so docs-only PRs skip every heavy job and
+#     backend-only PRs skip the Flutter/macOS jobs. Pushes to develop/main always
+#     run everything.
+#   - One composite action (.github/actions/setup-flutter) replaces four copies
+#     of the setup steps; the Flutter version comes from .fvmrc only.
+#   - pub / Gradle / CocoaPods / npm / emulator caches.
+#   - Superseded PR runs are cancelled; draft PRs skip the macOS jobs.
+#   - Backend deploy is chained behind `CI OK` (job `deploy-firebase` below).
+#   - `CI OK` is a single stable check that is green when every job that had to
+#     run passed (skipped jobs are fine), so branch protection can require just it.
+#
+# Generated files (*.freezed.dart / *.g.dart) are git-ignored, so every Flutter
+# job runs build_runner (inside the composite action).
 
 on:
   pull_request:
@@ -24,93 +33,121 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs, but never cut a post-merge develop/main run short.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  FLUTTER_VERSION: '3.47.4'
+permissions:
+  contents: read
 
 jobs:
-  analyze-test:
-    name: Analyze & test
+  # ---------------------------------------------------------------------------
+  # Classify the diff. Anything outside the lists below (docs, markdown, assets
+  # nobody builds) runs no heavy job. Workflow/action changes run everything.
+  # ---------------------------------------------------------------------------
+  changes:
+    name: Detect changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      functions: ${{ steps.filter.outputs.functions }}
+      rules: ${{ steps.filter.outputs.rules }}
     steps:
       - uses: actions/checkout@v4
-      - name: Seed .env from example
-        run: cp .env.example .env
-      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-      - name: Install dependencies
-        run: flutter pub get
-      - name: Code generation
-        run: dart run build_runner build --delete-conflicting-outputs
+          fetch-depth: 0
+      - name: Classify changed files
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "push event: run everything"
+            printf 'app=true\nfunctions=true\nrules=true\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          echo "Changed files:"; echo "$files" | sed 's/^/  /'
+          match() { echo "$files" | grep -Eq "$1" && echo true || echo false; }
+          ci='^\.github/'
+          app=$(match "$ci|^(lib|test|integration_test|ios|android|assets|scripts)/|^(pubspec\.(yaml|lock)|analysis_options\.yaml|\.fvmrc|Makefile|firebase\.json|\.env\.example)$")
+          functions=$(match "$ci|^firebase/functions/")
+          rules=$(match "$ci|^firebase/(firestore\.rules|firestore\.indexes\.json|storage\.rules|rules-test/)|^firebase\.json$")
+          printf 'app=%s\nfunctions=%s\nrules=%s\n' "$app" "$functions" "$rules" | tee -a "$GITHUB_OUTPUT"
+
+  analyze-test:
+    name: Analyze & test
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-flutter
       - name: Analyze
         run: flutter analyze --no-fatal-infos
       - name: Test
-        run: flutter test
+        run: flutter test --reporter github
       # The runner is UTC, so the local-time display tests would otherwise pass
       # vacuously (UTC fields == local fields). Re-run them in a +14h zone,
       # where the local day differs from the UTC day for a 23:30Z input.
       - name: Test (non-UTC timezone, local-time display)
         run: >-
-          TZ=Pacific/Kiritimati flutter test
+          TZ=Pacific/Kiritimati flutter test --reporter github
           test/core/util/date_format_test.dart
           test/features/chat/presentation/widgets/
           test/features/matching/presentation/widgets/request_inbox_tile_test.dart
 
   build-android:
     name: Build Android (stage, unsigned)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Seed .env from example
-        run: cp .env.example .env
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-      - name: Install dependencies
-        run: flutter pub get
-      - name: Code generation
-        run: dart run build_runner build --delete-conflicting-outputs
+          cache: gradle
+      - uses: ./.github/actions/setup-flutter
       - name: Build stage APK (debug, compile-verify)
         run: flutter build apk --flavor stage -t lib/main_stage.dart --debug
 
   build-ios:
     name: Build iOS (stage, no codesign)
+    needs: changes
+    # macOS minutes are the scarce ones: skip drafts, and PRs with no app change.
+    if: needs.changes.outputs.app == 'true' && github.event.pull_request.draft != true
     runs-on: macos-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Seed .env from example
-        run: cp .env.example .env
       - name: Select stage GoogleService-Info.plist
         # iOS has no build phase that copies the per-flavor plist into Runner/
         # (unlike Android's gradle sourceSets), and the default-path plist is
         # git-ignored scratch. Place the committed stage config where the Xcode
         # project expects it. See docs/CICD.md (iOS flavor plist).
         run: cp ios/config/stage/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
-      - uses: subosito/flutter-action@v2
+      - uses: ./.github/actions/setup-flutter
+      - name: Restore CocoaPods
+        uses: actions/cache@v4
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-      - name: Install dependencies
-        run: flutter pub get
-      - name: Code generation
-        run: dart run build_runner build --delete-conflicting-outputs
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-${{ runner.os }}-
       - name: Build stage iOS (debug, no codesign, compile-verify)
         run: flutter build ios --flavor stage -t lib/main_stage.dart --debug --no-codesign
 
   functions-build:
     name: Functions build & test
+    needs: changes
+    if: needs.changes.outputs.functions == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: firebase/functions
@@ -119,9 +156,43 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase/functions/package-lock.json
       - run: npm ci
       - run: npm run build
+      - run: npm run lint
       - run: npm test
+
+  # Firestore security rules against the local emulator (firebase/rules-test).
+  rules-test:
+    name: Firestore rules tests
+    needs: changes
+    if: needs.changes.outputs.rules == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase/rules-test/package-lock.json
+      # firebase-tools' emulators need Java 21+.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Restore Firestore emulator jar
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase/rules-test/package-lock.json') }}
+      - name: Install
+        working-directory: firebase/rules-test
+        run: npm ci
+      - name: Run rules tests
+        working-directory: firebase/rules-test
+        run: npm test
 
   # End-to-end suite (integration_test/) against the Firebase Emulator Suite on
   # a real iOS Simulator. NON-BLOCKING for now: deliberately NOT a required
@@ -134,6 +205,13 @@ jobs:
   # and local dev exercise the exact same path.
   e2e:
     name: E2E (emulator, iOS sim)
+    # Only after the cheap gate is green (don't burn up to 100 macOS minutes on
+    # a PR that already fails analyze/test), and only when something it covers
+    # changed.
+    needs: [changes, analyze-test]
+    if: >-
+      needs.analyze-test.result == 'success' &&
+      github.event.pull_request.draft != true
     runs-on: macos-latest
     permissions:
       contents: read
@@ -141,8 +219,6 @@ jobs:
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
-      - name: Seed .env from example
-        run: cp .env.example .env
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -151,21 +227,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-      - name: Provide `fvm` shim (Flutter pinned via FLUTTER_VERSION)
+      - uses: ./.github/actions/setup-flutter
+      - name: Provide `fvm` shim (Flutter comes from the setup-flutter action)
         # The Makefile invokes `fvm flutter ...`. Installing real FVM would
         # download a second copy of the same SDK, so shim it onto the
-        # flutter-action SDK instead — and guard against the two pins drifting.
+        # flutter-action SDK instead. (The version is read from .fvmrc by the
+        # setup action, so there is no second pin to drift.)
         run: |
-          pinned=$(sed -n 's/.*"flutter"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .fvmrc)
-          if [ "$pinned" != "$FLUTTER_VERSION" ]; then
-            echo "::error::.fvmrc pins Flutter $pinned but ci.yml FLUTTER_VERSION is $FLUTTER_VERSION — keep them in sync"
-            exit 1
-          fi
           mkdir -p "$RUNNER_TEMP/shim"
           printf '%s\n' '#!/bin/sh' \
             'case "$1" in flutter|dart) cmd=$1; shift; exec "$cmd" "$@" ;; esac' \
@@ -173,10 +241,6 @@ jobs:
             > "$RUNNER_TEMP/shim/fvm"
           chmod +x "$RUNNER_TEMP/shim/fvm"
           echo "$RUNNER_TEMP/shim" >> "$GITHUB_PATH"
-      - name: Install dependencies
-        run: flutter pub get
-      - name: Code generation
-        run: dart run build_runner build --delete-conflicting-outputs
       - name: Install firebase-tools
         # Major pinned to match deploy.yml (firebase-tools@13).
         run: npm install -g firebase-tools@13
@@ -286,3 +350,43 @@ jobs:
             *-debug.log
             e2e-logs/
           if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # One stable check for branch protection: green when every job that had to run
+  # passed. Skipped jobs (path filter, draft) are fine; failed or cancelled are
+  # not. E2E is deliberately excluded (non-blocking, see above).
+  # ---------------------------------------------------------------------------
+  ci-ok:
+    name: CI OK
+    if: always()
+    needs: [changes, analyze-test, build-android, build-ios, functions-build, rules-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check required jobs
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::A required CI job finished as '$r'"; exit 1 ;;
+            esac
+          done
+
+  # ---------------------------------------------------------------------------
+  # Backend CD, chained behind the gate: only a push to develop/main whose
+  # `CI OK` is green deploys Firestore/Storage/Functions. (Lives in
+  # deploy-firebase.yml so it can also be run by hand.)
+  # ---------------------------------------------------------------------------
+  deploy-firebase:
+    name: Deploy Firebase backend
+    needs: ci-ok
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    uses: ./.github/workflows/deploy-firebase.yml
+    secrets: inherit
+    permissions:
+      contents: read
