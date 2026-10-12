@@ -17,6 +17,7 @@ import 'package:not_eat_alone/features/matching/domain/entities/join_request.dar
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
 import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/meal_status.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/meal_detail_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -43,6 +44,8 @@ final _meal = Meal(
   dateTime: DateTime(2027, 1, 5, 19, 30),
   geohash: 'u09tvw',
 );
+
+final Meal _cancelledMeal = _meal.copyWith(status: MealStatus.cancelled);
 
 final _womenOnlyMeal = Meal(
   id: 'm1',
@@ -160,6 +163,40 @@ final _cases = <_Case>[
     status: 'The host chose someone else.',
     enabled: false,
     buttonKey: 'meal_detail_not_selected_button',
+  ),
+  (
+    name: 'cancelled, no request',
+    viewer: 'guest1',
+    meal: _cancelledMeal,
+    gender: null,
+    request: null,
+    label: 'Meal cancelled',
+    status: 'The host cancelled this meal.',
+    enabled: false,
+    buttonKey: 'meal_detail_cancelled_button',
+  ),
+  // D12: "Can't make it" (host) leaves the guest's request approved.
+  (
+    name: 'cancelled, approved request',
+    viewer: 'guest1',
+    meal: _cancelledMeal,
+    gender: null,
+    request: _request(RequestStatus.approved),
+    label: 'Meal cancelled',
+    status: 'The host cancelled this meal.',
+    enabled: false,
+    buttonKey: 'meal_detail_cancelled_button',
+  ),
+  (
+    name: 'cancelled, women only, not a woman',
+    viewer: 'guest1',
+    meal: _womenOnlyMeal.copyWith(status: MealStatus.cancelled),
+    gender: Gender.man,
+    request: null,
+    label: 'Meal cancelled',
+    status: 'The host cancelled this meal.',
+    enabled: false,
+    buttonKey: 'meal_detail_cancelled_button',
   ),
 ];
 
@@ -467,7 +504,10 @@ void main() {
         for (final c in _cases)
           c.name: () => pump(
             tester,
-            meal: longMeal.copyWith(womenOnly: c.meal.womenOnly),
+            meal: longMeal.copyWith(
+              womenOnly: c.meal.womenOnly,
+              status: c.meal.status,
+            ),
             viewer: c.viewer,
             gender: c.gender,
             request: c.request,
@@ -564,6 +604,27 @@ void main() {
       }
     });
   }
+
+  testWidgets('the host still sees "This is your meal" when it is cancelled', (
+    tester,
+  ) async {
+    await pump(tester, meal: _cancelledMeal, viewer: 'host1');
+
+    expect(find.text('This is your meal'), findsOneWidget);
+    expect(find.text('Meal cancelled'), findsNothing);
+  });
+
+  testWidgets('cancelled + approved: no Open chat button', (tester) async {
+    await pump(
+      tester,
+      meal: _cancelledMeal,
+      request: _request(RequestStatus.approved),
+    );
+
+    expect(find.text('Open chat'), findsNothing);
+    expect(find.byKey(const Key('meal_detail_matched_banner')), findsNothing);
+    expect(find.text('Meal cancelled'), findsOneWidget);
+  });
 
   group('safety menu', () {
     testWidgets('absent on your own meal', (tester) async {

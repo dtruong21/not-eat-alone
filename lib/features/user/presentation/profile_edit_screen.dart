@@ -1,34 +1,61 @@
-/// Profile edit screen — settings entry point for editing an already
-/// complete profile.
+/// Profile tab root — view and edit your own (already complete) profile.
 ///
-/// Wraps the same [ProfileForm] used by onboarding's `ProfileSetupScreen`,
-/// but with normal back navigation (an `AppBar` back arrow, plus whatever
-/// gesture/button the platform provides — no `PopScope` override) and a
-/// "Save" action that calls [ProfileController.save] (a partial update —
-/// only the fields that changed here get written) and then pops back to
-/// settings.
+/// Wraps the same [ProfileForm] used by onboarding's `ProfileSetupScreen`.
+/// It is a shell tab root, so there is no back arrow and no pop: "Save" calls
+/// [ProfileController.save] (a partial update), confirms with a "Profile
+/// saved" snackbar and stays. Save is enabled only while the name, bio or
+/// gender differ from the saved profile. Photos are not part of that
+/// comparison: the form writes each add/remove straight to the profile
+/// (see `ProfileController.addPhoto`), so they never wait for Save.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/presentation/widgets/profile_form.dart';
 
+/// The Profile tab screen.
 class ProfileEditScreen extends ConsumerStatefulWidget {
+  /// Creates the screen.
   const ProfileEditScreen({super.key});
 
   @override
   ConsumerState<ProfileEditScreen> createState() => ProfileEditScreenState();
 }
 
+/// State of [ProfileEditScreen].
 class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   ProfileFormData? _formData;
+
+  /// What was last written by Save; until then the loaded profile is the
+  /// baseline. Keeps Save disabled right after a save even before the
+  /// profile stream catches up.
+  ProfileFormData? _saved;
+
+  /// Name and bio compare trimmed (that is what Save writes), the bio's
+  /// null and empty are the same, and the photo count is ignored (photos are
+  /// saved as they change).
+  static ProfileFormData _normalized(ProfileFormData d) => ProfileFormData(
+    name: d.name.trim(),
+    gender: d.gender,
+    bio: (d.bio ?? '').trim(),
+    photoCount: 0,
+  );
+
+  static ProfileFormData _fromUser(AppUser u) => ProfileFormData(
+    name: u.displayName ?? '',
+    gender: u.gender,
+    bio: u.bio,
+    photoCount: 0,
+  );
 
   void _onFormChanged(ProfileFormData data) {
     if (data != _formData) setState(() => _formData = data);
@@ -52,7 +79,10 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (!mounted) return;
     final state = ref.read(profileControllerProvider);
     if (!state.hasError) {
-      Navigator.of(context).pop();
+      setState(() => _saved = _normalized(data));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile saved')));
     }
   }
 
@@ -60,11 +90,19 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
     final isSubmitting = state.isLoading;
-    final myUid = ref.watch(currentUserDocProvider).value?.uid;
+    final me = ref.watch(currentUserDocProvider).value;
+    final myUid = me?.uid;
+    final data = _formData;
+    final baseline = _saved ?? (me == null ? null : _normalized(_fromUser(me)));
+    final canSave =
+        data != null &&
+        baseline != null &&
+        data.isValid &&
+        _normalized(data) != baseline;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit profile'),
+        title: const Text('Profile'),
         actions: [
           IconButton(
             key: const Key('profile_settings_button'),
@@ -81,7 +119,7 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (myUid != null) ...[
-                RatingBadge(uid: myUid),
+                _YourRating(uid: myUid, hasRatings: (me?.ratingCount ?? 0) > 0),
                 const SizedBox(height: WarmPlayfulSpacing.s4),
               ],
               ProfileForm(onChanged: _onFormChanged),
@@ -90,12 +128,47 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 label: 'Save',
                 loadingLabel: 'Saving…',
                 isLoading: isSubmitting,
-                onPressed: isSubmitting ? null : _save,
+                onPressed: isSubmitting || !canSave ? null : _save,
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Your rating" + the star badge, or "No ratings yet". Wraps rather than
+/// overflowing at large text sizes.
+class _YourRating extends StatelessWidget {
+  const _YourRating({required this.uid, required this.hasRatings});
+
+  final String uid;
+  final bool hasRatings;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Wrap(
+      key: const Key('profile_your_rating'),
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: WarmPlayfulSpacing.s2,
+      runSpacing: WarmPlayfulSpacing.s1,
+      children: [
+        Text(
+          'Your rating',
+          style: textTheme.bodyMedium?.copyWith(
+            fontWeight: WarmPlayfulType.h2Weight,
+          ),
+        ),
+        if (hasRatings)
+          RatingBadge(uid: uid)
+        else
+          Text(
+            'No ratings yet',
+            style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
+          ),
+      ],
     );
   }
 }
