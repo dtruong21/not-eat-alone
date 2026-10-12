@@ -14,3 +14,5 @@
 **Frequency:** always.
 
 **Hypothesis / fix (small, in `lib/core/notifications/push_listener.dart`):** for destinations outside the shell, first `go` to the matching tab root (`/chats`) and then `push` the chat, e.g. `router.go('/chats'); router.push(location);` (check the two calls sequence in the stack-depth test; `/requests` and `/discover` stay a plain `go`). Cold start: do the same after the shell is mounted. The `push_listener_test.dart` spy tests keep working because they override `pushNavigateProvider`.
+
+**Status:** Fixed — `pushNavigateProvider` lands on `/chats` then pushes `/chats/:id`, so the chat has a back arrow and the shell stays alive. Test: `push_tap_back_stack_edge_test.dart` (un-skipped).

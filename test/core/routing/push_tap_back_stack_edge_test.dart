@@ -78,7 +78,7 @@ void main() {
       findsOneWidget,
       reason: 'iOS has no system back: the user is stuck on the chat',
     );
-  }, skip: true); // open bug: see _bug
+  });
 }
 
 int _stackDepth(ProviderContainer c) =>

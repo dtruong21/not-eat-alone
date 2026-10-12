@@ -65,7 +65,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 - [ ] Cold start (after force-kill) reaches the right screen within 3s on mid-tier Android. — timing NOT VERIFIED HERE; **FAIL (code)** for the screen itself: sign-in / age gate flash while the session or user doc loads, `docs/bugs/2026-10-12-router-flashes-signin-and-age-gate-while-session-loads.md`
 - [ ] Background → foreground after 10+ min doesn't crash or duplicate state.
-- [ ] Deep link cold-opens app to the linked screen (go_router `initialLocation` path). — **FAIL (code)** for push taps: chat opens with no back navigation, `docs/bugs/2026-10-12-push-tap-strands-user-in-chat-without-back.md`
+- [ ] Deep link cold-opens app to the linked screen (go_router `initialLocation` path). — **FAIL (code)** for push taps: chat opens with no back navigation, `docs/bugs/closed/2026-10-12-push-tap-strands-user-in-chat-without-back.md`
 
 ### Memory + perf
 
@@ -74,7 +74,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Security
 
-- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) and again 2026-10-12 (`hardening`, `users_profiles`, new `client_write_shapes`: 19 passed, 3 skipped for open bugs `docs/bugs/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md`, `docs/bugs/2026-10-12-requests-rule-lets-a-guest-break-the-hosts-inbox.md`, `docs/bugs/2026-10-12-minor-findings-second-sweep.md`) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`
+- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) and again 2026-10-12 (`hardening`, `users_profiles`, new `client_write_shapes`: 19 passed, 3 skipped for open bugs `docs/bugs/closed/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md`, `docs/bugs/2026-10-12-requests-rule-lets-a-guest-break-the-hosts-inbox.md`, `docs/bugs/2026-10-12-minor-findings-second-sweep.md`) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`
 - [ ] `.env` is gitignored — `git log --all -p -- .env` returns nothing.
 - [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/closed/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
 
@@ -203,7 +203,7 @@ Related PRD entry: `docs/PRD.md § Meals`
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
-- `docs/bugs/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open) — the `meals` rule accepts `restaurant: {}`
+- `docs/bugs/closed/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open) — the `meals` rule accepts `restaurant: {}`
 - `docs/bugs/2026-10-12-minor-findings-second-sweep.md` (P3) — restaurant search field/retry/billing nits
 
 ---
@@ -232,7 +232,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
 - `docs/bugs/closed/2026-10-09-location-fix-has-no-timeout.md` (P2)
-- `docs/bugs/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open)
+- `docs/bugs/closed/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open)
 - `docs/bugs/2026-10-12-feed-is-empty-for-any-device-outside-paris.md` (P2, open) — store-review risk
 - `docs/bugs/2026-10-12-seed-script-writes-legacy-users-shape.md` (P2, open) — the seed golden-path line above is currently untrue for host names/photos
 
@@ -307,7 +307,7 @@ Related PRD entry: `docs/PRD.md § Chat`
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
 - `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
 - `docs/bugs/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md` (P2, open)
-- `docs/bugs/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open)
+- `docs/bugs/closed/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open)
 
 ---
 
@@ -378,7 +378,7 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 
 **Known issues:**
 - `docs/bugs/2026-10-09-minor-polish-and-ci-gaps.md` (P3) — foreground banner while the chat is open, token-refresh error handling
-- `docs/bugs/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open) — tapped chat pushes use `go`, not `push`; the shell and this listener are disposed
+- `docs/bugs/closed/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open) — tapped chat pushes use `go`, not `push`; the shell and this listener are disposed
 - Route mapper covers every type the server sends (`request`, `request_update`, `message`, `rate`, `meal_reminder`); guarded by `test/features/notifications/data/push_type_contract_test.dart`.
 
 ---

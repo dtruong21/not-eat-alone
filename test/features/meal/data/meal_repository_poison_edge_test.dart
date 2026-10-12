@@ -56,6 +56,5 @@ void main() {
       ).watchDiscoverable(geohashPrefix: 'u09').first;
       expect(meals.map((m) => m.id), ['ok'], reason: _bug);
     },
-    skip: 'open bug: $_bug',
   );
 }
