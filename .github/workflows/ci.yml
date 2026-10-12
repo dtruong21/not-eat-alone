@@ -12,6 +12,7 @@ name: CI
 #     of the setup steps; the Flutter version comes from .fvmrc only.
 #   - pub / Gradle / CocoaPods / npm / emulator caches.
 #   - Superseded PR runs are cancelled; draft PRs skip the macOS jobs.
+#   - Backend deploy is chained behind `CI OK` (job `deploy-firebase` below).
 #   - `CI OK` is a single stable check that is green when every job that had to
 #     run passed (skipped jobs are fine), so branch protection can require just it.
 #
@@ -373,3 +374,19 @@ jobs:
               *) echo "::error::A required CI job finished as '$r'"; exit 1 ;;
             esac
           done
+
+  # ---------------------------------------------------------------------------
+  # Backend CD, chained behind the gate: only a push to develop/main whose
+  # `CI OK` is green deploys Firestore/Storage/Functions. (Lives in
+  # deploy-firebase.yml so it can also be run by hand.)
+  # ---------------------------------------------------------------------------
+  deploy-firebase:
+    name: Deploy Firebase backend
+    needs: ci-ok
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    uses: ./.github/workflows/deploy-firebase.yml
+    secrets: inherit
+    permissions:
+      contents: read

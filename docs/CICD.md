@@ -55,17 +55,26 @@ this repo.
 
 The E2E time caps are generous on purpose: every `integration_test/*.dart` file triggers its own Xcode build (about 150 s on the runner), so the whole suite needs more than 20 minutes on a cold runner. The first real runs were killed by a 20-minute per-attempt cap while still running tests normally (not hung), hence 40 min per attempt and a 100 min job cap (setup ~10 min + 2 attempts with headroom).
 
-**Known gap.** `deploy.yml` runs on the same push as CI and does not wait for it, so a bad backend change can deploy
-while its tests are still running. Chain it with `workflow_run` (deploy only when `CI` succeeded on that SHA) if that
-becomes a risk. The workflows have not been run on GitHub from this branch yet: first run on a real PR should be
-watched (`actionlint` is clean).
+**Not yet run on GitHub.** These workflows are validated with `actionlint` and the change-detection logic was exercised locally, but the first real PR / `develop` push should be watched.
 
-### `.github/workflows/deploy.yml` — backend CD + releases
 
-| Trigger | Job | What |
-|---|---|---|
-| push to `develop` / `main` | `Deploy Firebase backend` | `firebase deploy --only firestore,storage,functions` to project `not-eat-alone` |
-| push tag `v*` | `Publish GitHub Release` | GitHub Release with auto-generated notes |
+### Backend CD — chained behind CI
+
+| Where | Trigger | Job | What |
+|---|---|---|---|
+| `ci.yml` → `deploy-firebase.yml` | push to `develop` / `main`, **only after `CI OK` is green** | `Deploy Firebase backend` | `firebase deploy --only firestore,storage,functions` to project `not-eat-alone` |
+| `deploy-firebase.yml` | manual (*Actions → Deploy Firebase → Run workflow*) | same job | Redeploy a chosen branch **without** the CI gate — e.g. after a failed deploy or after setting the secret |
+| `deploy.yml` (workflow "Release") | push tag `v*` | `Publish GitHub Release` | GitHub Release with auto-generated notes |
+
+A commit whose analyze/test/builds/functions/rules jobs fail never reaches the backend: the deploy job is
+`needs: ci-ok` in `ci.yml` (E2E is excluded — it is non-blocking). The deploy lives in a reusable workflow
+(`deploy-firebase.yml`, `workflow_call` + `workflow_dispatch`) so the same steps serve the chained and the manual
+path, and the chain does not depend on `workflow_run` (which only reads workflow files from the default branch).
+
+Safeguards in the deploy job: **stale-commit skip** (two quick pushes can finish CI out of order; if the branch
+tip has moved past the commit being deployed, this run exits with a notice and the newer commit deploys),
+**one deploy at a time per branch** (queued, never cancelled mid-flight), a 30-minute timeout, and the secret
+guard below.
 
 The Firebase project is single (`.firebaserc`), and the rules files are shared,
 so one deploy keeps both the `(default)` and `stage` databases current.
