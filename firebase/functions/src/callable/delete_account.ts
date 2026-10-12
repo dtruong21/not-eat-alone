@@ -7,6 +7,7 @@ import type { Firestore, WhereFilterOp } from 'firebase-admin/firestore';
 import { deletionTargets } from '../lib/deletion_plan';
 import { decrementAggregateBy } from '../lib/aggregate';
 import { planGuestLeft, shouldNotifyGuestOfHostLeaving } from '../lib/matched_meals';
+import { deleteMatchTree } from '../lib/match_tree';
 import { sendToUser } from '../lib/messaging';
 import { buildMatchLeft, buildMealCancelled } from '../lib/payloads';
 
@@ -40,13 +41,7 @@ export const makeDeleteAccount = () =>
       const s = await q.get();
       for (const d of s.docs) matchDocs.set(d.id, d);
     }
-    for (const m of matchDocs.values()) {
-      for (const sub of ['messages', 'reads']) {
-        const subSnap = await m.ref.collection(sub).get();
-        await Promise.all(subSnap.docs.map((d) => d.ref.delete()));
-      }
-      await m.ref.delete();
-    }
+    for (const m of matchDocs.values()) await deleteMatchTree(m.ref);
     // ratings authored by the departing user: decrement each target's live aggregate,
     // then remove the rating (targets are other users, independent of this user's own doc).
     await purgeAuthoredRatings(db, t.ratingsAuthoredWhere.field, uid);

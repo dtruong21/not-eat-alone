@@ -41,6 +41,7 @@ A public restaurant at a fixed time keeps first meetings light, not a loaded dat
 - [x] Post-meal: confirm show-up and rate
 - [x] Push notifications: new request, approved/denied, new message, post-meal rating prompt
 - [x] Pre-meal reminders: push 24h and 2h before a matched meal — see Feature specs
+- [x] "Can't make it": cancel or withdraw from a matched meal — see Feature specs
 
 ### Pillar 3 — Trust & safety
 
@@ -168,6 +169,33 @@ As a person on Convyve, I want other users to see only my name, photo, bio, age 
 - Age bands/ranges instead of exact age; per-field visibility settings; showing profiles only to matched users.
 - Other rule-hardening gaps from the same QA sweep (report payload limits, server-set message timestamps) — tracked in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`.
 - Changing women-only enforcement logic.
+
+---
+
+### Feature: Can't make it — cancel or withdraw from a matched meal
+Pillar: 2 — Low-pressure (the main no-show lever; also keeps meals from sitting `matched` with nobody coming)
+Status: in-MVP, smallest version: **matched, future meals only, from the match chat**
+
+**Verdict:** Plans change. Without a way out, the only alternatives are a silent no-show or a chat message that the app doesn't act on. The smallest version that closes the loop is one action in the place both people already coordinate: the match chat. Cancelling or withdrawing from an *unmatched* open meal is cut: it expires on its own, never reaches Discover once past, and would need a new "my meals" screen.
+
+**User story:**
+As the host or the guest of a matched meal, I want to say "I can't make it" so that the other person knows and isn't left waiting, and the meal doesn't stay matched with nobody coming.
+
+**Acceptance criteria:**
+- [ ] The chat shows a "Can't make it" action only while its meal is `matched` and in the future.
+- [ ] **Host** confirms -> the meal becomes `cancelled`, the match chat is closed, the guest gets a push ("The host cancelled this meal") that opens Discover.
+- [ ] **Guest** confirms -> the meal reopens (`open`, guest cleared, reminder flags reset so it gets fresh reminders when matched again), the guest's request and the match chat are removed, the host gets a push ("Your match withdrew - your meal is open again") that opens Discover.
+- [ ] Done by a server callable (`cancelMatchedMeal`); clients cannot change a matched meal themselves (rules unchanged). App Check enforced; only a participant of a `matched`, future meal can call it.
+- [ ] A confirmation dialog states the consequence for the other person; "Keep meal" dismisses without any change.
+- [ ] After success: snackbar "Meal cancelled." / "You've withdrawn." and navigation to the Chats tab.
+- [ ] Analytics: `meal_cancelled` with `role: 'host' | 'guest'` (in `docs/TRACKING-PLAN.md` first); no PII.
+- [ ] Empty: no action when the meal is not matched, already past, or still loading. Offline: the action fails fast with "Couldn't cancel. Check your connection and try again." (it is not queued - the other person must really be told). Error: same snackbar, the dialog closes, nothing changes.
+- [ ] Idempotent/safe: calling it twice, or after the other person already left, returns a clear error and changes nothing.
+
+**Out of scope (cut from this feature):**
+- Cancelling or withdrawing from unmatched open meals; a "my meals" screen.
+- Reasons, penalties/reputation effects, undo, re-matching the same pair, cancelling after the meal time.
+- Notifying people whose requests were denied or pending; editing a meal.
 
 ---
 

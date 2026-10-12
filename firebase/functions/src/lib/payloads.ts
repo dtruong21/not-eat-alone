@@ -58,11 +58,14 @@ export function buildMealReminder(
   };
 }
 
-/** To the HOST when their matched guest deleted their account. */
-export function buildMatchLeft(reopened: boolean, mealId = ''): PushPayload {
+/**
+ * To the HOST when their matched guest is gone: deleted their account (default) or
+ * withdrew from the meal (`withdrew: true`).
+ */
+export function buildMatchLeft(reopened: boolean, mealId = '', withdrew = false): PushPayload {
   return {
     notification: {
-      title: 'Your match left Convyve',
+      title: withdrew ? 'Your match withdrew' : 'Your match left Convyve',
       body: reopened
         ? 'Your meal is open again so someone else can join.'
         : 'Your meal was cancelled.',
@@ -71,12 +74,17 @@ export function buildMatchLeft(reopened: boolean, mealId = ''): PushPayload {
   };
 }
 
-/** To the matched GUEST when the host deleted their account (the meal is gone). */
-export function buildMealCancelled(mealId = ''): PushPayload {
+/**
+ * To the matched GUEST when the meal is gone: the host deleted their account (default) or
+ * cancelled the meal (`byHost: true`).
+ */
+export function buildMealCancelled(mealId = '', byHost = false): PushPayload {
   return {
     notification: {
       title: 'Meal cancelled',
-      body: 'The host left Convyve, so this meal is cancelled.',
+      body: byHost
+        ? 'The host cancelled this meal.'
+        : 'The host left Convyve, so this meal is cancelled.',
     },
     data: { type: 'meal_cancelled', mealId },
   };

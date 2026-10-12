@@ -69,6 +69,7 @@ Once Blaze is upgraded, functions deploy automatically via CI on every `develop`
 - `onRequestUpdated` — push to guest on approve/deny
 - `onMessageCreated` — push to other chat participant
 - `postMealReminder` — hourly Pub/Sub, sends "rate your meal" nudges
+- `cancelMatchedMeal` — callable (App Check enforced): host cancels / guest withdraws a matched, future meal
 - `mealReminder` — every 15 minutes, sends the T-24h and T-2h pre-meal pushes (`mealReminderDefault` / `mealReminderStage`)
 - `onRatingCreated` — computes rolling ratings aggregate on target user
 

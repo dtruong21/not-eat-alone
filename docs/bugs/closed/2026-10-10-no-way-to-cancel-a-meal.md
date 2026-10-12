@@ -14,3 +14,5 @@
 **Frequency:** always.
 
 Split from `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md`.
+
+**Status:** Built as the PRD feature "Can't make it": `cancelMatchedMeal` callable (host cancels / guest withdraws a matched, future meal) + a chat app-bar action. Smallest version: matched, future meals only; cancelling an unmatched open meal is intentionally not offered (it expires on its own and never reaches Discover once past; a "my meals" screen would be needed).

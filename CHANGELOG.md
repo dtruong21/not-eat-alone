@@ -23,6 +23,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Added
 
+- "Can't make it": in a chat for an upcoming meal, the host can cancel the meal or the guest can withdraw. The other person is told, a cancelled meal is removed, and a withdrawn meal opens up again for others.
 - Reminders for your matched meals: a notification the day before and about 2 hours before, with the restaurant and time (tap to open the chat with your match).
 - Settings now has a "Contact support" row that opens an email to support, with the address shown on screen.
 - A meal's restaurant card now has an "Open in Maps" button that opens the restaurant in your maps app (hidden when a meal has no usable location).

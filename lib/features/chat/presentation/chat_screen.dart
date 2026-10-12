@@ -28,6 +28,7 @@ import 'package:not_eat_alone/features/chat/application/chat_messages_provider.d
 import 'package:not_eat_alone/features/chat/application/chat_read_provider.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
+import 'package:not_eat_alone/features/chat/presentation/widgets/leave_match_action.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_composer.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/post_meal_card.dart';
@@ -130,6 +131,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: otherUid == null
             ? null
             : [
+                LeaveMatchAction(
+                  matchId: widget.matchId,
+                  otherUid: otherUid,
+                ),
                 SafetyActions(
                   reportTargetType: 'user',
                   reportTargetId: otherUid,

@@ -106,6 +106,7 @@ Every event the product fires lives in this table. Add a row via `/track <event_
 | `user_blocked` | User blocks another user | — (No PII) | Safety, block rate |
 | `user_reported` | User submits a report against a user, meal, or message | `target_type: string` (category — `'user'` \| `'meal'` \| `'message'`; No PII, no uid/target id) | Safety, report rate |
 | `account_deletion_requested` | User confirms account deletion from profile | — (No PII) | Account deletion rate, churn signal |
+| `meal_cancelled` | A host cancels, or a guest withdraws from, a matched meal ("Can't make it" in the chat) | `role: 'host' \| 'guest'` (No PII) | Show-up rate, cancellations per matched meal |
 | `post_meal_prompt_shown` | The post-meal rating prompt is shown for a completed match | — (No PII) | Rating prompt reach, funnel start |
 | `meal_rated` | User submits a rating for the other participant of a match | `stars: int` (1-5), `showed_up: bool` (No PII) | Rating completion rate, no-show rate |
 

@@ -443,6 +443,19 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 
 ---
 
+### Feature: Can't make it (cancel / withdraw a matched meal)
+
+**Automated:** `firebase/functions/test/cancel_meal.test.ts` (who may cancel, matched + future only, host vs guest outcome, push wording); `leave_match_action_test.dart` (visibility, host/guest dialogs, keep, failure snackbar, 2.0x text); `leave_match_controller_test.dart` (success tracks `meal_cancelled` with the role, failure doesn't); `match_repository_impl_test.dart` (callable payload, error mapping). `applyCancel` checked against the Firestore emulator: host cancel -> `cancelled` + chat/messages gone; guest withdraw -> `open`, guest cleared, flags cleared, request + chat removed; second call, stranger, past meal and missing meal are rejected.
+
+**Manual on stage (two accounts, deployed `cancelMatchedMeal`, App Check token registered):**
+- [ ] Host: matched future meal -> chat -> "Can't make it" -> confirm: snackbar "Meal cancelled.", lands on Chats, the chat is gone; the guest gets "Meal cancelled - The host cancelled this meal" (tap opens Discover).
+- [ ] Guest: same -> "You've withdrawn."; the host gets "Your match withdrew" and the meal is in Discover again for another user; when someone else is approved the reminders start fresh.
+- [ ] The action is absent after the meal time (and the chat is only reachable for matched meals).
+- [ ] Airplane mode: confirm -> "Couldn't cancel. Check your connection and try again."; nothing changed.
+- [ ] `meal_cancelled` (role host/guest) appears in DebugView.
+
+---
+
 ### Feature: Rules hardening (reports, messages, ratings, storage)
 
 **Automated:** `firebase/rules-test/hardening.rules.test.cjs` (reports: key whitelist + size caps; messages: server `createdAt`, no extra keys; ratings: exact keys, no client `aggregated`, server `createdAt`). Run: `cd firebase/rules-test && npm install && npm test` (also a CI job).
@@ -531,7 +544,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Manual:**
 - [ ] Leave Discover open past a listed meal's start time: it disappears without pulling or reopening.
 - [ ] Production data: the `status + dateTime` index is deployed (`firebase/firestore.indexes.json`), the Discover query succeeds (no "requires an index" error).
-- [ ] Known follow-up: cancelling a meal — `docs/bugs/2026-10-10-no-way-to-cancel-a-meal.md`.
+- [ ] Known follow-up: cancelling a meal — `docs/bugs/closed/2026-10-10-no-way-to-cancel-a-meal.md`.
 
 ---
 
