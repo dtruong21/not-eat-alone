@@ -19,7 +19,8 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
-import 'package:not_eat_alone/features/notifications/application/push_registration_controller.dart';
+import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
+import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
 import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
 
 /// The app's display version + build number, e.g. "v1.1.0 (build 2)".
@@ -62,7 +63,12 @@ class SettingsScreen extends ConsumerWidget {
     // Read before the await: `ref` must not be used once the screen may have
     // unmounted, and a confirmed sign-out still completes in that case.
     final auth = ref.read(authRepositoryProvider);
-    final push = ref.read(pushRegistrationControllerProvider.notifier);
+    // The plain repository, not `pushRegistrationControllerProvider.notifier`:
+    // that controller is autoDispose with no listener, so it is gone by the
+    // time the dialog is confirmed and `unregister` would throw (swallowed
+    // below), leaving the FCM token registered to the signed-out account.
+    final push = ref.read(pushRepositoryProvider);
+    final uid = auth.currentUser?.uid;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -81,7 +87,7 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (confirmed ?? false) await _signOut(auth, push);
+    if (confirmed ?? false) await _signOut(auth, push, uid);
   }
 
   Future<bool> _confirmDeleteAccount(BuildContext context) async {
@@ -137,12 +143,12 @@ class SettingsScreen extends ConsumerWidget {
   /// block the user from signing out.
   Future<void> _signOut(
     AuthRepository auth,
-    PushRegistrationController push,
+    PushRepository push,
+    String? uid,
   ) async {
-    final uid = auth.currentUser?.uid;
     if (uid != null) {
       try {
-        await push.unregister(uid);
+        await push.unregisterCurrentToken(uid);
       } on Exception {
         // Ignored — see doc comment above.
       }

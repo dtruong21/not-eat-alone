@@ -89,9 +89,7 @@ void main() {
 
     // Wait for the host session to land on the authed Discover feed (same
     // marker as request_match_test.dart / smoke_test.dart).
-    final discoverMarker = find.byKey(
-      const Key('discovery_create_meal_button'),
-    );
+    final discoverMarker = discoverFeedMarker();
     await _pumpUntilFound(tester, discoverMarker);
     expect(
       discoverMarker,

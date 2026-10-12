@@ -90,9 +90,7 @@ Future<void> _rateThroughUi(
   required int stars,
   String? comment,
 }) async {
-  final discoverMarker = find.byKey(
-    const Key('discovery_create_meal_button'),
-  );
+  final discoverMarker = discoverFeedMarker();
   await _pumpUntilFound(tester, discoverMarker);
   expect(
     discoverMarker,

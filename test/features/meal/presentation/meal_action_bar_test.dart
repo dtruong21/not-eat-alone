@@ -447,7 +447,7 @@ void main() {
     });
   });
 
-  for (final scale in [1.0, 2.0]) {
+  for (final scale in [1.0, 1.3, 2.0]) {
     testWidgets('bar is one fixed size in every state at ${scale}x text '
         '(320x568)', (tester) async {
       tester.view
@@ -515,7 +515,8 @@ void main() {
         expect(rect.left, greaterThanOrEqualTo(0), reason: name);
         expect(rect.right, lessThanOrEqualTo(320), reason: name);
 
-        // The one action, when there is one, is exactly 56 high.
+        // The action is never smaller than the 56 pt token and its label is
+        // shown whole: not ellipsized, not clipped.
         final action = find.descendant(
           of: bar,
           matching: find.byType(FilledButton),
@@ -523,9 +524,21 @@ void main() {
         if (action.evaluate().isNotEmpty) {
           expect(
             tester.getSize(action).height,
-            WarmPlayfulSize.actionHeight,
+            greaterThanOrEqualTo(WarmPlayfulSize.actionHeight),
             reason: name,
           );
+          final label = find.descendant(
+            of: action,
+            matching: find.byType(RichText),
+          );
+          for (final element in label.evaluate()) {
+            final paragraph = element.renderObject! as RenderParagraph;
+            expect(
+              paragraph.didExceedMaxLines,
+              isFalse,
+              reason: '$name label is cut at ${scale}x',
+            );
+          }
         }
 
         // The status line shows its whole text, never ellipsized.
@@ -541,12 +554,10 @@ void main() {
           );
         }
 
-        // The scroll body keeps room.
-        expect(
-          tester.getSize(find.byType(SingleChildScrollView)).height,
-          greaterThanOrEqualTo(300),
-          reason: name,
-        );
+        // The scroll body keeps room. Measured on 320x568 (bar 83 / 91 / 212):
+        // body 397 px at 1.0x, 389 at 1.3x, 268 at 2.0x.
+        final body = tester.getSize(find.byType(SingleChildScrollView)).height;
+        expect(body, greaterThanOrEqualTo(220), reason: name);
 
         // Let a sending request settle before the next state.
         await tester.pump(const Duration(milliseconds: 200));

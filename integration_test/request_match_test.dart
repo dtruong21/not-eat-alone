@@ -131,9 +131,7 @@ void main() {
     // Wait for the guest's session to land on Discover (same marker as
     // smoke_test.dart: outside the meal-list `AsyncValue.when`, so it
     // renders regardless of the list's own loading/data state).
-    final discoverMarker = find.byKey(
-      const Key('discovery_create_meal_button'),
-    );
+    final discoverMarker = discoverFeedMarker();
     await _pumpUntilFound(tester, discoverMarker);
     expect(
       discoverMarker,

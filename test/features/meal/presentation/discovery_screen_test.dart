@@ -25,6 +25,8 @@ import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
+import '../../../helpers/load_app_fonts.dart';
+
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class MockUserRepository extends Mock implements UserRepository {}
@@ -61,6 +63,10 @@ AppUser _viewer(Gender gender) => AppUser(
     );
 
 void main() {
+  // Real glyph widths: with Ahem every glyph is 1 em and the wrap checks at
+  // large text mean nothing.
+  setUpAll(loadAppFonts);
+
   late MockAuthRepository authRepository;
   late MockUserRepository userRepository;
   var locationCalls = 0;
@@ -228,6 +234,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(AppButton), findsOneWidget);
+    await tester.pumpAndSettle(); // the FAB animates out once the feed is empty
+    // One Create a meal button, not two: the FAB is hidden for an empty feed.
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('Create a meal'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('discovery_empty_create_button')));
     await tester.pumpAndSettle();
@@ -244,14 +254,14 @@ void main() {
     expect(find.byTooltip('Sign out'), findsNothing);
   });
 
-  testWidgets('a card has ONE muted meta line: when · how far', (tester) async {
+  testWidgets('a card has ONE muted meta text: when · how far', (tester) async {
     await pumpDiscovery(tester, meals: [_discoverableMeal]);
 
     final meta = tester.widget<Text>(
       find.text('${formatMealDateTime(_meal.dateTime)} · 1.2 km'),
     );
     final wp = buildTheme(Brightness.light).extension<WarmPlayfulExtensions>()!;
-    expect(meta.maxLines, 1);
+    expect(meta.maxLines, 2);
     expect(meta.overflow, TextOverflow.ellipsis);
     expect(meta.style!.color, wp.muted);
     expect(find.text('1.2 km'), findsNothing);
@@ -290,15 +300,14 @@ void main() {
     expect(host.maxLines, 1);
     expect(host.overflow, TextOverflow.ellipsis);
 
-    // The meta line keeps its start (when) and is cut at the end (distance).
+    // The meta wraps to a second line instead of cutting the distance.
     final whenText = formatMealDateTime(long.dateTime);
     final metaFinder = find.textContaining(whenText);
     final meta = tester.widget<Text>(metaFinder);
     expect(meta.data, '$whenText · 1.3 km');
-    expect(meta.overflow, TextOverflow.ellipsis);
     expect(
       tester.renderObject<RenderParagraph>(metaFinder).didExceedMaxLines,
-      isTrue,
+      isFalse,
     );
     expect(
       tester.getRect(metaFinder).left,

@@ -2,11 +2,14 @@
 ///
 /// One full-width [AppButton] plus a reserved status line for every request
 /// state (own meal, women-only block, loading, error, none, pending, approved,
-/// denied), so the bar never changes size as the state changes. It is also the
+/// denied), so the bar never changes size as the state changes (at a given
+/// text size and width). It is also the
 /// always-mounted home of the server-rejection snackbar: the "Request to join"
 /// button is swapped for "Requested" by the optimistic write before the server
 /// answers, so the listener cannot live on that button.
 library;
+
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,10 +28,32 @@ import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
-/// Largest text scale inside the bar: keeps the 56 pt button and the status
-/// line a fixed size, so the bar never changes height (the page above it
-/// still scales). The status line's full text is in its semantics label.
-const _maxBarTextScale = 1.3;
+/// Largest text scale inside the bar: the app's tested ceiling, so the main
+/// action honours large text. The bar still has ONE height at a given text
+/// size in every state: [_Layout] sizes the action slot and the status slot
+/// from the same measurements for all states.
+const _maxBarTextScale = 2.0;
+
+/// Above this text scale the status line may use two lines (and its slot
+/// reserves them in every state).
+const _statusTwoLineScale = 1.3;
+
+/// Every label the bar's button can show, with the width its icon takes: the
+/// action slot is sized for the one that needs the most lines, so all states
+/// share one height.
+const _buttonLabels = <(String, double)>[
+  ('Request to join', 0),
+  ('Sending request…', WarmPlayfulSize.spinner + WarmPlayfulSpacing.s2),
+  ('Requested', 0),
+  ('Open chat', 24 + WarmPlayfulSpacing.s2),
+  ('Not selected', 0),
+  ('This is your meal', 0),
+  ('Women only', 0),
+  ('Try again', 0),
+];
+
+/// Most lines a button label may wrap to.
+const _maxLabelLines = 2;
 
 /// Pinned bottom bar for [meal]; use as `Scaffold.bottomNavigationBar`.
 class MealActionBar extends ConsumerWidget {
@@ -97,7 +122,7 @@ class _BarContent extends ConsumerWidget {
           key: Key('meal_detail_your_meal_button'),
           label: 'This is your meal',
           variant: AppButtonVariant.tonal,
-          maxLines: 1,
+          maxLines: _maxLabelLines,
           onPressed: null,
         ),
         status: 'See requests in the Requests tab.',
@@ -112,7 +137,7 @@ class _BarContent extends ConsumerWidget {
           key: Key('meal_detail_women_only_disabled_button'),
           label: 'Women only',
           variant: AppButtonVariant.tonal,
-          maxLines: 1,
+          maxLines: _maxLabelLines,
           onPressed: null,
         ),
         status: 'Only women can join this meal.',
@@ -123,13 +148,10 @@ class _BarContent extends ConsumerWidget {
     final requestState = ref.watch(mealRequestStateProvider(meal.id));
     return requestState.when(
       loading: () => const _Layout(
-        action: SizedBox(
-          height: WarmPlayfulSize.actionHeight,
-          child: SkeletonCard(
-            key: Key('meal_action_skeleton'),
-            lines: 1,
-            showAvatar: false,
-          ),
+        action: SkeletonCard(
+          key: Key('meal_action_skeleton'),
+          lines: 1,
+          showAvatar: false,
         ),
       ),
       error: (error, stackTrace) => _Layout(
@@ -137,7 +159,7 @@ class _BarContent extends ConsumerWidget {
           key: const Key('meal_detail_request_retry_button'),
           label: 'Try again',
           variant: AppButtonVariant.tonal,
-          maxLines: 1,
+          maxLines: _maxLabelLines,
           onPressed: () => ref.invalidate(mealRequestStateProvider(meal.id)),
         ),
         status: "Couldn't load your request.",
@@ -153,7 +175,7 @@ class _BarContent extends ConsumerWidget {
               key: const Key('meal_detail_request_to_join_button'),
               label: 'Request to join',
               loadingLabel: 'Sending request…',
-              maxLines: 1,
+              maxLines: _maxLabelLines,
               isLoading: isSubmitting,
               onPressed: isSubmitting
                   ? null
@@ -169,7 +191,7 @@ class _BarContent extends ConsumerWidget {
               key: Key('meal_detail_requested_button'),
               label: 'Requested',
               variant: AppButtonVariant.tonal,
-              maxLines: 1,
+              maxLines: _maxLabelLines,
               onPressed: null,
             ),
             status: 'Waiting for the host to reply.',
@@ -178,7 +200,7 @@ class _BarContent extends ConsumerWidget {
             action: AppButton(
               key: const Key('meal_detail_matched_banner'),
               label: 'Open chat',
-              maxLines: 1,
+              maxLines: _maxLabelLines,
               icon: const Icon(Icons.chat_bubble_outline_rounded),
               // matchId == mealId: `matches/{mealId}` is the hand-off doc the
               // approve transaction writes, so the meal id is the route param.
@@ -191,7 +213,7 @@ class _BarContent extends ConsumerWidget {
               key: Key('meal_detail_not_selected_button'),
               label: 'Not selected',
               variant: AppButtonVariant.tonal,
-              maxLines: 1,
+              maxLines: _maxLabelLines,
               onPressed: null,
             ),
             status: 'The host chose someone else.',
@@ -202,7 +224,8 @@ class _BarContent extends ConsumerWidget {
   }
 }
 
-/// Action on top, status line below in a slot that is always one line high.
+/// Action on top, status line below, both in slots whose height depends only
+/// on the text size and the width, never on the state.
 class _Layout extends StatelessWidget {
   const _Layout({
     required this.action,
@@ -218,45 +241,78 @@ class _Layout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+    final theme = Theme.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+    final statusStyle = theme.textTheme.bodySmall?.copyWith(
       color: isError ? context.wp.dangerText : context.wp.muted,
     );
-    final lineHeight = MediaQuery.textScalerOf(
-      context,
-    ).scale((style?.fontSize ?? 12) * (style?.height ?? 1.5)).ceilToDouble();
+    final statusLines = scaler.scale(1) > _statusTwoLineScale ? 2 : 1;
+    final statusLineHeight = scaler
+        .scale((statusStyle?.fontSize ?? 12) * (statusStyle?.height ?? 1.5))
+        .ceilToDouble();
+    final labelStyle = theme.textTheme.labelLarge ?? const TextStyle();
+    final direction = Directionality.of(context);
 
-    return Column(
-      key: const Key('meal_action_bar'),
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Exactly the action height: at the clamped scale a label can still
-        // ask for a pixel or two more than the button's minimum.
-        SizedBox(height: WarmPlayfulSize.actionHeight, child: action),
-        const SizedBox(height: WarmPlayfulSpacing.s2),
-        // Mounted in every state so a status appearing is announced; the
-        // label carries the full text even if the line is ellipsized.
-        Semantics(
-          key: const Key('meal_action_status'),
-          container: true,
-          liveRegion: true,
-          label: status,
-          excludeSemantics: true,
-          child: SizedBox(
-            height: lineHeight,
-            child: status == null
-                ? null
-                : Text(
-                    status!,
-                    key: statusKey,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: style,
-                  ),
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The text width inside a button: its horizontal padding comes off.
+        final textWidth = constraints.maxWidth - 2 * WarmPlayfulSpacing.s5;
+        var lines = 1;
+        for (final (label, iconWidth) in _buttonLabels) {
+          final painter =
+              TextPainter(
+                text: TextSpan(text: label, style: labelStyle),
+                textDirection: direction,
+                textScaler: scaler,
+                maxLines: _maxLabelLines,
+              )..layout(
+                maxWidth: (textWidth - iconWidth).clamp(0, double.infinity),
+              );
+          final measured = painter.computeLineMetrics().length;
+          painter.dispose();
+          if (measured > lines) lines = measured;
+        }
+        final labelLineHeight = scaler
+            .scale((labelStyle.fontSize ?? 16) * (labelStyle.height ?? 1.5))
+            .ceilToDouble();
+        final actionHeight = math.max(
+          WarmPlayfulSize.actionHeight,
+          lines * labelLineHeight + 2 * WarmPlayfulSpacing.s3,
+        );
+
+        return Column(
+          key: const Key('meal_action_bar'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Tight height: a button grows to the slot, the skeleton fills it.
+            SizedBox(height: actionHeight, child: action),
+            const SizedBox(height: WarmPlayfulSpacing.s2),
+            // Mounted in every state so a status appearing is announced; the
+            // label carries the full text even if the line is ellipsized.
+            Semantics(
+              key: const Key('meal_action_status'),
+              container: true,
+              liveRegion: true,
+              label: status,
+              excludeSemantics: true,
+              child: SizedBox(
+                height: statusLineHeight * statusLines,
+                child: status == null
+                    ? null
+                    : Text(
+                        status!,
+                        key: statusKey,
+                        textAlign: TextAlign.center,
+                        maxLines: statusLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: statusStyle,
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

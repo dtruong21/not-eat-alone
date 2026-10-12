@@ -3,7 +3,6 @@
 /// Discover feed without error. Run via `make e2e` (see `Makefile`).
 library;
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -43,14 +42,13 @@ void main() {
     // The auth -> Firestore-profile redirect chain (authStateProvider +
     // currentUserDocProvider, both streams) resolves asynchronously, so
     // bound a pump loop on a marker that renders ONLY on the authed
-    // Discover screen (`DiscoveryScreen`'s "Create a meal" FAB —
-    // lib/features/meal/presentation/discovery_screen.dart:204) rather
-    // than asserting immediately. The FAB is present regardless of the
+    // Discover screen (`DiscoveryScreen`'s "Create a meal" FAB, or the empty
+    // state's own button when the feed is empty:
+    // lib/features/meal/presentation/discovery_screen.dart) rather
+    // than asserting immediately. One of the two is present in every
     // meal-list AsyncValue state (loading/error/empty/data), so an empty
     // Discover feed (no seeded meal) is a valid "rendered" outcome here.
-    final discoverMarker = find.byKey(
-      const Key('discovery_create_meal_button'),
-    );
+    final discoverMarker = discoverFeedMarker();
     final deadline = DateTime.now().add(const Duration(seconds: 20));
     while (discoverMarker.evaluate().isEmpty &&
         DateTime.now().isBefore(deadline)) {

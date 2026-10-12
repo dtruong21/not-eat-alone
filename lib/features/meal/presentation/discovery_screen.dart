@@ -160,17 +160,26 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
       },
     );
 
+    final isEmpty = state.when(
+      data: (meals) => meals.isEmpty,
+      loading: () => false,
+      error: (error, stackTrace) => false,
+    );
+
     return Scaffold(
       appBar: AppBar(title: Text(FlavorConfig.current.appTitle)),
       body: SafeArea(
         child: RefreshIndicator(onRefresh: _onRefresh, child: body),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('discovery_create_meal_button'),
-        onPressed: _createMeal,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Create a meal'),
-      ),
+      // The empty state has its own Create a meal button: no second one.
+      floatingActionButton: isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              key: const Key('discovery_create_meal_button'),
+              onPressed: _createMeal,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Create a meal'),
+            ),
     );
   }
 }
@@ -231,7 +240,9 @@ class _MealCard extends StatelessWidget {
               Text(
                 '${formatMealDateTime(meal.dateTime)} · '
                 '${_formatDistance(item.distanceMeters)}',
-                maxLines: 1,
+                // Two lines: at large text the distance wraps instead of
+                // being cut off.
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),

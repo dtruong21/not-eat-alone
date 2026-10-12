@@ -51,22 +51,30 @@ Dark (`17b-dark-default`): same layouts; the bar, the notice, the empty state an
 | `73` | 118 px bottom (rating sheet) | unchanged: plan 18 |
 | `errors_viewer_signin` | 192 px right | gone in this run (not a 17b screen; cause not investigated, the 17a-owned sign-in screen was fixed in 17a) |
 
-Visible at xxl: the pinned bar keeps "Request to join" on screen without scrolling (`40`; before, the button was far below the fold), "Requested / Waiting for the host to reply." (`42`) fits at the same height; the Discover card's meta line is ellipsized (see D3).
+Visible at xxl: the pinned bar keeps "Request to join" on screen without scrolling (`40`; before, the button was far below the fold), "Requested / Waiting for the host to reply." (`42`) fits at the same height; the Discover card's meta line was ellipsized (D2, fixed in the final fix wave: two lines).
 
 ## Remaining defects
 
 | # | Defect | Severity | Owner |
 |---|---|---|---|
 | D1 | `createRequest` wraps every failure in `RepositoryWriteException`: "This meal is no longer open." never shows; the generic snackbar does (MEAL-04 only half-fixed by copy) | P2 | follow-up (repository rethrows `MealNoLongerOpenException`) |
-| D2 | Discover card meta line "Sun 18 Oct, 21:…" is cut at xxl, the distance is lost (one line with an ellipsis by design; the Paris notice also takes a whole screen at xxl, but it scrolls away) | P2 | follow-up in Discover (let the meta wrap to two lines at large text) |
+| D2 | FIXED in the final fix wave: Discover card meta line "Sun 18 Oct, 21:…" was cut at xxl and lost the distance; the meta text now wraps to two lines (widget-tested with real glyph widths) | - | done |
 | D3 | Chat, report sheet, rating sheet overflow at xxl (55 / 11 / 118 px) | P1 | 18 (chat, ratings) |
 | D4 | Requests inbox, chats and settings were not touched by 17b; their remaining issues (in-flight shots `UXMISSING`, etc.) stay with 18 | P2 | 18 |
 | D5 | All new strings ("Open chat", "You're matched. Say hi!", "Meal posted…", empty states) are English only | P2 | 19 (French) |
 | D6 | Official multicolour Google "G" mark still a Material stand-in | P3 (brand, may block store review) | open from 17a (D1 there): asset task, not 17b |
 | D7 | Android phone auto-verification path (`verificationCompleted`) never reports to the screen | P2 | open from 17a (D2 there): 18 or a small auth follow-up |
 | D8 | Disabled "Requested" / "Not selected" / "This is your meal" buttons are pale on the cream bar | P3 | follow-up (design token for disabled tonal) |
-| D9 | Empty Discover shows two "Create a meal" buttons (inline + FAB) | P3 | follow-up (hide the FAB in the empty state, or keep only the FAB) |
+| D9 | FIXED in the final fix wave: empty Discover showed two "Create a meal" buttons; the FAB is hidden for the empty state (loading and error keep it); the E2E marker accepts either button | - | done |
 | D10 | Paris notice dismissal is per session (needs `shared_preferences` to persist) | P3 | later decision |
+| D11 | develop's `settleOrQueue` ends `request()` as success after a 3 s grace: a server rejection that arrives later is a `loading -> data` transition, so the bar's snackbar never fires on a slow network and "Requested" reverts silently (the pre-17b MEAL-04 symptom). The emulator is fast, so shot 49 cannot show it. Re-verify after merging develop | P2 | 18 |
+| D12 | develop's "Can't make it" lets a host cancel a matched meal while the guest's request stays `approved`; the bar ignores `meal.status`, so a guest still on the screen keeps "Open chat / You're matched. Say hi!" for a cancelled meal (only reachable while the screen is open: matched meals leave Discover) | P2 | 18 (requests / chat) |
+
+## Final fix wave (after the final review)
+
+- Action bar: the text clamp is 2.0 (was 1.3) and the fixed 56 pt box is gone; the action slot height is measured once for every state from the longest label (up to two lines) and the status line may use two lines above 1.3x. On 320 x 568 the bar is 83 / 91 / 212 px at 1.0x / 1.3x / 2.0x and the scroll body keeps 397 / 389 / 268 px (widget-tested, above the 220 px floor). The AFTER shots `42`, `43` and `xxl_40` above were taken with the earlier 1.3x clamp: at xxl the button label is now larger and may wrap.
+- Settings sign-out unregisters the FCM token again (it was silently skipped since b2dc902: the autoDispose controller was gone when the dialog was confirmed). Widget-tested, mounted and unmounted-while-dialog-open.
+- Discover: meta text wraps to two lines (D2), FAB hidden on the empty state (D9).
 
 ## Not verified by the capture
 
