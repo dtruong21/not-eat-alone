@@ -72,7 +72,9 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         .read(profileControllerProvider.notifier)
         .save(
           displayName: name.isEmpty ? null : name,
-          bio: (bio == null || bio.isEmpty) ? null : bio,
+          // A blank bio is sent as '' (null means "leave unchanged" in
+          // `updateProfile`), so clearing it really clears it.
+          bio: bio ?? '',
           gender: data.gender,
         );
 

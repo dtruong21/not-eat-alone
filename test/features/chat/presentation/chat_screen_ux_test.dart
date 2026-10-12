@@ -429,6 +429,41 @@ void main() {
         expect(shown(), 1);
       });
 
+      testWidgets('a keyboard that pushes the list under the card threshold '
+          'does not move the card or re-fire (long thread)', (tester) async {
+        await pump(
+          tester,
+          messages: [
+            for (var i = 0; i < 80; i++)
+              _msg(i, at: DateTime(2027, 1, 5, 9).add(Duration(hours: i))),
+          ],
+          meal: _meal(DateTime(2020)),
+        );
+        final list = find.byKey(const Key('chat_messages_list'));
+        expect(tester.getSize(list).height, greaterThan(336));
+        expect(shown(), 1);
+        final before = tester.getTopLeft(
+          find.byKey(const Key('post_meal_card')),
+        );
+
+        // 800 - 400 leaves the list well under 336 dp.
+        tester.view.viewInsets = const FakeViewPadding(bottom: 400);
+        await tester.pump();
+        await tester.pump();
+        expect(tester.getSize(list).height, lessThan(336));
+        tester.view.viewInsets = FakeViewPadding.zero;
+        await tester.pump();
+        await tester.pump();
+
+        // Same place (after the newest message), same state: no second event.
+        expect(find.byKey(const Key('post_meal_card')), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.byKey(const Key('post_meal_card'))),
+          before,
+        );
+        expect(shown(), 1);
+      });
+
       testWidgets('the keyboard going up and down does not re-fire', (
         tester,
       ) async {

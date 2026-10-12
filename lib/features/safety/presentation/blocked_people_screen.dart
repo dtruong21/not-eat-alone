@@ -76,6 +76,9 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text('Unblocked $name.')));
+      // Normally the stream drops this row first; if it lags or errors the
+      // row must not spin forever.
+      if (mounted) setState(() => _busy = false);
     } on Object {
       messenger
         ..hideCurrentSnackBar()

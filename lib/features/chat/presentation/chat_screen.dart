@@ -88,6 +88,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// The safety banner is hidden for this chat only; not persisted.
   bool _safetyDismissed = false;
 
+  /// Where the post-meal card sits: after the newest message (true) or above
+  /// the oldest (short viewport). Only updated while the keyboard is closed.
+  bool _cardBelow = true;
+
   final _postMealCardKey = GlobalKey();
 
   @override
@@ -251,8 +255,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       // On a short viewport (large text on a small phone) it
                       // would cover the whole thread, so it goes above the
                       // oldest message instead and the latest ones stay visible.
-                      final cardBelow =
-                          constraints.maxHeight >= _roomForCardBelow;
+                      // Decided only while the keyboard is closed: the list
+                      // shrinks when it opens, and moving the card then would
+                      // drop its state and fire the analytics event again.
+                      if (!keyboardOpen) {
+                        _cardBelow = constraints.maxHeight >= _roomForCardBelow;
+                      }
+                      final cardBelow = _cardBelow;
                       final offset = postMealCard != null && cardBelow ? 1 : 0;
                       final count =
                           ordered.length + (postMealCard == null ? 0 : 1);

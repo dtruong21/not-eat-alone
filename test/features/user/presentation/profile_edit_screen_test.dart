@@ -164,6 +164,28 @@ void main() {
     expect(saveEnabled(tester), isTrue);
   });
 
+  testWidgets('clearing the bio saves an empty bio and disables Save', (
+    tester,
+  ) async {
+    final controller = await pumpScreen(tester);
+
+    await tester.enterText(find.byKey(const Key('profile_bio_field')), '');
+    await tester.pump();
+    await tester.pump();
+    expect(saveEnabled(tester), isTrue);
+
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump();
+
+    // '' (not null): null means "leave unchanged" in updateProfile.
+    expect(controller.saves.single.bio, '');
+    expect(find.text('Profile saved'), findsOneWidget);
+    expect(saveEnabled(tester), isFalse);
+  });
+
   testWidgets('a blank name cannot be saved', (tester) async {
     await pumpScreen(tester);
 

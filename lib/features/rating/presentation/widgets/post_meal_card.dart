@@ -1,8 +1,8 @@
 /// A card prompting the current user to rate the other participant, shown
-/// at the top of the matched chat once the meal is over. Self-hides while
-/// the meal is still upcoming, while the meal is unknown/loading, and once
-/// the current user has already rated this match — see
-/// `docs/superpowers/specs/2026-09-23-ratings-design.md § 5. In-app
+/// in the matched chat's message list (just above the composer) once the meal
+/// is over. Self-hides while the meal is still upcoming, while the meal is
+/// unknown/loading, and once the current user has already rated this match -
+/// see `docs/superpowers/specs/2026-09-23-ratings-design.md § 5. In-app
 /// post-meal flow`.
 library;
 

@@ -412,6 +412,28 @@ void main() {
       );
     });
 
+    testWidgets('two taps in one frame start one write', (tester) async {
+      final gate = Completer<void>();
+      when(
+        () => requestRepository.approve(any()),
+      ).thenAnswer((_) => gate.future);
+
+      await pumpTile(tester);
+      final approve = find.byKey(
+        Key('request_inbox_approve_button_${_request.id}'),
+      );
+      final onPressed = tester.widget<AppButton>(approve).onPressed!;
+      // Both calls land before the busy state repaints.
+      onPressed();
+      onPressed();
+      await tester.pump();
+
+      verify(() => requestRepository.approve(any())).called(1);
+      gate.complete();
+      await tester.pumpAndSettle();
+      verifyNever(() => requestRepository.deny(any()));
+    });
+
     testWidgets('unmounting mid-flight on approve still shows the snackbar', (
       tester,
     ) async {

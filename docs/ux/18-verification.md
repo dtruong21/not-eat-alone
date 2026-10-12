@@ -79,7 +79,7 @@ No remaining overflow stripes, no failed steps, no missing indicator in this cel
 | Android notification settings row (needs an Android settings intent, so a package) | P3 | Follow-up (Android) |
 | Deny keeps `onSurface` (not brick red) while loading | P3 | Follow-up (`AppButton`) |
 | `RatingBadge` has no semantics label (the star and "4.7 (7)" read as separate pieces) | P3 | Follow-up (app-wide) |
-| Inbox re-entrancy guard (a double tap can start two writes for one request) | P3 | Follow-up |
+| CI runs the date tests under Pacific/Kiritimati only, so the America/Los_Angeles DST group in `date_format_test.dart` never runs in CI (manual only) | P3 | CI owner (`.github/workflows/ci.yml`, out of scope for plan 18) |
 | `93_discover_error` can no longer be produced by the harness (Discover skips malformed meals) | P3 (tooling) | Harness follow-up (needs an injectable failing feed) |
 | Crowded chat top at 2.0x on a 375 x 667 phone; post-meal prompt buried in long threads | P3 / P2 | See the small-phone section |
 

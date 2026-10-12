@@ -52,6 +52,9 @@ class RequestInboxTile extends ConsumerWidget {
     WidgetRef ref,
     InboxAction action,
   ) async {
+    // A second tap in the same frame (before the busy state repaints) must
+    // not start a second write for this request.
+    if (ref.read(inboxPendingProvider).containsKey(request.id)) return;
     // Captured BEFORE the await: this tile can be unmounted mid-flight (the
     // request's own status flip, applied optimistically by the Firestore
     // SDK, can rebuild the inbox list and remove this tile before the action

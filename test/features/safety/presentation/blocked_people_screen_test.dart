@@ -233,6 +233,24 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
+  testWidgets('successful unblock whose row stays (lagging stream) stops '
+      'spinning', (tester) async {
+    when(() => blocks.unblock('me', 'a')).thenAnswer((_) async {});
+    await pump(tester);
+    ids.add({'a'});
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+
+    await tester.tap(find.byKey(const Key('unblock_button_a')));
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(find.text('Unblocked Bastien.'), findsOneWidget);
+    expect(find.text('Bastien'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Unblock'), findsOneWidget);
+  });
+
   testWidgets('no overflow at 320 px and 2.0x text', (tester) async {
     tester.view
       ..physicalSize = const Size(320, 568)
