@@ -127,6 +127,23 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 - [ ] **Android phone auto-verification.** On a real Android device whose SIM receives the SMS (or an instant-verification test number): Firebase can call `verificationCompleted` without ever calling `codeSent`. In the code, `AuthRepositoryImpl.verifyPhone` then signs in with the credential (`signInWithCredential`, not awaited) and does not call the screen back, so the sign-in screen keeps its "Sending code…" spinner until the router leaves it (signed in -> age gate or Discover). Expected: the spinner stays, then the app moves on; no code screen is shown. If `signInWithCredential` fails, nothing is reported either: the spinner stays until the 60 s timeout shows "Something went wrong — please try again." Check both and decide whether the failure should be surfaced (not changed in 17a).
 - [ ] **Focusing fields scrolls Continue into view (real device).** Profile setup on a small iPhone and a mid-size Android with the software keyboard: tap Name, then Bio, type a few lines: Bio's caret stays visible and Continue (plus the "Still needed" line) can be reached without dismissing the keyboard; repeat with the largest text size. Widget tests simulate the keyboard inset only.
 
+### Discover, meal detail, create meal, restaurant search (UX plan 17b) — automated
+
+- [x] `test/features/meal/presentation/meal_action_bar_test.dart` — every viewer state (own, women-only, loading, load error, none, pending, approved, denied) renders its label, key and status copy; the bar has exactly the same height in all of them at the tested text scales; the status line is one live-region node whose label is the full sentence; "Open chat" opens `/chats/{mealId}`; a failed request shows the "Couldn't send your request. Try again." snackbar even though the button was swapped for "Requested", and "This meal is no longer open." when the error is `MealNoLongerOpenException`. `meal_detail_button_test.dart` — request flow through the screen. `test/core/design/widgets/app_button_test.dart` — `maxLines` and the loading label.
+- [x] `test/features/meal/presentation/discovery_screen_test.dart`, `paris_notice_test.dart` — card anatomy (one `<when> · <distance>` line, `Wrap` for the badge), the last card clears the FAB, empty state with its Create-a-meal action, long names ellipsize at 320 px / 2.0x, the notice scrolls with the list and is shown above loading / empty / error, dismissal keeps the state. `settings_screen_test.dart` — sign-out is confirmed in a dialog and is safe when the screen unmounts while the dialog is open.
+- [x] `test/features/meal/presentation/create_meal_screen_test.dart` — `nextMealSlot` (now + 1 h rounded UP to :00 / :30, seconds, midnight; never before now + 1 h and less than 30 min later), the time picker opens on a slot and is 24 h, the success snackbar "Meal posted. You'll get requests in the Requests tab.", the note field's `scrollPadding` is `WarmPlayfulSize.keyboardReveal` (mutation-checked), Create meal reachable at 320 x 568 / 2.0x text with the keyboard up.
+- [x] `test/features/meal/presentation/restaurant_search_screen_test.dart` — "No restaurants to show yet." for an empty list before any query, "No restaurant called “<query>”. Try another name." after one, wrapped inside the margins at 320 px.
+- [ ] Manual: `make ux-capture` before/after comparison (see `docs/ux/17b-verification.md`).
+
+**Manual QA steps for 17b (cannot run headless; user-run on a device):**
+
+- [ ] **VoiceOver, action bar status.** Meal detail with VoiceOver on: Request to join is a button; double-tap: the spinner replaces the label, VoiceOver announces "Sending request…" as a disabled button; when the host approves (admin write or second device) the status "You're matched. Say hi!" is announced by itself and "Open chat" is focusable. Swipe to the status line: the whole sentence is read as one node even when it is cut with an ellipsis on screen.
+- [ ] **Action-bar label fit with Nunito at 1.3x (real device).** The bar clamps its text to 1.3x and the button is a fixed 56 pt, but the label asks for about 58 pt at that scale. Set the largest text size and look at "Request to join", "Sending request…", "This is your meal", "Open chat" on a small iPhone and a mid-size Android: no label clipped, no visible overflow, bar height unchanged between states.
+- [ ] **Open in Maps still works.** From the restaurant card above the pinned bar: tap "Open in Maps", the maps app opens on the venue (the card moved up, the button is unchanged); no snackbar.
+- [ ] **Pull-to-refresh in the empty and error states.** Discover with no meals nearby (and with the network off for the error state): pull down: the spinner shows, the empty / error state stays (no crash), and Try again behaves like a pull.
+- [ ] **Notice and FAB.** Dismiss the Paris notice: it is gone until the next launch (per session by design). Scroll to the end of a long feed: the last card is fully visible above "Create a meal".
+- [ ] **Rejected request.** Open a meal, have the host (or an admin write) match it, then tap Request to join: the snackbar "Couldn't send your request. Try again." appears, about one second after the tap. (The specific "This meal is no longer open." copy never shows yet: `createRequest` wraps every failure; follow-up.)
+
 ---
 
 ## Feature checklists
@@ -255,7 +272,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - [ ] **Women-only meals hidden** from non-women viewers; visible (with badge) to women.
 - [ ] Location denied/error → Paris center; feed still works.
 - [ ] geohash prefix query (precision 4 ~Paris cell) + client distance sort; any signed-in user can READ meals + host profiles (rules opened; writes still owner-only).
-- [ ] Empty state ("No meals near you yet") when nothing matches.
+- [ ] Empty state ("No meals nearby yet") when nothing matches.
 
 **Deferred (needs the Google API key — 30-day GCP wait):**
 - **Map view** of the feed (post-MVP, see PRD).

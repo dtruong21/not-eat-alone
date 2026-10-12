@@ -647,7 +647,7 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
   });
 
   await _step(tester, '21_discover_empty', () async {
-    await _pumpUntilFound(tester, find.text('No meals near you yet'));
+    await _pumpUntilFound(tester, find.text('No meals nearby yet'));
     await _snap(tester, '21_discover_empty');
   });
 
@@ -863,6 +863,9 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
     // Let the snackbar finish sliding in (fixed pumps: it has no settle).
     await tester.pump(const Duration(milliseconds: 600));
     await _snap(tester, '49_meal_detail_request_rejected');
+    // The snackbar outlives the route and would cover the create-meal button
+    // (step 30) at large text.
+    await _clearSnackBars(tester);
   });
   await _recover(tester);
 }
@@ -1136,9 +1139,11 @@ Future<void> _captureProfileAndSettings(WidgetTester tester) async {
 
   await _step(tester, '83_settings', () async {
     await _tap(tester, find.byKey(const Key('profile_settings_button')));
+    // The first row, not the version line at the bottom: the list is lazy and
+    // the version is not built until scrolled to (at large text).
     await _pumpUntilFound(
       tester,
-      find.byKey(const Key('settings_app_version')),
+      find.byKey(const Key('settings_contact_support')),
     );
     await _snap(tester, '83_settings');
   });
