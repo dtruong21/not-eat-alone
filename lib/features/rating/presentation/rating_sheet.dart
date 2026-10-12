@@ -11,29 +11,41 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/rating/application/rating_controller.dart';
 
-/// Opens the rating sheet for [targetUid] within [matchId].
+/// Opens the rating sheet for [targetUid] within [matchId]. [partnerName]
+/// titles it "How was your meal with NAME?".
 Future<void> showRatingSheet(
   BuildContext context, {
   required String matchId,
   required String targetUid,
+  String? partnerName,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => _RatingSheet(matchId: matchId, targetUid: targetUid),
+    builder: (context) => _RatingSheet(
+      matchId: matchId,
+      targetUid: targetUid,
+      partnerName: partnerName,
+    ),
   );
 }
 
 class _RatingSheet extends ConsumerStatefulWidget {
-  const _RatingSheet({required this.matchId, required this.targetUid});
+  const _RatingSheet({
+    required this.matchId,
+    required this.targetUid,
+    required this.partnerName,
+  });
 
   final String matchId;
   final String targetUid;
+  final String? partnerName;
 
   @override
   ConsumerState<_RatingSheet> createState() => _RatingSheetState();
@@ -88,6 +100,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
     final isSubmitting = ref.watch(ratingControllerProvider).isLoading;
+    final name = widget.partnerName;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -105,7 +118,9 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'How was your meal?',
+              name != null
+                  ? 'How was your meal with $name?'
+                  : 'How was your meal?',
               style: textTheme.titleMedium?.copyWith(
                 color: colors.onSurface,
                 fontWeight: WarmPlayfulType.h2Weight,
@@ -127,7 +142,9 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
                       i <= _stars
                           ? Icons.star_rounded
                           : Icons.star_border_rounded,
-                      color: colors.tertiary,
+                      // Sage/butter are ~1.9:1 on the peach sheet; muted
+                      // outline and onSurface fill both clear 3:1.
+                      color: i <= _stars ? colors.onSurface : context.wp.muted,
                       size: WarmPlayfulSpacing.s6,
                     ),
                   ),
@@ -152,9 +169,9 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
               maxLength: 200,
               decoration: InputDecoration(
                 hintText: 'Add a comment (optional)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                ),
+                // The sheet and the field share a fill: draw the edge.
+                enabledBorder: sheetFieldBorder(context),
+                disabledBorder: sheetFieldBorder(context),
               ),
             ),
             const SizedBox(height: WarmPlayfulSpacing.s2),

@@ -15,6 +15,7 @@ import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
 import 'package:not_eat_alone/features/rating/application/my_rating_provider.dart';
 import 'package:not_eat_alone/features/rating/presentation/rating_sheet.dart';
@@ -63,8 +64,10 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final targetName =
-        ref.watch(userDocProvider(widget.targetUid)).value?.displayName;
+    final targetName = ref
+        .watch(userDocProvider(widget.targetUid))
+        .value
+        ?.displayName;
 
     return Card(
       key: const Key('post_meal_card'),
@@ -88,9 +91,7 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
                   ),
                   const SizedBox(height: WarmPlayfulSpacing.s1),
                   Text(
-                    targetName != null
-                        ? 'Rate $targetName'
-                        : 'Rate the other person',
+                    'It only takes a moment.',
                     style: textTheme.bodySmall?.copyWith(
                       color: context.wp.muted,
                     ),
@@ -99,14 +100,18 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
               ),
             ),
             const SizedBox(width: WarmPlayfulSpacing.s3),
-            FilledButton(
-              key: const Key('post_meal_card_rate_button'),
-              onPressed: () => showRatingSheet(
-                context,
-                matchId: widget.matchId,
-                targetUid: widget.targetUid,
+            Flexible(
+              child: AppButton(
+                key: const Key('post_meal_card_rate_button'),
+                label: targetName != null ? 'Rate $targetName' : 'Rate',
+                expand: false,
+                onPressed: () => showRatingSheet(
+                  context,
+                  matchId: widget.matchId,
+                  targetUid: widget.targetUid,
+                  partnerName: targetName,
+                ),
               ),
-              child: const Text('Rate'),
             ),
           ],
         ),

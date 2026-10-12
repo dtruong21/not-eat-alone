@@ -587,3 +587,11 @@ extension WarmPlayfulContext on BuildContext {
   WarmPlayfulExtensions get wp =>
       Theme.of(this).extension<WarmPlayfulExtensions>()!;
 }
+
+/// Edge for a text field inside a bottom sheet. Sheets and the theme's input
+/// fill are both `surface`, so the field would be invisible; this draws a
+/// 1 px `muted` outline (>= 3:1 on the sheet in both modes).
+OutlineInputBorder sheetFieldBorder(BuildContext context) => OutlineInputBorder(
+  borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+  borderSide: BorderSide(color: context.wp.muted),
+);
