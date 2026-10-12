@@ -306,7 +306,7 @@ Related PRD entry: `docs/PRD.md § Chat`
 - `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
 - `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
-- `docs/bugs/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md` (P2, open)
+- `docs/bugs/closed/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md` (P2, fixed)
 - `docs/bugs/closed/2026-10-12-push-tap-strands-user-in-chat-without-back.md` (**P1**, open)
 
 ---
@@ -466,7 +466,7 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 - [ ] Airplane mode: confirm -> "Couldn't cancel. Check your connection and try again."; nothing changed.
 - [ ] `meal_cancelled` (role host/guest) appears in DebugView.
 
-**Re-verified 2026-10-12 (Firestore emulator, compiled functions: `firebase/functions/test-emulator/state_machine.test.cjs`; rules: `client_write_shapes.rules.test.cjs`):** guest withdraw reopens the meal, clears the three scheduler flags, removes request + chat, the same guest can re-request and be re-approved; host cancel ends in `cancelled` and is never reminded or completed; concurrent cancel from both sides lets exactly one win; after the meal time the cancel is refused and `postMealReminder` completes the meal once. Open: other person's open chat becomes an error (`docs/bugs/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md`), a crash between the transaction and the chat deletion blocks re-matching (`docs/bugs/2026-10-12-cancel-meal-can-leave-a-stale-match-that-blocks-rematching.md`), denied requesters cannot return (P3, minor findings).
+**Re-verified 2026-10-12 (Firestore emulator, compiled functions: `firebase/functions/test-emulator/state_machine.test.cjs`; rules: `client_write_shapes.rules.test.cjs`):** guest withdraw reopens the meal, clears the three scheduler flags, removes request + chat, the same guest can re-request and be re-approved; host cancel ends in `cancelled` and is never reminded or completed; concurrent cancel from both sides lets exactly one win; after the meal time the cancel is refused and `postMealReminder` completes the meal once. Fixed: other person's open chat now shows "no longer available" (`docs/bugs/closed/2026-10-12-chat-of-cancelled-match-shows-generic-error-and-reports-fatal.md`). Open: a crash between the transaction and the chat deletion blocks re-matching (`docs/bugs/2026-10-12-cancel-meal-can-leave-a-stale-match-that-blocks-rematching.md`), denied requesters cannot return (P3, minor findings).
 
 ---
 

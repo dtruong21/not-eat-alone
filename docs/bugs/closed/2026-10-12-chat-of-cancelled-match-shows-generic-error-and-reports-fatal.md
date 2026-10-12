@@ -14,3 +14,5 @@
 **Frequency:** always.
 
 **Hypothesis:** catch in `markRead` (log, no rethrow), and in `ChatScreen` treat "match not in `chatListProvider` after it loaded" or a permission error as a "This chat is no longer available" state (hide composer and actions, button back to Chats). Related minor item: `matchMealProvider` is a one-shot read, so "Can't make it" stays visible after the other person already cancelled and then fails with the generic "Check your connection" message.
+
+**Status:** FIXED — `markRead` is best-effort (logged, never thrown); `ChatScreen` shows "This chat is no longer available" with a Back to chats button and hides the composer when the thread errors. Regression: `chat_screen_cancelled_match_edge_test.dart`. Residual: `matchMealProvider` one-shot read (Can't make it stays visible after the other side cancelled) is tracked under minor findings.

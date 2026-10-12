@@ -43,6 +43,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - Your exact date of birth and gender are now private. Other people only see your name, photos, bio, age and rating.
 
 ### Fixed
+- Chat of a cancelled meal / deleted account now says "This chat is no longer available" with a way back, instead of a generic error; no more false crash reports from it.
 
 - Large photos from modern phone cameras can now be added to your profile (they are resized before upload), and profile pictures use less memory so feeds scroll more smoothly.
 - If the person you matched with deletes their account, you are told: a host's meal opens up again for someone else to join, and a guest is told the meal was cancelled. Meals no longer sit as "matched" with nobody coming.
