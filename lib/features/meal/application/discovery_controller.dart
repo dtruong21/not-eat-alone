@@ -33,6 +33,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
+import 'package:not_eat_alone/core/location/location_service.dart';
 import 'package:not_eat_alone/core/util/distance.dart';
 import 'package:not_eat_alone/core/util/geohash.dart';
 import 'package:not_eat_alone/features/meal/application/meal_providers.dart';
@@ -61,7 +62,8 @@ final discoveryControllerProvider =
     );
   }
 
-  final loc = locationAsync.value;
+  final rawLoc = locationAsync.value;
+  final loc = rawLoc == null ? null : parisOrNearby(rawLoc);
   final viewer = viewerAsync.value;
   if (loc == null || viewer == null) {
     // Still loading — see file header for why `Stream.empty()` keeps this

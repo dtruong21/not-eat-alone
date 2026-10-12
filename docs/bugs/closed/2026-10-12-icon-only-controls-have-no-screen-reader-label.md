@@ -14,3 +14,5 @@
 **Frequency:** always.
 
 **Hypothesis:** add `tooltip:` (or `Semantics(label:, button: true, selected:)`) to each; give stars a label like `'$i star${i == 1 ? '' : 's'}'` with `selected: i <= _stars`; raise the notice close target to 48 dp.
+
+**Status:** Fixed — tooltips/labels on chat send, Paris-notice close (now a 48 dp target), rating stars (with selected state) and the add-photo tile. Tests un-skipped. TalkBack/VoiceOver pass still to do on a device.

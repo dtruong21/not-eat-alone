@@ -118,6 +118,8 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
                 for (var i = 1; i <= 5; i++)
                   IconButton(
                     key: Key('rating_star_$i'),
+                    tooltip: '$i star${i == 1 ? '' : 's'}',
+                    isSelected: i <= _stars,
                     onPressed: isSubmitting
                         ? null
                         : () => setState(() => _stars = i),

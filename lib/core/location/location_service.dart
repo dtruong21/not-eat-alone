@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
+import 'package:not_eat_alone/core/util/distance.dart';
 
 typedef LatLng = ({double lat, double lng});
 
@@ -69,3 +70,20 @@ class LocationService {
     }
   }
 }
+
+/// v1 is Paris-only. A position farther than this from Paris centre (a store
+/// reviewer abroad, a traveller, an emulator's default location) is served the
+/// Paris feed instead of an empty one.
+const parisServiceRadiusMeters = 100000.0;
+
+/// [position] if it is within the Paris service area, else [parisCenter].
+LatLng parisOrNearby(LatLng position) =>
+    distanceMeters(
+          position.lat,
+          position.lng,
+          parisCenter.lat,
+          parisCenter.lng,
+        ) <=
+        parisServiceRadiusMeters
+    ? position
+    : parisCenter;

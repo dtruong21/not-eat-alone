@@ -82,7 +82,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 - [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`). — NOT VERIFIED HERE: only meal detail, buttons and contrast tokens have dark-mode tests; no per-screen goldens
 - [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — re-verified 2026-10-12 (harness, real Nunito): sign-in, sheets, age gate, chat pass (`docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md`, `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md`); other screens and a real device NOT VERIFIED HERE
-- [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one. — **FAIL (code)**: rating stars, chat send, Paris notice close, add-photo tile have no accessible name: `docs/bugs/2026-10-12-icon-only-controls-have-no-screen-reader-label.md` (`test/core/a11y/`); screen-reader pass NOT VERIFIED HERE
+- [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one. — **FAIL (code)**: rating stars, chat send, Paris notice close, add-photo tile have no accessible name: `docs/bugs/closed/2026-10-12-icon-only-controls-have-no-screen-reader-label.md` (`test/core/a11y/`); screen-reader pass NOT VERIFIED HERE
 
 ### Design system (UX plan 16a) — automated, `test/core/design/`
 
@@ -233,7 +233,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
 - `docs/bugs/closed/2026-10-09-location-fix-has-no-timeout.md` (P2)
 - `docs/bugs/closed/2026-10-12-one-malformed-meal-breaks-discover-for-everyone.md` (**P1**, open)
-- `docs/bugs/2026-10-12-feed-is-empty-for-any-device-outside-paris.md` (P2, open) — store-review risk
+- `docs/bugs/closed/2026-10-12-feed-is-empty-for-any-device-outside-paris.md` (P2, open) — store-review risk
 - `docs/bugs/2026-10-12-seed-script-writes-legacy-users-shape.md` (P2, open) — the seed golden-path line above is currently untrue for host names/photos
 
 ---

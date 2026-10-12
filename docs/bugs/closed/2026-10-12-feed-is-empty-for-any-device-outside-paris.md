@@ -14,3 +14,5 @@
 **Frequency:** always for non-Paris locations.
 
 **Hypothesis:** in `currentOrParis` (or in the discovery controller) clamp: if the position is farther than ~100 km from Paris centre (or outside the `u09` cell), use `parisCenter`. Also give App Review a demo path in the review notes (`docs/STORE_METADATA.md`) and seed meals in the production database before submission.
+
+**Status:** Fixed — `parisOrNearby` (100 km service radius) is applied in the discovery controller, so a device outside Paris is served the Paris feed. Tests un-skipped. Still do: seed meals in production + App Review demo notes in `docs/STORE_METADATA.md`.

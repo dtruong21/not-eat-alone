@@ -69,9 +69,9 @@ void main() {
 
   test('a device in San Francisco is still served the Paris feed', () async {
     expect(await requestedPrefix((lat: 37.77, lng: -122.42)), paris);
-  }, skip: 'open bug: $_bug');
+  });
 
   test('a device in New York is still served the Paris feed', () async {
     expect(await requestedPrefix((lat: 40.71, lng: -74.0)), paris);
-  }, skip: 'open bug: $_bug');
+  });
 }

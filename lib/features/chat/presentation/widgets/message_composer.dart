@@ -101,6 +101,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
               const SizedBox(width: WarmPlayfulSpacing.s2),
               IconButton(
                 key: const Key('message_composer_send_button'),
+                tooltip: 'Send message',
                 onPressed: canSend ? _send : null,
                 icon: isSending
                     ? SizedBox(
