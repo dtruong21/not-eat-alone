@@ -231,7 +231,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
-- `docs/bugs/2026-10-09-location-fix-has-no-timeout.md` (P2)
+- `docs/bugs/closed/2026-10-09-location-fix-has-no-timeout.md` (P2)
 
 ---
 
@@ -444,6 +444,17 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Location fix never hangs
+
+**Automated:** `test/core/location/location_service_timeout_edge_test.dart` (denied, error, never-arriving fix -> Paris within the timeout, last known position preferred, hanging last-known lookup, in-time fix).
+
+**Manual on a device:**
+- [ ] Location permission granted but no fix (airplane mode / indoors / emulator without a mock location): Discover leaves the spinner within ~10 s and shows the Paris feed.
+- [ ] Pull to refresh in that state does not hang again.
+- [ ] Permission denied: Paris feed immediately (unchanged). Granting later and pulling to refresh uses the real position.
 
 ---
 

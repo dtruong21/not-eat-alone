@@ -14,3 +14,5 @@
 **Hypothesis:** `getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 5)))` (city-level is enough for a geohash cell) and/or `.timeout(const Duration(seconds: 8), onTimeout: () => throw TimeoutException(...))` so the existing catch returns `parisCenter`. Android manifest only declares `ACCESS_COARSE_LOCATION`, which is consistent with low accuracy.
 
 **Regression test:** `test/core/location/location_service_timeout_edge_test.dart` ("a position that never arrives resolves to Paris within 30s", skipped until fixed).
+
+**Status:** Fixed — `LocationService`: city-level (`LocationAccuracy.low`, 5 s platform limit) fix, an 8 s overall timeout, then the last known position, then Paris. The OS permission prompt is user-paced and not timed out. Regression tests un-skipped plus last-known and in-time cases. Real GPS-less behaviour still to verify on a device.

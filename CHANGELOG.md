@@ -43,6 +43,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Fixed
 
+- Discover no longer spins forever when your phone can't get a location fix; it falls back to your last known position, or Paris, after a few seconds.
 - With a large system font size, the sign-in buttons, the age screen and the rating and report sheets no longer overflow, and the rating and report sheets scroll when the keyboard is open. In a chat, the safety tips and rating prompt step aside while you type so you can still see the conversation.
 - Sending a message, creating a meal, requesting to join and rating no longer hang on a spinner when you have no connection; they are saved and delivered when you are back online.
 - Discover no longer keeps showing a meal after its start time has passed, and it loads faster by only fetching upcoming meals.
