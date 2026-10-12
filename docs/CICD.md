@@ -8,22 +8,41 @@ macOS runners). Branching model: `docs/GITFLOW.md`.
 ### `.github/workflows/ci.yml` — the quality gate
 
 Runs on every PR into `main` / `develop` / `release/**` / `hotfix/**`, and on
-the post-merge commit of `develop` / `main`. Five jobs, Flutter pinned to the
-`.fvmrc` version:
+the post-merge commit of `develop` / `main`. Jobs:
 
-| Job | Runner | What |
-|---|---|---|
-| `Analyze & test` | ubuntu | `pub get` → `build_runner` → `flutter analyze --no-fatal-infos` → `flutter test` |
-| `Build Android (stage, unsigned)` | ubuntu | `flutter build apk --flavor stage --debug` — compile/flavor verification |
-| `Build iOS (stage, no codesign)` | macOS | `flutter build ios --flavor stage --debug --no-codesign` — iOS + Pods compile, no certs |
-| `Functions build & test` | ubuntu | `firebase/functions`: `npm ci` → `npm run build` → `npm test` — TypeScript Cloud Functions gate (Plan 8) |
-| `E2E (emulator, iOS sim)` | macOS | **Non-blocking.** `make e2e`: the `integration_test/` suite on a freshly created iOS Simulator against the Firebase Emulator Suite (Node 22, Java 21, `firebase-tools@13`). 100 min job timeout; each attempt capped at 40 min and retried once on failure/hang; emulator logs uploaded as an artifact on failure or retry |
+| Job | Runner | Runs when | What |
+|---|---|---|---|
+| `Detect changes` | ubuntu | always | Classifies the PR diff into `app` / `functions` / `rules` flags (pushes to `develop`/`main` run everything). Docs-only PRs run no heavy job |
+| `Analyze & test` | ubuntu | `app` | `pub get` → `build_runner` → `flutter analyze --no-fatal-infos` → `flutter test` (+ a `TZ=Pacific/Kiritimati` re-run of the local-time display tests) |
+| `Build Android (stage, unsigned)` | ubuntu | `app` | `flutter build apk --flavor stage --debug` — compile/flavor verification (Gradle cache) |
+| `Build iOS (stage, no codesign)` | macOS | `app`, not a draft PR | `flutter build ios --flavor stage --debug --no-codesign` — iOS + Pods compile, no certs (CocoaPods cache) |
+| `Functions build & test` | ubuntu | `functions` | `firebase/functions`: `npm ci` → `build` → `lint` → `test` (npm cache) |
+| `Firestore rules tests` | ubuntu | `rules` | `firebase/rules-test`: the rules suite against the local Firestore emulator (Java 21, emulator jar cached) |
+| `E2E (emulator, iOS sim)` | macOS | after `Analyze & test` is green, not a draft PR | **Non-blocking.** `make e2e`: the `integration_test/` suite on a freshly created iOS Simulator against the Firebase Emulator Suite (Node 22, Java 21, `firebase-tools@13`). 100 min job timeout; each attempt capped at 40 min and retried once on failure/hang; emulator logs uploaded as an artifact on failure or retry |
+| `CI OK` | ubuntu | always | One aggregate check: green when every job that had to run passed (**skipped is fine**; failed/cancelled is not). E2E is excluded |
 
-Generated files (`*.freezed.dart`, `*.g.dart`) are git-ignored, so every Flutter
-job runs `build_runner`. The required status checks for branch protection today are `Analyze & test`,
-`Build Android` and `Build iOS` (not the E2E job); **`Functions build & test`
-should be added as a fourth required check** (branch protection is configured outside this repo via
-`gh api`/GitHub UI — not something a workflow file controls).
+**What changes which flags** (`Detect changes`): `app` ← `lib/ test/ integration_test/ ios/ android/ assets/ scripts/`,
+`pubspec.yaml|lock`, `analysis_options.yaml`, `.fvmrc`, `Makefile`, `firebase.json`, `.env.example`;
+`functions` ← `firebase/functions/`; `rules` ← `firebase/firestore.rules|indexes`, `storage.rules`,
+`firebase/rules-test/`, `firebase.json`. Any change under `.github/` (workflows, actions, dependabot) sets all three.
+Everything else (docs, changelog, bug files…) runs nothing but `CI OK`.
+
+**Shared setup.** `.github/actions/setup-flutter` (a local composite action) seeds `.env` from `.env.example`,
+installs Flutter at the version in **`.fvmrc` (the only pin — there is no second copy in the workflow to drift)**,
+restores the pub cache, runs `pub get` and `build_runner`. Generated files (`*.freezed.dart`, `*.g.dart`) are
+git-ignored, so every Flutter job needs it.
+
+**Other levers:** superseded PR runs are cancelled (post-merge `develop`/`main` runs are never cut short);
+workflow `permissions: contents: read`; every job has a `timeout-minutes`; Dependabot
+(`.github/dependabot.yml`) opens weekly grouped PRs for Actions, the two npm projects and pub
+(`firebase-functions` majors are excluded — upgrade that one deliberately).
+
+**Branch protection (configured outside this repo, via `gh api` / the GitHub UI).** Because jobs can now be
+skipped by the path filter, require the single **`CI OK`** check (plus E2E later) instead of the individual job
+names: a required check that is *skipped* counts as passing, and `CI OK` fails when any job that ran failed.
+Until protection is switched over, the previously required checks (`Analyze & test`, `Build Android`,
+`Build iOS`) keep working — a skipped required check passes — but `Functions build & test` and
+`Firestore rules tests` are only enforced once `CI OK` is the required check.
 
 **`E2E (emulator, iOS sim)` is deliberately not a required check yet.** It runs
 a real Xcode build, simulator and emulators on a shared macOS runner, and the
@@ -35,6 +54,11 @@ a merge blocker. As with the others, branch protection is configured outside
 this repo.
 
 The E2E time caps are generous on purpose: every `integration_test/*.dart` file triggers its own Xcode build (about 150 s on the runner), so the whole suite needs more than 20 minutes on a cold runner. The first real runs were killed by a 20-minute per-attempt cap while still running tests normally (not hung), hence 40 min per attempt and a 100 min job cap (setup ~10 min + 2 attempts with headroom).
+
+**Known gap.** `deploy.yml` runs on the same push as CI and does not wait for it, so a bad backend change can deploy
+while its tests are still running. Chain it with `workflow_run` (deploy only when `CI` succeeded on that SHA) if that
+becomes a risk. The workflows have not been run on GitHub from this branch yet: first run on a real PR should be
+watched (`actionlint` is clean).
 
 ### `.github/workflows/deploy.yml` — backend CD + releases
 

@@ -28,12 +28,16 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   deploy-firebase:
     name: Deploy Firebase backend
     # Only for branch pushes (not tag pushes).
     if: startsWith(github.ref, 'refs/heads/')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +58,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase/functions/package-lock.json
 
       - name: Write service account
         if: steps.guard.outputs.present == 'true'
@@ -79,6 +85,7 @@ jobs:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
