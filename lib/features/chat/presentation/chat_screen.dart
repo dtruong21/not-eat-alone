@@ -31,13 +31,17 @@ import 'package:not_eat_alone/features/chat/application/chat_messages_provider.d
 import 'package:not_eat_alone/features/chat/application/chat_read_provider.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
+import 'package:not_eat_alone/features/chat/presentation/group_messages.dart';
+import 'package:not_eat_alone/features/chat/presentation/widgets/chat_meal_header.dart';
+import 'package:not_eat_alone/features/chat/presentation/widgets/day_separator.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/leave_match_action.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_composer.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/post_meal_card.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
+import 'package:not_eat_alone/features/safety/presentation/safety_tips_sheet.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
-import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_card.dart';
+import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_banner.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 String? _otherUidFor(List<ChatListItem> items, String matchId) {
@@ -67,6 +71,10 @@ bool _isSeenBy(ChatMessage message, MessageRead? otherRead) {
   return !lastReadAt.isBefore(createdAt);
 }
 
+/// Thread height needed to keep the post-meal prompt below the latest
+/// message; on less room it moves above the oldest one (see the list).
+const _roomForCardBelow = WarmPlayfulSize.keyboardReveal * 2;
+
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({required this.matchId, super.key});
 
@@ -77,6 +85,15 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
+  /// The safety banner is hidden for this chat only; not persisted.
+  bool _safetyDismissed = false;
+
+  /// Where the post-meal card sits: after the newest message (true) or above
+  /// the oldest (short viewport). Only updated while the keyboard is closed.
+  bool _cardBelow = true;
+
+  final _postMealCardKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -121,6 +138,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           );
 
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final chatGone =
+        messagesAsync.hasError && _isChatGone(messagesAsync.error!);
 
     return Scaffold(
       appBar: AppBar(
@@ -142,43 +161,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // The post-meal prompt and safety tips are informational: hide them
-            // while the keyboard is open (they would leave the thread a sliver
-            // or push the composer off-screen) and never let them take more
-            // than ~40% of the body (they scroll at large text sizes).
-            if (!keyboardOpen)
-              Flexible(
-                flex: 0,
-                child: LayoutBuilder(
-                  builder: (context, constraints) => ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.sizeOf(context).height * 0.4,
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          if (otherUid != null)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                WarmPlayfulSpacing.s4,
-                                WarmPlayfulSpacing.s4,
-                                WarmPlayfulSpacing.s4,
-                                0,
-                              ),
-                              child: PostMealCard(
-                                matchId: widget.matchId,
-                                targetUid: otherUid,
-                              ),
-                            ),
-                          const Padding(
-                            padding: EdgeInsets.all(WarmPlayfulSpacing.s4),
-                            child: SafetyTipsCard(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+            // The meal header and safety banner are informational: hide them
+            // while the keyboard is open so the thread keeps its room. The
+            // post-meal prompt scrolls with the messages instead.
+            if (!keyboardOpen && !chatGone)
+              ChatMealHeader(matchId: widget.matchId),
+            if (!keyboardOpen && !_safetyDismissed && !chatGone)
+              SafetyTipsBanner(
+                onOpen: () => showSafetyTipsSheet(context),
+                onDismiss: () => setState(() => _safetyDismissed = true),
               ),
             Expanded(
               child: messagesAsync.when(
@@ -216,41 +207,109 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ),
                       ),
                 data: (messages) {
+                  // Offstage (not removed) while the keyboard is up: it takes no
+                  // room, yet keeps its state, so `post_meal_prompt_shown`
+                  // still fires once. The keep-alive and the GlobalKey do the
+                  // same across scrolling and the empty -> first message step.
+                  final postMealCard = otherUid == null
+                      ? null
+                      : _KeepAlive(
+                          key: _postMealCardKey,
+                          child: Offstage(
+                            offstage: keyboardOpen,
+                            child: PostMealCard(
+                              matchId: widget.matchId,
+                              targetUid: otherUid,
+                            ),
+                          ),
+                        );
                   if (messages.isEmpty) {
-                    return const EmptyState(title: 'Say hi \u{1F44B}');
+                    return Column(
+                      children: [
+                        // Horizontal padding only: a hidden card costs no height.
+                        if (postMealCard != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: WarmPlayfulSpacing.s3,
+                            ),
+                            child: postMealCard,
+                          ),
+                        const Expanded(
+                          child: EmptyState(title: 'Say hi \u{1F44B}'),
+                        ),
+                      ],
+                    );
                   }
 
                   final myLatestId = _myLatestMessageId(messages, myUid);
-                  final ordered = messages.reversed.toList(growable: false);
-
-                  return ListView.builder(
-                    key: const Key('chat_messages_list'),
-                    reverse: true,
-                    padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-                    itemCount: ordered.length,
-                    itemBuilder: (context, index) {
-                      final message = ordered[index];
-                      final mine = myUid != null && message.senderId == myUid;
-                      final showSeen =
-                          mine &&
-                          message.id == myLatestId &&
-                          _isSeenBy(message, otherReadAsync.value);
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: WarmPlayfulSpacing.s3,
-                        ),
-                        child: MessageBubble(
-                          message: message,
-                          mine: mine,
-                          showSeen: showSeen,
-                        ),
+                  // Newest first (the list is reversed); a day separator
+                  // therefore comes after the first message of its day.
+                  final ordered = groupMessages(
+                    messages,
+                    now: DateTime.now(),
+                  ).reversed.toList(growable: false);
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      // The post-meal prompt follows the latest message (index
+                      // 0, just above the composer) and scrolls away with it.
+                      // On a short viewport (large text on a small phone) it
+                      // would cover the whole thread, so it goes above the
+                      // oldest message instead and the latest ones stay visible.
+                      // Decided only while the keyboard is closed: the list
+                      // shrinks when it opens, and moving the card then would
+                      // drop its state and fire the analytics event again.
+                      if (!keyboardOpen) {
+                        _cardBelow = constraints.maxHeight >= _roomForCardBelow;
+                      }
+                      final cardBelow = _cardBelow;
+                      final offset = postMealCard != null && cardBelow ? 1 : 0;
+                      final count =
+                          ordered.length + (postMealCard == null ? 0 : 1);
+                      return ListView.builder(
+                        key: const Key('chat_messages_list'),
+                        reverse: true,
+                        padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                        itemCount: count,
+                        itemBuilder: (context, index) {
+                          if (postMealCard != null &&
+                              index == (cardBelow ? 0 : count - 1)) {
+                            return postMealCard;
+                          }
+                          final entry = ordered[index - offset];
+                          if (entry is DaySeparatorEntry) {
+                            return DaySeparator(label: entry.label);
+                          }
+                          entry as MessageEntry;
+                          final message = entry.message;
+                          final mine =
+                              myUid != null && message.senderId == myUid;
+                          final showSeen =
+                              mine &&
+                              message.id == myLatestId &&
+                              _isSeenBy(message, otherReadAsync.value);
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: entry.endsRun
+                                  ? WarmPlayfulSpacing.s3
+                                  : WarmPlayfulSpacing.s1,
+                            ),
+                            child: MessageBubble(
+                              message: message,
+                              mine: mine,
+                              showSeen: showSeen,
+                              showTimestamp: entry.endsRun,
+                            ),
+                          );
+                        },
                       );
                     },
                   );
                 },
               ),
             ),
-            if (!(messagesAsync.hasError && _isChatGone(messagesAsync.error!)))
+            // A thread that failed to load shows only Retry: nothing to reply
+            // to (this also covers the cancelled-match state).
+            if (!messagesAsync.hasError)
               MessageComposer(matchId: widget.matchId),
           ],
         ),
@@ -315,3 +374,26 @@ class _ChatAppBarTitle extends ConsumerWidget {
 /// permission-denied (the participant check `get()`s a missing document).
 bool _isChatGone(Object error) =>
     error.toString().contains('permission-denied');
+
+/// Keeps its child mounted when the list scrolls it out of view, so the
+/// post-meal card is not rebuilt (and its analytics event not re-fired).
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}

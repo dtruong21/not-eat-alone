@@ -1,22 +1,26 @@
 /// Settings screen (`/settings`) — reached from the Profile tab.
 ///
-/// Owns the app's destructive/account actions (moved out of
-/// `profile_edit_screen`, which stays focused on editing profile fields):
-/// support contact, legal links, account deletion, sign-out, and the app version footer.
+/// Grouped Account / Safety / Notifications (iOS) / Legal / About, with the
+/// destructive Delete account last. Owns the account actions (moved out of
+/// `profile_edit_screen`, which stays focused on editing profile fields).
 library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/config/legal_urls.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
@@ -32,6 +36,13 @@ final appVersionProvider = FutureProvider<String>((ref) async {
   final info = await PackageInfo.fromPlatform();
   return 'v${info.version} (build ${info.buildNumber})';
 });
+
+/// Opens this app's page in the iOS Settings app (where notifications are
+/// switched on or off). A provider so tests can replace the launch.
+final openAppSettingsProvider = Provider<Future<bool> Function()>(
+  (ref) =>
+      () => launchUrl(Uri.parse('app-settings:')),
+);
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -130,9 +141,7 @@ class SettingsScreen extends ConsumerWidget {
     final error = ref.read(accountDeletionControllerProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't delete account. Try again."),
-        ),
+        const SnackBar(content: Text("Couldn't delete account. Try again.")),
       );
     }
     // On success, signOut flips authState and the router redirect sends the
@@ -159,12 +168,13 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final isDeleting = ref.watch(
       accountDeletionControllerProvider.select((s) => s.isLoading),
     );
     final versionAsync = ref.watch(appVersionProvider);
+    final phone = ref.watch(
+      authStateProvider.select((a) => a.value?.phoneNumber),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -172,7 +182,44 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s3),
           children: [
-            const _SectionHeader('Support'),
+            const _SectionHeader('Account'),
+            ListTile(
+              key: const Key('settings_edit_profile'),
+              leading: const Icon(Icons.person_outline_rounded),
+              title: const Text('Edit profile'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              // `/profile` is a shell tab: go, not push.
+              onTap: () => context.go('/profile'),
+            ),
+            if (phone != null)
+              ListTile(
+                key: const Key('settings_phone_number'),
+                leading: const Icon(Icons.phone_outlined),
+                title: const Text('Phone number'),
+                subtitle: Text(formatPhoneDisplay(phone)),
+              ),
+            ListTile(
+              key: const Key('settings_sign_out'),
+              leading: const Icon(Icons.logout_rounded),
+              title: const Text('Sign out'),
+              onTap: () => unawaited(_confirmSignOut(context, ref)),
+            ),
+            const Divider(),
+            const _SectionHeader('Safety'),
+            ListTile(
+              key: const Key('settings_blocked_people'),
+              leading: const Icon(Icons.block_rounded),
+              title: const Text('Blocked people'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => unawaited(context.push('/settings/blocked')),
+            ),
+            ListTile(
+              key: const Key('settings_safety_tips'),
+              leading: const Icon(Icons.health_and_safety_outlined),
+              title: const Text('Safety tips'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => unawaited(context.push('/settings/safety')),
+            ),
             ListTile(
               key: const Key('settings_contact_support'),
               leading: const Icon(Icons.mail_outline_rounded),
@@ -181,6 +228,20 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => unawaited(_contactSupport(context)),
             ),
             const Divider(),
+            // ponytail: iOS only; Android has no equivalent `app-settings:`
+            // URL without a new package, add the Android row with it.
+            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+              const _SectionHeader('Notifications'),
+              ListTile(
+                key: const Key('settings_notifications'),
+                leading: const Icon(Icons.notifications_none_rounded),
+                title: const Text('Notification settings'),
+                subtitle: const Text('Manage notifications in iOS Settings'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => unawaited(ref.read(openAppSettingsProvider)()),
+              ),
+              const Divider(),
+            ],
             const _SectionHeader('Legal'),
             ListTile(
               key: const Key('settings_privacy_policy'),
@@ -194,34 +255,16 @@ class SettingsScreen extends ConsumerWidget {
               title: const Text('Terms of Service'),
               onTap: () => unawaited(_openUrl(termsOfServiceUrl)),
             ),
-            const Divider(),
-            const _SectionHeader('Account'),
             ListTile(
-              key: const Key('settings_sign_out'),
-              leading: const Icon(Icons.logout_rounded),
-              title: const Text('Sign out'),
-              onTap: () => unawaited(_confirmSignOut(context, ref)),
-            ),
-            ListTile(
-              key: const Key('settings_delete_account'),
-              leading: Icon(Icons.delete_outline_rounded, color: colors.error),
-              title: Text(
-                'Delete account',
-                style: TextStyle(color: colors.error),
+              key: const Key('settings_licenses'),
+              leading: const Icon(Icons.article_outlined),
+              title: const Text('Open-source licences'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: FlavorConfig.current.appTitle,
+                applicationVersion: versionAsync.value,
               ),
-              trailing: isDeleting
-                  ? SizedBox(
-                      height: WarmPlayfulSpacing.s4,
-                      width: WarmPlayfulSpacing.s4,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colors.error,
-                      ),
-                    )
-                  : null,
-              onTap: isDeleting
-                  ? null
-                  : () => unawaited(_deleteAccount(context, ref)),
             ),
             const Divider(),
             const _SectionHeader('About'),
@@ -234,6 +277,32 @@ class SettingsScreen extends ConsumerWidget {
                 error: (error, stackTrace) => const Text('Unavailable'),
                 data: Text.new,
               ),
+            ),
+            const Divider(),
+            // Last and apart: the one destructive action.
+            ListTile(
+              key: const Key('settings_delete_account'),
+              leading: Icon(
+                Icons.delete_outline_rounded,
+                color: context.wp.dangerText,
+              ),
+              title: Text(
+                'Delete account',
+                style: TextStyle(color: context.wp.dangerText),
+              ),
+              trailing: isDeleting
+                  ? SizedBox(
+                      height: WarmPlayfulSpacing.s4,
+                      width: WarmPlayfulSpacing.s4,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: context.wp.dangerText,
+                      ),
+                    )
+                  : null,
+              onTap: isDeleting
+                  ? null
+                  : () => unawaited(_deleteAccount(context, ref)),
             ),
           ],
         ),
@@ -256,13 +325,16 @@ class _SectionHeader extends StatelessWidget {
         WarmPlayfulSpacing.s4,
         WarmPlayfulSpacing.s2,
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: WarmPlayfulType.captionSize,
-          height: WarmPlayfulType.captionHeight,
-          fontWeight: WarmPlayfulType.captionWeight,
-          color: context.wp.muted,
+      child: Semantics(
+        header: true,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: WarmPlayfulType.captionSize,
+            height: WarmPlayfulType.captionHeight,
+            fontWeight: WarmPlayfulType.captionWeight,
+            color: context.wp.muted,
+          ),
         ),
       ),
     );

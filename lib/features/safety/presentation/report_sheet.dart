@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/safety/application/report_controller.dart';
@@ -28,26 +29,37 @@ const _reportReasons = <String, String>{
 };
 
 /// Opens the report sheet for [targetType]/[targetId] (`'user'`, `'meal'`, or
-/// `'message'` — see the spec's `reports` model).
+/// `'message'` — see the spec's `reports` model). [targetName] (a person's
+/// name) titles the sheet "Report NAME"; without it a meal reads "Report
+/// this meal" and anything else just "Report".
 Future<void> showReportSheet(
   BuildContext context, {
   required String targetType,
   required String targetId,
+  String? targetName,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) =>
-        _ReportSheet(targetType: targetType, targetId: targetId),
+    builder: (context) => _ReportSheet(
+      targetType: targetType,
+      targetId: targetId,
+      targetName: targetName,
+    ),
   );
 }
 
 class _ReportSheet extends ConsumerStatefulWidget {
-  const _ReportSheet({required this.targetType, required this.targetId});
+  const _ReportSheet({
+    required this.targetType,
+    required this.targetId,
+    required this.targetName,
+  });
 
   final String targetType;
   final String targetId;
+  final String? targetName;
 
   @override
   ConsumerState<_ReportSheet> createState() => _ReportSheetState();
@@ -104,6 +116,12 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
     final isSubmitting = ref.watch(reportControllerProvider).isLoading;
+    final name = widget.targetName;
+    final title = name != null
+        ? 'Report $name'
+        : widget.targetType == 'meal'
+        ? 'Report this meal'
+        : 'Report';
 
     return Padding(
       padding: EdgeInsets.only(
@@ -121,7 +139,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Report',
+              title,
               style: textTheme.titleMedium?.copyWith(
                 color: colors.onSurface,
                 fontWeight: WarmPlayfulType.h2Weight,
@@ -149,11 +167,12 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               controller: _noteController,
               enabled: !isSubmitting,
               maxLines: 3,
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 hintText: 'Add a note (optional)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-                ),
+                // The sheet and the field share a fill: draw the edge.
+                enabledBorder: sheetFieldBorder(context),
+                disabledBorder: sheetFieldBorder(context),
               ),
             ),
             const SizedBox(height: WarmPlayfulSpacing.s4),

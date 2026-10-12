@@ -13,6 +13,7 @@ import 'package:not_eat_alone/features/chat/application/chat_messages_provider.d
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/chat/presentation/chat_list_screen.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/match.dart';
+import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
@@ -55,6 +56,10 @@ void main() {
           builder: (context, state) => const ChatListScreen(),
         ),
         GoRoute(
+          path: '/discover',
+          builder: (context, state) => const Scaffold(body: Text('discover')),
+        ),
+        GoRoute(
           path: '/chats/:matchId',
           builder: (context, state) =>
               Scaffold(body: Text('chat:${state.pathParameters['matchId']}')),
@@ -69,6 +74,7 @@ void main() {
           authStateProvider.overrideWith(
             (ref) => Stream.value(const AuthUser(uid: 'me')),
           ),
+          matchMealProvider.overrideWith((ref, matchId) async => null),
           lastMessageProvider('m1').overrideWith(
             (ref) => const Stream<ChatMessage?>.empty(),
           ),
@@ -96,10 +102,19 @@ void main() {
   testWidgets('empty chat list shows the empty state', (tester) async {
     await pumpChatList(tester, chatListState: const AsyncData([]));
 
-    expect(
-      find.text('No chats yet — match on a meal to start talking'),
-      findsOneWidget,
-    );
+    expect(find.text('No chats yet'), findsOneWidget);
+    expect(find.text('Match on a meal to start talking.'), findsOneWidget);
+  });
+
+  testWidgets('the empty state offers Find a meal, which opens Discover', (
+    tester,
+  ) async {
+    await pumpChatList(tester, chatListState: const AsyncData([]));
+
+    await tester.tap(find.text('Find a meal'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('discover'), findsOneWidget);
   });
 
   testWidgets('one item shows the other participant name', (tester) async {
@@ -153,6 +168,7 @@ void main() {
           authStateProvider.overrideWith(
             (ref) => Stream.value(const AuthUser(uid: 'me')),
           ),
+          matchMealProvider.overrideWith((ref, matchId) async => null),
           chatMessagesProvider('m1').overrideWith(
             (ref) => const Stream<List<ChatMessage>>.empty(),
           ),

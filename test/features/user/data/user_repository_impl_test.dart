@@ -27,7 +27,10 @@ void main() {
       expect(own.ageVerified, isTrue);
 
       final privateDoc = await firestore.collection('users').doc('u1').get();
-      expect(privateDoc.data()!.keys, containsAll(['uid', 'dob', 'ageVerified']));
+      expect(
+        privateDoc.data()!.keys,
+        containsAll(['uid', 'dob', 'ageVerified']),
+      );
       final publicDoc = await firestore.collection('profiles').doc('u1').get();
       expect(publicDoc.data(), {'uid': 'u1', 'age': ageFromDob(dob)});
     });
@@ -51,10 +54,28 @@ void main() {
       expect(publicData.keys, isNot(contains('gender')));
       expect(publicData['displayName'], 'Ada');
 
-      final privateData =
-          (await firestore.collection('users').doc('u1').get()).data()!;
+      final privateData = (await firestore.collection('users').doc('u1').get())
+          .data()!;
       expect(privateData['gender'], 'woman');
       expect(privateData.keys, isNot(contains('displayName')));
+    });
+
+    test('updateProfile with an empty bio overwrites the old bio', () async {
+      await repository.updateProfile(uid: 'u1', bio: 'Loves ramen.');
+      await repository.updateProfile(uid: 'u1', bio: '');
+
+      final data = (await firestore.collection('profiles').doc('u1').get())
+          .data()!;
+      expect(data['bio'], '');
+    });
+
+    test('updateProfile without a bio leaves the bio unchanged', () async {
+      await repository.updateProfile(uid: 'u1', bio: 'Loves ramen.');
+      await repository.updateProfile(uid: 'u1', displayName: 'Ada');
+
+      final data = (await firestore.collection('profiles').doc('u1').get())
+          .data()!;
+      expect(data['bio'], 'Loves ramen.');
     });
 
     test('watch (another person) exposes only the public profile', () async {
@@ -107,10 +128,10 @@ void main() {
     test('a malformed public doc throws RepositoryParseException', () async {
       // `photoUrls` has the wrong type; the converter surfaces a typed error
       // (fake_cloud_firestore resolves the initial snapshot synchronously).
-      await firestore
-          .collection('profiles')
-          .doc('bad')
-          .set({'uid': 'bad', 'photoUrls': 'nope'});
+      await firestore.collection('profiles').doc('bad').set({
+        'uid': 'bad',
+        'photoUrls': 'nope',
+      });
 
       expect(
         () => repository.watch('bad').first,
@@ -141,10 +162,10 @@ void main() {
     test('watchOwn refreshes a stale public age (birthday passed)', () async {
       final dob = DateTime.utc(2000, 1, 1);
       await repository.upsertAgeVerified(uid: 'u1', dob: dob);
-      await firestore
-          .collection('profiles')
-          .doc('u1')
-          .set({'uid': 'u1', 'age': 1}, SetOptions(merge: true));
+      await firestore.collection('profiles').doc('u1').set({
+        'uid': 'u1',
+        'age': 1,
+      }, SetOptions(merge: true));
 
       // Listening is enough to trigger the self-heal; wait for the rewrite.
       final sub = repository.watchOwn('u1').listen((_) {});

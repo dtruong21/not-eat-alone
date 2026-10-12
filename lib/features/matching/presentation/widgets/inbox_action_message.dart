@@ -2,16 +2,10 @@
 /// sees. Kept free of Flutter/Riverpod so every row is unit-testable.
 library;
 
+import 'package:not_eat_alone/features/matching/domain/inbox_action.dart';
 import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 
-/// A host decision on a pending join request.
-enum InboxAction {
-  /// The host accepts the request.
-  approve,
-
-  /// The host declines the request.
-  deny,
-}
+export 'package:not_eat_alone/features/matching/domain/inbox_action.dart';
 
 /// Snackbar text for [action] given its outcome: [error] is `null` on
 /// success, otherwise whatever the controller surfaced.

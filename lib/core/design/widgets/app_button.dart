@@ -18,6 +18,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.primary,
     this.isLoading = false,
     this.loadingLabel,
+    this.semanticLabel,
     this.icon,
     this.expand = true,
     this.height,
@@ -39,6 +40,11 @@ class AppButton extends StatelessWidget {
 
   /// Text shown (and announced) while loading; defaults to [label].
   final String? loadingLabel;
+
+  /// What screen readers say while idle when [label] alone is ambiguous in a
+  /// list (e.g. 'Unblock Bastien' on a button reading 'Unblock'). The loading
+  /// announcement still uses [loadingLabel].
+  final String? semanticLabel;
 
   /// Optional leading widget, replaced by the spinner while loading.
   final Widget? icon;
@@ -88,6 +94,7 @@ class AppButton extends StatelessWidget {
 
     final text = Text(
       label,
+      semanticsLabel: semanticLabel,
       maxLines: maxLines,
       textAlign: TextAlign.center,
       overflow: TextOverflow.ellipsis,

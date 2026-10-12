@@ -9,8 +9,26 @@ import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/matching/application/request_providers.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
+import 'package:not_eat_alone/features/matching/domain/inbox_action.dart';
 
 part 'inbox_action_controller.g.dart';
+
+/// Requests whose Approve/Deny is in flight, by request id. The controller's
+/// own state is shared by every inbox tile, so each tile reads THIS to know
+/// whether its own request is busy (and which button to spin) while the other
+/// tiles stay enabled. `keepAlive` so it outlives a tile unmounted mid-flight.
+@Riverpod(keepAlive: true)
+class InboxPending extends _$InboxPending {
+  @override
+  Map<String, InboxAction> build() => const {};
+
+  /// Marks [requestId] as busy with [action].
+  void start(String requestId, InboxAction action) =>
+      state = {...state, requestId: action};
+
+  /// Clears [requestId]'s busy mark.
+  void finish(String requestId) => state = {...state}..remove(requestId);
+}
 
 @riverpod
 class InboxActionController extends _$InboxActionController {
@@ -27,6 +45,8 @@ class InboxActionController extends _$InboxActionController {
   Future<Object?> approve(JoinRequest request) async {
     // Keep alive until settled — see CreateRequestController.request.
     final link = ref.keepAlive();
+    final pending = ref.read(inboxPendingProvider.notifier)
+      ..start(request.id, InboxAction.approve);
     try {
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
@@ -38,6 +58,7 @@ class InboxActionController extends _$InboxActionController {
       });
       return state.error;
     } finally {
+      pending.finish(request.id);
       link.close();
     }
   }
@@ -47,6 +68,8 @@ class InboxActionController extends _$InboxActionController {
   Future<Object?> deny(JoinRequest request) async {
     // Keep alive until settled — see CreateRequestController.request.
     final link = ref.keepAlive();
+    final pending = ref.read(inboxPendingProvider.notifier)
+      ..start(request.id, InboxAction.deny);
     try {
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
@@ -55,6 +78,7 @@ class InboxActionController extends _$InboxActionController {
       });
       return state.error;
     } finally {
+      pending.finish(request.id);
       link.close();
     }
   }

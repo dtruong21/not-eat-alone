@@ -49,6 +49,8 @@ import 'package:not_eat_alone/features/meal/presentation/meal_detail_screen.dart
 import 'package:not_eat_alone/features/meal/presentation/restaurant_search_screen.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/age_gate_screen.dart';
 import 'package:not_eat_alone/features/onboarding/presentation/profile_setup_screen.dart';
+import 'package:not_eat_alone/features/safety/presentation/blocked_people_screen.dart';
+import 'package:not_eat_alone/features/safety/presentation/safety_tips_screen.dart';
 import 'package:not_eat_alone/features/settings/presentation/settings_screen.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/presentation/profile_edit_screen.dart';
@@ -247,6 +249,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/blocked',
+        builder: (context, state) => const BlockedPeopleScreen(),
+      ),
+      GoRoute(
+        path: '/settings/safety',
+        builder: (context, state) => const SafetyTipsScreen(),
       ),
       GoRoute(
         path: '/chats/:matchId',

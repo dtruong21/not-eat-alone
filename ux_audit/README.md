@@ -92,7 +92,7 @@ blank).
 
 ## Shots
 
-Numbering is by screen, not capture order; names sort in flow order. 67 per cell (65 before plan 17a added `07` and `13`)
+Numbering is by screen, not capture order; names sort in flow order. 73 per cell (68 before plan 18 added `76`, `82`, `82b`, `84`, `86`, `87` and `93_discover_error` stopped being producible, see below; 65 before plan 17a added `07` and `13`)
 (one file per name below, `<name>.png`).
 
 | Range | Screen | Shots |
@@ -103,9 +103,9 @@ Numbering is by screen, not capture order; names sort in flow order. 67 per cell
 | 30-37 | Create a meal | `30_restaurant_search`, `31_restaurant_search_no_matches`, `32_restaurant_search_filtered`, `33_create_meal_empty`, `34_create_meal_date_picker`, `35_create_meal_time_picker`, `36_create_meal_filled`, `37_create_meal_in_flight` |
 | 40-49 | Meal detail | `40_meal_detail_open` (idle "Request to join"), `42_meal_detail_requested`, `43_meal_detail_matched`, `44_meal_detail_not_selected`, `45_meal_detail_women_only` (as a woman), `46_meal_detail_women_only_disabled` (as a man), `47_meal_detail_menu` (report/block), `48_meal_detail_own`, `49_meal_detail_request_rejected` |
 | 51-55 | Requests inbox | `51_requests_empty`, `52_requests_data` (two pending, one past-meal chip), `53_requests_scrolled`, `54_requests_approve_in_flight`, `55_requests_deny_in_flight` |
-| 60-75 | Chats | `60_chats_loading`, `61_chats_empty`, `62_chats_data`, `63_chat_messages` (safety tips, "Seen"), `64_chat_messages_older`, `65_chat_empty`, `66_chat_send_pending`, `67_chat_menu`, `68_chat_report_sheet`, `69_chat_report_filled`, `70_chat_report_in_flight`, `71_chat_block_dialog`, `72_chat_post_meal_card`, `73_rating_sheet`, `74_rating_sheet_filled`, `75_rating_sheet_in_flight` |
-| 80-85 | Profile, settings | `80_profile_edit`, `81_profile_edit_scrolled`, `83_settings` (the whole list: it fits one screen), `85_settings_delete_dialog` |
-| 90-93 | Error states (last stage) | `90_chat_error`, `91_requests_error`, `92_chats_error`, `93_discover_error` |
+| 60-75 | Chats | `60_chats_loading`, `61_chats_empty`, `62_chats_data`, `63_chat_messages` (meal header, safety-tips banner, day separators, "Seen"), `64_chat_messages_older`, `65_chat_empty`, `66_chat_send_pending`, `67_chat_menu`, `68_chat_report_sheet`, `69_chat_report_filled`, `70_chat_report_in_flight`, `71_chat_block_dialog`, `76_chat_safety_sheet` (the banner's full tips), `72_chat_post_meal_card`, `73_rating_sheet`, `74_rating_sheet_filled`, `75_rating_sheet_in_flight` |
+| 80-87 | Profile, settings | `80_profile_edit` (Save dimmed), `81_profile_edit_scrolled`, `82_profile_edited` (Save lit), `82b_profile_name_blank` ("Still needed: your name."), `83_settings` (top), `84_settings_bottom` (Legal, About, Delete account), `85_settings_delete_dialog`, `86_blocked_people` (the seeded block of Hugo), `87_blocked_people_empty` (after a real Unblock) |
+| 90-93 | Error states (last stage) | `90_chat_error`, `91_requests_error`, `92_chats_error`; `93_discover_error` is skipped (`UXNOTE` in the log): Discover now ignores a meal it cannot parse, so the malformed meal no longer makes the feed fail |
 
 Keyboards: a text field that is focused by the test raises the iOS keyboard, as
 it would for a user, so some form shots show it.

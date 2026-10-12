@@ -1,9 +1,9 @@
 /// The meal-detail screen's pinned action bar.
 ///
 /// One full-width [AppButton] plus a reserved status line for every request
-/// state (own meal, women-only block, loading, error, none, pending, approved,
-/// denied), so the bar never changes size as the state changes (at a given
-/// text size and width). It is also the
+/// state (own meal, cancelled meal, women-only block, loading, error, none,
+/// pending, approved, denied), so the bar never changes size as the state
+/// changes (at a given text size and width). It is also the
 /// always-mounted home of the server-rejection snackbar: the "Request to join"
 /// button is swapped for "Requested" by the optimistic write before the server
 /// answers, so the listener cannot live on that button.
@@ -25,6 +25,7 @@ import 'package:not_eat_alone/features/matching/application/meal_request_state_p
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
 import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/meal_status.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 
@@ -49,6 +50,7 @@ const _buttonLabels = <(String, double)>[
   ('Not selected', 0),
   ('This is your meal', 0),
   ('Women only', 0),
+  ('Meal cancelled', 0),
   ('Try again', 0),
 ];
 
@@ -126,6 +128,24 @@ class _BarContent extends ConsumerWidget {
           onPressed: null,
         ),
         status: 'See requests in the Requests tab.',
+      );
+    }
+
+    // A cancelled meal is terminal and wins over everything below: the host's
+    // "Can't make it" sets the meal to `cancelled` but leaves the guest's
+    // request `approved`, which must not read as "Open chat". After the
+    // own-meal check (the host keeps their own view) and before the women-only
+    // check (eligibility is moot once the meal is gone).
+    if (meal.status == MealStatus.cancelled) {
+      return const _Layout(
+        action: AppButton(
+          key: Key('meal_detail_cancelled_button'),
+          label: 'Meal cancelled',
+          variant: AppButtonVariant.tonal,
+          maxLines: _maxLabelLines,
+          onPressed: null,
+        ),
+        status: 'The host cancelled this meal.',
       );
     }
 

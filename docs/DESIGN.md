@@ -289,6 +289,15 @@ ClipRRect(
 );
 ```
 
+#### Report, rating and block sheets (UX plan 18)
+
+Sheets and dialogs name who they are about so a person never has to remember which profile they came from. Widget-tested.
+
+- **Report** (`showReportSheet`): title "Report <name>" (user targets; the name is read from the already-loaded public profile at action time), "Report this meal" for meal targets, plain "Report" when the name is not loaded. The note field has a visible 1 px `wp.muted` edge (`sheetFieldBorder`, a local decoration, not a theme change; >= 3:1 against the sheet) and a `done` keyboard action. The selected reason chip label uses `wp.onAccent` (the chip theme's default measured 2.5:1 light / 1.7:1 dark on coral).
+- **Rating** (`showRatingSheet`): title "How was your meal with <name>?" (plain fallback). Stars: unselected = outline in `wp.muted`, selected = filled in `onSurface` (the sage tertiary is only 1.9:1 on the sheet; state is shape plus 10:1 colour). The comment field gets the same visible edge. Both sheets scroll with the keyboard open.
+- **Block dialog** ("Block <name>?", fallback "Block this person?"): the confirm button is in `wp.dangerText`; Cancel stays neutral.
+- **Safety tips sheet** (`showSafetyTipsSheet`, key `safety_tips_sheet`): the same four tips as `/settings/safety` (`SafetyTipsList`), scrollable, with a "Got it" button.
+
 ## Auth and onboarding patterns (UX plan 17a)
 
 Sign-in, phone code, age gate and profile setup. All widget-tested unless noted; what only the capture shows is listed in `docs/ux/17a-verification.md`.
@@ -315,7 +324,7 @@ Widget-tested unless noted; what only the capture shows is listed in `docs/ux/17
 
 ### Meal-detail action bar (`MealActionBar`, `lib/features/meal/presentation/widgets/meal_action_bar.dart`)
 
-The request button is pinned: it is `Scaffold.bottomNavigationBar` (a `Material` with card elevation inside a `SafeArea`, padding `s4`), so it never scrolls away under a long page. One full-width `AppButton` (up to two lines) plus a status line below it. The bar has ONE height in every state at a given text size and width: `_Layout` measures every label the button can show ("Request to join", "Sending request…", "Requested", "Open chat" with its icon, "Not selected", "This is your meal", "Women only", "Try again") with the bar's text scaler and the width left inside a button, takes the largest line count (1 or 2), and sizes the action slot once as `max(WarmPlayfulSize.actionHeight, lines x label line height + 2 x s3)` for every state, the loading skeleton included (a button grows to the slot, the skeleton fills it). The status slot is always the same height too (empty when there is no status). Text scale INSIDE the bar is clamped to 2.0 (`MediaQuery.withClampedTextScaling`, the app's tested ceiling), so the main action honours large text: on 320 x 568 the bar is 83 px at 1.0x, 91 px at 1.3x and 212 px at 2.0x, which leaves the scroll body 397 / 389 / 268 px (widget-tested). Why a shared height: a bar that changes height from state to state shifts the whole page when a request resolves. The status line is one line up to 1.3x and may use two lines above it (both reserved in every state), with an ellipsis if it needs more; its full text is the `Semantics` label (a `liveRegion` + `container` node mounted in every state, so a status that appears is announced and VoiceOver reads the whole sentence even when it is cut on screen).
+The request button is pinned: it is `Scaffold.bottomNavigationBar` (a `Material` with card elevation inside a `SafeArea`, padding `s4`), so it never scrolls away under a long page. One full-width `AppButton` (up to two lines) plus a status line below it. The bar has ONE height in every state at a given text size and width: `_Layout` measures every label the button can show ("Request to join", "Sending request…", "Requested", "Open chat" with its icon, "Not selected", "Meal cancelled", "This is your meal", "Women only", "Try again") with the bar's text scaler and the width left inside a button, takes the largest line count (1 or 2), and sizes the action slot once as `max(WarmPlayfulSize.actionHeight, lines x label line height + 2 x s3)` for every state, the loading skeleton included (a button grows to the slot, the skeleton fills it). The status slot is always the same height too (empty when there is no status). Text scale INSIDE the bar is clamped to 2.0 (`MediaQuery.withClampedTextScaling`, the app's tested ceiling), so the main action honours large text: on 320 x 568 the bar is 83 px at 1.0x, 91 px at 1.3x and 212 px at 2.0x, which leaves the scroll body 397 / 389 / 268 px (widget-tested). Why a shared height: a bar that changes height from state to state shifts the whole page when a request resolves. The status line is one line up to 1.3x and may use two lines above it (both reserved in every state), with an ellipsis if it needs more; its full text is the `Semantics` label (a `liveRegion` + `container` node mounted in every state, so a status that appears is announced and VoiceOver reads the whole sentence even when it is cut on screen).
 
 | Viewer state | Button (key) | Status line |
 |---|---|---|
@@ -327,6 +336,7 @@ The request button is pinned: it is `Scaffold.bottomNavigationBar` (a `Material`
 | Pending | "Requested", tonal, disabled (`meal_detail_requested_button`) | "Waiting for the host to reply." |
 | Approved | "Open chat" with a chat icon, primary, enabled, opens `/chats/{mealId}` (`meal_detail_matched_banner`: the key of the old banner, kept so E2E and the capture still find it) | "You're matched. Say hi!" |
 | Denied | "Not selected", tonal, disabled (`meal_detail_not_selected_button`) | "The host chose someone else." |
+| Meal cancelled (any viewer but the host) | "Meal cancelled", tonal, disabled (`meal_detail_cancelled_button`); checked after "own meal" (the host keeps "This is your meal") and before the women-only and request branches | "The host cancelled this meal." (also used when the host deleted their account). The meal arrives as a static snapshot through the route `extra`, so a meal cancelled while the screen is already open updates only on the next open (live meal stream is a follow-up) |
 
 The bar is also the always-mounted home of the failed-request snackbar. Latency compensation swaps "Request to join" for "Requested" before the server answers, so a listener on the button would be gone when a rejection arrives; the bar listens to the create-request controller (loading to error only) and shows "Couldn't send your request. Try again.". `createRequest` wraps every failure in `RepositoryWriteException`, so the specific "This meal is no longer open." copy (which the code already maps from `MealNoLongerOpenException`) never shows in production yet (follow-up: the repository must rethrow it). The widget test for the equal height in all states runs at 1.0x, 1.3x and 2.0x text on 320 x 568 (no overflow, no label ellipsized or clipped, scroll body at least 220 px).
 
@@ -350,6 +360,32 @@ The list has bottom padding of `actionHeight + s8` so the extended "Create a mea
 **Search copy.** With the untouched field the screen shows the default restaurant list; if that is empty it says "No restaurants to show yet.". A typed query without results says "No restaurant called “<query>”. Try another name." (the query the results answer, not the live text; padded `s4` so a long query wraps inside the margins).
 
 ---
+
+## Requests, chat and profile (UX plan 18)
+
+Widget-tested unless noted; what only the capture shows is in `docs/ux/18-verification.md`.
+
+### Request inbox (`RequestInboxTile`)
+
+- **Actions.** Approve = `AppButton` primary (coral, 56 high; "Approving…" with a spinner while in flight); Deny = `AppButton` text variant in `wp.dangerText` (>= 4.5:1 in both modes; "Denying…"). Both live in an `OverflowBar(alignment: end, overflowAlignment: end, overflowDirection: up)`: side by side when they fit, stacked with Approve on top at narrow widths / large text (no overflow at 320 px, 2.0x; both >= 48 high). Past-meal requests keep Approve disabled (a tooltip and a semantics hint say "Meal time has passed") and Deny enabled.
+- **Busy state is per request.** `inboxPendingProvider` (a keep-alive map `requestId -> InboxAction`, set before the await and cleared in `finally`) decides which tile is busy: both buttons of THAT tile disable and the pressed one shows the spinner; other tiles stay usable and two concurrent actions do not clobber each other. The 5 snackbar outcomes and the unmount-mid-flight handling are unchanged.
+- **Guest rating.** `RatingBadge(uid: guestId)` under the guest name.
+- **Tab icon.** Requests tab = `Icons.inbox_outlined` / `Icons.inbox` with the count `Badge` (the old "unread dot" mail icon is gone).
+
+### Chat anatomy (`ChatScreen`, top to bottom)
+
+1. App bar: title, "Can't make it" (meal cancel / withdraw), safety menu.
+2. **Meal header** (`ChatMealHeader`, key `chat_meal_header`): one row (min 48), "Restaurant · Tue 6 Oct, 20:30" in muted `bodyMedium`, ellipsis, chevron; tap pushes the meal detail. Nothing while the meal loads or is missing.
+3. **Safety banner** (`SafetyTipsBanner`, key `safety_tips_banner`): one line "Meeting up? Safety tips", tap opens the safety sheet, an X ("Dismiss safety tips", 48 dp) hides it for the session. It is a banner, not a `Card`, so it never competes with the messages (the old tips card took up to 40% of the screen).
+4. Message list (the only flexible child): **day separators** ("Today", "Yesterday", "Mon 5 Oct", with the year when it differs; `formatDayLabel`) and bubbles grouped into runs: a time only under the last bubble of a run, gap `s3` after a run and `s1` inside it.
+5. **Post-meal card** (`PostMealCard`, key `post_meal_card`) is a list item, so it scrolls with the messages instead of being pinned: just above the composer, or above the oldest message on a short viewport (< 2 x `keyboardReveal`), or above "Say hi" in an empty thread (decided only while the keyboard is closed, so opening the keyboard never moves it). It is `Offstage` while the keyboard is open (state survives, `post_meal_prompt_shown` fires once). Layout: a Row 3:2 (text : "Rate <name>" button) up to text scale 1.3, a Column with a full-width button above it; 108 px tall at 320 px / 1.0x, 266 px at 2.0x.
+6. Composer: clears the moment you send and restores the text if the send fails. Hidden when the messages fail to load (an `ErrorState` with retry is the only content) and in the "no longer available" state.
+
+The header and banner step aside while the keyboard is open. The Chats list rows add a meal line ("Restaurant · date") under the name, an `Unread` semantics label on the dot, and the empty state is "No chats yet" with a "Find a meal" button.
+
+### Profile (`ProfileEditScreen`, the Profile tab)
+
+Title "Profile"; "Your rating" + `RatingBadge`, or "No ratings yet", wrapping at large text. **Save is enabled only while the (trimmed) name, bio or gender differ from the saved profile AND the form is valid.** Photos are excluded from that comparison: add/remove write straight to the profile and never wait for Save. When the form is invalid (blank name, no photo) a muted live-region line under Save says "Still needed: <missing fields>."; an unchanged but valid form shows no hint. A cleared bio is sent as an empty string (null would mean "leave unchanged"). Success: "Profile saved" snackbar, stay on the screen, Save disabled again. Failure: the form and typed text stay, the error shows, Save stays enabled for a retry.
 
 ## Date and time formats
 
@@ -435,3 +471,21 @@ Added via `/design`.
 **Tests to write (via `/test`):** hidden for 0,0 / missing coords; visible otherwise; tap fires `directions_opened` once and calls the injected launcher with the expected URL per platform; launcher failure shows "Couldn't open Maps"; semantics label present; large text scale (2.0) renders without overflow; dark theme golden-free contrast assertion on the button theme.
 
 ---
+
+## Settings and Blocked people (UX plan 18)
+
+Settings is one `ListView` of grouped rows (`Settings`, widget-tested in `settings_screen_test.dart`). Group titles are small headers (`Semantics(header: true)`), navigating rows carry a trailing `chevron_right_rounded`, every row is >= 48 high.
+
+| Group | Rows (key) | Notes |
+|---|---|---|
+| Account | Edit profile (`settings_edit_profile`, `go('/profile')`), Phone number (read-only, only when the sign-in has one), Sign out (`settings_sign_out`) | Sign out confirms first |
+| Safety | Blocked people (`/settings/blocked`), Safety tips (`/settings/safety`), Contact support (email) | |
+| Notifications | "Notification settings", subtitle "Manage notifications in iOS Settings" (`settings_notifications`) | iOS only (`defaultTargetPlatform`); hidden on Android |
+| Legal | Privacy Policy, Terms of Service, Open-source licences (`showLicensePage` with app name and version) | |
+| About | Version | |
+| (after a Divider) | Delete account (`settings_delete_account`) | last in the list, `wp.dangerText` |
+
+- Notification settings: one row, opens `app-settings:` through `url_launcher` (injectable `openAppSettingsProvider`). Shown only when `defaultTargetPlatform == iOS`; the Android row is later (it needs an Android settings intent, so a new package).
+- Language switch: not here; it lands with French (plan 19).
+- `/settings/blocked`: AppBar "Blocked people"; rows = avatar (initials fallback), name from the public profile ("Unknown user" if it is gone), outlined "Unblock" button (announced "Unblock <name>" by screen readers; "Unblocking…" while in flight) with a row-level spinner, plain snackbar "Unblocked <name>." (no undo, YAGNI); the button drops below the name at text scale > 1.3. Empty: block icon, "You haven't blocked anyone". Skeleton while loading, ErrorState with retry. Data: `BlockRepository.watchBlockedByMe` (query `pair array-contains uid`, `blockerUid == uid` filtered client-side, because the rules cannot prove a `blockerUid ==` query).
+- `/settings/safety`: the same four tips as the chat sheet (`SafetyTipsList`).

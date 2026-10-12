@@ -6,4 +6,8 @@ abstract class BlockRepository {
   /// Every uid I should hide — the "other" side of any block whose pair
   /// contains me.
   Stream<Set<String>> watchBlockedUserIds(String uid);
+
+  /// Only the uids [uid] blocked themself (not people who blocked them), for
+  /// the Blocked-people screen.
+  Stream<Set<String>> watchBlockedByMe(String uid);
 }

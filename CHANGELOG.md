@@ -23,6 +23,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Added
 
+- A chat now says which meal it is about (restaurant and time, tap to open the meal), the safety tips are a one-line banner you can dismiss that opens the full tips, and messages are grouped under Today / Yesterday / date labels with a time only on the last message of a burst.
 - "Can't make it": in a chat for an upcoming meal, the host can cancel the meal or the guest can withdraw. The other person is told, a cancelled meal is removed, and a withdrawn meal opens up again for others.
 - Reminders for your matched meals: a notification the day before and about 2 hours before, with the restaurant and time (tap to open the chat with your match).
 - Settings now has a "Contact support" row that opens an email to support, with the address shown on screen.
@@ -34,6 +35,13 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Changed
 
+- Request inbox: Approve is now a clear coral button and Deny a quiet red one (they stack at large text sizes instead of overflowing), only the request you tapped shows a spinner while the others stay usable, the guest's rating is shown under their name, and the Requests tab has an inbox icon.
+- The report, rating and block screens now say who they are about ("Report Sam", "How was your meal with Sam?", "Block Sam?"), the text box has a visible edge, selected reasons and stars are easier to read, and "Block" is red.
+- Profile: the tab is titled "Profile" and shows "Your rating" (or "No ratings yet"). Save is only available when you changed your name, bio or gender, and confirms with "Profile saved"; with a blank name it says what is still needed. Photos are saved as soon as you add or remove them.
+- A meal the host cancelled now shows "Meal cancelled" on its page instead of a "Request to join" button.
+- Settings is now grouped into Account (Edit profile, your phone number, Sign out), Safety, Notifications (iPhone), Legal (with open-source licences) and About, with Delete account last. New Blocked people screen to see and unblock people you blocked, and a Safety tips screen.
+- At large text sizes the "Rate <name>" button under the chat's rating prompt moves below the text instead of squeezing it, and screen readers now say "Unblock <name>", "Approving…" / "Denying…" and read Settings group titles as headings.
+- The rating prompt in a chat now scrolls with the messages instead of being pinned above them, your message clears from the box as soon as you send it (and comes back if it could not be sent), and the Chats list shows the restaurant and time of each meal, with a "Find a meal" button when you have no chats yet. A chat whose messages fail to load now shows only the retry button.
 - Lists show placeholder cards while they load (Discover, requests, chats, chat messages, restaurant search) instead of a spinner, and error and empty screens share one design.
 - Dates and times are now 24-hour with the day before the month, and read "Today 20:30" or "Tomorrow 12:30" for the next two days (for example "Sat 10 Oct, 20:00"); chat times show as "20:30".
 - Secondary text, hints and icons are darker and easier to read (they were as pale as the card outlines); error text and the Deny button are a deeper brick red that is readable on the cream page.
@@ -55,6 +63,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - Your exact date of birth and gender are now private. Other people only see your name, photos, bio, age and rating.
 
 ### Fixed
+- The chat is usable at large text sizes and with the keyboard open (the safety tips no longer fill the screen).
 - Chat of a cancelled meal / deleted account now says "This chat is no longer available" with a way back, instead of a generic error; no more false crash reports from it.
 
 - A join request that the server refuses (for example the meal was just matched) now shows "Couldn't send your request. Try again." instead of nothing.
@@ -65,7 +74,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - Large photos from modern phone cameras can now be added to your profile (they are resized before upload), and profile pictures use less memory so feeds scroll more smoothly.
 - If the person you matched with deletes their account, you are told: a host's meal opens up again for someone else to join, and a guest is told the meal was cancelled. Meals no longer sit as "matched" with nobody coming.
 - Discover no longer spins forever when your phone can't get a location fix; it falls back to your last known position, or Paris, after a few seconds.
-- With a large system font size, the sign-in buttons, the age screen and the rating and report sheets no longer overflow, and the rating and report sheets scroll when the keyboard is open. In a chat, the safety tips and rating prompt step aside while you type so you can still see the conversation.
+- With a large system font size, the sign-in buttons, the age screen and the rating and report sheets no longer overflow, and the rating and report sheets scroll when the keyboard is open. In a chat, the meal header and safety-tips banner step aside while you type (and the rating prompt too) so you can still see the conversation.
 - Sending a message, creating a meal, requesting to join and rating no longer hang on a spinner when you have no connection; they are saved and delivered when you are back online.
 - Discover no longer keeps showing a meal after its start time has passed, and it loads faster by only fetching upcoming meals.
 - The "add photo" tile on the profile now has a visible outline.

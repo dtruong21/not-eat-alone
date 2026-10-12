@@ -18,8 +18,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/safety/application/block_controller.dart';
 import 'package:not_eat_alone/features/safety/presentation/report_sheet.dart';
+import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 enum _SafetyAction { report, reportSecondary, block }
 
@@ -65,14 +67,17 @@ class SafetyActions extends ConsumerWidget {
   /// do.
   final VoidCallback? onBlocked;
 
-  Future<bool> _confirmBlock(BuildContext context) async {
+  /// The person's display name when their profile is already loaded (chat and
+  /// meal detail both show it), else null so titles fall back to generic copy.
+  String? _nameOf(WidgetRef ref, String uid) =>
+      ref.read(userDocProvider(uid)).value?.displayName;
+
+  Future<bool> _confirmBlock(BuildContext context, String? name) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Block this person?'),
-        content: const Text(
-          "You won't see each other in Convyve anymore.",
-        ),
+        title: Text(name != null ? 'Block $name?' : 'Block this person?'),
+        content: const Text("You won't see each other in Convyve anymore."),
         actions: [
           TextButton(
             key: const Key('safety_actions_block_cancel'),
@@ -81,6 +86,9 @@ class SafetyActions extends ConsumerWidget {
           ),
           TextButton(
             key: const Key('safety_actions_block_confirm'),
+            style: TextButton.styleFrom(
+              foregroundColor: dialogContext.wp.dangerText,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Block'),
           ),
@@ -94,7 +102,7 @@ class SafetyActions extends ConsumerWidget {
     final uid = blockUid;
     if (uid == null) return;
 
-    final confirmed = await _confirmBlock(context);
+    final confirmed = await _confirmBlock(context, _nameOf(ref, uid));
     if (!confirmed) return;
     if (!context.mounted) return;
 
@@ -109,14 +117,25 @@ class SafetyActions extends ConsumerWidget {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Blocked.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Blocked.')));
     onBlocked?.call();
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the profiles that titles may name: `userDocProvider` is
+    // autoDispose, so without a watcher `_nameOf`'s read would start a fresh
+    // load (name unavailable) unless some other widget (chat title, meal
+    // detail's RatingBadge) happened to watch the same uid.
+    for (final uid in {
+      if (reportTargetType == 'user') reportTargetId,
+      if (secondaryReportTargetType == 'user') ?secondaryReportTargetId,
+      ?blockUid,
+    }) {
+      ref.watch(userDocProvider(uid));
+    }
     return PopupMenuButton<_SafetyAction>(
       key: const Key('safety_actions_menu'),
       icon: const Icon(Icons.more_vert_rounded),
@@ -128,6 +147,9 @@ class SafetyActions extends ConsumerWidget {
                 context,
                 targetType: reportTargetType,
                 targetId: reportTargetId,
+                targetName: reportTargetType == 'user'
+                    ? _nameOf(ref, reportTargetId)
+                    : null,
               ),
             );
           case _SafetyAction.reportSecondary:
@@ -135,7 +157,12 @@ class SafetyActions extends ConsumerWidget {
             final id = secondaryReportTargetId;
             if (type == null || id == null) return;
             unawaited(
-              showReportSheet(context, targetType: type, targetId: id),
+              showReportSheet(
+                context,
+                targetType: type,
+                targetId: id,
+                targetName: type == 'user' ? _nameOf(ref, id) : null,
+              ),
             );
           case _SafetyAction.block:
             unawaited(_block(context, ref));

@@ -20,6 +20,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/design/widgets/app_button.dart';
+import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
+import 'package:not_eat_alone/features/auth/domain/entities/auth_user.dart';
 import 'package:not_eat_alone/features/matching/application/request_meal_provider.dart';
 import 'package:not_eat_alone/features/matching/application/request_providers.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/join_request.dart';
@@ -28,6 +31,7 @@ import 'package:not_eat_alone/features/matching/domain/repositories/request_repo
 import 'package:not_eat_alone/features/matching/presentation/widgets/request_inbox_tile.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
@@ -40,6 +44,13 @@ const _request = JoinRequest(
   id: 'm1_guest1',
   mealId: 'm1',
   guestId: 'guest1',
+  hostId: 'host1',
+);
+
+const _request2 = JoinRequest(
+  id: 'm1_guest2',
+  mealId: 'm1',
+  guestId: 'guest2',
   hostId: 'host1',
 );
 
@@ -106,6 +117,9 @@ void main() {
     when(
       () => userRepository.watch('guest1'),
     ).thenAnswer((_) => Stream.value(_guest));
+    when(
+      () => userRepository.watch('guest2'),
+    ).thenAnswer((_) => Stream.value(_guest.copyWith(uid: 'guest2')));
   });
 
   tearDown(() {
@@ -119,6 +133,7 @@ void main() {
     List<String>? pushed,
     ThemeData? theme,
     double textScale = 1,
+    List<JoinRequest> requests = const [_request],
   }) async {
     Widget scaled(BuildContext context, Widget? child) => MediaQuery(
       data: MediaQuery.of(
@@ -127,6 +142,10 @@ void main() {
       child: child!,
     );
     final overrides = [
+      // Per-user providers wait for the auth session to resolve.
+      authStateProvider.overrideWith(
+        (ref) => Stream.value(const AuthUser(uid: 'host1')),
+      ),
       requestRepositoryProvider.overrideWithValue(requestRepository),
       userRepositoryProvider.overrideWithValue(userRepository),
       requestMealProvider('m1').overrideWith(
@@ -145,7 +164,13 @@ void main() {
         child: ValueListenableBuilder<bool>(
           valueListenable: showTile,
           builder: (context, show, _) => show
-              ? const RequestInboxTile(request: _request)
+              ? SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      for (final r in requests) RequestInboxTile(request: r),
+                    ],
+                  ),
+                )
               : const SizedBox.shrink(),
         ),
       ),
@@ -176,6 +201,7 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
+      await tester.pump();
       return;
     }
     await tester.pumpWidget(
@@ -188,6 +214,7 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
     await tester.pump();
     await tester.pump();
   }
@@ -385,6 +412,28 @@ void main() {
       );
     });
 
+    testWidgets('two taps in one frame start one write', (tester) async {
+      final gate = Completer<void>();
+      when(
+        () => requestRepository.approve(any()),
+      ).thenAnswer((_) => gate.future);
+
+      await pumpTile(tester);
+      final approve = find.byKey(
+        Key('request_inbox_approve_button_${_request.id}'),
+      );
+      final onPressed = tester.widget<AppButton>(approve).onPressed!;
+      // Both calls land before the busy state repaints.
+      onPressed();
+      onPressed();
+      await tester.pump();
+
+      verify(() => requestRepository.approve(any())).called(1);
+      gate.complete();
+      await tester.pumpAndSettle();
+      verifyNever(() => requestRepository.deny(any()));
+    });
+
     testWidgets('unmounting mid-flight on approve still shows the snackbar', (
       tester,
     ) async {
@@ -499,9 +548,8 @@ void main() {
       expect(find.widgetWithText(SnackBarAction, 'Chat'), findsNothing);
     });
 
-    testWidgets('while an action is in flight both buttons are disabled', (
-      tester,
-    ) async {
+    testWidgets('while an action is in flight both of its buttons are disabled '
+        'and only the pressed one shows a spinner', (tester) async {
       final gate = Completer<void>();
       when(
         () => requestRepository.approve(any()),
@@ -513,6 +561,22 @@ void main() {
 
       expect(_approveButton(tester).onPressed, isNull);
       expect(_denyButton(tester).onPressed, isNull);
+      // Busy is announced as progress, not just 'Approve'.
+      expect(find.text('Approving…'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('request_inbox_approve_button_m1_guest1')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('request_inbox_deny_button_m1_guest1')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsNothing,
+      );
 
       gate.complete();
       await tester.pumpAndSettle();
@@ -540,9 +604,153 @@ void main() {
         find.ancestor(of: approve, matching: find.byType(Tooltip)),
         findsOneWidget,
       );
-      final node = tester.getSemantics(approve);
+      final node = tester.getSemantics(approve).getSemanticsData();
       expect(node.hint, 'Meal time has passed');
       expect(node.label, contains('Approve'));
+    });
+  });
+
+  group('per-request busy state', () {
+    testWidgets('approving A spins in A only; B stays enabled and tappable', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      when(
+        () => requestRepository.approve(
+          any(that: isA<JoinRequest>().having((r) => r.id, 'id', 'm1_guest1')),
+        ),
+      ).thenAnswer((_) => gate.future);
+      when(() => requestRepository.deny(any())).thenAnswer((_) async {});
+
+      await pumpTile(tester, requests: const [_request, _request2]);
+      await tester.tap(
+        find.byKey(const Key('request_inbox_approve_button_m1_guest1')),
+      );
+      await tester.pump();
+
+      Finder spinnerIn(String key) => find.descendant(
+        of: find.byKey(Key(key)),
+        matching: find.byType(CircularProgressIndicator),
+      );
+      expect(
+        spinnerIn('request_inbox_approve_button_m1_guest1'),
+        findsOneWidget,
+      );
+      expect(spinnerIn('request_inbox_approve_button_m1_guest2'), findsNothing);
+      expect(spinnerIn('request_inbox_deny_button_m1_guest2'), findsNothing);
+      expect(_button(tester, 'approve', 'm1_guest1').onPressed, isNull);
+      expect(_button(tester, 'deny', 'm1_guest1').onPressed, isNull);
+      expect(_button(tester, 'approve', 'm1_guest2').onPressed, isNotNull);
+      expect(_button(tester, 'deny', 'm1_guest2').onPressed, isNotNull);
+
+      await tester.tap(
+        find.byKey(const Key('request_inbox_deny_button_m1_guest2')),
+      );
+      await tester.pump();
+      verify(() => requestRepository.deny(any())).called(1);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(_button(tester, 'approve', 'm1_guest1').onPressed, isNotNull);
+    });
+
+    testWidgets('denying shows the spinner in Deny, not Approve', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      when(() => requestRepository.deny(any())).thenAnswer((_) => gate.future);
+
+      await pumpTile(tester);
+      await tester.tap(find.text('Deny'));
+      await tester.pump();
+
+      expect(find.text('Denying…'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('request_inbox_deny_button_m1_guest1')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('request_inbox_approve_button_m1_guest1')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsNothing,
+      );
+
+      gate.complete();
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('button hierarchy and guest rating', () {
+    testWidgets('Approve is the primary filled button, Deny a danger text '
+        'button', (tester) async {
+      await pumpTile(tester);
+      final scheme = buildTheme(Brightness.light).colorScheme;
+      final wp = buildTheme(
+        Brightness.light,
+      ).extension<WarmPlayfulExtensions>()!;
+
+      final approve = find.byKey(
+        const Key('request_inbox_approve_button_m1_guest1'),
+      );
+      final deny = find.byKey(const Key('request_inbox_deny_button_m1_guest1'));
+      expect(
+        find.descendant(of: approve, matching: find.byType(FilledButton)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: deny, matching: find.byType(TextButton)),
+        findsOneWidget,
+      );
+      Material materialOf(Finder f) => tester.widget<Material>(
+        find.descendant(of: f, matching: find.byType(Material)).first,
+      );
+      expect(materialOf(approve).color, scheme.primary);
+      expect(materialOf(deny).textStyle?.color, wp.dangerText);
+    });
+
+    for (final brightness in Brightness.values) {
+      test('Deny text reaches 4.5:1 on the tile in ${brightness.name}', () {
+        final theme = buildTheme(brightness);
+        final wp = theme.extension<WarmPlayfulExtensions>()!;
+        final l1 = wp.dangerText.computeLuminance();
+        final l2 = theme.colorScheme.surfaceContainerHighest.computeLuminance();
+        final hi = l1 > l2 ? l1 : l2;
+        final lo = l1 > l2 ? l2 : l1;
+        expect((hi + 0.05) / (lo + 0.05), greaterThanOrEqualTo(4.5));
+      });
+    }
+
+    testWidgets('no badge (and no gap for it) while the guest doc loads', (
+      tester,
+    ) async {
+      when(
+        () => userRepository.watch('guest1'),
+      ).thenAnswer((_) => const Stream.empty());
+      await pumpTile(tester);
+
+      expect(find.byType(RatingBadge), findsNothing);
+    });
+
+    testWidgets('the guest RatingBadge renders under the name', (tester) async {
+      when(() => userRepository.watch('guest1')).thenAnswer(
+        (_) => Stream.value(_guest.copyWith(ratingAvg: 4.5, ratingCount: 8)),
+      );
+      await pumpTile(tester);
+
+      final badge = find.byKey(const Key('rating_badge'));
+      expect(badge, findsOneWidget);
+      expect(find.text('4.5 (8)'), findsOneWidget);
+      expect(
+        tester.getTopLeft(badge).dy,
+        greaterThanOrEqualTo(
+          tester.getBottomLeft(find.textContaining('Amélie')).dy,
+        ),
+      );
     });
   });
 
@@ -612,6 +820,43 @@ void main() {
         },
       );
     }
+
+    testWidgets('at 320px and 2.0x text the actions stack: no overflow, both '
+        '>= 48 high', (tester) async {
+      tester.view
+        ..physicalSize = const Size(320, 800)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpTile(
+        tester,
+        theme: _nunitoLike(buildTheme(Brightness.light)),
+        textScale: 2,
+      );
+
+      expect(tester.takeException(), isNull);
+      final tileRect = tester.getRect(
+        find.byKey(const Key('request_inbox_tile_m1_guest1')),
+      );
+      final approve = tester.getRect(
+        find.byKey(const Key('request_inbox_approve_button_m1_guest1')),
+      );
+      final deny = tester.getRect(
+        find.byKey(const Key('request_inbox_deny_button_m1_guest1')),
+      );
+      for (final r in [approve, deny]) {
+        expect(r.height, greaterThanOrEqualTo(WarmPlayfulSize.minTap));
+        expect(r.left, greaterThanOrEqualTo(tileRect.left));
+        expect(r.right, lessThanOrEqualTo(tileRect.right));
+      }
+      // OverflowBar stacks upwards: Approve (primary) on top of Deny.
+      expect(
+        approve.bottom,
+        lessThanOrEqualTo(deny.top),
+        reason: 'stacked vertically with Approve on top',
+      );
+      expect(find.text('Approve'), findsOneWidget);
+      expect(find.text('Deny'), findsOneWidget);
+    });
   });
 
   group('contrast', () {
@@ -640,11 +885,11 @@ void main() {
   });
 }
 
-FilledButton _approveButton(WidgetTester tester) => tester.widget<FilledButton>(
-  find.byKey(const Key('request_inbox_approve_button_m1_guest1')),
-);
+AppButton _button(WidgetTester tester, String which, String id) => tester
+    .widget<AppButton>(find.byKey(Key('request_inbox_${which}_button_$id')));
 
-OutlinedButton _denyButton(WidgetTester tester) =>
-    tester.widget<OutlinedButton>(
-      find.byKey(const Key('request_inbox_deny_button_m1_guest1')),
-    );
+AppButton _approveButton(WidgetTester tester) =>
+    _button(tester, 'approve', 'm1_guest1');
+
+AppButton _denyButton(WidgetTester tester) =>
+    _button(tester, 'deny', 'm1_guest1');

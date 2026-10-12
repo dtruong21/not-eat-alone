@@ -55,7 +55,9 @@ class AuthRepositoryImpl implements AuthRepository {
     AuthMethod? method;
     DateTime? createdAt;
     DateTime? lastSignInAt;
+    String? phoneNumber;
     try {
+      phoneNumber = u.phoneNumber;
       for (final info in u.providerData) {
         method = switch (info.providerId) {
           'google.com' => AuthMethod.google,
@@ -75,6 +77,7 @@ class AuthRepositoryImpl implements AuthRepository {
       method: method,
       createdAt: createdAt,
       lastSignInAt: lastSignInAt,
+      phoneNumber: phoneNumber,
     );
   }
 

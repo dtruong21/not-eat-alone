@@ -15,3 +15,19 @@ final blockedUserIdsProvider = StreamProvider<Set<String>>((ref) {
   if (uid == null) return Stream.value(const <String>{});
   return ref.watch(blockRepositoryProvider).watchBlockedUserIds(uid);
 });
+
+/// Only the uids the signed-in user blocked (for the Blocked-people screen).
+/// Auto-disposed and tied to the session like the other per-user streams.
+final blockedByMeProvider = StreamProvider.autoDispose<Set<String>>((ref) {
+  switch (watchSession(ref)) {
+    case SessionState.resolving:
+      return const Stream.empty();
+    case SessionState.signedOut:
+      return Stream.value(const <String>{});
+    case SessionState.signedIn:
+      break;
+  }
+  final uid = ref.watch(authStateProvider.select((a) => a.value?.uid));
+  if (uid == null) return Stream.value(const <String>{});
+  return ref.watch(blockRepositoryProvider).watchBlockedByMe(uid);
+});

@@ -100,6 +100,15 @@ void main() {
       expect(methodFor('password'), isNull);
     });
 
+    test('currentUser carries the phone number of a phone sign-in', () {
+      final user = MockUser();
+      when(() => user.uid).thenReturn('x');
+      when(() => user.phoneNumber).thenReturn('+33612345678');
+      when(() => firebaseAuth.currentUser).thenReturn(user);
+
+      expect(repository.currentUser!.phoneNumber, '+33612345678');
+    });
+
     test("currentUser maps the FirebaseAuth mock's user", () {
       final user = MockUser();
       when(() => user.uid).thenReturn('x');

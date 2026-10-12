@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
-import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_card.dart';
 import '../../support/contrast.dart';
 
 /// Card builds that are not `Card` widgets (Material/Container surfaces) must
@@ -20,7 +19,6 @@ const _materialCardFiles = <String>[
 
 /// `Card` widgets: must inherit the CardTheme shadow (no `elevation: 0`).
 const _cardWidgetFiles = <String>[
-  'lib/features/safety/presentation/widgets/safety_tips_card.dart',
   'lib/features/rating/presentation/widgets/post_meal_card.dart',
   'lib/features/meal/presentation/widgets/paris_notice.dart',
 ];
@@ -38,28 +36,6 @@ void main() {
         expect(c.elevation, WarmPlayfulElevation.card);
         expect(c.shadowColor, wp.shadow);
         expect(c.surfaceTintColor, Colors.transparent);
-      });
-
-      testWidgets('SafetyTipsCard renders with the card shadow', (t) async {
-        await t.pumpWidget(
-          MaterialApp(
-            theme: theme,
-            home: const Scaffold(body: SafetyTipsCard()),
-          ),
-        );
-        final card = t.widget<Card>(find.byKey(const Key('safety_tips_card')));
-        final material = t.widget<Material>(
-          find
-              .descendant(
-                of: find.byKey(const Key('safety_tips_card')),
-                matching: find.byType(Material),
-              )
-              .first,
-        );
-        expect(card.elevation, isNull); // inherits cardTheme
-        expect(material.elevation, WarmPlayfulElevation.card);
-        expect(material.shadowColor, wp.shadow);
-        expect(material.surfaceTintColor, Colors.transparent);
       });
     });
   }

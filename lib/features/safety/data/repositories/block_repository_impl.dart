@@ -62,4 +62,25 @@ class BlockRepositoryImpl implements BlockRepository {
           return ids;
         });
   }
+
+  @override
+  Stream<Set<String>> watchBlockedByMe(String uid) {
+    // The rules only prove a `pair array-contains uid` query, so `blockerUid`
+    // is filtered here rather than in the query.
+    return _firestore
+        .collection('blocks')
+        .where('pair', arrayContains: uid)
+        .snapshots()
+        .map((s) {
+          final ids = <String>{};
+          for (final d in s.docs) {
+            final data = d.data();
+            final blocked = data['blockedUid'];
+            if (data['blockerUid'] == uid && blocked is String) {
+              ids.add(blocked);
+            }
+          }
+          return ids;
+        });
+  }
 }

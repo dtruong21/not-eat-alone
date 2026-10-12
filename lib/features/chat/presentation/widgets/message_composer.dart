@@ -28,15 +28,25 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     super.dispose();
   }
 
+  /// Empties the field at once (the thread shows the message as soon as the
+  /// write is queued) and puts the text back, ahead of anything typed
+  /// meanwhile, if the send fails.
   Future<void> _send() async {
     final text = _controller.text;
     if (text.trim().isEmpty) return;
+    _controller.clear();
+    setState(() {});
     await ref
         .read(chatControllerProvider.notifier)
         .send(matchId: widget.matchId, text: text);
     if (!mounted) return;
-    if (!ref.read(chatControllerProvider).hasError) {
-      _controller.clear();
+    if (ref.read(chatControllerProvider).hasError) {
+      final typed = _controller.text;
+      final restored = typed.isEmpty ? text : '$text $typed';
+      _controller.value = TextEditingValue(
+        text: restored,
+        selection: TextSelection.collapsed(offset: restored.length),
+      );
     }
     setState(() {});
   }

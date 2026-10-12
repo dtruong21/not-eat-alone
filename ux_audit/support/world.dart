@@ -412,17 +412,23 @@ Future<UxUsers> seedUsers() async {
   final hugo = uids['hugo']!;
   final now = DateTime.now();
 
-  // 2. Users.
+  // 2. Users: the private `users/{uid}` (dob, age gate, gender) and the
+  //    public `profiles/{uid}` (name, photos, bio, age, rating) the app merges
+  //    since the privacy split.
   for (final p in _personas) {
     await adminSetDoc('users', uids[p.key]!, {
       'uid': uids[p.key],
       'dob': DateTime(now.year - p.age, 3, 14),
       'ageVerified': true,
       'createdAt': now.subtract(const Duration(days: 60)),
+      'gender': p.gender,
+    });
+    await adminSetDoc('profiles', uids[p.key]!, {
+      'uid': uids[p.key],
       'displayName': p.name,
       'photoUrls': _photoUrls(p),
       if (p.bio.isNotEmpty) 'bio': p.bio,
-      'gender': p.gender,
+      'age': p.age,
       'ratingCount': p.ratingCount,
       'ratingAvg': p.ratingAvg,
       'ratingSum': p.ratingAvg * p.ratingCount,
