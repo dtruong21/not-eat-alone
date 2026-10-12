@@ -48,10 +48,9 @@ void main() {
       ),
     );
     // Let the name stream emit, as it already has once chat shows the title.
-    final container = ProviderScope.containerOf(
+    ProviderScope.containerOf(
       tester.element(find.byType(SafetyActions)),
-    );
-    container.listen(userDocProvider('them'), (_, _) {});
+    ).listen(userDocProvider('them'), (_, _) {});
     await tester.pump();
     return theme;
   }
