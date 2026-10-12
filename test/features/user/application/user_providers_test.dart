@@ -68,7 +68,7 @@ void main() {
       final result = await waitFor(container, (value) => value == null);
 
       expect(result, isNull);
-      verifyNever(() => userRepository.watch(any()));
+      verifyNever(() => userRepository.watchOwn(any()));
     });
 
     test('emits the AppUser when signed in', () async {
@@ -80,7 +80,7 @@ void main() {
         dob: DateTime.utc(2000, 1, 1),
         ageVerified: true,
       );
-      when(() => userRepository.watch('u1'))
+      when(() => userRepository.watchOwn('u1'))
           .thenAnswer((_) => Stream.value(appUser));
 
       container = buildContainer();
@@ -88,7 +88,7 @@ void main() {
       final result = await waitFor(container, (value) => value == appUser);
 
       expect(result, appUser);
-      verify(() => userRepository.watch('u1')).called(1);
+      verify(() => userRepository.watchOwn('u1')).called(1);
     });
   });
 }

@@ -5,7 +5,8 @@
 /// [currentUserDocProvider] (the viewer's uid + gender) into a geohash-
 /// bounded `MealRepository.watchDiscoverable` query, then reduces each
 /// emitted `List<Meal>` into a sorted `List<DiscoverableMeal>`:
-///  - future meals only (`dateTime.isAfter(now)`)
+///  - future meals only (`dateTime.isAfter(now)`), re-checked when the next
+///    listed meal's start time passes — not only when Firestore emits
 ///  - not hosted by the viewer
 ///  - women-only meals hidden unless the viewer is a woman
 ///  - sorted ascending by distance from the viewer (nearest first)
@@ -26,6 +27,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
@@ -35,6 +37,7 @@ import 'package:not_eat_alone/core/util/distance.dart';
 import 'package:not_eat_alone/core/util/geohash.dart';
 import 'package:not_eat_alone/features/meal/application/meal_providers.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
+import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/safety/application/block_providers.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
@@ -72,13 +75,23 @@ final discoveryControllerProvider =
   // discovery design spec §3/§11).
   final prefix = encodeGeohash(loc.lat, loc.lng, precision: 3);
 
-  return ref
+  final source = ref
       .watch(mealRepositoryProvider)
-      .watchDiscoverable(geohashPrefix: prefix)
-      .map((meals) {
+      .watchDiscoverable(geohashPrefix: prefix);
+
+  // Derive the feed from the latest snapshot on every snapshot AND whenever the
+  // next listed meal's start time passes, so a meal drops out of the list by
+  // itself instead of waiting for Firestore to emit again.
+  final controller = StreamController<List<DiscoverableMeal>>();
+  var latest = const <Meal>[];
+  List<String>? lastIds;
+  Timer? nextDrop;
+
+  void publish() {
+    if (controller.isClosed) return;
     final now = DateTime.now();
-    final result = meals
-        .where((m) => m.dateTime.isAfter(now))
+    final upcoming = latest.where((m) => m.dateTime.isAfter(now)).toList();
+    final result = upcoming
         .where((m) => m.hostId != viewer.uid)
         .where((m) => !(m.womenOnly && viewer.gender != Gender.woman))
         .where((m) => !blocked.contains(m.hostId))
@@ -95,12 +108,48 @@ final discoveryControllerProvider =
         )
         .toList()
       ..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+    controller.add(result);
 
-    // Fire-and-forget, guarded against a rebuild loop: `track()` doesn't
-    // touch `ref`/provider state, so firing per emission just logs each
-    // refreshed feed rather than causing another rebuild.
-    unawaited(analytics.track(DiscoveryViewed(count: result.length)));
+    // Count a feed view only when what the user sees changed (the same ids
+    // re-emitted by a snapshot or a timer tick is not a new view).
+    final ids = [for (final d in result) d.meal.id];
+    if (lastIds == null || !listEquals(lastIds, ids)) {
+      lastIds = ids;
+      unawaited(analytics.track(DiscoveryViewed(count: result.length)));
+    }
 
-    return result;
+    nextDrop?.cancel();
+    if (upcoming.isNotEmpty) {
+      final soonest = upcoming
+          .map((m) => m.dateTime)
+          .reduce((a, b) => a.isBefore(b) ? a : b);
+      final wait = soonest.difference(now) + const Duration(milliseconds: 50);
+      nextDrop = Timer(
+        wait > _maxDropWait ? _maxDropWait : wait,
+        publish,
+      );
+    }
+  }
+
+  final subscription = source.listen(
+    (meals) {
+      latest = meals;
+      publish();
+    },
+    onError: controller.addError,
+    onDone: () {
+      nextDrop?.cancel();
+      unawaited(controller.close());
+    },
+  );
+  ref.onDispose(() {
+    nextDrop?.cancel();
+    unawaited(subscription.cancel());
+    unawaited(controller.close());
   });
+  return controller.stream;
 });
+
+/// Upper bound on how long the feed waits before re-checking which listed
+/// meals have started (the exact next start time is used when sooner).
+const _maxDropWait = Duration(minutes: 5);

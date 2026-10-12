@@ -66,21 +66,34 @@ service cloud.firestore {
              && noBlockBetween(uid, uid == m.hostId ? m.guestId : m.hostId);
     }
 
-    // Per-user docs
+    // Allowed keys + age sanity for a public profile write.
+    function profileShapeOk() {
+      return request.resource.data.keys().hasOnly(['uid', 'displayName', 'photoUrls', 'bio', 'age', 'ratingSum', 'ratingCount', 'ratingAvg'])
+          && (!('age' in request.resource.data)
+              || (request.resource.data.age is int
+                  && request.resource.data.age >= 18
+                  && request.resource.data.age <= 120));
+    }
+
+    // Per-user PRIVATE doc: date of birth, age-verified flag, gender. Owner-only
+    // (the rules themselves may still `get()` it, e.g. women-only checks read
+    // `gender`). Once `ageVerified` is true, `dob` / `ageVerified` can never be
+    // rewritten — before that (age-gate retry) they can. The 18+ gate stays
+    // self-attested behind phone sign-in; this only stops rewriting it after.
     match /users/{uid} {
-      allow read: if isSignedIn();
+      allow read: if isOwner(uid);
       allow create: if isOwner(uid)
+                    && request.resource.data.keys().hasOnly(['uid', 'dob', 'ageVerified', 'createdAt', 'gender'])
                     && request.resource.data.uid == uid
                     && request.resource.data.dob is timestamp
-                    && request.resource.data.ageVerified is bool
-                    && request.resource.data.get('ratingSum', 0) == 0
-                    && request.resource.data.get('ratingCount', 0) == 0
-                    && request.resource.data.get('ratingAvg', 0) == 0;
+                    && request.resource.data.ageVerified is bool;
       allow update: if isOwner(uid)
-                    && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
-                    && request.resource.data.get('ratingCount', 0) == resource.data.get('ratingCount', 0)
-                    && request.resource.data.get('ratingAvg', 0) == resource.data.get('ratingAvg', 0);
-      allow delete: if false; // account deletion via Cloud Function later
+                    && request.resource.data.keys().hasOnly(['uid', 'dob', 'ageVerified', 'createdAt', 'gender'])
+                    && request.resource.data.uid == uid
+                    && (resource.data.get('ageVerified', false) != true
+                        || (request.resource.data.dob == resource.data.dob
+                            && request.resource.data.ageVerified == resource.data.ageVerified));
+      allow delete: if false; // account deletion via Cloud Function
 
       // Add subcollections here as you build features.
       // Each subcollection should have its own explicit allow/deny block.
@@ -93,6 +106,30 @@ service cloud.firestore {
       match /fcmTokens/{token} {
         allow read, write: if isOwner(uid);
       }
+    }
+
+    // Per-user PUBLIC profile: what other people are shown (name, photos, bio,
+    // age in years, rating aggregate). Any signed-in user may `get` ONE profile
+    // by uid; `list`/queries are denied so the table can't be enumerated. Only
+    // the owner writes it, and never the rating fields (the `onRatingCreated`
+    // / `deleteAccount` functions write those via the Admin SDK). No date of
+    // birth or gender is ever stored here.
+    match /profiles/{uid} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isOwner(uid)
+                    && profileShapeOk()
+                    && request.resource.data.uid == uid
+                    && request.resource.data.get('ratingSum', 0) == 0
+                    && request.resource.data.get('ratingCount', 0) == 0
+                    && request.resource.data.get('ratingAvg', 0) == 0;
+      allow update: if isOwner(uid)
+                    && profileShapeOk()
+                    && request.resource.data.uid == uid
+                    && request.resource.data.get('ratingSum', 0) == resource.data.get('ratingSum', 0)
+                    && request.resource.data.get('ratingCount', 0) == resource.data.get('ratingCount', 0)
+                    && request.resource.data.get('ratingAvg', 0) == resource.data.get('ratingAvg', 0);
+      allow delete: if false; // account deletion via Cloud Function
     }
 
     // The request being approved in the same transaction as a meal update:

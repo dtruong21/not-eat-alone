@@ -19,3 +19,5 @@
 **Hypothesis:** Make the tips card collapsible/dismissible (or move it into the app bar overflow / a one-time banner) and put the cards inside the scrollable thread (as list header) instead of a fixed header; hide the tips while the keyboard is open (`MediaQuery.viewInsetsOf(context).bottom > 0`).
 
 **Regression tests:** `test/features/chat/presentation/chat_screen_edge_test.dart` (3 cases skipped with `bug = true`; flip the constant when fixed).
+
+**Status:** Fixed — the post-meal card and safety tips are hidden while the keyboard is open and otherwise capped at 40% of the screen height (they scroll); the thread keeps the rest. Regression tests un-skipped (`chat_screen_edge_test`).

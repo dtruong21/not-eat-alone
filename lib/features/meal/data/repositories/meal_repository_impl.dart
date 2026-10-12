@@ -60,14 +60,24 @@ class MealRepositoryImpl implements MealRepository {
     return newId;
   }
 
-  /// Streams `meals` documents with `status == 'open'` whose `geohash`
-  /// starts with [geohashPrefix].
+  /// Max upcoming open meals one discovery listener downloads.
+  static const discoverableLimit = 100;
+
+  /// Streams UPCOMING open meals (`status == 'open'` and `dateTime` after now,
+  /// soonest first, at most [discoverableLimit]) whose `geohash` starts with
+  /// [geohashPrefix].
   ///
-  /// `'~'` (0x7E) sorts after every base-32 geohash character, so bounding
-  /// the range with `geohash < '$geohashPrefix~'` selects exactly the docs
-  /// whose geohash starts with [geohashPrefix]. The equality + range filter
-  /// needs the composite index declared in
-  /// `firebase/firestore.indexes.json` (`status` ASC, `geohash` ASC).
+  /// Bounding by time on the server keeps the download from growing with
+  /// every meal ever created (expired meals stay `open` forever — nothing
+  /// closes them). The `status` equality + `dateTime` range/order uses the
+  /// composite index in `firebase/firestore.indexes.json` (`status` ASC,
+  /// `dateTime` ASC). The geohash prefix is filtered on the client: v1 is
+  /// Paris-only (one cell), and Firestore can't combine a second range filter
+  /// on `geohash` with this one without another index — revisit at the
+  /// multi-city scale-up.
+  ///
+  /// `now` is fixed when the listener starts; the caller drops meals whose
+  /// start time passes later (see `discoveryControllerProvider`).
   ///
   /// A doc that fails to parse (schema drift) surfaces as a
   /// [RepositoryParseException] error event on the stream, same as
@@ -77,12 +87,20 @@ class MealRepositoryImpl implements MealRepository {
     return _firestore
         .collection('meals')
         .where('status', isEqualTo: 'open')
-        .where('geohash', isGreaterThanOrEqualTo: geohashPrefix)
-        .where('geohash', isLessThan: '$geohashPrefix~')
+        .where('dateTime', isGreaterThan: Timestamp.now())
+        .orderBy('dateTime')
+        .limit(discoverableLimit)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map(_mealFromDoc).toList(growable: false),
+          (snapshot) => snapshot.docs
+              .where(
+                (doc) =>
+                    ((doc.data()['geohash'] as String?) ?? '').startsWith(
+                      geohashPrefix,
+                    ),
+              )
+              .map(_mealFromDoc)
+              .toList(growable: false),
         );
   }
 

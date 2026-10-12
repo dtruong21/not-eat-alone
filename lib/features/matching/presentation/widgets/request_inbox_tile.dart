@@ -28,19 +28,6 @@ import 'package:not_eat_alone/features/matching/domain/entities/join_request.dar
 import 'package:not_eat_alone/features/matching/presentation/widgets/inbox_action_message.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
-/// Age in whole years for someone born on [dob], as of [now] (defaults to
-/// `DateTime.now()`). Duplicated from `meal_detail_screen.dart`'s
-/// `_ageFromDob` — both are small, presentation-only, private helpers.
-int _ageFromDob(DateTime dob, {DateTime? now}) {
-  final today = now ?? DateTime.now();
-  var age = today.year - dob.year;
-  final hadBirthday =
-      (today.month > dob.month) ||
-      (today.month == dob.month && today.day >= dob.day);
-  if (!hadBirthday) age -= 1;
-  return age;
-}
-
 const _pastMealLabel = 'Meal time has passed';
 const _snackBarDuration = Duration(seconds: 6);
 const _a11ySnackBarDuration = Duration(seconds: 8);
@@ -112,9 +99,13 @@ class RequestInboxTile extends ConsumerWidget {
     final photoUrl = (guest != null && guest.photoUrls.isNotEmpty)
         ? guest.photoUrls.first
         : null;
+    final guestAge = guest?.ageYears;
     final label = guest == null
         ? 'Guest'
-        : '${guest.displayName ?? 'Guest'}, ${_ageFromDob(guest.dob)}';
+        : [
+            guest.displayName ?? 'Guest',
+            if (guestAge != null) guestAge,
+          ].join(', ');
 
     final isSubmitting = ref.watch(inboxActionControllerProvider).isLoading;
 

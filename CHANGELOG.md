@@ -41,9 +41,16 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - The Nunito font now ships inside the app instead of being downloaded when it first opens, so text looks the same offline and nothing is fetched from Google.
 - Creating a meal now needs a time at least 5 minutes ahead; an earlier pick shows a message instead of being accepted.
 
+### Security
+
+- Your exact date of birth and gender are now private. Other people only see your name, photos, bio, age and rating.
+
 ### Fixed
 
 - Editing your profile (for example adding a photo) no longer sends you back to Discover or empties the form you were filling in.
+- With a large system font size, the sign-in buttons, the age screen and the rating and report sheets no longer overflow, and the rating and report sheets scroll when the keyboard is open. In a chat, the safety tips and rating prompt step aside while you type so you can still see the conversation.
+- Sending a message, creating a meal, requesting to join and rating no longer hang on a spinner when you have no connection; they are saved and delivered when you are back online.
+- Discover no longer keeps showing a meal after its start time has passed, and it loads faster by only fetching upcoming meals.
 - The "add photo" tile on the profile now has a visible outline.
 - Chat message times now show in your local time instead of UTC.
 - Meal times now show in your local time instead of UTC (a 7:30 PM meal in Paris no longer reads 5:30 PM).

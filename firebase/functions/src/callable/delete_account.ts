@@ -41,7 +41,7 @@ export const makeDeleteAccount = () =>
     // then remove the rating (targets are other users, independent of this user's own doc).
     await purgeAuthoredRatings(db, t.ratingsAuthoredWhere.field, uid);
     // ratings about the departing user: no aggregate to adjust — their own aggregate
-    // is removed along with the rest of their user doc below.
+    // is removed along with their profile doc below.
     await deleteWhere(db, 'ratings', t.ratingsAboutWhere.field, uid);
     await deleteWhere(db, 'meals', t.mealsWhere.field, uid);
     for (const q of t.requestsWhere) await deleteWhere(db, 'requests', q.field, uid);
@@ -50,6 +50,7 @@ export const makeDeleteAccount = () =>
     const tokens = await db.collection('users').doc(uid).collection('fcmTokens').get();
     await Promise.all(tokens.docs.map((d) => d.ref.delete()));
     await db.collection('users').doc(uid).delete();
+    await db.collection('profiles').doc(uid).delete();
 
     // storage
     try {
@@ -123,7 +124,7 @@ async function purgeAuthoredRatings(db: Firestore, field: string, uid: string): 
   await Promise.all(
     Array.from(groups.entries()).map(async ([targetUid, group]) => {
       try {
-        const targetRef = db.collection('users').doc(targetUid);
+        const targetRef = db.collection('profiles').doc(targetUid);
         await db.runTransaction(async (txn) => {
           const targetSnap = await txn.get(targetRef);
           if (targetSnap.exists) {

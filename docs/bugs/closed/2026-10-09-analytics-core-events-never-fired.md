@@ -15,3 +15,5 @@
 **Hypothesis:** Fire `AppOpened` from a `WidgetsBindingObserver` (resumed) in `app.dart`/`bootstrap`; fire `SignupCompleted`/`SigninCompleted` where `authStateProvider` first reports a user (new vs returning = whether `users/{uid}` exists) or in `AuthRepositoryImpl` callers; call `identify(uid)` there and `reset()` in both sign-out paths. If the events are intentionally cut, remove them from the plan and registry and redefine Activation/Retention on Firebase's automatic `first_open`/`session_start`.
 
 **Regression test:** `test/core/analytics/tracking_plan_parity_test.dart` ("every registry event is fired from somewhere in lib/", skipped until fixed; the plan/registry parity tests pass).
+
+**Status:** Fixed — `AnalyticsListener` (app_opened, cold + resume) and `SessionTracker` (identify/reset, signup_completed / signin_completed) wired above the router; `AuthUser` carries method + account timestamps. Parity test un-skipped. DebugView check on a device still to do.

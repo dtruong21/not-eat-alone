@@ -15,3 +15,5 @@
 **Hypothesis:** Split profile data: `users/{uid}` (private: dob, ageVerified, gender used by rules) vs `profiles/{uid}` (public: displayName, photoUrls, bio, ageYears or age band, rating*), read-open only on the latter; keep `gender` readable only via the rule's `get()` (rules can read private docs the client cannot). If this is accepted for the Paris soft launch, downgrade to P2 explicitly and add it to the privacy policy + store data-safety/privacy labels ("date of birth: visible to other users").
 
 **Workaround:** none client-side.
+
+**Status:** Fixed — public `profiles/{uid}` vs private `users/{uid}` split; owner-only private doc, no `list` on profiles, `dob`/`ageVerified` locked after verification. Rules tests: `firebase/rules-test/`. Rollout order: `docs/RELEASE.md` §1.5. PRD: "Private vs public profile".

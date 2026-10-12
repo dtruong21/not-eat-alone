@@ -18,3 +18,5 @@
 **Hypothesis:** `_AuthButton`: wrap the label in `Flexible` (or `FittedBox`/two-line label) and drop fixed horizontal padding. Sheets: wrap the content in `SingleChildScrollView` (keep the viewInsets padding) and use `useSafeArea: true`. Age gate: scroll body.
 
 **Regression tests:** `test/features/auth/presentation/signin_screen_text_scale_edge_test.dart` (1.5x cases skipped) and `test/features/safety/presentation/sheets_keyboard_edge_test.dart` (keyboard/1.5x cases skipped via `bug = true`).
+
+**Status:** Fixed — `_AuthButton` label is `Flexible` (wraps); rating/report sheets scroll (`SingleChildScrollView`, `useSafeArea`); age gate scrolls; verified at 1.5x and 2.0x on 360x640. Regression tests un-skipped (`signin_screen_text_scale_edge_test`, `sheets_keyboard_edge_test`, `age_gate_text_scale_test`). Device check at the largest system font still to do.

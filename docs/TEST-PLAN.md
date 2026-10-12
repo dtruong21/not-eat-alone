@@ -36,7 +36,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Data + time
 
 - [ ] Timezone math. Date-keyed data must respect local TZ, not UTC.
-- [ ] Date rollover at midnight — "today" advances without manual refresh. — **FAIL (code)**, see `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md`
+- [ ] Date rollover at midnight — "today" advances without manual refresh. — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md`
 - [ ] DST transition — math still correct on clock-change days.
 - [ ] Long strings (≥1000 chars) in text fields don't crash.
 - [ ] Long lists (≥100 items) render without dropped frames.
@@ -44,7 +44,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Network
 
-- [ ] Offline write queues (toggle airplane mode mid-action). — **FAIL (code)**: UI awaits the server ack, see `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md`
+- [ ] Offline write queues (toggle airplane mode mid-action). — **FAIL (code)**: UI awaits the server ack, see `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md`
 - [ ] Reconnect syncs queued writes.
 - [ ] Slow network throttle (Network Link Conditioner / Android emulator throttle) doesn't break UI.
 - [ ] Firestore cache renders previously-fetched data on cold offline launch.
@@ -74,14 +74,14 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Security
 
-- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; **FAIL for `users/{uid}` (open read incl. dob)**, see `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`
+- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`
 - [ ] `.env` is gitignored — `git log --all -p -- .env` returns nothing.
 - [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
 
 ### Visual + a11y
 
 - [ ] Dark mode parity for every shipped screen (both `ThemeMode.light` and `ThemeMode.dark`).
-- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — **FAIL (harness)**: sign-in, sheets, chat, see `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` and `docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md`
+- [ ] Dynamic type at 200% (`MediaQuery.textScaler`) doesn't truncate critical text. — **FAIL (harness)**: sign-in, sheets, chat, see `docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md` and `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md`
 - [ ] Screen reader (VoiceOver / TalkBack) reaches every action — every interactive widget has a `Semantics` label or wraps a Material widget that provides one.
 
 ### Design system (UX plan 16a) — automated, `test/core/design/`
@@ -151,7 +151,7 @@ Related PRD entry: `docs/PRD.md § Auth`
 - [ ] DOB exactly 18 today = allowed; one day short = blocked (unit-tested in `age_test.dart`).
 - [ ] DOB stored UTC-midnight — no timezone day-drift on read (unit-tested in `users_repository_test.dart`).
 - [ ] Malformed `users` doc surfaces `RepositoryParseException`, not a raw crash.
-- [ ] Non-owner cannot read/write another user's `users/{uid}` doc (Firestore rules).
+- [x] Non-owner cannot read/write another user's private `users/{uid}` doc; other users can `get` (not list) the public `profiles/{uid}` only (Firestore rules; `firebase/rules-test/`).
 - [ ] Redirect never loops across signin / age-gate / home / OTP (unit-tested in `redirect_test.dart`).
 
 **Pending native config (blocks live tests):**
@@ -159,9 +159,9 @@ Related PRD entry: `docs/PRD.md § Auth`
 - Phone: APNs auth key (iOS), Android SHA-256 + Play Integrity not yet registered.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1) — contradicts the "Non-owner cannot read" edge case above
+- `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md` (P1, fixed) — private/public split; rules tests in `firebase/rules-test/`
 - `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed)
-- `docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
+- `docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md` (P2)
 
 ---
 
@@ -216,8 +216,8 @@ Related PRD entry: `docs/PRD.md § Meals`
 - **Map preview** of the restaurant (embedded map is post-MVP; "Open in Maps" link-out shipped). Real Places search shipped via the `searchRestaurants` callable (stale "fake list" note above).
 
 **Known issues:**
-- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
-- `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
+- `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2) — no way to cancel/expire a meal
 
 ---
 
@@ -244,7 +244,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - **Map view** of the feed (post-MVP, see PRD).
 
 **Known issues:**
-- `docs/bugs/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
+- `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
 - `docs/bugs/2026-10-09-location-fix-has-no-timeout.md` (P2)
 
 ---
@@ -285,7 +285,7 @@ Related PRD entry: `docs/PRD.md § Matching`
 - [ ] Firestore rules (`firebase/firestore.rules`) restrict `requests/{id}` writes to the guest (create, pending only) and the host (status transition pending→approved/denied only); `matches/{mealId}` is host/guest-readable, write-restricted to the approve transaction. Verify via Rules Playground or emulator — a non-host cannot approve/deny another host's request, and a non-participant cannot read a match doc.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Request to join spins offline
 
 ---
 
@@ -313,8 +313,8 @@ Related PRD entry: `docs/PRD.md § Chat`
 - [ ] `matches/{matchId}/messages/{id}` and `matches/{matchId}/reads/{uid}` are readable/writable only by `match.hostId`/`match.guestId` (participants array) — verify a third user is denied both read and write via emulator.
 
 **Known issues:**
-- `docs/bugs/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
-- `docs/bugs/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
+- `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
+- `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
 - `docs/bugs/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
 
 ---
@@ -458,6 +458,68 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Large text sizes
+
+**Automated (real Nunito font, 360x640):** `signin_screen_text_scale_edge_test` (1.0/1.5/2.0x, both themes), `sheets_keyboard_edge_test` (rating + report: keyboard, 1.5x, 2.0x), `age_gate_text_scale_test` (1.5/2.0x, button reachable by scrolling), `chat_screen_edge_test` (keyboard open keeps the thread readable; 1.5x no overflow).
+
+**Manual on a device at the largest system font (Android 2.0x / iOS Larger Accessibility Sizes):**
+- [ ] Sign-in: all three buttons readable, labels wrap, nothing clipped.
+- [ ] Age gate: scrolls; Continue reachable.
+- [ ] Rating / report sheets: open the keyboard, the field and Submit stay reachable (scroll).
+- [ ] Chat after the meal time: with the keyboard open the tips and rating card are hidden and the thread is usable; with it closed they show and scroll if tall.
+
+---
+
+### Feature: Offline writes don't block the UI
+
+**Automated:** `test/core/util/queued_write_test.dart` (ack, rejection inside the grace period, pending past it = queued, late error swallowed); `message_composer_offline_edge_test.dart` (composer frees up); `create_meal_controller_test.dart` (never-acknowledged create settles).
+
+**Manual on a device (airplane mode):**
+- [ ] Chat: send a message; within ~3 s the field clears and a second message can be sent; both appear in the thread; after reconnecting they deliver once each (no duplicates).
+- [ ] Create meal / Request to join / Rate: after ~3 s the screen moves on instead of spinning; after reconnect the meal / request / rating appears server-side (check Firestore) and the host gets the push.
+- [ ] A write rejected by the rules while online (e.g. messaging someone who blocked you) still shows the error within 3 s.
+- Known trade-off: while offline the success snackbar ("Meal created!") appears even though delivery waits for the network; a rejection that only arrives after reconnect is logged, not shown.
+
+---
+
+### Feature: Discovery feed freshness
+
+**Automated:** `test/features/meal/application/discovery_clock_edge_test.dart` (a meal drops when its start passes with no new snapshot; only started meals drop; unchanged feed doesn't recount `discovery_viewed`); `meal_repository_impl_test.dart` (past meals excluded, soonest-first, capped at 100).
+
+**Manual:**
+- [ ] Leave Discover open past a listed meal's start time: it disappears without pulling or reopening.
+- [ ] Production data: the `status + dateTime` index is deployed (`firebase/firestore.indexes.json`), the Discover query succeeds (no "requires an index" error).
+- [ ] Known follow-up: cancelling a meal — `docs/bugs/2026-10-10-no-way-to-cancel-a-meal.md`.
+
+---
+
+### Feature: Core analytics events (app_opened, signup/signin, identify)
+
+**Automated:** `test/core/analytics/session_tracker_test.dart`, `analytics_listener_test.dart`, `tracking_plan_parity_test.dart` (every registry event is fired somewhere in `lib/`), `auth_repository_impl_test.dart` (method + timestamps mapping).
+
+**Manual on a device with `--dart-define=ANALYTICS_IN_DEV=true`, Firebase Analytics DebugView:**
+- [ ] Cold start: `app_opened` (`is_cold_start: true`); background and resume: `app_opened` (`false`).
+- [ ] Brand-new account via Google / Apple / phone: one `signup_completed` with the right `method`; user properties `signup_date`, `signup_method`, `app_version`, `platform` appear.
+- [ ] Sign out and sign back in with an existing account: one `signin_completed`; no `signup_completed`.
+- [ ] Kill and relaunch while signed in: `app_opened` + identify, but no `signin_completed`.
+- [ ] After sign-out, new events carry no user id (`reset`).
+
+---
+
+### Feature: Private vs public profile
+
+**Automated:** `firebase/rules-test/users_profiles.rules.test.cjs` (7 cases, emulator); `test/features/user/data/*` (DTO split, merge, public age self-heal, no dob/gender in the public doc); `firebase/functions/test/profile_split.test.ts` (backfill split).
+
+**Manual (stage, after the rollout in `docs/RELEASE.md` §1.5):**
+- [ ] Sign up a new account: age gate -> profile setup works; a second account sees the first one's name/photo/age on a meal and in the request inbox and chat, with no crash.
+- [ ] A second account cannot read `users/<other>` or list `profiles` (Rules Playground / emulator).
+- [ ] After a rating lands, the aggregate appears on the rated person's profile badge.
+- [ ] Delete an account: both `users/{uid}` and `profiles/{uid}` are gone; their meals/ratings behave as before.
+- [ ] Existing test accounts show correct names/photos after the backfill (dry-run first).
+- [ ] A person with no public profile shows a neutral placeholder, not an error.
 
 ---
 

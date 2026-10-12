@@ -15,3 +15,5 @@
 **Hypothesis:** (1) Add a scheduled function that sets `status: 'expired'` (or deletes) `open` meals whose `dateTime` passed (the existing `status+dateTime` index serves it). (2) In the controller re-filter on a `Timer.periodic(1 min)` tick or schedule a refresh at the earliest listed `dateTime`. (3) Add a `cancelMeal` callable (host: open or matched; guest: withdraw) that also notifies the other side.
 
 **Regression tests:** `test/features/meal/application/discovery_clock_edge_test.dart` ("a listed meal is dropped once its start time passes" skipped until fixed; 300-meal mapping test passes).
+
+**Status:** Fixed (stale feed, unbounded download, over-counted `discovery_viewed`) — the controller re-evaluates when the next listed meal starts; the query is `status == open` + `dateTime > now`, ordered, limited to 100 (existing `status`+`dateTime` index); geohash prefix is filtered on the client (v1 is Paris-only). `discovery_viewed` fires only when the visible ids change. Not part of this fix: closing expired `open` docs (no longer affects cost) and cancelling a meal — split into `docs/bugs/2026-10-10-no-way-to-cancel-a-meal.md` (needs `/spec`).

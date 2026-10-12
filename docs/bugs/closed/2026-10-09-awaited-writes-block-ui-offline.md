@@ -15,3 +15,5 @@
 **Hypothesis:** For writes that are safe to queue (messages, ratings), do not await the server ack: `unawaited(ref.set(...))` after local validation, clear the draft/close the sheet immediately, and surface failures from the stream's `snapshotsInSync`/metadata (`hasPendingWrites`) instead. For create meal / request, either do the same or detect connectivity and show "You're offline - it will be sent when you reconnect".
 
 **Regression test:** `message_composer_offline_edge_test.dart` "offline (write never acknowledged): composer is free again" (skipped until fixed).
+
+**Status:** Fixed — `settleOrQueue` (`lib/core/util/queued_write.dart`) in the chat, create-meal, request and rating controllers: a write acknowledged or rejected within 3 s behaves as before (errors still surface); one still pending after 3 s counts as queued (Firestore offline persistence delivers it on reconnect) and the UI moves on. A rejection that only arrives after reconnect is logged. Real airplane-mode behaviour still to verify on a device.

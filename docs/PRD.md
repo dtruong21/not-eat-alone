@@ -54,7 +54,7 @@ Joiners are approval-gated, women-only meals exist, and block/report is always o
 - [x] Safety-tips card
 - [x] Account deletion
 - [x] Contact support (Settings; address shown in-app)
-- [ ] Private vs public profile split — closes the P1 date-of-birth exposure (see Feature specs)
+- [x] Private vs public profile split — closes the P1 date-of-birth exposure (see Feature specs; **deploy order in `docs/RELEASE.md`**)
 - [ ] Profanity / image moderation (Cloud Function) — not built; deferred by decision (see Open questions)
 
 ### Pillar 4 — Liquidity over reach
@@ -150,17 +150,17 @@ Status: in-MVP (release blocker: QA P1 `docs/bugs/2026-10-09-users-collection-ex
 As a person on Convyve, I want other users to see only my name, photo, bio, age and rating so that my exact date of birth and gender are never exposed to strangers.
 
 **Acceptance criteria:**
-- [ ] Two documents per user: **public** `profiles/{uid}` (display name, photo URLs, bio, age in years, rating count/average) and **private** `users/{uid}` (date of birth, age-verified flag, gender, created-at). Nothing else is added.
-- [ ] Rules: any signed-in user may `get` a public profile; `list`/query on `profiles` is denied (no enumeration); only the owner may write their own public profile (never the rating fields, which only the `onRatingCreated` / deletion functions write). `users/{uid}` is readable and writable by the owner only; the rules themselves may still read it (e.g. women-only checks use `gender`). `fcmTokens` stays owner-only.
-- [ ] 18+ gate lock: once `ageVerified` is true, the owner can no longer change `dob` or `ageVerified`. Before it is true (age-gate retry) they can. Self-attestation remains the v1 trust model; stronger verification is out of scope and the privacy policy says so.
-- [ ] Age: other users see an age in years only. The owner's app keeps the public age correct (written on profile save and refreshed at sign-in when it differs from the date of birth). No month/day/year of birth is ever in a public document.
-- [ ] All screens that show another person (discovery, meal detail host block, request inbox, chat, rating badge) read the public profile; none reads another user's `users/{uid}`.
-- [ ] Existing accounts are backfilled once (script run per database) before the rules are deployed; account deletion also removes the public profile; rating aggregates move to the public profile (functions updated, aggregate math unchanged).
-- [ ] Empty: a person with no public profile yet (not backfilled / brand new) renders as a neutral placeholder name and avatar, never a crash or a blocked screen.
-- [ ] Offline: previously loaded profiles show from cache; no new loading state is introduced.
-- [ ] Error: a failed public-profile read shows the screen's existing error/placeholder state; it never exposes the private document as a fallback.
-- [ ] Rules tests (emulator): another user cannot read or list `users`, cannot list `profiles`, cannot write another's profile, cannot change `dob`/`ageVerified` after verification, cannot write rating fields; the owner can read/edit their own documents; women-only request rules still work.
-- [ ] `docs/legal/privacy.md` and the store privacy labels list exactly what is public (name, photos, bio, age, rating) and what is private (date of birth, gender).
+- [x] Two documents per user: **public** `profiles/{uid}` (display name, photo URLs, bio, age in years, rating count/average) and **private** `users/{uid}` (date of birth, age-verified flag, gender, created-at). Nothing else is added.
+- [x] Rules: any signed-in user may `get` a public profile; `list`/query on `profiles` is denied (no enumeration); only the owner may write their own public profile (never the rating fields, which only the `onRatingCreated` / deletion functions write). `users/{uid}` is readable and writable by the owner only; the rules themselves may still read it (e.g. women-only checks use `gender`). `fcmTokens` stays owner-only.
+- [x] 18+ gate lock: once `ageVerified` is true, the owner can no longer change `dob` or `ageVerified`. Before it is true (age-gate retry) they can. Self-attestation remains the v1 trust model; stronger verification is out of scope and the privacy policy says so.
+- [x] Age: other users see an age in years only. The owner's app keeps the public age correct (written on profile save and refreshed at sign-in when it differs from the date of birth). No month/day/year of birth is ever in a public document.
+- [x] All screens that show another person (discovery, meal detail host block, request inbox, chat, rating badge) read the public profile; none reads another user's `users/{uid}`.
+- [x] Existing accounts are backfilled (script `firebase/functions/scripts/backfill_profiles.js` — run per database BEFORE deploying the rules) once (script run per database) before the rules are deployed; account deletion also removes the public profile; rating aggregates move to the public profile (functions updated, aggregate math unchanged).
+- [x] Empty: a person with no public profile yet (not backfilled / brand new) renders as a neutral placeholder name and avatar, never a crash or a blocked screen.
+- [x] Offline: previously loaded profiles show from cache; no new loading state is introduced.
+- [x] Error: a failed public-profile read shows the screen's existing error/placeholder state; it never exposes the private document as a fallback.
+- [x] Rules tests (emulator) — `firebase/rules-test/`: another user cannot read or list `users`, cannot list `profiles`, cannot write another's profile, cannot change `dob`/`ageVerified` after verification, cannot write rating fields; the owner can read/edit their own documents; women-only request rules still work.
+- [x] `docs/legal/privacy.md` lists exactly what is public (name, photos, bio, age, rating) and what is private (date of birth, gender). **Still to do at submission:** the same wording in the App Store / Play privacy labels.
 
 **Out of scope (cut from this feature):**
 - Server-side age or identity verification (ID check, document upload) — v1 stays self-attested behind phone sign-in.

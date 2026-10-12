@@ -11,6 +11,8 @@ class MockGoogleSignIn extends Mock implements GoogleSignIn {}
 
 class MockUser extends Mock implements firebase_auth.User {}
 
+class MockUserInfo extends Mock implements firebase_auth.UserInfo {}
+
 class MockUserCredential extends Mock implements firebase_auth.UserCredential {}
 
 void main() {
@@ -55,6 +57,46 @@ void main() {
         repository.authStateChanges(),
         emitsInOrder([null, const AuthUser(uid: 'x')]),
       );
+    });
+
+    test('currentUser carries the sign-in method and account timestamps', () {
+      final info = MockUserInfo();
+      when(() => info.providerId).thenReturn('google.com');
+      final user = MockUser();
+      when(() => user.uid).thenReturn('x');
+      when(() => user.providerData).thenReturn([info]);
+      when(() => user.metadata).thenReturn(
+        firebase_auth.UserMetadata(
+          DateTime.utc(2026, 10).millisecondsSinceEpoch,
+          DateTime.utc(2026, 10, 2).millisecondsSinceEpoch,
+        ),
+      );
+      when(() => firebaseAuth.currentUser).thenReturn(user);
+
+      final mapped = repository.currentUser!;
+
+      expect(mapped.uid, 'x');
+      expect(mapped.method, AuthMethod.google);
+      expect(mapped.createdAt, DateTime.utc(2026, 10));
+      expect(mapped.lastSignInAt, DateTime.utc(2026, 10, 2));
+    });
+
+    test('maps apple.com and phone providers', () {
+      AuthMethod? methodFor(String providerId) {
+        final info = MockUserInfo();
+        when(() => info.providerId).thenReturn(providerId);
+        final user = MockUser();
+        when(() => user.uid).thenReturn('x');
+        when(() => user.providerData).thenReturn([info]);
+        when(() => user.metadata)
+            .thenReturn(firebase_auth.UserMetadata(0, 0));
+        when(() => firebaseAuth.currentUser).thenReturn(user);
+        return repository.currentUser!.method;
+      }
+
+      expect(methodFor('apple.com'), AuthMethod.apple);
+      expect(methodFor('phone'), AuthMethod.phone);
+      expect(methodFor('password'), isNull);
     });
 
     test("currentUser maps the FirebaseAuth mock's user", () {
