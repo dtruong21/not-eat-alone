@@ -52,7 +52,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Auth
 
 - [ ] Anonymous → real-account linking preserves uid + data.
-- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped). — **FAIL (code)**, see `docs/bugs/2026-10-09-providers-survive-sign-out.md`
+- [ ] Sign-out clears all local state (Riverpod providers invalidated, in-memory caches dropped). — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`
 - [ ] Account deletion cascade leaves zero orphan docs. — gap: a deleted guest strands the host's matched meal, see `docs/bugs/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (reports are retained by design, undocumented)
 - [ ] Token refresh works after 1h+ idle.
 
@@ -70,7 +70,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 ### Memory + perf
 
 - [ ] 5 min of typical use → no obvious memory growth (DevTools memory tab).
-- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes. — **FAIL (code)**, see `docs/bugs/2026-10-09-providers-survive-sign-out.md`
+- [ ] No Firestore listener leaks — every `.snapshots()` subscription is owned by a Riverpod provider that auto-disposes. — **FAIL (code)**, see `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md`
 
 ### Security
 
@@ -301,7 +301,7 @@ Related PRD entry: `docs/PRD.md § Chat`
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-chat-keyboard-squeezes-message-list.md` (P2)
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — composer stuck on a spinner offline
-- `docs/bugs/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
+- `docs/bugs/closed/2026-10-09-providers-survive-sign-out.md` (P2) — one full-history listener per chat row
 
 ---
 
@@ -444,6 +444,18 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Sign-out drops per-user state
+
+**Automated:** `test/core/auth_transition_state_test.dart` (waits while auth resolves; no Firestore read when signed out; an unwatched profile closes its listener; sign-out then sign-in re-subscribes); `chat_repository_impl_test.dart` (`watchLastMessage` = newest only); chat list tests use `lastMessageProvider`.
+
+**Manual on a device:**
+- [ ] Sign in as A, open chats and a profile, sign out, sign in as B: no data or error from A's session appears (no stale profile, thread or "permission denied").
+- [ ] Chats tab with several matches: each row shows the last message; (DevTools/Firestore usage) it does not download every match's full history.
+- [ ] Sign out while a chat is open: lands on sign-in, no crash or red error flash.
+- Known follow-up: the open chat thread is still unbounded (`limit` + load-more not built).
 
 ---
 

@@ -67,8 +67,8 @@ void main() {
           authStateProvider.overrideWith(
             (ref) => Stream.value(const AuthUser(uid: 'me')),
           ),
-          chatMessagesProvider('m1').overrideWith(
-            (ref) => const Stream<List<ChatMessage>>.empty(),
+          lastMessageProvider('m1').overrideWith(
+            (ref) => const Stream<ChatMessage?>.empty(),
           ),
           chatListProvider.overrideWith(
             (ref) => switch (chatListState) {
@@ -85,6 +85,8 @@ void main() {
       ),
     );
     await tester.pump();
+    await tester.pump();
+    // Per-user providers wait for the auth session to resolve.
     await tester.pump();
   }
 

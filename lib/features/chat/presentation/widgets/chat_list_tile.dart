@@ -12,7 +12,6 @@ import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
 import 'package:not_eat_alone/features/chat/application/chat_messages_provider.dart';
-import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 
 /// "1m" / "2h" / "3d" / falls back to a short date beyond a week — kept as a
@@ -30,7 +29,7 @@ String _relativeTime(DateTime dateTime, {DateTime? now}) {
 
 /// A single chat row. Watches [userDocProvider] for the other participant's
 /// photo/name (tolerates loading/null with a placeholder) and
-/// [chatMessagesProvider] for the last-message preview + unread state.
+/// [lastMessageProvider] (a `limit(1)` query) for the last-message preview + unread state.
 ///
 /// Unread is derived simply: the last message exists and was sent by the
 /// other participant — a full compare against the viewer's own `reads` doc
@@ -48,12 +47,9 @@ class ChatListTile extends ConsumerWidget {
     final textTheme = theme.textTheme;
 
     final user = ref.watch(userDocProvider(item.otherUid)).value;
-    final messages =
-        ref.watch(chatMessagesProvider(item.match.id)).value ??
-            const <ChatMessage>[];
+    final lastMessage = ref.watch(lastMessageProvider(item.match.id)).value;
     final myUid = ref.watch(authStateProvider).value?.uid;
 
-    final lastMessage = messages.isNotEmpty ? messages.last : null;
     final preview = lastMessage?.text ?? 'Say hi \u{1F44B}';
     final unread = lastMessage != null &&
         myUid != null &&

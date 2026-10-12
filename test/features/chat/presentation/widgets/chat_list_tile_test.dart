@@ -39,8 +39,8 @@ void main() {
           authStateProvider.overrideWith(
             (ref) => Stream.value(const AuthUser(uid: 'me')),
           ),
-          chatMessagesProvider('m1').overrideWith(
-            (ref) => Stream.value([
+          lastMessageProvider('m1').overrideWith(
+            (ref) => Stream.value(
               ChatMessage(
                 id: 'x',
                 matchId: 'm1',
@@ -48,7 +48,7 @@ void main() {
                 text: 'hi',
                 createdAt: createdAt,
               ),
-            ]),
+            ),
           ),
         ],
         child: MaterialApp(

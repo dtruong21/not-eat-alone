@@ -4,7 +4,9 @@ import 'package:not_eat_alone/features/user/data/repositories/user_repository_im
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/repositories/user_repository.dart';
 
-final userRepositoryProvider = Provider<UserRepository>((ref) => UserRepositoryImpl());
+final userRepositoryProvider = Provider<UserRepository>(
+  (ref) => UserRepositoryImpl(),
+);
 
 /// The signed-in user's OWN record (private `users/{uid}` merged with their
 /// public profile), or `null` when signed out or the age gate hasn't created
@@ -17,6 +19,22 @@ final currentUserDocProvider = StreamProvider<AppUser?>((ref) {
 
 /// Any user's PUBLIC profile (`profiles/{uid}`) — for showing a host/guest.
 /// Has no `dob`/`gender`; use [AppUser.ageYears] for the age.
-final userDocProvider = StreamProvider.family<AppUser?, String>((ref, uid) {
+///
+/// Auto-disposed (the listener closes when no screen shows that person) and
+/// tied to the signed-in uid: signing out closes it, and the next session
+/// re-subscribes under its own credentials instead of reusing a stream the
+/// backend already terminated.
+final userDocProvider = StreamProvider.autoDispose.family<AppUser?, String>((
+  ref,
+  uid,
+) {
+  switch (watchSession(ref)) {
+    case SessionState.resolving:
+      return const Stream.empty();
+    case SessionState.signedOut:
+      return Stream.value(null);
+    case SessionState.signedIn:
+      break;
+  }
   return ref.watch(userRepositoryProvider).watch(uid);
 });
