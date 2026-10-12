@@ -24,6 +24,8 @@ class _MockMeals extends Mock implements MealRepository {}
 /// geohash cell, finds none of the Paris meals and sees "No meals near you
 /// yet" with no way to evaluate matching.
 /// Bug: docs/bugs/2026-10-12-feed-is-empty-for-any-device-outside-paris.md
+// ignore: unused_element
+
 const _bug = 'docs/bugs/2026-10-12-feed-is-empty-for-any-device-outside-paris.md';
 
 void main() {
