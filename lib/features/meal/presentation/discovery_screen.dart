@@ -23,6 +23,7 @@ import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
+import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
@@ -308,7 +309,11 @@ class _HostInfo extends ConsumerWidget {
             CircleAvatar(
               radius: WarmPlayfulSpacing.s4,
               backgroundColor: colors.surfaceContainerHighest,
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+              backgroundImage: photoUrl != null
+                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s4)
+                  : null,
+              onBackgroundImageError:
+                  photoUrl != null ? ignoreAvatarImageError : null,
               child: photoUrl == null
                   ? Icon(
                       Icons.person_rounded,

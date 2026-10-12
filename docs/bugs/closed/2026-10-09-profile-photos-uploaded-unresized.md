@@ -12,3 +12,5 @@
 **Frequency:** depends on the user's camera.
 
 **Hypothesis:** `pickImage(maxWidth: 1080, maxHeight: 1080, imageQuality: 80)`; use `ResizeImage(NetworkImage(url), width: 2 * radius * dpr)` (or `cached_network_image` with `memCacheWidth`) and pass `onBackgroundImageError: (_, __) {}` on avatars. Optionally record non-fatal (`fatal: false`) for async errors in `PlatformDispatcher.onError`.
+
+**Status:** Fixed — picked photos are downscaled at pick time (`maxWidth/maxHeight: 1080`, JPEG quality 80); avatars decode at avatar size (`avatarImage` -> `ResizeImage`, `lib/core/design/avatar_image.dart`) and a failing photo no longer reaches `FlutterError.onError` (`ignoreAvatarImageError`); form tiles decode at 480 px. Tests: `test/core/design/avatar_image_test.dart`. Still unverified on hardware: a 48-200 MP photo, and memory in a long feed.

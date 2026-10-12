@@ -176,7 +176,7 @@ Related PRD entry: `docs/PRD.md § Profile`
 
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-router-rebuilt-on-every-user-doc-change.md` (P1, fixed) — each photo add rewrites the user doc and resets navigation
-- `docs/bugs/2026-10-09-profile-photos-uploaded-unresized.md` (P2, inferred)
+- `docs/bugs/closed/2026-10-09-profile-photos-uploaded-unresized.md` (P2, inferred)
 
 ---
 
@@ -444,6 +444,17 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Photo size and avatar decoding
+
+**Automated:** `test/core/design/avatar_image_test.dart` (decode width = radius x 2 x DPR, no upscaling; a failing photo raises no framework error).
+
+**Manual on a device:**
+- [ ] Add a photo from a 48-200 MP camera roll image: it uploads (no "profile error"); the Storage object is well under 8 MB (~1080 px).
+- [ ] Discover / Chats / inbox with ~20 hosts' photos scrolls smoothly on a mid-tier Android phone (DevTools memory stays flat).
+- [ ] Remove a photo then view the old profile elsewhere: the avatar shows the person icon, and Crashlytics gets no fatal image error.
 
 ---
 
