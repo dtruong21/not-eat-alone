@@ -13,7 +13,8 @@ export const makeRatingCreated = (database: string) =>
       const stars = data?.stars as number | undefined;
       if (!snapshot || !targetUid || typeof stars !== 'number') return;
       const db = getFirestore(getApp(), database);
-      const userRef = db.collection('users').doc(targetUid);
+      // The aggregate lives on the PUBLIC profile (other users read it).
+      const userRef = db.collection('profiles').doc(targetUid);
       const ratingRef = snapshot.ref;
       await db.runTransaction(async (txn) => {
         // Firestore triggers are at-least-once: guard against a duplicate

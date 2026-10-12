@@ -212,6 +212,20 @@ final class DirectionsOpened extends AppEvent {
   Map<String, Object?> get props => const {};
 }
 
+/// Who cancelled a matched meal.
+enum CancelRole { host, guest }
+
+final class MealCancelled extends AppEvent {
+  const MealCancelled({required this.role});
+  final CancelRole role;
+
+  @override
+  String get name => 'meal_cancelled';
+
+  @override
+  Map<String, Object?> get props => {'role': role.name};
+}
+
 final class JoinRequested extends AppEvent {
   const JoinRequested({required this.womenOnly});
   final bool womenOnly;

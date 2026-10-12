@@ -31,6 +31,14 @@ import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
 /// tile; the controller is the source of truth that actually enforces it).
 const kProfilePhotoLimit = 6;
 
+/// Longest side (px) and JPEG quality of a picked profile photo - plenty for a
+/// full-screen view, far under the 8 MB Storage limit.
+const profilePhotoMaxSide = 1080.0;
+const profilePhotoQuality = 80;
+
+/// Decode width (px) for the small photo tiles in the form (about 3x a tile).
+const _photoTileDecodeWidth = 480;
+
 const _maxNameLength = 40;
 const _maxBioLength = 300;
 
@@ -167,7 +175,14 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
     _debugPickedBytes = null;
 
     if (bytes == null) {
-      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      // Downscale + recompress at pick time: originals from a modern camera are
+      // 5-30 MB, and Storage rejects anything over 8 MB.
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: profilePhotoMaxSide,
+        maxHeight: profilePhotoMaxSide,
+        imageQuality: profilePhotoQuality,
+      );
       if (picked == null) return;
       bytes = await picked.readAsBytes();
     }
@@ -344,6 +359,8 @@ class _PhotoThumbnail extends StatelessWidget {
           child: Image.network(
             url,
             fit: BoxFit.cover,
+            // Decode at tile size, not full resolution.
+            cacheWidth: _photoTileDecodeWidth,
             width: double.infinity,
             height: double.infinity,
             errorBuilder: (context, error, stackTrace) => ColoredBox(

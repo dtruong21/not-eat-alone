@@ -68,8 +68,5 @@ void main() {
       ];
       expect(neverFired, isEmpty, reason: 'declared but never fired');
     },
-    skip:
-        'BUG docs/bugs/2026-10-09-analytics-core-events-never-fired.md '
-        '(un-skip when fixed)',
   );
 }

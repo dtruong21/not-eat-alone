@@ -45,6 +45,10 @@ void main() {
     expect(mapPushData({'type': 'rate'}), isNull);
     expect(mapPushData({'type': 'rate', 'matchId': ''}), isNull);
   });
+  test('match_left and meal_cancelled -> /discover', () {
+    expect(mapPushData({'type': 'match_left', 'mealId': 'm1'})!.location, '/discover');
+    expect(mapPushData({'type': 'meal_cancelled', 'mealId': 'm1'})!.location, '/discover');
+  });
   test('unknown/missing type -> null', () {
     expect(mapPushData({}), isNull);
     expect(mapPushData({'type': 'nope'}), isNull);

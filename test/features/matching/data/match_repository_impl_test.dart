@@ -1,5 +1,8 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:not_eat_alone/core/config/flavor.dart';
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/matching/data/repositories/match_repository_impl.dart';
 
 void main() {
@@ -23,5 +26,35 @@ void main() {
     final list = await repo.watchMatchesForUser('g1').first;
     expect(list.map((m) => m.id), ['m1']);
     expect(list.single.participants, ['h1', 'g1']);
+  });
+
+  group('cancelMatchedMeal', () {
+    test('invokes the callable with the meal id and the flavor database', () async {
+      FlavorConfig.current = FlavorConfig(flavor: Flavor.stage);
+      Map<String, dynamic>? sent;
+      final r = MatchRepositoryImpl(
+        firestore: db,
+        callCancel: (data) async => sent = data,
+      );
+
+      await r.cancelMatchedMeal(mealId: 'm1');
+
+      expect(sent, {'mealId': 'm1', 'databaseId': 'stage'});
+    });
+
+    test('maps a failed call to RepositoryWriteException', () async {
+      final r = MatchRepositoryImpl(
+        firestore: db,
+        callCancel: (_) async => throw FirebaseFunctionsException(
+          message: 'nope',
+          code: 'failed-precondition',
+        ),
+      );
+
+      expect(
+        r.cancelMatchedMeal(mealId: 'm1'),
+        throwsA(isA<RepositoryWriteException>()),
+      );
+    });
   });
 }

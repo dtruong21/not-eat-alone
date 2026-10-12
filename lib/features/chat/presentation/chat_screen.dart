@@ -18,6 +18,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
+import 'package:not_eat_alone/core/design/avatar_image.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
@@ -30,6 +31,7 @@ import 'package:not_eat_alone/features/chat/application/chat_messages_provider.d
 import 'package:not_eat_alone/features/chat/application/chat_read_provider.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/message_read.dart';
+import 'package:not_eat_alone/features/chat/presentation/widgets/leave_match_action.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/message_composer.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/post_meal_card.dart';
@@ -118,6 +120,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             otherReadProvider((matchId: widget.matchId, otherUid: otherUid)),
           );
 
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return Scaffold(
       appBar: AppBar(
         title: otherUid != null
@@ -126,6 +130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: otherUid == null
             ? null
             : [
+                LeaveMatchAction(matchId: widget.matchId, otherUid: otherUid),
                 SafetyActions(
                   reportTargetType: 'user',
                   reportTargetId: otherUid,
@@ -137,30 +142,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (otherUid != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  WarmPlayfulSpacing.s4,
-                  WarmPlayfulSpacing.s4,
-                  WarmPlayfulSpacing.s4,
-                  0,
-                ),
-                child: PostMealCard(
-                  matchId: widget.matchId,
-                  targetUid: otherUid,
+            // The post-meal prompt and safety tips are informational: hide them
+            // while the keyboard is open (they would leave the thread a sliver
+            // or push the composer off-screen) and never let them take more
+            // than ~40% of the body (they scroll at large text sizes).
+            if (!keyboardOpen)
+              Flexible(
+                flex: 0,
+                child: LayoutBuilder(
+                  builder: (context, constraints) => ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.4,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          if (otherUid != null)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                WarmPlayfulSpacing.s4,
+                                WarmPlayfulSpacing.s4,
+                                WarmPlayfulSpacing.s4,
+                                0,
+                              ),
+                              child: PostMealCard(
+                                matchId: widget.matchId,
+                                targetUid: otherUid,
+                              ),
+                            ),
+                          const Padding(
+                            padding: EdgeInsets.all(WarmPlayfulSpacing.s4),
+                            child: SafetyTipsCard(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-              child: const SafetyTipsCard(),
-            ),
             Expanded(
               child: messagesAsync.when(
+                // Riverpod auto-retries a failed stream: keep showing the error.
+                skipLoadingOnReload: true,
                 loading: () => const SkeletonMessages(),
-                error: (error, stackTrace) => ErrorState(
-                  onRetry: () =>
-                      ref.invalidate(chatMessagesProvider(widget.matchId)),
-                ),
+                error: (error, stackTrace) => !_isChatGone(error)
+                    ? ErrorState(
+                        onRetry: () => ref.invalidate(
+                          chatMessagesProvider(widget.matchId),
+                        ),
+                      )
+                    // Every read under a deleted match is denied: the chat is
+                    // gone (cancelled / account deleted).
+                    : Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'This chat is no longer available — the meal was '
+                                'cancelled.',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: WarmPlayfulSpacing.s3),
+                              FilledButton(
+                                key: const Key('chat_unavailable_back_button'),
+                                onPressed: () => context.go('/chats'),
+                                child: const Text('Back to chats'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                 data: (messages) {
                   if (messages.isEmpty) {
                     return const EmptyState(title: 'Say hi \u{1F44B}');
@@ -177,7 +231,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     itemBuilder: (context, index) {
                       final message = ordered[index];
                       final mine = myUid != null && message.senderId == myUid;
-                      final showSeen = mine &&
+                      final showSeen =
+                          mine &&
                           message.id == myLatestId &&
                           _isSeenBy(message, otherReadAsync.value);
                       return Padding(
@@ -195,7 +250,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
             ),
-            MessageComposer(matchId: widget.matchId),
+            if (!(messagesAsync.hasError && _isChatGone(messagesAsync.error!)))
+              MessageComposer(matchId: widget.matchId),
           ],
         ),
       ),
@@ -213,15 +269,21 @@ class _ChatAppBarTitle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final user = ref.watch(userDocProvider(otherUid)).value;
-    final photoUrl =
-        (user?.photoUrls.isNotEmpty ?? false) ? user!.photoUrls.first : null;
+    final photoUrl = (user?.photoUrls.isNotEmpty ?? false)
+        ? user!.photoUrls.first
+        : null;
 
     return Row(
       children: [
         CircleAvatar(
           radius: WarmPlayfulSpacing.s4,
           backgroundColor: colors.surfaceContainerHighest,
-          backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+          backgroundImage: photoUrl != null
+              ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s4)
+              : null,
+          onBackgroundImageError: photoUrl != null
+              ? ignoreAvatarImageError
+              : null,
           child: photoUrl == null
               ? Icon(
                   Icons.person_rounded,
@@ -248,3 +310,8 @@ class _ChatAppBarTitle extends ConsumerWidget {
     );
   }
 }
+
+/// Rules answer every read under a cancelled / deleted match with
+/// permission-denied (the participant check `get()`s a missing document).
+bool _isChatGone(Object error) =>
+    error.toString().contains('permission-denied');

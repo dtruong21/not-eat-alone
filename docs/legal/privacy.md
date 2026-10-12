@@ -21,16 +21,17 @@
 ### Account & Profile
 
 - **Account creation:** email address, phone number (authentication method)
-- **Profile information:** display name, date of birth, age, gender, biography, profile photos (stored in Firebase Storage)
+- **Profile information:** display name, date of birth (private), age, gender (private), biography, profile photos (stored in Firebase Storage)
 - **Authentication:** sign-in credentials via Firebase Auth (Google, Apple, or phone number); sign-in provider identifiers
 
 ### Location
 
-- **Coarse location:** country, city, and geohash (via the Geolocator library) — used **only** to show meals and users near you on the Discovery feed. We do not collect precise GPS coordinates or track your real-time location.
+- **Device location (not stored):** the app reads your phone's approximate location on your device only to find meals near you; it is used to compute a search area and is **not saved** on our servers. If you decline permission, the app uses central Paris. We do not track your real-time location.
 
 ### Service content
 
-- **Meals:** meal name, date/time, cuisine, allergies/dietary notes, photos, restaurant/venue details, and participant list
+- **Meals:** the restaurant you choose (name, address, coordinates), date/time, an optional note, the women-only setting, and who is matched
+- **Restaurant search:** the text you type when searching for a restaurant is sent through our server to the Google Places service to return results
 - **Matches:** pairs of users who have matched (both expressed interest)
 - **Messages:** direct messages between matched users
 - **Ratings:** ratings you give to other users after a meal
@@ -67,6 +68,10 @@ We do **not**:
 
 ## 4. Who we share your data with
 
+### What other Convyve users can see
+
+Other signed-in users can see your **public profile only**: display name, profile photos, biography, **age in years**, and your average rating and rating count. Your **exact date of birth and your gender are private** — they are stored separately, are never shown to other users, and are readable only by you and by our systems (for example, to enforce the 18+ requirement and women-only meals). The age gate is a self-declared date of birth and is not independently verified.
+
 ### Third-party processors (on your behalf)
 
 - **Google Firebase**:
@@ -78,6 +83,8 @@ We do **not**:
   - **Firebase Crashlytics:** collects and reports crash data
   - **Cloud Messaging:** delivers push notifications
   
+- **Google Places** (restaurant search only): your search text is sent to Google Maps Platform through our server; no account or profile data is included.
+
 - **Google & Apple** (for sign-in only):
   - **Google Sign-In / Apple Sign-In:** if you authenticate via these providers, they receive your choice to sign in but do not receive your Convyve profile data (only a provider token)
 
@@ -114,6 +121,8 @@ Account deletion is **PERMANENT and IRREVERSIBLE**. When you delete your account
 - **Ratings you authored** (your reviews of other users) — the affected users' aggregate rating (average and count) is automatically adjusted to remove your rating's contribution
 - **Ratings about you** (other users' reviews of you)
 
+**Retained after deletion:** reports you filed about other users, and reports others filed about you, are kept for safety and abuse prevention (they contain no profile data beyond the report text and identifiers).
+
 **Note:** You retain the right to request complete data deletion under GDPR (Art. 17). The account-deletion flow automatically implements deletion of all personal data listed above; if you believe any data was not deleted, include this in a GDPR erasure request. See "Your rights" below.
 
 ---
@@ -123,7 +132,7 @@ Account deletion is **PERMANENT and IRREVERSIBLE**. When you delete your account
 ### Technical measures
 
 - **App Check**: Firebase App Check verifies that requests to your backend come from the genuine app (not from a hacked or forged client)
-- **Firestore Security Rules**: all database access is scoped to the authenticated user (you can only read/write your own data, except for public meal/profile data visible to other users)
+- **Firestore Security Rules**: all database access is scoped to the authenticated user (you can only read/write your own data, except for your public profile — name, photos, bio, age, rating — and public meal data, which other signed-in users can view one at a time)
 - **HTTPS/TLS**: all data in transit is encrypted
 - **Firebase Storage rules**: your photos are private by default; only you and the service can access them
 

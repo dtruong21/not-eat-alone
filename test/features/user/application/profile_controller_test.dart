@@ -83,7 +83,7 @@ void main() {
   });
 
   ProviderContainer buildContainer({List<String> photoUrls = const []}) {
-    when(() => userRepository.watch('u1'))
+    when(() => userRepository.watchOwn('u1'))
         .thenAnswer((_) => Stream.value(_userWithPhotos(photoUrls)));
 
     return ProviderContainer(

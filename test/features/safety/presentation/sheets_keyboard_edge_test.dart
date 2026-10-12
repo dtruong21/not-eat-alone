@@ -18,8 +18,8 @@ class _MockReports extends Mock implements ReportRepository {}
 
 /// QA sweep 2026-10-09: the rating and report bottom sheets host a text field,
 /// so they are used with the software keyboard open. Both are non-scrolling
-/// `Column`s. Open bug:
-/// docs/bugs/2026-10-09-text-scale-overflow-signin-and-sheets.md
+/// `Column`s. Fixed:
+/// docs/bugs/closed/2026-10-09-text-scale-overflow-signin-and-sheets.md
 void main() {
   setUpAll(loadAppFonts);
 
@@ -70,8 +70,6 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  // Un-skip when the sheets scroll (see the bug file).
-  const bug = true;
 
   for (final rating in [true, false]) {
     final name = rating ? 'rating' : 'report';
@@ -113,7 +111,7 @@ void main() {
         scale: 1,
       );
       expect(tester.takeException(), isNull);
-    }, skip: bug);
+    });
 
     testWidgets('$name sheet, 360x800, 1.5x, keyboard open: no overflow', (
       tester,
@@ -126,6 +124,31 @@ void main() {
         scale: 1.5,
       );
       expect(tester.takeException(), isNull);
-    }, skip: bug);
+    });
+    testWidgets('$name sheet, 360x640, 2.0x, keyboard open: no overflow', (
+      tester,
+    ) async {
+      await open(
+        tester,
+        rating: rating,
+        size: const Size(360, 640),
+        keyboard: 280,
+        scale: 2,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('$name sheet, 360x640, 2.0x, no keyboard: no overflow', (
+      tester,
+    ) async {
+      await open(
+        tester,
+        rating: rating,
+        size: const Size(360, 640),
+        keyboard: 0,
+        scale: 2,
+      );
+      expect(tester.takeException(), isNull);
+    });
   }
 }
