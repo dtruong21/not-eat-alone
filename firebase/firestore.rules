@@ -189,6 +189,21 @@ service cloud.firestore {
                         || request.resource.data.guestId == null)
                     && request.resource.data.keys().hasOnly(['id', 'hostId', 'restaurant', 'dateTime', 'geohash', 'note', 'womenOnly', 'seats', 'status', 'guestId', 'createdAt'])
                     && request.resource.data.restaurant is map
+                    // Exactly the shape the app writes: a malformed restaurant would
+                    // make the doc unparseable and take Discover down for everyone.
+                    && request.resource.data.restaurant.keys().hasOnly(['placeId', 'name', 'address', 'lat', 'lng'])
+                    && request.resource.data.restaurant.placeId is string
+                    && request.resource.data.restaurant.placeId.size() <= 200
+                    && request.resource.data.restaurant.name is string
+                    && request.resource.data.restaurant.name.size() <= 200
+                    && request.resource.data.restaurant.address is string
+                    && request.resource.data.restaurant.address.size() <= 300
+                    && request.resource.data.restaurant.lat is number
+                    && request.resource.data.restaurant.lat >= -90
+                    && request.resource.data.restaurant.lat <= 90
+                    && request.resource.data.restaurant.lng is number
+                    && request.resource.data.restaurant.lng >= -180
+                    && request.resource.data.restaurant.lng <= 180
                     && request.resource.data.womenOnly is bool
                     && request.resource.data.seats is int
                     && (!('note' in request.resource.data)

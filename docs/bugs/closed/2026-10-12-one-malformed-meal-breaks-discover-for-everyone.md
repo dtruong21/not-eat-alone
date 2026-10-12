@@ -14,3 +14,5 @@
 **Frequency:** always.
 
 **Hypothesis / fix (both, defence in depth):** (1) rules: `request.resource.data.restaurant.keys().hasOnly(['placeId','name','address','lat','lng']) && placeId/name/address is string && lat/lng is number && lat in [-90,90] && lng in [-180,180]` plus size caps on `name`/`address`; (2) client: in `watchDiscoverable` parse per document and drop (and log) the ones that fail instead of failing the whole snapshot. Add the matching case to `firebase/rules-test/` and to the `meals` whitelist contract test `test/core/firebase/rules_write_shape_contract_test.dart`.
+
+**Status:** Fixed — rules validate the exact `restaurant` shape/types/ranges/sizes; `watchDiscoverable` skips (and logs) an unparseable meal instead of failing the whole stream. Tests: `meal_repository_poison_edge_test.dart` (un-skipped) and `hardening.rules.test.cjs` (restaurant shape). Deploy the rules for the server half.

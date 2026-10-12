@@ -55,6 +55,7 @@ class _ParisNoticeState extends State<ParisNotice> {
               const SizedBox(width: WarmPlayfulSpacing.s2),
               IconButton(
                 key: const Key('paris_notice_close_button'),
+                tooltip: 'Dismiss',
                 icon: const Icon(Icons.close_rounded),
                 onPressed: () {
                   setState(() {
@@ -64,8 +65,8 @@ class _ParisNoticeState extends State<ParisNotice> {
                 iconSize: WarmPlayfulSpacing.s5,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(
-                  minWidth: WarmPlayfulSpacing.s5,
-                  minHeight: WarmPlayfulSpacing.s5,
+                  minWidth: WarmPlayfulSize.minTap,
+                  minHeight: WarmPlayfulSize.minTap,
                 ),
               ),
             ],

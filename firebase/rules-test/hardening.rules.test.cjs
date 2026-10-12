@@ -66,3 +66,20 @@ test('ratings: exact keys (no client-set aggregated) and server createdAt', asyn
   await assertFails(setDoc(doc(as('bob'), 'ratings/mm_bob'), { ...rating, createdAt: Timestamp.fromMillis(0) }));
   await assertSucceeds(setDoc(doc(as('bob'), 'ratings/mm_bob'), { ...rating, comment: 'great' }));
 });
+
+test('meals: malformed restaurant is rejected (it would break Discover for everyone)', async () => {
+  await seed();
+  const meal = (restaurant) => ({
+    id: 'x', hostId: 'bob', restaurant, dateTime: Timestamp.fromMillis(Date.now() + 86400e3),
+    geohash: 'u09tv', note: null, womenOnly: false, seats: 1, status: 'open', guestId: null,
+    createdAt: serverTimestamp(),
+  });
+  const ok = { placeId: 'p1', name: 'Septime', address: '80 Rue de Charonne', lat: 48.85, lng: 2.37 };
+  await assertSucceeds(setDoc(doc(as('bob'), 'meals/ok'), meal(ok)));
+  await assertFails(setDoc(doc(as('bob'), 'meals/j1'), meal({})));
+  await assertFails(setDoc(doc(as('bob'), 'meals/j2'), meal({ placeId: 5, name: null, lat: 'x' })));
+  await assertFails(setDoc(doc(as('bob'), 'meals/j3'), meal({ ...ok, extra: 1 })));
+  await assertFails(setDoc(doc(as('bob'), 'meals/j4'), meal({ ...ok, lat: 91 })));
+  await assertFails(setDoc(doc(as('bob'), 'meals/j5'), meal({ ...ok, name: 'n'.repeat(201) })));
+  await assertFails(setDoc(doc(as('bob'), 'meals/j6'), meal({ placeId: 'p', name: 'n', address: 'a', lat: 48 })));
+});

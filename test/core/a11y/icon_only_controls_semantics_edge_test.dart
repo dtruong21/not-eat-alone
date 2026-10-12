@@ -81,7 +81,7 @@ void main() {
       isNotEmpty,
       reason: _bug,
     );
-  }, skip: true); // open bug: see _bug
+  });
 
   testWidgets('"Paris-only" notice close button has a screen-reader label',
       (tester) async {
@@ -96,7 +96,7 @@ void main() {
       isNotEmpty,
       reason: _bug,
     );
-  }, skip: true); // open bug: see _bug
+  });
 
   testWidgets('rating stars have screen-reader labels', (tester) async {
     await tester.pumpWidget(
@@ -128,5 +128,5 @@ void main() {
         reason: 'star $i: $_bug',
       );
     }
-  }, skip: true); // open bug: see _bug
+  });
 }

@@ -7,6 +7,7 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:not_eat_alone/core/firebase/firebase_client.dart';
 import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/core/util/geohash.dart';
@@ -99,7 +100,8 @@ class MealRepositoryImpl implements MealRepository {
                       geohashPrefix,
                     ),
               )
-              .map(_mealFromDoc)
+              .map(_tryMealFromDoc)
+              .whereType<Meal>()
               .toList(growable: false),
         );
   }
@@ -110,6 +112,17 @@ class MealRepositoryImpl implements MealRepository {
     final snapshot = await _firestore.collection('meals').doc(id).get();
     if (!snapshot.exists) return null;
     return _mealFromData(id, snapshot.data()!);
+  }
+
+  /// A malformed document (schema drift or a hostile write) is skipped and
+  /// logged, so one bad meal can never fail the whole feed for everyone.
+  static Meal? _tryMealFromDoc(QueryDocumentSnapshot<Map<String, Object?>> doc) {
+    try {
+      return _mealFromDoc(doc);
+    } on RepositoryParseException catch (e) {
+      debugPrint('[meals] skipping unparseable meal ${doc.id}: ${e.cause}');
+      return null;
+    }
   }
 
   static Meal _mealFromDoc(QueryDocumentSnapshot<Map<String, Object?>> doc) =>

@@ -378,30 +378,36 @@ class _AddPhotoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return Material(
-      color: colors.surface,
-      borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-      child: InkWell(
-        onTap: onTap,
+    return Semantics(
+      button: true,
+      label: 'Add photo',
+      excludeSemantics: true,
+      onTap: onTap,
+      child: Material(
+        color: colors.surface,
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            // Enabled control: the outline must reach 3:1 on the surface
-            // (outlineVariant is the divider token, ~1:1 there).
-            border: Border.all(color: context.wp.muted),
-            borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
-          ),
-          child: Center(
-            child: isBusy
-                ? SizedBox(
-                    height: WarmPlayfulSpacing.s4,
-                    width: WarmPlayfulSpacing.s4,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colors.primary,
-                    ),
-                  )
-                : Icon(Icons.add_a_photo_outlined, color: context.wp.muted),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              // Enabled control: the outline must reach 3:1 on the surface
+              // (outlineVariant is the divider token, ~1:1 there).
+              border: Border.all(color: context.wp.muted),
+              borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
+            ),
+            child: Center(
+              child: isBusy
+                  ? SizedBox(
+                      height: WarmPlayfulSpacing.s4,
+                      width: WarmPlayfulSpacing.s4,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colors.primary,
+                      ),
+                    )
+                  : Icon(Icons.add_a_photo_outlined, color: context.wp.muted),
+            ),
           ),
         ),
       ),
