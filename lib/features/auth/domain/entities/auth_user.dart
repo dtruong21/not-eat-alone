@@ -11,7 +11,8 @@ enum AuthMethod { google, apple, phone }
 ///
 /// [method], [createdAt] and [lastSignInAt] are optional metadata used by
 /// analytics to tell a fresh sign-up / sign-in from a restored session; they
-/// are null when unknown.
+/// are null when unknown. [phoneNumber] is the E.164 number of a phone
+/// sign-in (null for Google/Apple), shown read-only in Settings.
 @freezed
 abstract class AuthUser with _$AuthUser {
   const factory AuthUser({
@@ -19,5 +20,6 @@ abstract class AuthUser with _$AuthUser {
     AuthMethod? method,
     DateTime? createdAt,
     DateTime? lastSignInAt,
+    String? phoneNumber,
   }) = _AuthUser;
 }

@@ -435,3 +435,12 @@ Added via `/design`.
 **Tests to write (via `/test`):** hidden for 0,0 / missing coords; visible otherwise; tap fires `directions_opened` once and calls the injected launcher with the expected URL per platform; launcher failure shows "Couldn't open Maps"; semantics label present; large text scale (2.0) renders without overflow; dark theme golden-free contrast assertion on the button theme.
 
 ---
+
+## Settings and Blocked people (UX plan 18)
+
+Settings groups, in order: **Account** (Edit profile, read-only Phone number when the sign-in has one, Sign out), **Safety** (Blocked people, Safety tips, Contact support), **Notifications** (iOS only), **Legal** (Privacy Policy, Terms of Service, Open-source licences via `showLicensePage` with the app name and version), **About** (Version). **Delete account** is last in the whole list, after a Divider, in `dangerText`. Navigating rows carry a trailing `chevron_right_rounded`; all rows are >= 48 high.
+
+- Notification settings: one row, "Manage notifications in iOS Settings", opens `app-settings:` through `url_launcher` (injectable `openAppSettingsProvider`). Shown only when `defaultTargetPlatform == iOS`; the Android row is later (it needs an Android settings intent, so a new package).
+- Language switch: not here; it lands with French (plan 19).
+- `/settings/blocked`: AppBar "Blocked people"; rows = avatar (initials fallback), name from the public profile ("Unknown user" if it is gone), outlined "Unblock" button with a row-level spinner, plain snackbar "Unblocked <name>." (no undo, YAGNI); the button drops below the name at text scale > 1.3. Empty: block icon, "You haven't blocked anyone". Skeleton while loading, ErrorState with retry. Data: `BlockRepository.watchBlockedByMe` (query `pair array-contains uid`, `blockerUid == uid` filtered client-side, because the rules cannot prove a `blockerUid ==` query).
+- `/settings/safety`: the same four tips as the chat sheet (`SafetyTipsList`).

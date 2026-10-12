@@ -1,5 +1,6 @@
 /// The safety tips for meeting up in person, as a bottom sheet opened from the
-/// chat's safety banner. Static, scrollable at large text sizes.
+/// chat's safety banner (and the list for Settings' Safety tips screen).
+/// Static, scrollable at large text sizes.
 library;
 
 import 'package:flutter/material.dart';
@@ -41,11 +42,7 @@ class _SafetyTipsSheet extends StatelessWidget {
           children: [
             Text('Meeting up? Stay safe', style: textTheme.titleLarge),
             const SizedBox(height: WarmPlayfulSpacing.s4),
-            for (final tip in _tips)
-              Padding(
-                padding: const EdgeInsets.only(bottom: WarmPlayfulSpacing.s3),
-                child: _TipBullet(text: tip),
-              ),
+            const SafetyTipsList(),
             const SizedBox(height: WarmPlayfulSpacing.s2),
             AppButton(
               label: 'Got it',
@@ -56,6 +53,23 @@ class _SafetyTipsSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The four tips as bullets; shared by the sheet and the Safety tips screen.
+class SafetyTipsList extends StatelessWidget {
+  const SafetyTipsList({super.key});
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final tip in _tips)
+        Padding(
+          padding: const EdgeInsets.only(bottom: WarmPlayfulSpacing.s3),
+          child: _TipBullet(text: tip),
+        ),
+    ],
+  );
 }
 
 class _TipBullet extends StatelessWidget {

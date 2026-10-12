@@ -32,4 +32,35 @@ void main() {
     final snap = await db.collection('blocks').doc('me_x').get();
     expect(snap.exists, isFalse);
   });
+
+  group('watchBlockedByMe', () {
+    test('only the uids I blocked, not the people who blocked me', () async {
+      await repo.block('me', 'x'); // I blocked x
+      await repo.block('y', 'me'); // y blocked me
+      await repo.block('me', 'z'); // I blocked z
+      await repo.block('p', 'q'); // unrelated
+      expect(await repo.watchBlockedByMe('me').first, {'x', 'z'});
+    });
+
+    test('a block where I am only the blocked side is excluded', () async {
+      await repo.block('y', 'me');
+      expect(await repo.watchBlockedByMe('me').first, isEmpty);
+    });
+
+    test('no blocks: empty set', () async {
+      expect(await repo.watchBlockedByMe('me').first, isEmpty);
+    });
+
+    test('updates after unblock', () async {
+      await repo.block('me', 'x');
+      final emissions = <Set<String>>[];
+      final sub = repo.watchBlockedByMe('me').listen(emissions.add);
+      await Future<void>.delayed(Duration.zero);
+      await repo.unblock('me', 'x');
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+      expect(emissions.first, {'x'});
+      expect(emissions.last, isEmpty);
+    });
+  });
 }
