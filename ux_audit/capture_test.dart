@@ -482,7 +482,7 @@ void main() {
     await _captureCreateMeal(tester);
     await _captureRequests(tester);
     await _captureChats(tester, world);
-    await _captureProfileAndSettings(tester);
+    await _captureProfileAndSettings(tester, world);
     await _captureInboxInFlight(tester, world);
     await _captureWomenOnlyAsMan(tester, world);
     await _captureFeedErrors(tester, world);
@@ -665,10 +665,8 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
   });
 
   await _step(tester, '61_chats_empty', () async {
-    await _pumpUntilFound(
-      tester,
-      find.text('No chats yet — match on a meal to start talking'),
-    );
+    // Plan 18: "No chats yet", a hint and a "Find a meal" button.
+    await _pumpUntilFound(tester, find.text('Find a meal'));
     await _snap(tester, '61_chats_empty');
   });
 
@@ -1050,6 +1048,15 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
     await _tap(tester, find.byKey(const Key('safety_actions_block_cancel')));
   });
 
+  // Plan 18: the safety tips are a banner; tapping it opens the full tips.
+  await _step(tester, '76_chat_safety_sheet', () async {
+    await _ensureChat(tester, world.matchMealId);
+    await _tap(tester, find.byKey(const Key('safety_tips_banner')));
+    await _pumpUntilFound(tester, find.byKey(const Key('safety_tips_sheet')));
+    await _snap(tester, '76_chat_safety_sheet');
+    await _tap(tester, find.text('Got it'));
+  });
+
   await _step(tester, '65_chat_empty', () async {
     await _openChatFromList(tester, world.mealIds['emptyChat']!);
     await _pumpUntilFound(tester, find.text('Say hi \u{1F44B}'));
@@ -1078,7 +1085,14 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
   // rating sheet (closed without submitting).
   await _step(tester, '72_chat_post_meal_card', () async {
     await _openChatFromList(tester, world.pastMatchMealId);
-    await _pumpUntilFound(tester, find.byKey(const Key('post_meal_card')));
+    // On a short viewport at large text the card sits above the oldest
+    // message (a lazy list item): scroll up until it is built.
+    final card = find.byKey(const Key('post_meal_card'));
+    for (var i = 0; i < 6 && card.evaluate().isEmpty; i++) {
+      await tester.drag(messages, const Offset(0, 600));
+      await _settle(tester);
+    }
+    await _pumpUntilFound(tester, card);
     await _snap(tester, '72_chat_post_meal_card');
   });
 
@@ -1118,7 +1132,10 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
 
 // ---- Profile and settings -------------------------------------------------
 
-Future<void> _captureProfileAndSettings(WidgetTester tester) async {
+Future<void> _captureProfileAndSettings(
+  WidgetTester tester,
+  UxWorld world,
+) async {
   await _step(tester, '80_profile_edit', () async {
     await _tap(tester, _tab('Profile'));
     await _pumpUntilFound(tester, find.byKey(const Key('profile_name_field')));
@@ -1137,6 +1154,23 @@ Future<void> _captureProfileAndSettings(WidgetTester tester) async {
     await _settle(tester);
   });
 
+  // Plan 18: Save lights up only for a change; a blank name says what is
+  // still needed. The typed text is put back afterwards (nothing is saved).
+  await _step(tester, '82_profile_edited', () async {
+    final name = find.byKey(const Key('profile_name_field'));
+    final original = tester.widget<TextFormField>(name).controller!.text;
+    await tester.enterText(name, '$original B.');
+    await _settle(tester);
+    await _reveal(tester, find.text('Save'));
+    await _snap(tester, '82_profile_edited');
+    await tester.enterText(name, '');
+    await _settle(tester);
+    await _reveal(tester, find.byKey(const Key('profile_save_hint')));
+    await _snap(tester, '82b_profile_name_blank');
+    await tester.enterText(name, original);
+    await _settle(tester);
+  });
+
   await _step(tester, '83_settings', () async {
     await _tap(tester, find.byKey(const Key('profile_settings_button')));
     // The first row, not the version line at the bottom: the list is lazy and
@@ -1148,6 +1182,11 @@ Future<void> _captureProfileAndSettings(WidgetTester tester) async {
     await _snap(tester, '83_settings');
   });
 
+  await _step(tester, '84_settings_bottom', () async {
+    await _reveal(tester, find.byKey(const Key('settings_app_version')));
+    await _snap(tester, '84_settings_bottom');
+  });
+
   await _step(tester, '85_settings_delete_dialog', () async {
     await _tap(tester, find.byKey(const Key('settings_delete_account')));
     await _pumpUntilFound(
@@ -1156,6 +1195,31 @@ Future<void> _captureProfileAndSettings(WidgetTester tester) async {
     );
     await _snap(tester, '85_settings_delete_dialog');
     await _tap(tester, find.byKey(const Key('settings_delete_account_cancel')));
+  });
+
+  // Plan 18: the seeded world has one block (viewer -> Hugo): the list, then
+  // the empty state after a real unblock.
+  await _step(tester, '86_blocked_people', () async {
+    final list = find.descendant(
+      of: find.byType(Scaffold).last,
+      matching: find.byType(Scrollable),
+    );
+    await tester.drag(list.first, const Offset(0, 3000));
+    await _settle(tester);
+    await _tap(tester, find.byKey(const Key('settings_blocked_people')));
+    await _pumpUntilFound(
+      tester,
+      find.byKey(Key('unblock_button_${world.uids['hugo']}')),
+    );
+    await _snap(tester, '86_blocked_people');
+  });
+
+  await _step(tester, '87_blocked_people_empty', () async {
+    await _tap(tester, find.byKey(Key('unblock_button_${world.uids['hugo']}')));
+    await _pumpUntilFound(tester, find.text("You haven't blocked anyone"));
+    await _clearSnackBars(tester);
+    await _snap(tester, '87_blocked_people_empty');
+    await _back(tester);
   });
   await _back(tester);
 
@@ -1198,7 +1262,8 @@ Future<void> _captureInboxInFlight(WidgetTester tester, UxWorld world) async {
       find.byKey(Key('request_inbox_deny_button_$faridPastRequest')),
       '55_requests_deny_in_flight',
       freeze: 'firestore',
-      mustShow: _spinner,
+      // No mustShow: a denied request leaves the inbox at once (optimistic
+      // write), so there is no row left to show a spinner on.
     );
     await _settle(tester);
     await _clearSnackBars(tester);
@@ -1298,7 +1363,9 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
 
   await _step(tester, '16_profile_setup_ready', () async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    await adminUpdateDoc('users', uid, {
+    // Photos live on the public profile since the privacy split.
+    await adminSetDoc('profiles', uid, {
+      'uid': uid,
       'photoUrls': ['$kAvatarBase/ines.png'],
     });
     await _pumpUntilFound(tester, find.byKey(const Key('add_photo_tile')));
@@ -1403,7 +1470,21 @@ Future<void> _captureFeedErrors(WidgetTester tester, UxWorld world) async {
 
   await _step(tester, '93_discover_error', () async {
     await _tap(tester, _tab('Discover'));
-    await _pumpUntilFound(tester, error, timeout: retriesExhausted);
+    // Since the feed skips meals it cannot parse (develop, 019a666) the
+    // malformed meal no longer makes Discover fail: there is no way left to
+    // photograph this state without changing the app. Note it, do not fail.
+    try {
+      await _pumpUntilFound(
+        tester,
+        error,
+        timeout: const Duration(seconds: 15),
+      );
+    } on Object {
+      // Run-log note for the audit; there is no logger in dev tooling.
+      // ignore: avoid_print
+      print('UXNOTE 93_discover_error: skipped, Discover ignores bad meals');
+      return;
+    }
     await _snap(tester, '93_discover_error');
   });
 }

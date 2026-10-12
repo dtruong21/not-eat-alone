@@ -35,6 +35,10 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Changed
 
+- Request inbox: Approve is now a clear coral button and Deny a quiet red one (they stack at large text sizes instead of overflowing), only the request you tapped shows a spinner while the others stay usable, the guest's rating is shown under their name, and the Requests tab has an inbox icon.
+- The report, rating and block screens now say who they are about ("Report Sam", "How was your meal with Sam?", "Block Sam?"), the text box has a visible edge, selected reasons and stars are easier to read, and "Block" is red.
+- Profile: the tab is titled "Profile" and shows "Your rating" (or "No ratings yet"). Save is only available when you changed your name, bio or gender, and confirms with "Profile saved"; with a blank name it says what is still needed. Photos are saved as soon as you add or remove them.
+- A meal the host cancelled now shows "Meal cancelled" on its page instead of a "Request to join" button.
 - Settings is now grouped into Account (Edit profile, your phone number, Sign out), Safety, Notifications (iPhone), Legal (with open-source licences) and About, with Delete account last. New Blocked people screen to see and unblock people you blocked, and a Safety tips screen.
 - At large text sizes the "Rate <name>" button under the chat's rating prompt moves below the text instead of squeezing it, and screen readers now say "Unblock <name>", "Approving…" / "Denying…" and read Settings group titles as headings.
 - The rating prompt in a chat now scrolls with the messages instead of being pinned above them, your message clears from the box as soon as you send it (and comes back if it could not be sent), and the Chats list shows the restaurant and time of each meal, with a "Find a meal" button when you have no chats yet. A chat whose messages fail to load now shows only the retry button.
