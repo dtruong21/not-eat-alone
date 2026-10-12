@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +14,7 @@ import 'package:not_eat_alone/features/user/presentation/profile_edit_screen.dar
 class _FakeProfileController extends ProfileController {
   _FakeProfileController({this.fail = false});
 
-  final bool fail;
+  bool fail;
   final saves = <({String? name, String? bio, Gender? gender})>[];
 
   @override
@@ -44,8 +46,10 @@ void main() {
     bool fail = false,
     double textScale = 1,
     Size? size,
+    Stream<AppUser>? userStream,
   }) async {
     final u = user ?? _user();
+    Stream<AppUser> stream() => userStream ?? Stream.value(u);
     final controller = _FakeProfileController(fail: fail);
     if (size != null) {
       tester.view
@@ -56,8 +60,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          currentUserDocProvider.overrideWith((ref) => Stream.value(u)),
-          userDocProvider('u1').overrideWith((ref) => Stream.value(u)),
+          currentUserDocProvider.overrideWith((ref) => stream()),
+          userDocProvider('u1').overrideWith((ref) => stream()),
           profileControllerProvider.overrideWith(() => controller),
         ],
         child: MaterialApp(
@@ -167,6 +171,109 @@ void main() {
     expect(saveEnabled(tester), isFalse);
   });
 
+  testWidgets('a photo-only change leaves Save disabled (photos persist '
+      'immediately)', (tester) async {
+    final users = StreamController<AppUser>.broadcast();
+    addTearDown(users.close);
+    await pumpScreen(tester, userStream: users.stream);
+    users.add(_user());
+    await tester.pump();
+    await tester.pump();
+    expect(saveEnabled(tester), isFalse);
+
+    users.add(
+      _user().copyWith(
+        photoUrls: const [
+          'https://example.com/1.jpg',
+          'https://example.com/2.jpg',
+        ],
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('profile_photo_https://example.com/2.jpg')),
+      findsOneWidget,
+    );
+    expect(saveEnabled(tester), isFalse);
+    expect(find.byKey(const Key('profile_save_hint')), findsNothing);
+  });
+
+  testWidgets('typed name and bio survive a user-doc re-emit', (tester) async {
+    final users = StreamController<AppUser>.broadcast();
+    addTearDown(users.close);
+    await pumpScreen(tester, userStream: users.stream);
+    users.add(_user());
+    await tester.pump();
+    await tester.pump();
+
+    await typeName(tester, 'Alexandra');
+    await tester.enterText(
+      find.byKey(const Key('profile_bio_field')),
+      'Loves ramen and sushi.',
+    );
+    await tester.pump();
+
+    users.add(_user(ratingCount: 8, ratingAvg: 4.8));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    String text(String key) =>
+        tester.widget<TextFormField>(find.byKey(Key(key))).controller!.text;
+    expect(text('profile_name_field'), 'Alexandra');
+    expect(text('profile_bio_field'), 'Loves ramen and sushi.');
+    expect(find.text('4.8 (8)'), findsOneWidget);
+    expect(saveEnabled(tester), isTrue);
+  });
+
+  testWidgets('retrying after a failed save works and keeps the form', (
+    tester,
+  ) async {
+    final controller = await pumpScreen(tester, fail: true);
+    await typeName(tester, 'Alexandra');
+
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump();
+    expect(find.text('Profile saved'), findsNothing);
+    expect(saveEnabled(tester), isTrue);
+
+    controller.fail = false;
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump();
+
+    expect(controller.saves.length, 2);
+    expect(find.text('Profile saved'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('profile_name_field')))
+          .controller!
+          .text,
+      'Alexandra',
+    );
+    expect(saveEnabled(tester), isFalse);
+  });
+
+  testWidgets('an invalid form says what is still needed; an unchanged one '
+      'stays silent', (tester) async {
+    await pumpScreen(tester);
+    expect(find.byKey(const Key('profile_save_hint')), findsNothing);
+
+    await typeName(tester, '   ');
+    expect(saveEnabled(tester), isFalse);
+    expect(find.text('Still needed: your name.'), findsOneWidget);
+
+    await typeName(tester, 'Alex');
+    expect(find.byKey(const Key('profile_save_hint')), findsNothing);
+  });
+
   testWidgets('saving shows "Profile saved", stays on the screen and '
       'disables Save again', (tester) async {
     final controller = await pumpScreen(tester);
@@ -222,6 +329,15 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Your rating'), findsOneWidget);
+      // Label and value both on screen (wrapped under each other at 2.0x),
+      // not clipped off the 320 px width.
+      for (final f in [find.text('Your rating'), find.text('4.7 (7)')]) {
+        final r = tester.getRect(f);
+        expect(r.width, greaterThan(0));
+        expect(r.left, greaterThanOrEqualTo(0));
+        expect(r.right, lessThanOrEqualTo(320));
+        expect(r.top, greaterThanOrEqualTo(0));
+      }
       await tester.ensureVisible(find.text('Save'));
       await tester.pump();
       expect(tester.takeException(), isNull);

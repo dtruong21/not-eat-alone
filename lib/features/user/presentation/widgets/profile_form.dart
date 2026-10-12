@@ -1,8 +1,8 @@
 /// Shared profile form — name, gender, bio, and photo grid.
 ///
 /// Used by both `ProfileSetupScreen` (forced onboarding) and
-/// `ProfileEditScreen` (settings). Owns its own text-field state and the
-/// photo add/remove flow (`profileControllerProvider`), and reports the
+/// `ProfileEditScreen` (the Profile tab). Owns its own text-field state and
+/// the photo add/remove flow (`profileControllerProvider`), and reports the
 /// current form values back to its parent via [ProfileForm.onChanged] —
 /// the parent decides what "valid" means for its own submit button
 /// ([ProfileFormData.isValid] covers the common case: name + gender + at
@@ -82,6 +82,14 @@ class ProfileFormData {
     if (name.trim().isEmpty) 'your name',
     if (gender == null) 'how you identify',
   ];
+
+  /// [missingFields] as a sentence part: "a, b and c".
+  String get missingSummary {
+    final parts = missingFields;
+    return parts.length < 2
+        ? parts.join()
+        : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
+  }
 
   @override
   bool operator ==(Object other) =>

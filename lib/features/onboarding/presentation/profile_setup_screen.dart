@@ -73,11 +73,6 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         );
   }
 
-  /// "a, b and c".
-  static String _sentence(List<String> parts) => parts.length < 2
-      ? parts.join()
-      : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
@@ -133,7 +128,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             top: WarmPlayfulSpacing.s2,
                           ),
                           child: Text(
-                            'Still needed: ${_sentence(missing)}.',
+                            'Still needed: ${_formData!.missingSummary}.',
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(
                               color: context.wp.muted,

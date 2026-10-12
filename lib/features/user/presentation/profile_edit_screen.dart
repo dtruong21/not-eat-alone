@@ -99,6 +99,8 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         baseline != null &&
         data.isValid &&
         _normalized(data) != baseline;
+    // Only an invalid form explains itself; merely-unchanged stays silent.
+    final missing = data != null && !data.isValid ? data.missingSummary : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -129,6 +131,25 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 loadingLabel: 'Saving…',
                 isLoading: isSubmitting,
                 onPressed: isSubmitting || !canSave ? null : _save,
+              ),
+              // Always mounted so screen readers announce text changes.
+              Semantics(
+                liveRegion: true,
+                container: true,
+                child: missing == null
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(
+                          top: WarmPlayfulSpacing.s2,
+                        ),
+                        child: Text(
+                          'Still needed: $missing.',
+                          key: const Key('profile_save_hint'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: context.wp.muted),
+                        ),
+                      ),
               ),
             ],
           ),
