@@ -272,14 +272,14 @@ Status: active
 Related PRD entry: `docs/PRD.md § Matching`
 
 **Golden path:**
-- [ ] From meal detail, a signed-in non-host guest taps "Request to join" → a `requests/{mealId_guestId}` doc is written (`status: pending`) → button becomes disabled "Requested" with a "Waiting for the host" hint.
+- [ ] From meal detail, a signed-in non-host guest taps "Request to join" → a `requests/{mealId_guestId}` doc is written (`status: pending`) → the pinned action bar's button becomes a disabled "Requested" with the status line "Waiting for the host to reply."
 - [ ] The host opens the discovery app-bar inbox (`/requests`) → sees the pending request as a tile (guest photo/name/derived age) with **Approve** and **Deny** actions, and under the guest's label the meal the request is for (restaurant on its own line, ellipsized; date/time on the next, in the viewer's local time), with Deny/Approve on a second row. While the meal is loading, errored or missing the line is simply absent and the tile works as before. (Meal line: widget-tested in `request_inbox_tile_test.dart` groups "meal line"; E2E in `inbox_feedback_test.dart`.)
-- [ ] Host taps **Approve** → a client transaction locks the meal (`status` leaves `open`), creates a `matches/{mealId}` doc, marks this request `approved`, and denies every other pending request on the same meal ("sibling" denials) → the approved guest's meal-detail button flips to a "Matched!" banner; denied guests see "Not selected".
+- [ ] Host taps **Approve** → a client transaction locks the meal (`status` leaves `open`), creates a `matches/{mealId}` doc, marks this request `approved`, and denies every other pending request on the same meal ("sibling" denials) → the approved guest's action bar flips to an enabled "Open chat" button with the status line "You're matched. Say hi!"; denied guests see a disabled "Not selected" with "The host chose someone else."
 - [ ] A second guest who requests the now-locked meal is rejected (request creation blocked once the meal is no longer `open`).
 - [ ] `matches/{mealId}` is the hand-off doc Plan 7 (chat) reads from.
 
 **Edge cases (specific to this feature):**
-- [ ] A host cannot request their own meal — meal-detail shows a "Your meal" chip instead of a request button, no request stream touched.
+- [ ] A host cannot request their own meal — the action bar shows a disabled "This is your meal" button with "See requests in the Requests tab." instead of a request button, no request stream touched.
 - [ ] Requesting a non-`open` meal (already matched/cancelled/completed) is rejected client + rules side.
 - [ ] Denied requests are terminal — no re-request, no state flip back to pending.
 - [ ] Approving a request whose meal raced shut (approved by a concurrent transaction first) throws `MealNoLongerOpenException`; the inbox surfaces a SnackBar ("This meal is no longer open.") instead of crashing, and does not deny/approve anything. (Widget-tested, both with the tile still mounted and removed mid-flight; not E2E.)
@@ -312,7 +312,7 @@ Status: active
 Related PRD entry: `docs/PRD.md § Chat`
 
 **Golden path:**
-- [ ] Host approves a request → guest's meal-detail "Matched!" banner is tappable → pushes `/chats/{mealId}` straight into the new chat.
+- [ ] Host approves a request → guest's meal-detail "Open chat" button (key `meal_detail_matched_banner`) → pushes `/chats/{mealId}` straight into the new chat.
 - [ ] Chats tab (`/chats`) lists every match as a row (other participant photo/name, last-message preview, relative time); tapping a row opens `/chats/:matchId`.
 - [ ] Chat screen: app bar shows the other participant's name/photo (looked up via `chatListProvider`); sending a message via the composer writes to `matches/{matchId}/messages` and appears immediately (mine, right-aligned).
 - [ ] The other participant, viewing the same match in a second session, sees the message arrive in realtime (left-aligned) and the sender's bubble flips to "Seen" once the other participant opens the chat (`reads/{uid}.lastReadAt` compared to the message's `createdAt`).
@@ -346,7 +346,7 @@ Related PRD entry: `docs/PRD.md § Safety`
 - [ ] Blocked user attempts to request a meal from the blocker → `noBlockBetween` rule rejects (`create_request_controller` displays "User not available").
 - [ ] Blocked user sends a chat message → `noBlockBetween` rule rejects in `matches/{matchId}/messages` create.
 - [ ] Report a user/meal/message → a `reports/{id}` doc is written (create-only, contains reporterId, targetType, targetId, reason) → Firestore records the report (no immediate action on client).
-- [ ] Non-woman user requests a women-only meal → meal-detail shows "Women only — you don't qualify" (client guard) and the rule rejects the create if the guard fails.
+- [ ] Non-woman user requests a women-only meal → the action bar shows a disabled "Women only" button with "Only women can join this meal." (client guard) and the rule rejects the create if the guard fails.
 - [ ] Woman user requests a women-only meal → request succeeds (rules allow).
 - [ ] Account deletion: tap Settings → Delete account → confirmation dialog → password confirmation → `deleteAccount` callable is invoked → success dialog → sign-out → user profile + all data purged (Cloud Function processes the cascade).
 

@@ -309,6 +309,48 @@ Sign-in, phone code, age gate and profile setup. All widget-tested unless noted;
 
 ---
 
+## Discover, meal detail, create meal (UX plan 17b)
+
+Widget-tested unless noted; what only the capture shows is listed in `docs/ux/17b-verification.md`.
+
+### Meal-detail action bar (`MealActionBar`, `lib/features/meal/presentation/widgets/meal_action_bar.dart`)
+
+The request button is pinned: it is `Scaffold.bottomNavigationBar` (a `Material` with card elevation inside a `SafeArea`, padding `s4`), so it never scrolls away under a long page. One full-width `AppButton` (single line, `maxLines: 1`) plus a status line below it. The bar has ONE height in every state, at any text size: the button is a fixed `SizedBox(WarmPlayfulSize.actionHeight)` (56 pt; at the clamped scale a label can still ask for 58 pt, which is why the box is fixed rather than a minimum) and the status slot is always one line high (empty when there is no status). Text scale INSIDE the bar is clamped to 1.3 (`MediaQuery.withClampedTextScaling`), so the bar cannot grow with the OS text size; the page above it still scales. Why: a bar that changes height from state to state shifts the whole page when a request resolves, and one that grows at 2x text steals half a small screen. The status line is a single line with an ellipsis; its full text is the `Semantics` label (a `liveRegion` + `container` node mounted in every state, so a status that appears is announced and VoiceOver reads the whole sentence even when it is cut on screen).
+
+| Viewer state | Button (key) | Status line |
+|---|---|---|
+| Own meal | "This is your meal", tonal, disabled (`meal_detail_your_meal_button`) | "See requests in the Requests tab." |
+| Women-only meal, viewer not a woman | "Women only", tonal, disabled (`meal_detail_women_only_disabled_button`) | "Only women can join this meal." (`meal_detail_women_only_note`) |
+| Request state loading | Skeleton, action height (`meal_action_skeleton`) | none |
+| Request state failed to load | "Try again", tonal button (`meal_detail_request_retry_button`) re-reads the state | "Couldn't load your request." in `wp.dangerText` |
+| No request yet | "Request to join", primary (`meal_detail_request_to_join_button`); "Sending request…" with a spinner while the write is in flight | none |
+| Pending | "Requested", tonal, disabled (`meal_detail_requested_button`) | "Waiting for the host to reply." |
+| Approved | "Open chat" with a chat icon, primary, enabled, opens `/chats/{mealId}` (`meal_detail_matched_banner`: the key of the old banner, kept so E2E and the capture still find it) | "You're matched. Say hi!" |
+| Denied | "Not selected", tonal, disabled (`meal_detail_not_selected_button`) | "The host chose someone else." |
+
+The bar is also the always-mounted home of the failed-request snackbar. Latency compensation swaps "Request to join" for "Requested" before the server answers, so a listener on the button would be gone when a rejection arrives; the bar listens to the create-request controller (loading to error only) and shows "Couldn't send your request. Try again.". `createRequest` wraps every failure in `RepositoryWriteException`, so the specific "This meal is no longer open." copy (which the code already maps from `MealNoLongerOpenException`) never shows in production yet (follow-up: the repository must rethrow it). The widget test for the equal height in all states runs at 1x and 2x text; Nunito's actual label fit at 1.3x on a device is a manual check (`docs/TEST-PLAN.md`).
+
+### Discover (`DiscoveryScreen`)
+
+**Card** (`_MealCard`, `Material` surface, radius `lg`, padding `s4`, tappable), top to bottom:
+1. Restaurant name (`bodyMedium`, h2 weight, at most 2 lines with an ellipsis) and, for a woman viewer on a women-only meal, the peach "Women only" badge, in a `Wrap` so at large text the badge drops under the name instead of overflowing.
+2. ONE muted line `<when> · <distance>` (e.g. `Today 20:30 · 1.2 km`, `formatMealDateTime`), a single line with an ellipsis. It used to be two chips that overflowed at xxl.
+3. Host row: 32 pt avatar (photo or person icon) + display name (one line, ellipsis), fallback "Host".
+
+The list has bottom padding of `actionHeight + s8` so the extended "Create a meal" FAB never covers the last card (shot `23b_discover_scrolled_end`). The FAB is the entry to `/meals/new`; sign-out lives in Settings (with a confirm dialog), not in the Discover app bar.
+
+**Empty state:** no meals nearby = `EmptyState` (restaurant icon, "No meals nearby yet", "Be the first: host a meal and someone will join.") with a "Create a meal" `AppButton` (`discovery_empty_create_button`), under the Paris notice. Loading (`SkeletonList`) and error (`ErrorState`, Try again re-reads the location like a pull-to-refresh) also keep the notice above them; pull-to-refresh works in every state.
+
+**Paris notice** (`ParisNotice`): "Convyve is Paris-only for now — we're just getting started here." with a 48 x 48 close button (tooltip "Dismiss"). In the data state it is the FIRST ITEM of the list, so it scrolls away with the cards instead of eating screen space; in the loading, empty and error states it sits above the state widget. Dismissal is PER SESSION only (state of `_DiscoveryScreenState`): it comes back at the next launch. Persisting it needs `shared_preferences`, which is not a dependency; adding one is a later decision, not part of 17b.
+
+### Create a meal and restaurant search
+
+**Default time.** The date/time field opens the pickers on `nextMealSlot(now)`: now + 1 hour rounded UP to the next :00 or :30 (`12:29` gives `13:30`, `12:31` gives `14:00`, leftover seconds push to the next slot, midnight rolls over), never "11:01". The field itself still starts as "Pick date & time" and Create meal stays disabled until the user confirms a time. The time picker is 24 h (`alwaysUse24HourFormat`), like every time the app shows. A pick less than `mealMinLead` (5 minutes) from now is refused with "Pick a time at least 5 minutes from now.". The note field gives keyboard scrolling `WarmPlayfulSize.keyboardReveal` of room (`scrollPadding`), so Create meal can be reached with the keyboard up at 2x text on 320 x 568. After creating, the snackbar reads "Meal posted. You'll get requests in the Requests tab." (was "Meal created!").
+
+**Search copy.** With the untouched field the screen shows the default restaurant list; if that is empty it says "No restaurants to show yet.". A typed query without results says "No restaurant called “<query>”. Try another name." (the query the results answer, not the live text; padded `s4` so a long query wraps inside the margins).
+
+---
+
 ## Date and time formats
 
 English, 24-hour clock, day before month, always in the viewer's LOCAL time (`lib/core/util/date_format.dart`, pure, dependency-free; `intl` and French arrive with plan 19, which replaces the internals, not the call sites):

@@ -67,7 +67,9 @@ Future<FakeCreateMealController> pumpScreen(
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [createMealControllerProvider.overrideWith(() => controller)],
+      overrides: [
+        createMealControllerProvider.overrideWith(() => controller),
+      ],
       child: MaterialApp(
         theme: buildTheme(Brightness.light),
         home: CreateMealScreen(key: screenKey, restaurant: _restaurant),
@@ -81,28 +83,32 @@ Future<FakeCreateMealController> pumpScreen(
 }
 
 void main() {
-  testWidgets('renders the restaurant name and address', (tester) async {
-    final screenKey = GlobalKey<CreateMealScreenState>();
-    await pumpScreen(tester, screenKey: screenKey);
+  testWidgets(
+    'renders the restaurant name and address',
+    (tester) async {
+      final screenKey = GlobalKey<CreateMealScreenState>();
+      await pumpScreen(tester, screenKey: screenKey);
 
-    expect(find.text(_restaurant.name), findsOneWidget);
-    expect(find.text(_restaurant.address), findsOneWidget);
-  });
+      expect(find.text(_restaurant.name), findsOneWidget);
+      expect(find.text(_restaurant.address), findsOneWidget);
+    },
+  );
 
-  testWidgets('the submit button stays disabled until a date/time is chosen', (
-    tester,
-  ) async {
-    final screenKey = GlobalKey<CreateMealScreenState>();
-    await pumpScreen(tester, screenKey: screenKey);
+  testWidgets(
+    'the submit button stays disabled until a date/time is chosen',
+    (tester) async {
+      final screenKey = GlobalKey<CreateMealScreenState>();
+      await pumpScreen(tester, screenKey: screenKey);
 
-    final button = tester.widget<FilledButton>(
+      final button = tester.widget<FilledButton>(
       find.descendant(
         of: find.byKey(const Key('create_meal_submit_button')),
         matching: find.byType(FilledButton),
       ),
     );
-    expect(button.onPressed, isNull);
-  });
+      expect(button.onPressed, isNull);
+    },
+  );
 
   testWidgets(
     'tapping "Create meal" with an injected date/time calls create() with '
@@ -136,22 +142,25 @@ void main() {
     },
   );
 
-  testWidgets('an empty note is passed as null', (tester) async {
-    final screenKey = GlobalKey<CreateMealScreenState>();
-    final controller = await pumpScreen(tester, screenKey: screenKey);
+  testWidgets(
+    'an empty note is passed as null',
+    (tester) async {
+      final screenKey = GlobalKey<CreateMealScreenState>();
+      final controller = await pumpScreen(tester, screenKey: screenKey);
 
-    final chosen = DateTime.now().add(const Duration(days: 1));
-    screenKey.currentState!.debugSetSelectedDateTime(chosen);
-    await tester.pump();
+      final chosen = DateTime.now().add(const Duration(days: 1));
+      screenKey.currentState!.debugSetSelectedDateTime(chosen);
+      await tester.pump();
 
-    await tester.tap(find.byKey(const Key('create_meal_submit_button')));
-    await tester.pump();
-    await tester.pump();
+      await tester.tap(find.byKey(const Key('create_meal_submit_button')));
+      await tester.pump();
+      await tester.pump();
 
-    expect(controller.callCount, 1);
-    expect(controller.calledNote, isNull);
-    expect(controller.calledWomenOnly, isFalse);
-  });
+      expect(controller.callCount, 1);
+      expect(controller.calledNote, isNull);
+      expect(controller.calledWomenOnly, isFalse);
+    },
+  );
 
   group('nextMealSlot', () {
     DateTime slot(int h, int m, [int s = 0]) =>
@@ -174,11 +183,17 @@ void main() {
       expect(slot(23, 31), DateTime(2027, 1, 6, 1));
     });
 
-    test('is always at least the minimum lead away', () {
+    test('rounds up by less than a slot and never lands before now + 1 h', () {
       var t = DateTime(2027, 1, 5, 12);
       for (var i = 0; i < 200; i++) {
         final picked = nextMealSlot(t);
-        expect(isMealTimeFarEnough(picked, now: t), isTrue, reason: '$t');
+        final earliest = t.add(const Duration(hours: 1));
+        expect(picked.isBefore(earliest), isFalse, reason: '$t');
+        expect(
+          picked.difference(earliest),
+          lessThan(const Duration(minutes: 30)),
+          reason: '$t',
+        );
         expect(picked.minute % 30, 0);
         t = t.add(const Duration(minutes: 7, seconds: 13));
       }
@@ -302,9 +317,17 @@ void main() {
     expect(controller.callCount, 1);
   });
 
-  test('the note field reveals itself above the keyboard', () {
-    // Token contract used by the note field's scrollPadding.
-    expect(WarmPlayfulSize.keyboardReveal, WarmPlayfulSize.actionHeight * 3);
+  testWidgets('the note field reveals itself above the keyboard', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      screenKey: GlobalKey<CreateMealScreenState>(),
+    );
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('create_meal_note_field')),
+    );
+    expect(field.scrollPadding.bottom, WarmPlayfulSize.keyboardReveal);
   });
 
   group('isMealTimeFarEnough', () {

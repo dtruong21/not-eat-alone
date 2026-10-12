@@ -707,6 +707,16 @@ Future<void> _captureDiscover(WidgetTester tester, UxWorld world) async {
     await _settle(tester);
   });
 
+  // The very end of the list: the last card must be fully visible above the
+  // create-meal button (DISC-03).
+  await _step(tester, '23b_discover_scrolled_end', () async {
+    await tester.drag(feed.first, const Offset(0, -6000));
+    await _settle(tester);
+    await _snap(tester, '23b_discover_scrolled_end');
+    await tester.drag(feed.first, const Offset(0, 6000));
+    await _settle(tester);
+  });
+
   await _step(tester, '24_discover_notice_dismissed', () async {
     await _tap(tester, find.byKey(const Key('paris_notice_close_button')));
     await _snap(tester, '24_discover_notice_dismissed');
@@ -819,7 +829,7 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
     unawaited(_router(tester).push('/meals/detail', extra: world.ownMeal));
     await _pumpUntilFound(
       tester,
-      find.byKey(const Key('meal_detail_your_meal_chip')),
+      find.byKey(const Key('meal_detail_your_meal_button')),
     );
     await _snap(tester, '48_meal_detail_own');
   });
@@ -840,14 +850,18 @@ Future<void> _captureMealDetail(WidgetTester tester, UxWorld world) async {
       tester,
       find.byKey(const Key('meal_detail_request_to_join_button')),
     );
-    // The server rejects the write. The button that listens for the failure is
-    // swapped out by latency compensation (optimistic "Requested") and back,
-    // so no error message is shown: photograph what the user is left with.
+    // The server rejects the write. The bar (always mounted) listens for the
+    // failure and shows a snackbar (the generic "Couldn't send your request.
+    // Try again.": createRequest wraps every failure, so the specific "no
+    // longer open" copy never shows). The snackbar lasts 4 s: photograph it as
+    // soon as it appears, not after a fixed wait.
     final end = DateTime.now().add(const Duration(seconds: 6));
-    while (DateTime.now().isBefore(end)) {
+    while (DateTime.now().isBefore(end) &&
+        find.byType(SnackBar).evaluate().isEmpty) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    await _settle(tester);
+    // Let the snackbar finish sliding in (fixed pumps: it has no settle).
+    await tester.pump(const Duration(milliseconds: 600));
     await _snap(tester, '49_meal_detail_request_rejected');
   });
   await _recover(tester);
