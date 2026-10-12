@@ -11,10 +11,14 @@ import { sendToUser } from '../lib/messaging';
 import { buildMatchLeft, buildMealCancelled } from '../lib/payloads';
 
 export const makeDeleteAccount = () =>
-  onCall({ region: 'europe-west1' }, async (req) => {
+  onCall({ region: 'europe-west1', enforceAppCheck: true }, async (req) => {
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
     const databaseId = (req.data?.databaseId as string | undefined) ?? '(default)';
+    // Only the two databases this project has; never an arbitrary client-supplied name.
+    if (databaseId !== '(default)' && databaseId !== 'stage') {
+      throw new HttpsError('invalid-argument', 'Unknown database.');
+    }
     const t = deletionTargets(uid);
     const db = getFirestore(getApp(), databaseId);
 

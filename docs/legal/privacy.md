@@ -26,11 +26,12 @@
 
 ### Location
 
-- **Coarse location:** country, city, and geohash (via the Geolocator library) — used **only** to show meals and users near you on the Discovery feed. We do not collect precise GPS coordinates or track your real-time location.
+- **Device location (not stored):** the app reads your phone's approximate location on your device only to find meals near you; it is used to compute a search area and is **not saved** on our servers. If you decline permission, the app uses central Paris. We do not track your real-time location.
 
 ### Service content
 
-- **Meals:** meal name, date/time, cuisine, allergies/dietary notes, photos, restaurant/venue details, and participant list
+- **Meals:** the restaurant you choose (name, address, coordinates), date/time, an optional note, the women-only setting, and who is matched
+- **Restaurant search:** the text you type when searching for a restaurant is sent through our server to the Google Places service to return results
 - **Matches:** pairs of users who have matched (both expressed interest)
 - **Messages:** direct messages between matched users
 - **Ratings:** ratings you give to other users after a meal
@@ -82,6 +83,8 @@ Other signed-in users can see your **public profile only**: display name, profil
   - **Firebase Crashlytics:** collects and reports crash data
   - **Cloud Messaging:** delivers push notifications
   
+- **Google Places** (restaurant search only): your search text is sent to Google Maps Platform through our server; no account or profile data is included.
+
 - **Google & Apple** (for sign-in only):
   - **Google Sign-In / Apple Sign-In:** if you authenticate via these providers, they receive your choice to sign in but do not receive your Convyve profile data (only a provider token)
 
@@ -117,6 +120,8 @@ Account deletion is **PERMANENT and IRREVERSIBLE**. When you delete your account
 - Your Firebase Authentication account
 - **Ratings you authored** (your reviews of other users) — the affected users' aggregate rating (average and count) is automatically adjusted to remove your rating's contribution
 - **Ratings about you** (other users' reviews of you)
+
+**Retained after deletion:** reports you filed about other users, and reports others filed about you, are kept for safety and abuse prevention (they contain no profile data beyond the report text and identifiers).
 
 **Note:** You retain the right to request complete data deletion under GDPR (Art. 17). The account-deletion flow automatically implements deletion of all personal data listed above; if you believe any data was not deleted, include this in a GDPR erasure request. See "Your rights" below.
 

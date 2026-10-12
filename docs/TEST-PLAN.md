@@ -74,9 +74,9 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 
 ### Security
 
-- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md`
+- [ ] Firestore rules deny reads of another user's data (test via Rules Playground or emulator). — verified on the emulator 2026-10-09 (72 cases) for requests, matches, messages, reads, fcmTokens, blocks, reports, ratings; `users/{uid}` was open (incl. dob) — **fixed**: private `users` + public `profiles`, rules tests in `firebase/rules-test/`; see `docs/bugs/closed/2026-10-09-users-collection-exposes-dob-to-all-signed-in-users.md`; hardening gaps in `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md`
 - [ ] `.env` is gitignored — `git log --all -p -- .env` returns nothing.
-- [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
+- [ ] No `cloud_firestore` imports outside a feature's `data/` layer or `lib/core/firebase/` (the old grep in this line contradicted the architecture; see `docs/bugs/closed/2026-10-09-docs-contradict-code.md`). Checked 2026-10-09: clean.
 
 ### Visual + a11y
 
@@ -197,9 +197,7 @@ Related PRD entry: `docs/PRD.md § Meals`
 - [ ] Deep-link/restart on `/meals/new/details` with no restaurant → falls back to search (no crash).
 - [ ] `seats` fixed at 1 (1:1); date/time is future-only.
 
-**Deferred (needs the Google API key — 30-day GCP wait):**
-- Real **Places API** restaurant search (currently a fake 20-restaurant Paris list behind `RestaurantSearchRepository` — swap one datasource).
-- **Map preview** of the restaurant (embedded map is post-MVP; "Open in Maps" link-out shipped). Real Places search shipped via the `searchRestaurants` callable (stale "fake list" note above).
+**Shipped / deferred:** real Places search is live via the `searchRestaurants` callable (the fake 20-restaurant list remains only as a test double); an embedded map preview is post-MVP (the "Open in Maps" link-out shipped).
 
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-awaited-writes-block-ui-offline.md` (P2) — Create meal spins until the server acks
@@ -226,8 +224,7 @@ Related PRD entry: `docs/PRD.md § Discovery`
 - [ ] geohash prefix query (precision 4 ~Paris cell) + client distance sort; any signed-in user can READ meals + host profiles (rules opened; writes still owner-only).
 - [ ] Empty state ("No meals near you yet") when nothing matches.
 
-**Deferred (needs the Google API key — 30-day GCP wait):**
-- **Map view** of the feed (post-MVP, see PRD).
+**Deferred (post-MVP, see PRD):** map view of the feed.
 
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-discovery-feed-stale-and-unbounded.md` (P2)
@@ -317,14 +314,14 @@ Related PRD entry: `docs/PRD.md § Safety`
 - [ ] Report a user/meal/message → a `reports/{id}` doc is written (create-only, contains reporterId, targetType, targetId, reason) → Firestore records the report (no immediate action on client).
 - [ ] Non-woman user requests a women-only meal → meal-detail shows "Women only — you don't qualify" (client guard) and the rule rejects the create if the guard fails.
 - [ ] Woman user requests a women-only meal → request succeeds (rules allow).
-- [ ] Account deletion: tap Settings → Delete account → confirmation dialog → password confirmation → `deleteAccount` callable is invoked → success dialog → sign-out → user profile + all data purged (Cloud Function processes the cascade).
+- [ ] Account deletion: tap Settings → Delete account → one confirmation dialog (no re-authentication, no success dialog) → `deleteAccount` callable is invoked → automatic sign-out → user + profile docs, meals, requests, matches, ratings, photos and the Auth account are purged by the Cloud Function. Matched meals are released first (see "Account deletion with a matched meal"). Reports the user filed or that target them are retained for safety.
 
 **Edge cases (specific to this feature):**
 - [ ] Blocking is bidirectional: if A blocks B, both A→B and B→A interactions are denied (rules verify both `blocks/{a}_{b}` and `blocks/{b}_{a}` do not exist).
 - [ ] Reports are create-only (no read/update/delete via client); Firestore rules reject any attempt.
 - [ ] Women-only meal rule enforces gender field read: a malformed user (missing gender) is treated as non-woman.
 - [ ] Block deletion: blocker can unblock via `blocks/{blockId}` delete (blockerUid check); blocked user cannot (rule rejects).
-- [ ] Deletion is cascading: deleteAccount callable deletes the user doc, all user-owned meals, all requests as guest, all matches as a participant, FCM tokens, profile pictures (deferred: Storage Rules + Function cleanup).
+- [ ] Deletion is cascading: deleteAccount callable deletes the user doc, all user-owned meals, all requests as guest, all matches as a participant, FCM tokens, the public profile doc, ratings in both directions, and profile pictures (Storage prefix `{env}/users/{uid}/`). Reports are intentionally retained.
 - [ ] After account deletion, all references to the deleted user's profile (name, photo) in persisted matches/messages are stale (no retroactive cleanup — acceptable for MVP).
 
 **Manual emulator verification (off-platform):**
@@ -339,9 +336,9 @@ Related PRD entry: `docs/PRD.md § Safety`
 - Live account deletion via UI (requires **Blaze plan**; current callable requires manual backend trigger or custom Cloud Function for email verification).
 
 **Known issues:**
-- Stale text above: Settings -> Delete account (single confirm dialog, no re-auth) ships and the callable also deletes the Storage prefix; see `docs/bugs/2026-10-09-docs-contradict-code.md`.
+- Stale text above: Settings -> Delete account (single confirm dialog, no re-auth) ships and the callable also deletes the Storage prefix; see `docs/bugs/closed/2026-10-09-docs-contradict-code.md`.
 - `docs/bugs/closed/2026-10-09-deleted-guest-strands-hosts-matched-meal.md` (P2)
-- `docs/bugs/2026-10-09-firestore-rules-hardening-gaps.md` (P3)
+- `docs/bugs/closed/2026-10-09-firestore-rules-hardening-gaps.md` (P3)
 - Block detection is possible via direct Firestore inspection (silent-block mirror not yet implemented).
 - Store-UGC risk (decided, not a bug): no automated moderation and no operator workflow for `reports` (create-only, nobody reads them); Apple 1.2 / Play UGC reviewers may ask for one.
 
@@ -383,7 +380,7 @@ Related PRD entry: `docs/PRD.md § Ratings`
 - [ ] After the meal `dateTime` has passed, the post-meal card ("How was your meal?") appears in the match's chat.
 - [ ] Tap the card → rating sheet appears with star picker (1–5), show-up toggle, and optional comment field.
 - [ ] Select stars + toggle show-up (true/false) + optionally type a comment (≤200 chars) → "Submit" writes a `ratings/{matchId}_{raterUid}` doc.
-- [ ] Both participants receive a post-meal nudge push notification (type `'rate'`) shortly after rating.
+- [ ] Both participants receive a post-meal "How was it?" push (type `'rate'`) from the hourly `postMealReminder` once the meal's start time has passed (up to an hour after it began), before anyone has rated. Tapping it opens the match chat with the rating card.
 - [ ] After rating, the target user's profile card shows a rating badge (⭐ count displayed, e.g. "⭐ 4.5 (12)").
 - [ ] The target user's `AppUser.ratingAvg` and `ratingCount` are updated by the `onRatingCreated` aggregate Function in realtime; their profile screen reflects the new aggregate.
 
@@ -392,10 +389,10 @@ Related PRD entry: `docs/PRD.md § Ratings`
 - [ ] A user cannot rate themselves — the rule rejects if `raterUid == targetUid`.
 - [ ] Star count must be 1–5 inclusive — submit disabled if outside range (client); rule rejects otherwise.
 - [ ] Comment is optional, but if present must be ≤200 chars (both client validation + rule check).
-- [ ] One rating per match per rater — a second attempt to rate the same match writes to the same doc (idempotent ID), overwriting the previous rating.
+- [ ] One rating per match per rater — the doc id is `{matchId}_{raterUid}` and ratings are create-only: a second attempt is rejected by the rules (no overwrite).
 - [ ] `AppUser.ratingCount` and `ratingAvg` are write-protected: client cannot write them directly (Firestore rules validate `ratingSum/ratingCount/ratingAvg` unchanged in user updates).
 - [ ] Scheduled post-meal push (`postMealReminder`, hourly Pub/Sub) is deduplicated via the `postMealNotified` flag; once sent, a meal does not re-notify its participants.
-- [ ] After both participants rate, the meal's `status` flips to `completed` by the scheduled Function.
+- [ ] `postMealReminder` marks a matched meal `completed` at its first hourly run after the meal time, whether or not anyone has rated.
 
 **Manual emulator/Blaze verification:**
 - [ ] Firestore rules reject a rating where `raterUid == targetUid` (write forbidden).
@@ -404,7 +401,6 @@ Related PRD entry: `docs/PRD.md § Ratings`
 - [ ] Scheduled `postMealReminder` function runs hourly and sends a notification to non-notified participants (requires Blaze + Cloud Scheduler; emulator cannot run scheduled triggers).
 
 **Known issues:**
-- Stale text: the `'rate'` tap handler exists (opens the match chat). Several edge-case lines above (overwrite on second rating, `completed` after both rate, nudge after rating) do not match the code, see `docs/bugs/2026-10-09-docs-contradict-code.md`.
 - `docs/bugs/2026-10-09-minor-polish-and-ci-gaps.md` (P3) — the rate prompt fires at meal start
 - Live aggregate updates + scheduled push notification delivery require the project to be on **Blaze** plan; if still on Spark, Functions deploy fails and rating aggregates/pushes are non-functional.
 
@@ -444,6 +440,17 @@ Automated: `test/features/meal/application/maps_launcher_provider_test.dart`, `m
 **Known issues:**
 - `docs/bugs/closed/2026-10-09-open-in-maps-ref-after-dispose.md` (P2, fixed; closed in the 2026-10-09 sweep: regression test un-skipped and green)
 - `docs/bugs/closed/2026-10-09-meal-detail-women-only-badge-overflow-2x.md` (P3, pre-existing, same card; fixed; closed in the 2026-10-09 sweep)
+
+---
+
+### Feature: Rules hardening (reports, messages, ratings, storage)
+
+**Automated:** `firebase/rules-test/hardening.rules.test.cjs` (reports: key whitelist + size caps; messages: server `createdAt`, no extra keys; ratings: exact keys, no client `aggregated`, server `createdAt`). Run: `cd firebase/rules-test && npm install && npm test` (also a CI job).
+
+**Manual (stage, after deploying rules + functions):**
+- [ ] Send a chat message, file a report, submit a rating: all still work from the app (the rules now expect exactly the keys/`serverTimestamp()` the app writes).
+- [ ] Upload a profile photo (Storage rule now requires env `stage|prod`).
+- [ ] Delete an account: still works with App Check on (`deleteAccount` now enforces it); register the debug token on dev devices first.
 
 ---
 

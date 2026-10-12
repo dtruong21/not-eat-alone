@@ -20,3 +20,5 @@
 **Frequency:** always.
 
 **Hypothesis:** Update the plan text in the same PR that fixes the matching code bug; prefer deleting stale "Deferred/Known issues" lines.
+
+**Status:** Fixed — TEST-PLAN (deletion, ratings, deferred notes, stale known-issues), PRD moderation wording, privacy policy (location not stored, meal fields, Places disclosure, reports retention, DOB private), TRACKING-PLAN push types, in-app feedback checklist item removed. Items 1, 8 and 10 were already resolved by earlier fixes.
