@@ -206,9 +206,10 @@ void _logFontDiagnostics(WidgetTester tester) {
 }
 
 // ---------------------------------------------------------------------------
-// Locale: `UX_LOCALE=fr make ux-capture ...` runs the app in French without
-// touching the simulator language. The finders below take the ENGLISH string
-// and look up its French twin (kept in step with lib/l10n/app_fr.arb by hand).
+// Locale: `UX_LOCALE=fr make ux-capture ...` runs the app in French (empty =
+// English, whatever the simulator language is). The finders below take the
+// ENGLISH string and look up its French twin (kept in step with
+// lib/l10n/app_fr.arb by hand).
 // ---------------------------------------------------------------------------
 
 const _uxLocale = String.fromEnvironment('UX_LOCALE');
@@ -510,8 +511,9 @@ void main() {
       ProviderScope(
         key: UniqueKey(),
         overrides: [
-          if (_uxLocale == 'fr')
-            localeSeedProvider.overrideWithValue(const Locale('fr')),
+          localeSeedProvider.overrideWithValue(
+            Locale(_uxLocale.isEmpty ? 'en' : _uxLocale),
+          ),
           restaurantSearchRepositoryProvider.overrideWithValue(
             _FixedRestaurantSearch(),
           ),

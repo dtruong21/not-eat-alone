@@ -23,7 +23,7 @@ Needs the same tools as `make e2e` (fvm, Firebase CLI, Java 21, npm) and
 Python 3 (placeholder avatars). Output: `ux_audit/out/<device>-<theme>-<size>/NN_name.png`
 (gitignored), plus `ux_audit/out/logs/<cell>.log` and `<cell>.findings.txt`.
 
-French (plan 19): run the app in French without touching the simulator's language:
+French (plan 19): run the app in French without touching the simulator's language (an empty `UX_LOCALE` means English, whatever the simulator language is):
 
     make ux-capture DEVICE='Convyve E2E' OUT=19-fr-light-default UX_LOCALE=fr
     tool/ux_matrix.sh --only se3-light-xxl --locale fr   # cell se3-light-xxl-fr

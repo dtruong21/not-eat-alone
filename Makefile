@@ -161,7 +161,7 @@ e2e: ios-plist ios-sim-boot ios-privacy
 # non-interactive sh starts with SIGINT ignored. Exit status is non-zero if
 # the test failed or any screenshot was missing/empty.
 OUT ?= default
-# App language of a capture (empty = the simulator's; fr = French). Passed to ux_audit/capture_test.dart.
+# App language of a capture (empty = English; fr = French), whatever the simulator language is. Passed to ux_audit/capture_test.dart.
 UX_LOCALE ?=
 .PHONY: ux-capture
 ux-capture: ios-plist ios-sim-boot ios-privacy

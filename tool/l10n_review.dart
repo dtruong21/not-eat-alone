@@ -28,8 +28,9 @@ const _uncertain = <String, String>{
   'mealActionStatusWomenOnly': '"Réservé aux femmes." (terse: width)',
   'mealWomenOnly': '"Entre femmes" for "Women only"',
   'safetyTipsBanner': 'free translation of "Meeting up?"',
+  'createMealNoteLabel': '"Note" (facultative) for the meal note field',
   'inboxActionChat': '"Discuter" vs "Ouvrir la discussion"',
-  'settingsSectionLegal': '"Mentions légales"',
+  'settingsSectionLegal': '"Informations légales"',
   'setupSubtitle': '"genre" for gender',
   'errorStateTitle': '"Chargement impossible" (generic, many screens)',
   'discoverEmptyMessage': 'avoids the gendered "Sois le premier / la première"',
@@ -46,6 +47,7 @@ String _where(String key) {
     if (f.path.startsWith('lib/l10n/')) continue;
     if (word.hasMatch(f.readAsStringSync())) files.add(f.path);
   }
+  files.sort(); // listSync order is not stable across machines
   return files.isEmpty ? 'n/a' : files.join(', ');
 }
 

@@ -48,16 +48,17 @@ Future<void> bootstrap({
     await FirebaseStorage.instance.useStorageEmulator(e.host, e.storagePort);
   } else {
     await FirebaseAppCheck.instance.activate(
-      androidProvider:
-          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-      appleProvider:
-          kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+      androidProvider: kDebugMode
+          ? AndroidProvider.debug
+          : AndroidProvider.playIntegrity,
+      appleProvider: kDebugMode
+          ? AppleProvider.debug
+          : AppleProvider.deviceCheck,
     );
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
       !kDebugMode,
     );
-    FlutterError.onError =
-        FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
@@ -95,12 +96,6 @@ class NotEatAloneApp extends ConsumerWidget {
         locale: ref.watch(localeControllerProvider),
         supportedLocales: supportedAppLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        localeResolutionCallback: (device, supported) {
-          for (final l in supported) {
-            if (l.languageCode == device?.languageCode) return l;
-          }
-          return const Locale('en');
-        },
       ),
     );
   }

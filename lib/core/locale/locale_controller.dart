@@ -42,11 +42,16 @@ class LocaleController extends Notifier<Locale?> {
   /// Switches language now (null = follow the device) and remembers it.
   Future<void> setLocale(Locale? locale) async {
     state = locale;
-    final prefs = await SharedPreferences.getInstance();
-    if (locale == null) {
-      await prefs.remove(localePrefsKey);
-    } else {
-      await prefs.setString(localePrefsKey, locale.languageCode);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (locale == null) {
+        await prefs.remove(localePrefsKey);
+      } else {
+        await prefs.setString(localePrefsKey, locale.languageCode);
+      }
+    } on Object {
+      // The choice still applies for this session. The picker calls this
+      // unawaited, so a failed write must not surface as an unhandled error.
     }
   }
 }

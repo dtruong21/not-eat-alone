@@ -68,12 +68,6 @@ void main() {
             locale: ref.watch(localeControllerProvider),
             supportedLocales: supportedAppLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            localeResolutionCallback: (device, supported) {
-              for (final s in supported) {
-                if (s.languageCode == device?.languageCode) return s;
-              }
-              return const Locale('en');
-            },
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(
                 context,
@@ -176,6 +170,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Settings'), findsOneWidget);
   });
+
+  // Flutter's own resolution (no callback in `main_common`): regional and
+  // second-preferred languages count, anything else falls back to English.
+  for (final (devices, title) in [
+    (const [Locale('fr', 'CA')], 'Réglages'),
+    (const [Locale('es'), Locale('fr')], 'Réglages'),
+    (const [Locale('de'), Locale('es')], 'Settings'),
+  ]) {
+    testWidgets('device languages $devices show $title', (tester) async {
+      tester.platformDispatcher.localesTestValue = devices;
+      await pump(tester);
+      expect(find.text(title), findsOneWidget);
+    });
+  }
 
   testWidgets('the selected option is announced as selected', (tester) async {
     final handle = tester.ensureSemantics();

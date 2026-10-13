@@ -7,6 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// `tooltip:`/`semanticLabel:`/`semanticsLabel:` string literal that has a
 /// letter and a space (or starts uppercase). Extract it to the ARB files, or
 /// allow-list it in `hardcoded_strings_allowlist.txt` with a reason.
+///
+/// A regex scan, not a parser. It cannot see: `title:`, `message:`, `hint:`,
+/// `helperText:`, `errorText:` literals, `TextSpan(text:)`, `SelectableText`,
+/// `Tooltip(message:)`, literals inside ternaries, and lowercase single words.
+/// Review those by hand.
 void main() {
   final literal = RegExp(
     r'''(?:\bText\(\s*|\b(?:label|hintText|labelText|tooltip|semanticLabel|semanticsLabel)\s*:\s*(?:const\s+)?)(?:r?)(["'])((?:\\.|(?!\1)[^\\\n])*)\1''',
