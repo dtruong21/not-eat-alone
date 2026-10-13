@@ -23,6 +23,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Added
 
+- Store: framed screenshots for the App Store and Google Play in English and French (`docs/store/screenshots/`), and a French store listing draft (`docs/store/listing.fr.md`, native review pending).
 - Convyve now speaks French as well as English: every screen, button, message and accessibility label. It follows your phone's language the first time you open the app, and Settings has a new Language row (System default / English / Français) that switches at once and is remembered.
 
 - A chat now says which meal it is about (restaurant and time, tap to open the meal), the safety tips are a one-line banner you can dismiss that opens the full tips, and messages are grouped under Today / Yesterday / date labels with a time only on the last message of a burst.
