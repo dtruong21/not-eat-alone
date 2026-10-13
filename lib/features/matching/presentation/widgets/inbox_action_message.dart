@@ -1,6 +1,7 @@
 /// Pure mapping from an inbox action's outcome to a typed [InboxOutcome], plus
-/// its localised snackbar text. The mapping is free of Flutter/Riverpod so
-/// every row is unit-testable; only [localizeInboxOutcome] touches l10n.
+/// its localised snackbar text. The outcome mapping uses no widgets or
+/// Riverpod, so every row is unit-testable; only [localizeInboxOutcome]
+/// touches l10n.
 library;
 
 import 'package:not_eat_alone/features/matching/domain/inbox_action.dart';

@@ -116,12 +116,6 @@ abstract class AppLocalizations {
   /// **'Dismiss'**
   String get commonDismiss;
 
-  /// Short button label that retries a failed action.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get commonRetry;
-
   /// Screen-reader label of a loading placeholder.
   ///
   /// In en, this message translates to:

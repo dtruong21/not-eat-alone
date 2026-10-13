@@ -12,10 +12,6 @@
   "@commonDismiss": {
     "description": "Tooltip / accessibility label of a close button on a dismissible notice."
   },
-  "commonRetry": "Retry",
-  "@commonRetry": {
-    "description": "Short button label that retries a failed action."
-  },
   "commonLoading": "Loading",
   "@commonLoading": {
     "description": "Screen-reader label of a loading placeholder."

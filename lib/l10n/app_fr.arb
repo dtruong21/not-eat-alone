@@ -12,10 +12,6 @@
   "@commonDismiss": {
     "description": "Tooltip / accessibility label of a close button on a dismissible notice."
   },
-  "commonRetry": "Réessayer",
-  "@commonRetry": {
-    "description": "Short button label that retries a failed action."
-  },
   "commonLoading": "Chargement",
   "@commonLoading": {
     "description": "Screen-reader label of a loading placeholder."
@@ -28,7 +24,7 @@
   "@commonSaving": {
     "description": "Label shown on a button while a save is in flight."
   },
-  "commonSomethingWentWrong": "Un problème est survenu. Réessaie.",
+  "commonSomethingWentWrong": "Oups, un problème est survenu. Réessaie.",
   "@commonSomethingWentWrong": {
     "description": "Generic inline error shown when a step fails for an unknown reason."
   },
@@ -104,7 +100,7 @@
   "@phoneTitle": {
     "description": "Headline of the SMS code screen."
   },
-  "phoneSentTo": "Envoyé au {phone}",
+  "phoneSentTo": "Code envoyé au {phone}",
   "@phoneSentTo": {
     "description": "Line under the headline naming the number the code was sent to.",
     "placeholders": {
@@ -141,7 +137,7 @@
   "@phoneResend": {
     "description": "Button that requests a new SMS code."
   },
-  "phoneResendIn": "Renvoyer le code dans {seconds} s",
+  "phoneResendIn": "Renvoyer le code dans {seconds} s",
   "@phoneResendIn": {
     "description": "Disabled resend button showing the cooldown; \"s\" is the seconds symbol.",
     "placeholders": {
@@ -199,7 +195,7 @@
   "@discoverEmptyTitle": {
     "description": "Headline of the Discover empty state."
   },
-  "discoverEmptyMessage": "Lance-toi : propose un repas et quelqu’un te rejoindra.",
+  "discoverEmptyMessage": "Lance-toi : propose un repas et quelqu’un te rejoindra.",
   "@discoverEmptyMessage": {
     "description": "Supporting text of the Discover empty state."
   },
@@ -207,7 +203,7 @@
   "@discoverCreateMeal": {
     "description": "Discover button / floating button that starts meal creation."
   },
-  "discoverDistanceKm": "{distance} km",
+  "discoverDistanceKm": "{distance} km",
   "@discoverDistanceKm": {
     "description": "Distance from the viewer to a meal, in kilometres with one decimal.",
     "placeholders": {
@@ -305,7 +301,7 @@
   "@mealActionCancelled": {
     "description": "Meal action bar: disabled button on a cancelled meal."
   },
-  "mealActionStatusYourMeal": "Tes demandes : onglet Demandes.",
+  "mealActionStatusYourMeal": "Tes demandes : onglet Demandes.",
   "@mealActionStatusYourMeal": {
     "description": "Meal action bar status line (one line only) on the viewer's own meal."
   },
@@ -325,7 +321,7 @@
   "@mealActionStatusPending": {
     "description": "Meal action bar status line while the request is pending."
   },
-  "mealActionStatusApproved": "C’est un match ! Dis bonjour !",
+  "mealActionStatusApproved": "C’est un match ! Dis bonjour !",
   "@mealActionStatusApproved": {
     "description": "Meal action bar status line after the host approved the request."
   },
@@ -361,7 +357,7 @@
   "@createMealCreating": {
     "description": "Button label while the meal is being posted."
   },
-  "createMealTooSoon": "Choisis une heure dans au moins {minutes} minutes.",
+  "createMealTooSoon": "Choisis une heure à au moins {minutes} minutes d’ici.",
   "@createMealTooSoon": {
     "description": "Snackbar when the picked time is too close to now.",
     "placeholders": {
@@ -386,7 +382,7 @@
   "@restaurantSearchEmpty": {
     "description": "Shown when the search has no query and no results."
   },
-  "restaurantSearchNoMatch": "Aucun restaurant ne s’appelle « {query} ». Essaie un autre nom.",
+  "restaurantSearchNoMatch": "Aucun restaurant ne s’appelle « {query} ». Essaie un autre nom.",
   "@restaurantSearchNoMatch": {
     "description": "Shown when a typed search has no results; query is what the user typed.",
     "placeholders": {
@@ -403,7 +399,7 @@
   "@inboxEmptyTitle": {
     "description": "Empty state of the host request inbox."
   },
-  "inboxGuestFallback": "Invité·e",
+  "inboxGuestFallback": "Convive",
   "@inboxGuestFallback": {
     "description": "Name shown for a requesting guest whose profile is not loaded."
   },
@@ -487,7 +483,7 @@
   "@chatTimeNow": {
     "description": "Relative time for under a minute ago, on the chat list."
   },
-  "chatTimeMinutes": "{minutes} min",
+  "chatTimeMinutes": "{minutes} min",
   "@chatTimeMinutes": {
     "description": "Relative time in minutes on the chat list.",
     "placeholders": {
@@ -496,7 +492,7 @@
       }
     }
   },
-  "chatTimeHours": "{hours} h",
+  "chatTimeHours": "{hours} h",
   "@chatTimeHours": {
     "description": "Relative time in hours on the chat list.",
     "placeholders": {
@@ -505,7 +501,7 @@
       }
     }
   },
-  "chatTimeDays": "{days} j",
+  "chatTimeDays": "{days} j",
   "@chatTimeDays": {
     "description": "Relative time in days on the chat list.",
     "placeholders": {
@@ -550,11 +546,11 @@
   "@leaveMatchOtherFallback": {
     "description": "Stands in for the other person’s name in the leave dialog when it is not loaded."
   },
-  "leaveMatchHostTitle": "Annuler ce repas ?",
+  "leaveMatchHostTitle": "Annuler ce repas ?",
   "@leaveMatchHostTitle": {
     "description": "Leave dialog title for the host."
   },
-  "leaveMatchGuestTitle": "Te retirer de ce repas ?",
+  "leaveMatchGuestTitle": "Te retirer de ce repas ?",
   "@leaveMatchGuestTitle": {
     "description": "Leave dialog title for the guest."
   },
@@ -600,7 +596,7 @@
   "@leaveMatchFailed": {
     "description": "Snackbar when cancelling or withdrawing failed."
   },
-  "safetyTipsBanner": "Bientôt à table ? Nos conseils de sécurité",
+  "safetyTipsBanner": "Bientôt à table ? Nos conseils de sécurité",
   "@safetyTipsBanner": {
     "description": "One-line banner above the chat thread."
   },
@@ -608,7 +604,7 @@
   "@safetyTipsBannerDismiss": {
     "description": "Tooltip of the banner close button."
   },
-  "safetyTipsHeading": "Bientôt à table ? Reste en sécurité",
+  "safetyTipsHeading": "Bientôt à table ? Reste en sécurité",
   "@safetyTipsHeading": {
     "description": "Heading of the safety tips sheet and screen."
   },
@@ -652,7 +648,7 @@
   "@safetyBlockAction": {
     "description": "Safety menu item and confirm button that blocks a person."
   },
-  "safetyBlockTitleNamed": "Bloquer {name} ?",
+  "safetyBlockTitleNamed": "Bloquer {name} ?",
   "@safetyBlockTitleNamed": {
     "description": "Title of the block confirmation dialog when the person is named.",
     "placeholders": {
@@ -661,7 +657,7 @@
       }
     }
   },
-  "safetyBlockTitleGeneric": "Bloquer cette personne ?",
+  "safetyBlockTitleGeneric": "Bloquer cette personne ?",
   "@safetyBlockTitleGeneric": {
     "description": "Title of the block confirmation dialog when the name is unknown."
   },
@@ -673,7 +669,7 @@
   "@safetyBlockFailed": {
     "description": "Snackbar when blocking failed."
   },
-  "safetyBlockDone": "Personne bloquée.",
+  "safetyBlockDone": "Tu as bloqué cette personne.",
   "@safetyBlockDone": {
     "description": "Snackbar after a successful block."
   },
@@ -722,7 +718,7 @@
   "@reportFailed": {
     "description": "Snackbar when sending a report failed."
   },
-  "reportThanks": "Merci, on va examiner ça.",
+  "reportThanks": "Merci. Nous allons examiner ton signalement.",
   "@reportThanks": {
     "description": "Snackbar after a report was sent."
   },
@@ -738,7 +734,7 @@
   "@blockedEmptyMessage": {
     "description": "Empty-state message of the blocked people screen."
   },
-  "blockedUnknownUser": "Utilisateur inconnu",
+  "blockedUnknownUser": "Profil inconnu",
   "@blockedUnknownUser": {
     "description": "Name shown for a blocked person whose profile cannot be loaded."
   },
@@ -772,7 +768,7 @@
   "@blockedUnblockFailed": {
     "description": "Snackbar when unblocking failed."
   },
-  "ratingTitleNamed": "Comment s’est passé ton repas avec {name} ?",
+  "ratingTitleNamed": "Comment s’est passé ton repas avec {name} ?",
   "@ratingTitleNamed": {
     "description": "Rating sheet title when the partner is named.",
     "placeholders": {
@@ -781,7 +777,7 @@
       }
     }
   },
-  "ratingTitle": "Comment s’est passé ton repas ?",
+  "ratingTitle": "Comment s’est passé ton repas ?",
   "@ratingTitle": {
     "description": "Rating sheet title and post-meal card headline."
   },
@@ -794,7 +790,7 @@
       }
     }
   },
-  "ratingShowedUp": "La personne est-elle venue ?",
+  "ratingShowedUp": "La personne est-elle venue ?",
   "@ratingShowedUp": {
     "description": "Label of the show-up switch in the rating sheet."
   },
@@ -806,7 +802,7 @@
   "@ratingFailed": {
     "description": "Snackbar when sending a rating failed."
   },
-  "ratingThanks": "Merci pour ton retour !",
+  "ratingThanks": "Merci pour ton retour !",
   "@ratingThanks": {
     "description": "Snackbar after a rating was sent."
   },
@@ -867,7 +863,7 @@
   "@settingsSignOut": {
     "description": "Settings row and confirm button that signs the user out."
   },
-  "settingsSignOutTitle": "Te déconnecter ?",
+  "settingsSignOutTitle": "Te déconnecter ?",
   "@settingsSignOutTitle": {
     "description": "Title of the sign-out confirmation dialog."
   },
@@ -948,7 +944,7 @@
   "@settingsDeleteAccount": {
     "description": "Settings row and confirm button that deletes the account."
   },
-  "settingsDeleteTitle": "Supprimer ton compte ?",
+  "settingsDeleteTitle": "Supprimer ton compte ?",
   "@settingsDeleteTitle": {
     "description": "Title of the delete-account confirmation dialog."
   },
@@ -984,7 +980,7 @@
   "@profileFormAddPhoto": {
     "description": "Label of the add-photo tile."
   },
-  "profileFormUploadingPhoto": "Envoi de la photo",
+  "profileFormUploadingPhoto": "Envoi de la photo en cours",
   "@profileFormUploadingPhoto": {
     "description": "Screen-reader label of the add-photo tile while a photo uploads."
   },

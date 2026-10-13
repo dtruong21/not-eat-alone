@@ -234,7 +234,7 @@ void main() {
       );
 
       expect(find.text(_longName), findsOneWidget);
-      expect(find.text('3 h'), findsOneWidget);
+      expect(find.text('3\u00a0h'), findsOneWidget);
       expect(find.text('salut'), findsOneWidget);
       expect(
         find.byWidgetPredicate(
@@ -252,10 +252,10 @@ void main() {
     // ProviderScope and keep its cached last-message stream.
     final cases = <Duration, String>{
       const Duration(seconds: 5): 'à l’instant',
-      const Duration(minutes: 1, seconds: 10): '1 min',
-      const Duration(minutes: 42): '42 min',
-      const Duration(hours: 1, minutes: 1): '1 h',
-      const Duration(days: 2, hours: 1): '2 j',
+      const Duration(minutes: 1, seconds: 10): '1\u00a0min',
+      const Duration(minutes: 42): '42\u00a0min',
+      const Duration(hours: 1, minutes: 1): '1\u00a0h',
+      const Duration(days: 2, hours: 1): '2\u00a0j',
     };
     for (final entry in cases.entries) {
       testWidgets('relative time ${entry.value}', (tester) async {
@@ -307,15 +307,17 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('30 min'), findsOneWidget);
+      expect(find.text('30\u00a0min'), findsOneWidget);
     });
   });
 
   group('chat screen', () {
-    final now = DateTime.now();
+    // Start of today / yesterday: always past, so never flaky at midnight.
+    final today = DateTime.now();
+    final now = DateTime(today.year, today.month, today.day);
     final thread = [
-      _msg('a', 'them', 'Salut !', now.subtract(const Duration(days: 1))),
-      _msg('b', 'me', 'À ce soir', now.subtract(const Duration(minutes: 30))),
+      _msg('a', 'them', 'Salut !', DateTime(now.year, now.month, now.day - 1)),
+      _msg('b', 'me', 'À ce soir', now),
     ];
 
     testWidgets('header, separators, seen, composer and banner in French', (
@@ -334,7 +336,7 @@ void main() {
       expect(find.byTooltip('Envoyer le message'), findsOneWidget);
       expect(find.byTooltip('Je ne peux pas venir'), findsOneWidget);
       expect(
-        find.text('Bientôt à table ? Nos conseils de sécurité'),
+        find.text('Bientôt à table\u00a0? Nos conseils de sécurité'),
         findsOneWidget,
       );
       expect(find.byTooltip('Fermer les conseils de sécurité'), findsOneWidget);
@@ -348,9 +350,14 @@ void main() {
     ) async {
       await pump(tester, home: chatScreen, messages: thread, meal: _meal());
 
-      await tester.tap(find.text('Bientôt à table ? Nos conseils de sécurité'));
+      await tester.tap(
+        find.text('Bientôt à table\u00a0? Nos conseils de sécurité'),
+      );
       await tester.pumpAndSettle();
-      expect(find.text('Bientôt à table ? Reste en sécurité'), findsOneWidget);
+      expect(
+        find.text('Bientôt à table\u00a0? Reste en sécurité'),
+        findsOneWidget,
+      );
       expect(find.text('Retrouve-toi dans un lieu public'), findsOneWidget);
       expect(
         find.text('Préviens un proche de l’endroit où tu vas'),
@@ -476,7 +483,7 @@ void main() {
     testWidgets('host dialog and snackbar are French', (tester) async {
       await open(tester, host: true);
 
-      expect(find.text('Annuler ce repas ?'), findsOneWidget);
+      expect(find.text('Annuler ce repas\u00a0?'), findsOneWidget);
       expect(
         find.text('On préviendra $_longName et le repas sera supprimé.'),
         findsOneWidget,
@@ -493,7 +500,7 @@ void main() {
     testWidgets('guest dialog and snackbar are French', (tester) async {
       await open(tester, host: false);
 
-      expect(find.text('Te retirer de ce repas ?'), findsOneWidget);
+      expect(find.text('Te retirer de ce repas\u00a0?'), findsOneWidget);
       expect(
         find.text(
           'On préviendra $_longName et le repas sera de nouveau ouvert '
@@ -526,7 +533,7 @@ void main() {
       await open(tester, host: true);
       await tester.tap(find.byKey(const Key('leave_match_keep')));
       await tester.pumpAndSettle();
-      expect(find.text('Annuler ce repas ?'), findsNothing);
+      expect(find.text('Annuler ce repas\u00a0?'), findsNothing);
     });
 
     testWidgets('the dialog does not overflow at 320 px and 2.0x', (
@@ -541,7 +548,7 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('leave_match_button')));
       await tester.pumpAndSettle();
-      expect(find.text('Te retirer de ce repas ?'), findsOneWidget);
+      expect(find.text('Te retirer de ce repas\u00a0?'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

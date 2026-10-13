@@ -99,7 +99,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Un problème est survenu. Réessaie.'), findsOneWidget);
+    expect(
+      find.text('Oups, un problème est survenu. Réessaie.'),
+      findsOneWidget,
+    );
     expect(find.textContaining('Something went wrong'), findsNothing);
   });
 

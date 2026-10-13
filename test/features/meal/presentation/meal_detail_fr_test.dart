@@ -86,7 +86,7 @@ final _cases = <_Case>[
     request: null,
     loadError: false,
     label: 'C’est ton repas',
-    status: 'Tes demandes : onglet Demandes.',
+    status: 'Tes demandes\u00a0: onglet Demandes.',
   ),
   (
     name: 'cancelled',
@@ -146,7 +146,7 @@ final _cases = <_Case>[
     request: _request(RequestStatus.approved),
     loadError: false,
     label: 'Ouvrir la discussion',
-    status: 'C’est un match ! Dis bonjour !',
+    status: 'C’est un match\u00a0! Dis bonjour\u00a0!',
   ),
   (
     name: 'denied',
@@ -289,7 +289,10 @@ void main() {
     ).thenAnswer((_) => Stream<AppUser?>.error(StateError('boom')));
     await pump(tester, meal: _meal);
 
-    expect(find.text('Un problème est survenu. Réessaie.'), findsOneWidget);
+    expect(
+      find.text('Oups, un problème est survenu. Réessaie.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the safety menu is French', (tester) async {

@@ -380,7 +380,7 @@ void main() {
         );
       });
       test('a UTC instant lands on the Pacific calendar day', () {
-        // 03:30Z on 2 Nov is 20:30 PST on 1 Nov.
+        // 03:30Z on 2 Nov is 19:30 PST on 1 Nov.
         final utc = DateTime.utc(2026, 11, 2, 3, 30);
         expect(formatDayLabel(utc, now: DateTime(2026, 11, 1, 22)), 'Today');
         expect(formatDayLabel(utc, now: DateTime(2026, 11, 2, 9)), 'Yesterday');

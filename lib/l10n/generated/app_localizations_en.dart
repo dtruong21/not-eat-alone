@@ -18,9 +18,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDismiss => 'Dismiss';
 
   @override
-  String get commonRetry => 'Retry';
-
-  @override
   String get commonLoading => 'Loading';
 
   @override

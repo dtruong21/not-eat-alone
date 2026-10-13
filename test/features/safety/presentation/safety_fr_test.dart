@@ -146,7 +146,7 @@ void main() {
     testWidgets('block dialog names an apostrophe name', (tester) async {
       await pumpMenu(tester, name: "Jean d'Arc");
       await choose(tester, 'safety_actions_block_item');
-      expect(find.text("Bloquer Jean d'Arc ?"), findsOneWidget);
+      expect(find.text("Bloquer Jean d'Arc\u00a0?"), findsOneWidget);
       expect(
         find.text(
           'Tu ne verras plus cette personne sur Convyve, '
@@ -164,7 +164,7 @@ void main() {
     testWidgets('block dialog falls back to "cette personne"', (tester) async {
       await pumpMenu(tester);
       await choose(tester, 'safety_actions_block_item');
-      expect(find.text('Bloquer cette personne ?'), findsOneWidget);
+      expect(find.text('Bloquer cette personne\u00a0?'), findsOneWidget);
     });
 
     testWidgets('confirming shows the French snackbar', (tester) async {
@@ -172,7 +172,7 @@ void main() {
       await choose(tester, 'safety_actions_block_item');
       await tester.tap(find.byKey(const Key('safety_actions_block_confirm')));
       await tester.pumpAndSettle();
-      expect(find.text('Personne bloquée.'), findsOneWidget);
+      expect(find.text('Tu as bloqué cette personne.'), findsOneWidget);
       expect(find.text('Blocked.'), findsNothing);
     });
 
@@ -190,7 +190,7 @@ void main() {
     ) async {
       await pumpMenu(tester, name: _longName, isNarrow: true, textScale: 2);
       await choose(tester, 'safety_actions_block_item');
-      expect(find.text('Bloquer $_longName ?'), findsOneWidget);
+      expect(find.text('Bloquer $_longName\u00a0?'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -271,7 +271,10 @@ void main() {
           reason: 'harassment',
         ),
       ).called(1);
-      expect(find.text('Merci, on va examiner ça.'), findsOneWidget);
+      expect(
+        find.text('Merci. Nous allons examiner ton signalement.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a failed report shows the French error', (tester) async {
@@ -340,7 +343,7 @@ void main() {
       await pumpBlocked(tester, blocked: {'a', 'gone'});
       expect(find.text('Personnes bloquées'), findsOneWidget);
       expect(find.text('Débloquer'), findsNWidgets(2));
-      expect(find.text('Utilisateur inconnu'), findsOneWidget);
+      expect(find.text('Profil inconnu'), findsOneWidget);
       expect(find.bySemanticsLabel("Débloquer D'Artagnan"), findsOneWidget);
       expect(find.text('Unblock'), findsNothing);
       expect(find.text('Blocked people'), findsNothing);

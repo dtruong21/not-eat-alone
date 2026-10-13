@@ -47,10 +47,10 @@ void main() {
 
     for (final fr in [
       'Saisis le code',
-      'Envoyé au +33 6 12 34 56 78',
+      'Code envoyé au +33 6 12 34 56 78',
       'Modifier',
       'Valider',
-      'Renvoyer le code dans 30 s',
+      'Renvoyer le code dans 30\u00a0s',
     ]) {
       expect(find.text(fr), findsOneWidget, reason: fr);
     }
@@ -104,7 +104,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Un problème est survenu. Réessaie.'), findsOneWidget);
+    expect(
+      find.text('Oups, un problème est survenu. Réessaie.'),
+      findsOneWidget,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -116,9 +119,12 @@ void main() {
 
   test('placeholders render real values (seconds 0/1/many, phone)', () {
     final fr = AppLocalizationsFr();
-    expect(fr.phoneResendIn(0), 'Renvoyer le code dans 0 s');
-    expect(fr.phoneResendIn(1), 'Renvoyer le code dans 1 s');
-    expect(fr.phoneResendIn(29), 'Renvoyer le code dans 29 s');
-    expect(fr.phoneSentTo('+33 6 12 34 56 78'), 'Envoyé au +33 6 12 34 56 78');
+    expect(fr.phoneResendIn(0), 'Renvoyer le code dans 0\u00a0s');
+    expect(fr.phoneResendIn(1), 'Renvoyer le code dans 1\u00a0s');
+    expect(fr.phoneResendIn(29), 'Renvoyer le code dans 29\u00a0s');
+    expect(
+      fr.phoneSentTo('+33 6 12 34 56 78'),
+      'Code envoyé au +33 6 12 34 56 78',
+    );
   });
 }

@@ -85,7 +85,8 @@ void main() {
 
     expect(
       find.text(
-        "Aucun restaurant ne s’appelle « L'Ami Jean ». Essaie un autre nom.",
+        "Aucun restaurant ne s’appelle «\u00a0L'Ami Jean\u00a0». "
+        'Essaie un autre nom.',
       ),
       findsOneWidget,
     );
@@ -100,7 +101,7 @@ void main() {
 
     expect(
       find.text(
-        'Aucun restaurant ne s’appelle « Chez l’Ami "Louis" {x} ». '
+        'Aucun restaurant ne s’appelle «\u00a0Chez l’Ami "Louis" {x}\u00a0». '
         'Essaie un autre nom.',
       ),
       findsOneWidget,

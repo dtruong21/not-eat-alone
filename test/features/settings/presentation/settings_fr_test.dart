@@ -150,7 +150,7 @@ void main() {
     await pump(tester);
     await tester.tap(find.byKey(const Key('settings_sign_out')));
     await tester.pumpAndSettle();
-    expect(find.text('Te déconnecter ?'), findsOneWidget);
+    expect(find.text('Te déconnecter\u00a0?'), findsOneWidget);
     expect(find.text('Annuler'), findsOneWidget);
     expect(find.text('Se déconnecter'), findsNWidgets(2));
   });
@@ -160,7 +160,7 @@ void main() {
     await pump(tester);
     await tester.tap(find.byKey(const Key('settings_delete_account')));
     await tester.pumpAndSettle();
-    expect(find.text('Supprimer ton compte ?'), findsOneWidget);
+    expect(find.text('Supprimer ton compte\u00a0?'), findsOneWidget);
     expect(
       find.text(
         'Cela supprime définitivement ton compte et toutes tes données. '

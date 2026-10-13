@@ -131,10 +131,10 @@ void main() {
     testWidgets('title, switch, hint and Submit are French', (tester) async {
       await openSheet(tester, name: "Jean d'Arc");
       expect(
-        find.text("Comment s’est passé ton repas avec Jean d'Arc ?"),
+        find.text("Comment s’est passé ton repas avec Jean d'Arc\u00a0?"),
         findsOneWidget,
       );
-      expect(find.text('La personne est-elle venue ?'), findsOneWidget);
+      expect(find.text('La personne est-elle venue\u00a0?'), findsOneWidget);
       expect(find.text('Ajoute un commentaire (facultatif)'), findsOneWidget);
       expect(find.text('Envoyer'), findsOneWidget);
       for (final en in ['Did they show up?', 'Submit']) {
@@ -144,7 +144,7 @@ void main() {
 
     testWidgets('unnamed title', (tester) async {
       await openSheet(tester);
-      expect(find.text('Comment s’est passé ton repas ?'), findsOneWidget);
+      expect(find.text('Comment s’est passé ton repas\u00a0?'), findsOneWidget);
     });
 
     testWidgets('star tooltips pluralise (1 and many)', (tester) async {
@@ -162,7 +162,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(const Key('rating_submit_button')));
       await tester.pumpAndSettle();
-      expect(find.text('Merci pour ton retour !'), findsOneWidget);
+      expect(find.text('Merci pour ton retour\u00a0!'), findsOneWidget);
       expect(find.text('Thanks for the feedback!'), findsNothing);
     });
 
@@ -193,7 +193,7 @@ void main() {
         name: "Jean d'Arc",
       );
       await tester.pumpAndSettle();
-      expect(find.text('Comment s’est passé ton repas ?'), findsOneWidget);
+      expect(find.text('Comment s’est passé ton repas\u00a0?'), findsOneWidget);
       expect(find.text('Ça ne prend qu’un instant.'), findsOneWidget);
       expect(find.text("Noter Jean d'Arc"), findsOneWidget);
       expect(find.text('How was your meal?'), findsNothing);

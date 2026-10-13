@@ -138,7 +138,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Un problème est survenu. Réessaie.'), findsOneWidget);
+    expect(
+      find.text('Oups, un problème est survenu. Réessaie.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a posted meal shows the French confirmation', (tester) async {
@@ -167,7 +170,7 @@ void main() {
 
     expect(
       context.l10n.createMealTooSoon(5),
-      'Choisis une heure dans au moins 5 minutes.',
+      'Choisis une heure à au moins 5 minutes d’ici.',
     );
   });
 

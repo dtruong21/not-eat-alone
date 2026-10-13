@@ -152,6 +152,19 @@ void main() {
     expect(await readSavedLocale(), isNull);
   });
 
+  testWidgets('tapping the already-selected option just closes the picker', (
+    tester,
+  ) async {
+    await pump(tester, seed: const Locale('fr'));
+    await tester.tap(find.byKey(const Key('settings_language')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('language_option_fr')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('language_picker')), findsNothing);
+    expect(container.read(localeControllerProvider), const Locale('fr'));
+    expect(find.text('Réglages'), findsOneWidget);
+  });
+
   testWidgets('System default follows the device language', (tester) async {
     await pump(tester, seed: const Locale('en'));
     tester.platformDispatcher.localesTestValue = const [Locale('fr')];

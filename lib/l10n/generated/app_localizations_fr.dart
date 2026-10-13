@@ -18,9 +18,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get commonDismiss => 'Fermer';
 
   @override
-  String get commonRetry => 'Réessayer';
-
-  @override
   String get commonLoading => 'Chargement';
 
   @override
@@ -30,7 +27,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get commonSaving => 'Enregistrement…';
 
   @override
-  String get commonSomethingWentWrong => 'Un problème est survenu. Réessaie.';
+  String get commonSomethingWentWrong =>
+      'Oups, un problème est survenu. Réessaie.';
 
   @override
   String get errorStateTitle => 'Chargement impossible';
@@ -90,7 +88,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String phoneSentTo(String phone) {
-    return 'Envoyé au $phone';
+    return 'Code envoyé au $phone';
   }
 
   @override
@@ -117,7 +115,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String phoneResendIn(int seconds) {
-    return 'Renvoyer le code dans $seconds s';
+    return 'Renvoyer le code dans $seconds s';
   }
 
   @override
@@ -157,7 +155,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get discoverEmptyMessage =>
-      'Lance-toi : propose un repas et quelqu’un te rejoindra.';
+      'Lance-toi : propose un repas et quelqu’un te rejoindra.';
 
   @override
   String get discoverCreateMeal => 'Proposer un repas';
@@ -171,7 +169,7 @@ class AppLocalizationsFr extends AppLocalizations {
         );
     final String distanceString = distanceNumberFormat.format(distance);
 
-    return '$distanceString km';
+    return '$distanceString km';
   }
 
   @override
@@ -234,7 +232,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealActionCancelled => 'Repas annulé';
 
   @override
-  String get mealActionStatusYourMeal => 'Tes demandes : onglet Demandes.';
+  String get mealActionStatusYourMeal => 'Tes demandes : onglet Demandes.';
 
   @override
   String get mealActionStatusCancelled => 'L’hôte a annulé ce repas.';
@@ -249,7 +247,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealActionStatusPending => 'L’hôte n’a pas encore répondu.';
 
   @override
-  String get mealActionStatusApproved => 'C’est un match ! Dis bonjour !';
+  String get mealActionStatusApproved => 'C’est un match ! Dis bonjour !';
 
   @override
   String get mealActionStatusDenied => 'L’hôte a choisi quelqu’un d’autre.';
@@ -278,7 +276,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String createMealTooSoon(int minutes) {
-    return 'Choisis une heure dans au moins $minutes minutes.';
+    return 'Choisis une heure à au moins $minutes minutes d’ici.';
   }
 
   @override
@@ -297,7 +295,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String restaurantSearchNoMatch(String query) {
-    return 'Aucun restaurant ne s’appelle « $query ». Essaie un autre nom.';
+    return 'Aucun restaurant ne s’appelle « $query ». Essaie un autre nom.';
   }
 
   @override
@@ -307,7 +305,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get inboxEmptyTitle => 'Aucune demande en attente';
 
   @override
-  String get inboxGuestFallback => 'Invité·e';
+  String get inboxGuestFallback => 'Convive';
 
   @override
   String inboxGuestNameAge(String name, int age) {
@@ -371,17 +369,17 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatTimeMinutes(int minutes) {
-    return '$minutes min';
+    return '$minutes min';
   }
 
   @override
   String chatTimeHours(int hours) {
-    return '$hours h';
+    return '$hours h';
   }
 
   @override
   String chatTimeDays(int days) {
-    return '$days j';
+    return '$days j';
   }
 
   @override
@@ -413,10 +411,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get leaveMatchOtherFallback => 'l’autre personne';
 
   @override
-  String get leaveMatchHostTitle => 'Annuler ce repas ?';
+  String get leaveMatchHostTitle => 'Annuler ce repas ?';
 
   @override
-  String get leaveMatchGuestTitle => 'Te retirer de ce repas ?';
+  String get leaveMatchGuestTitle => 'Te retirer de ce repas ?';
 
   @override
   String leaveMatchHostBody(String name) {
@@ -448,13 +446,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Annulation impossible. Vérifie ta connexion et réessaie.';
 
   @override
-  String get safetyTipsBanner => 'Bientôt à table ? Nos conseils de sécurité';
+  String get safetyTipsBanner => 'Bientôt à table ? Nos conseils de sécurité';
 
   @override
   String get safetyTipsBannerDismiss => 'Fermer les conseils de sécurité';
 
   @override
-  String get safetyTipsHeading => 'Bientôt à table ? Reste en sécurité';
+  String get safetyTipsHeading => 'Bientôt à table ? Reste en sécurité';
 
   @override
   String get safetyTipPublicPlace => 'Retrouve-toi dans un lieu public';
@@ -489,11 +487,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String safetyBlockTitleNamed(String name) {
-    return 'Bloquer $name ?';
+    return 'Bloquer $name ?';
   }
 
   @override
-  String get safetyBlockTitleGeneric => 'Bloquer cette personne ?';
+  String get safetyBlockTitleGeneric => 'Bloquer cette personne ?';
 
   @override
   String get safetyBlockBody =>
@@ -503,7 +501,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get safetyBlockFailed => 'Impossible de bloquer. Réessaie.';
 
   @override
-  String get safetyBlockDone => 'Personne bloquée.';
+  String get safetyBlockDone => 'Tu as bloqué cette personne.';
 
   @override
   String get safetyTipsTitle => 'Conseils de sécurité';
@@ -538,7 +536,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get reportFailed => 'Impossible d’envoyer ton signalement. Réessaie.';
 
   @override
-  String get reportThanks => 'Merci, on va examiner ça.';
+  String get reportThanks => 'Merci. Nous allons examiner ton signalement.';
 
   @override
   String get blockedTitle => 'Personnes bloquées';
@@ -551,7 +549,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Les personnes que tu bloques sont masquées de tes repas et de tes discussions.';
 
   @override
-  String get blockedUnknownUser => 'Utilisateur inconnu';
+  String get blockedUnknownUser => 'Profil inconnu';
 
   @override
   String get blockedUnblock => 'Débloquer';
@@ -574,11 +572,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String ratingTitleNamed(String name) {
-    return 'Comment s’est passé ton repas avec $name ?';
+    return 'Comment s’est passé ton repas avec $name ?';
   }
 
   @override
-  String get ratingTitle => 'Comment s’est passé ton repas ?';
+  String get ratingTitle => 'Comment s’est passé ton repas ?';
 
   @override
   String ratingStarTooltip(int count) {
@@ -592,7 +590,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get ratingShowedUp => 'La personne est-elle venue ?';
+  String get ratingShowedUp => 'La personne est-elle venue ?';
 
   @override
   String get ratingCommentHint => 'Ajoute un commentaire (facultatif)';
@@ -601,7 +599,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ratingFailed => 'Impossible d’envoyer ta note. Réessaie.';
 
   @override
-  String get ratingThanks => 'Merci pour ton retour !';
+  String get ratingThanks => 'Merci pour ton retour !';
 
   @override
   String get ratingCardSubtitle => 'Ça ne prend qu’un instant.';
@@ -645,7 +643,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsSignOut => 'Se déconnecter';
 
   @override
-  String get settingsSignOutTitle => 'Te déconnecter ?';
+  String get settingsSignOutTitle => 'Te déconnecter ?';
 
   @override
   String get settingsSectionSafety => 'Sécurité';
@@ -705,7 +703,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsDeleteAccount => 'Supprimer le compte';
 
   @override
-  String get settingsDeleteTitle => 'Supprimer ton compte ?';
+  String get settingsDeleteTitle => 'Supprimer ton compte ?';
 
   @override
   String get settingsDeleteBody =>
@@ -734,7 +732,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get profileFormAddPhoto => 'Ajouter une photo';
 
   @override
-  String get profileFormUploadingPhoto => 'Envoi de la photo';
+  String get profileFormUploadingPhoto => 'Envoi de la photo en cours';
 
   @override
   String get profileFormName => 'Nom';

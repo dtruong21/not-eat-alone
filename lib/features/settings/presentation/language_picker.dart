@@ -49,16 +49,39 @@ class _LanguageDialog extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final o in options.entries)
-                RadioListTile<String?>(
-                  key: Key('language_option_${o.key ?? 'system'}'),
-                  value: o.key,
-                  selected: o.key == current?.languageCode,
-                  title: Text(o.value),
-                ),
+                _tile(context, o, selected: o.key == current?.languageCode),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// A radio only reports a change, so tapping the option that is already
+  /// selected would do nothing: close the dialog for that one instead.
+  Widget _tile(
+    BuildContext context,
+    MapEntry<String?, String> o, {
+    required bool selected,
+  }) {
+    final tile = RadioListTile<String?>(
+      key: Key('language_option_${o.key ?? 'system'}'),
+      value: o.key,
+      selected: selected,
+      title: Text(o.value),
+    );
+    if (!selected) return tile;
+    return Stack(
+      children: [
+        tile,
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTap: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ],
     );
   }
 }

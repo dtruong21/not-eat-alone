@@ -99,7 +99,7 @@ void main() {
 
     expect(find.text('Pas encore de repas près de toi'), findsOneWidget);
     expect(
-      find.text('Lance-toi : propose un repas et quelqu’un te rejoindra.'),
+      find.text('Lance-toi\u00a0: propose un repas et quelqu’un te rejoindra.'),
       findsOneWidget,
     );
     expect(find.text('Proposer un repas'), findsOneWidget);
@@ -124,7 +124,7 @@ void main() {
     );
 
     expect(find.text('Entre femmes'), findsOneWidget);
-    expect(find.textContaining('1,2 km'), findsOneWidget);
+    expect(find.textContaining('1,2\u00a0km'), findsOneWidget);
     expect(find.textContaining('janv.'), findsOneWidget);
     expect(find.text('Alex'), findsOneWidget);
     expect(find.text('Proposer un repas'), findsOneWidget); // the FAB
@@ -151,7 +151,7 @@ void main() {
       meals: [DiscoverableMeal(meal: _meal, distanceMeters: 40)],
     );
 
-    expect(find.textContaining('0,0 km'), findsOneWidget);
+    expect(find.textContaining('0,0\u00a0km'), findsOneWidget);
   });
 
   testWidgets('a host without a name reads "Hôte"', (tester) async {
