@@ -40,7 +40,7 @@
   "@navDiscover": {
     "description": "Bottom navigation tab: browse meals."
   },
-  "navChats": "Discussions",
+  "navChats": "Messages",
   "@navChats": {
     "description": "Bottom navigation tab: conversations."
   },
@@ -199,7 +199,7 @@
   "@discoverEmptyMessage": {
     "description": "Supporting text of the Discover empty state."
   },
-  "discoverCreateMeal": "Proposer un repas",
+  "discoverCreateMeal": "Créer un repas",
   "@discoverCreateMeal": {
     "description": "Discover button / floating button that starts meal creation."
   },
@@ -216,7 +216,7 @@
       }
     }
   },
-  "parisNotice": "Convyve n’est disponible qu’à Paris pour l’instant — on ne fait que commencer.",
+  "parisNotice": "Convyve n’est qu’à Paris pour l’instant — on démarre tout juste.",
   "@parisNotice": {
     "description": "Dismissible banner on Discover explaining the Paris-only launch."
   },
@@ -337,7 +337,7 @@
   "@mealActionRequestFailed": {
     "description": "Snackbar when sending a join request failed."
   },
-  "createMealTitle": "Proposer un repas",
+  "createMealTitle": "Créer un repas",
   "@createMealTitle": {
     "description": "App bar title of the create-meal screen."
   },
@@ -455,7 +455,7 @@
   "@inboxOutcomeDenyFailed": {
     "description": "Snackbar when denying failed."
   },
-  "chatListTitle": "Discussions",
+  "chatListTitle": "Messages",
   "@chatListTitle": {
     "description": "App bar title of the chat list."
   },

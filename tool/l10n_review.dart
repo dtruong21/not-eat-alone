@@ -12,7 +12,7 @@ const _nbspMark = '⍽'; // ⍽
 
 /// Strings the implementers were least sure about: key -> why.
 const _uncertain = <String, String>{
-  'navChats': '"Discussions" (vs "Messages")',
+  'navChats': '"Messages" (vs "Discussions": too long for the tab at 2.0x)',
   'navRequests': '"Demandes" (vs "Invitations")',
   'phoneVerify': '"Valider" (vs "Vérifier")',
   'settingsTitle': '"Réglages" (vs "Paramètres"; matches iOS "Réglages")',

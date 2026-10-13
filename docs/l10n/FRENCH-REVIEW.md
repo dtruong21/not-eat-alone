@@ -28,7 +28,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 
 ## Strings the implementers were unsure about
 
-- `navChats`: "Discussions" (vs "Messages") -> now "Discussions"
+- `navChats`: "Messages" (vs "Discussions": too long for the tab at 2.0x) -> now "Messages"
 - `navRequests`: "Demandes" (vs "Invitations") -> now "Demandes"
 - `phoneVerify`: "Valider" (vs "Vérifier") -> now "Valider"
 - `settingsTitle`: "Réglages" (vs "Paramètres"; matches iOS "Réglages") -> now "Réglages"
@@ -54,13 +54,13 @@ buttons are fixed width: check any longer rewording at 320 px.
 | key | length | French | used in |
 | --- | ---: | --- | --- |
 | `settingsDeleteBody` | 93 | Cela supprime définitivement ton compte et toutes tes données. Cette action est irréversible. | lib/features/settings/presentation/settings_screen.dart |
-| `parisNotice` | 78 | Convyve n’est disponible qu’à Paris pour l’instant — on ne fait que commencer. | lib/features/meal/presentation/widgets/paris_notice.dart |
 | `blockedEmptyMessage` | 78 | Les personnes que tu bloques sont masquées de tes repas et de tes discussions. | lib/features/safety/presentation/blocked_people_screen.dart |
 | `inboxOutcomeDenyFailed` | 71 | Impossible de refuser cette demande. Elle a peut-être déjà été traitée. | lib/features/matching/presentation/widgets/inbox_action_message.dart |
-| `inboxOutcomeApproveFailed` | 71 | Impossible d’accepter cette demande. Elle a peut-être déjà été traitée. | lib/features/matching/presentation/widgets/inbox_action_message.dart |
 | `safetyBlockBody` | 71 | Tu ne verras plus cette personne sur Convyve, et elle ne te verra plus. | lib/features/safety/presentation/widgets/safety_actions.dart |
+| `inboxOutcomeApproveFailed` | 71 | Impossible d’accepter cette demande. Elle a peut-être déjà été traitée. | lib/features/matching/presentation/widgets/inbox_action_message.dart |
 | `signinPhoneError` | 68 | Saisis un numéro avec l’indicatif du pays, par ex. +33 6 12 34 56 78 | lib/features/auth/presentation/signin_screen.dart |
 | `leaveMatchGuestBody` | 67 | On préviendra {name} et le repas sera de nouveau ouvert aux autres. | lib/features/chat/presentation/widgets/leave_match_action.dart |
+| `parisNotice` | 64 | Convyve n’est qu’à Paris pour l’instant — on démarre tout juste. | lib/features/meal/presentation/widgets/paris_notice.dart |
 | `chatUnavailable` | 63 | Cette discussion n’est plus disponible — le repas a été annulé. | lib/features/chat/presentation/chat_screen.dart |
 | `restaurantSearchNoMatch` | 63 | Aucun restaurant ne s’appelle «⍽{query}⍽». Essaie un autre nom. | lib/features/meal/presentation/restaurant_search_screen.dart |
 
@@ -78,7 +78,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `errorStateTitle` | Couldn't load this | Chargement impossible | Default headline of the error block shown when a screen fails to load. |
 | `errorStateMessage` | Check your connection and try again. | Vérifie ta connexion et réessaie. | Default supporting text of the error block. |
 | `navDiscover` | Discover | Découvrir | Bottom navigation tab: browse meals. |
-| `navChats` | Chats | Discussions | Bottom navigation tab: conversations. |
+| `navChats` | Chats | Messages | Bottom navigation tab: conversations. |
 | `navRequests` | Requests | Demandes | Bottom navigation tab: join requests inbox. |
 | `navProfile` | Profile | Profil | Bottom navigation tab: the user's own profile. |
 | `authSendingCode` | Sending code… | Envoi du code… | Button label while an SMS code is being sent. |
@@ -114,9 +114,9 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `mealHostFallbackName` | Host | Hôte | Name shown for a host whose profile has no display name. |
 | `discoverEmptyTitle` | No meals nearby yet | Pas encore de repas près de toi | Headline of the Discover empty state. |
 | `discoverEmptyMessage` | Be the first: host a meal and someone will join. | Lance-toi⍽: propose un repas et quelqu’un te rejoindra. | Supporting text of the Discover empty state. |
-| `discoverCreateMeal` | Create a meal | Proposer un repas | Discover button / floating button that starts meal creation. |
+| `discoverCreateMeal` | Create a meal | Créer un repas | Discover button / floating button that starts meal creation. |
 | `discoverDistanceKm` | {distance} km | {distance}⍽km | Distance from the viewer to a meal, in kilometres with one decimal. |
-| `parisNotice` | Convyve is Paris-only for now — we're just getting started here. | Convyve n’est disponible qu’à Paris pour l’instant — on ne fait que commencer. | Dismissible banner on Discover explaining the Paris-only launch. |
+| `parisNotice` | Convyve is Paris-only for now — we're just getting started here. | Convyve n’est qu’à Paris pour l’instant — on démarre tout juste. | Dismissible banner on Discover explaining the Paris-only launch. |
 | `mealDetailTitle` | Meal details | Détails du repas | App bar title of the meal detail screen. |
 | `mealDetailHostHeading` | Host | Hôte | Section heading above the host's profile block. |
 | `mealDetailHostUnavailable` | Host unavailable | Hôte indisponible | Shown instead of the host block when the host profile no longer exists. |
@@ -143,7 +143,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `mealActionStatusDenied` | The host chose someone else. | L’hôte a choisi quelqu’un d’autre. | Meal action bar status line after the host declined the request. |
 | `mealActionNoLongerOpen` | This meal is no longer open. | Ce repas n’est plus ouvert. | Snackbar when the server rejects a request because the meal closed. |
 | `mealActionRequestFailed` | Couldn't send your request. Try again. | Impossible d’envoyer ta demande. Réessaie. | Snackbar when sending a join request failed. |
-| `createMealTitle` | Create a meal | Proposer un repas | App bar title of the create-meal screen. |
+| `createMealTitle` | Create a meal | Créer un repas | App bar title of the create-meal screen. |
 | `createMealPickDateTime` | Pick date & time | Choisir la date et l’heure | Button that opens the date and time pickers. |
 | `createMealNoteLabel` | Note (optional) | Note (facultative) | Label of the optional note field. |
 | `createMealSubmit` | Create meal | Publier le repas | Button that posts the meal. |
@@ -168,7 +168,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `inboxOutcomeApproveFailed` | Couldn't approve this request. It may already have been handled. | Impossible d’accepter cette demande. Elle a peut-être déjà été traitée. | Snackbar when approving failed for any reason other than the meal being closed. |
 | `inboxOutcomeDenied` | Request denied. | Demande refusée. | Snackbar after a request was denied. |
 | `inboxOutcomeDenyFailed` | Couldn't deny this request. It may already have been handled. | Impossible de refuser cette demande. Elle a peut-être déjà été traitée. | Snackbar when denying failed. |
-| `chatListTitle` | Chats | Discussions | App bar title of the chat list. |
+| `chatListTitle` | Chats | Messages | App bar title of the chat list. |
 | `chatListEmptyTitle` | No chats yet | Pas encore de discussion | Empty state title of the chat list. |
 | `chatListEmptyMessage` | Match on a meal to start talking. | Fais un match sur un repas pour lancer la discussion. | Empty state message of the chat list. |
 | `chatListFindMeal` | Find a meal | Trouver un repas | Empty chat list button that opens Discover. |

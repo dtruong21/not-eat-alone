@@ -200,7 +200,7 @@ void main() {
     testWidgets('empty state is French', (tester) async {
       await pump(tester, home: chatList, chats: const []);
 
-      expect(find.text('Discussions'), findsOneWidget);
+      expect(find.text('Messages'), findsOneWidget);
       expect(find.text('Pas encore de discussion'), findsOneWidget);
       expect(
         find.text('Fais un match sur un repas pour lancer la discussion.'),

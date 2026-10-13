@@ -40,7 +40,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navDiscover => 'Découvrir';
 
   @override
-  String get navChats => 'Discussions';
+  String get navChats => 'Messages';
 
   @override
   String get navRequests => 'Demandes';
@@ -158,7 +158,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Lance-toi : propose un repas et quelqu’un te rejoindra.';
 
   @override
-  String get discoverCreateMeal => 'Proposer un repas';
+  String get discoverCreateMeal => 'Créer un repas';
 
   @override
   String discoverDistanceKm(double distance) {
@@ -174,7 +174,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get parisNotice =>
-      'Convyve n’est disponible qu’à Paris pour l’instant — on ne fait que commencer.';
+      'Convyve n’est qu’à Paris pour l’instant — on démarre tout juste.';
 
   @override
   String get mealDetailTitle => 'Détails du repas';
@@ -260,7 +260,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible d’envoyer ta demande. Réessaie.';
 
   @override
-  String get createMealTitle => 'Proposer un repas';
+  String get createMealTitle => 'Créer un repas';
 
   @override
   String get createMealPickDateTime => 'Choisir la date et l’heure';
@@ -346,7 +346,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de refuser cette demande. Elle a peut-être déjà été traitée.';
 
   @override
-  String get chatListTitle => 'Discussions';
+  String get chatListTitle => 'Messages';
 
   @override
   String get chatListEmptyTitle => 'Pas encore de discussion';

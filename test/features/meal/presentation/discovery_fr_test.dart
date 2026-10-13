@@ -102,11 +102,10 @@ void main() {
       find.text('Lance-toi\u00a0: propose un repas et quelqu’un te rejoindra.'),
       findsOneWidget,
     );
-    expect(find.text('Proposer un repas'), findsOneWidget);
+    expect(find.text('Créer un repas'), findsOneWidget);
     expect(
       find.text(
-        'Convyve n’est disponible qu’à Paris pour l’instant — '
-        'on ne fait que commencer.',
+        'Convyve n’est qu’à Paris pour l’instant — on démarre tout juste.',
       ),
       findsOneWidget,
     );
@@ -127,7 +126,7 @@ void main() {
     expect(find.textContaining('1,2\u00a0km'), findsOneWidget);
     expect(find.textContaining('janv.'), findsOneWidget);
     expect(find.text('Alex'), findsOneWidget);
-    expect(find.text('Proposer un repas'), findsOneWidget); // the FAB
+    expect(find.text('Créer un repas'), findsOneWidget); // the FAB
     expect(find.text('Women only'), findsNothing);
     expect(find.textContaining('1.2 km'), findsNothing);
   });

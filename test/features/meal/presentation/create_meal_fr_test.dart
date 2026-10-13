@@ -104,7 +104,7 @@ void main() {
   testWidgets('every visible string is French', (tester) async {
     await pump(tester);
 
-    expect(find.text('Proposer un repas'), findsOneWidget);
+    expect(find.text('Créer un repas'), findsOneWidget);
     expect(find.text('Choisir la date et l’heure'), findsOneWidget);
     expect(find.text('Note (facultative)'), findsOneWidget);
     expect(find.text('Entre femmes'), findsOneWidget);

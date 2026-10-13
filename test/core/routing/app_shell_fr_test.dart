@@ -68,7 +68,7 @@ void main() {
     );
     await tester.pump();
 
-    for (final label in ['Découvrir', 'Discussions', 'Demandes', 'Profil']) {
+    for (final label in ['Découvrir', 'Messages', 'Demandes', 'Profil']) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
     for (final en in ['Discover', 'Chats', 'Requests', 'Profile']) {
