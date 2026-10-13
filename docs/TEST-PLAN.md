@@ -180,7 +180,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
   - **VoiceOver in French.** French voice: tab names, buttons, the meal action bar, "Non lu", "Débloquer <nom>", star ratings ("3 étoiles") and the language dialog (selected option announced) read sensibly; times like "5 min" read as minutes.
   - **Typography.** No line starts with "?", "!", ":" or "»" at 320 px wide (NBSP held).
   - **Native review** of `docs/l10n/FRENCH-REVIEW.md` by a French speaker, applied to `lib/l10n/app_fr.arb` (then `fvm flutter gen-l10n`, update the `*_fr_test.dart` expectations, `fvm dart run tool/l10n_review.dart`) before store submission.
-  - Known gap: push notification text from Cloud Functions is still English (needs server-side i18n and the user's language stored server-side).
+  - ~~Known gap: push notification text from Cloud Functions is still English~~ Done (push i18n plan 22): see the push-language manual cases in this file and `docs/l10n/PUSH-REVIEW.md` (needs server-side i18n and the user's language stored server-side).
 
 ---
 
@@ -467,7 +467,7 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 - [ ] The same account signed in on two devices, one French and one English: each gets the push in its own language, once.
 - [ ] Known limit: change the phone's language in the OS while "System default" is selected: pushes follow it only after the app is started again.
 - [ ] Known limit: a push that arrives while the app is open shows the server text as sent.
-- [ ] After the merge to `develop`: the *Deploy Firebase backend* job succeeded (no rules or indexes changed in this release).
+- [ ] After the merge to `develop`: the Functions are actually deployed. The *Deploy Firebase backend* job is green even when the deploy is skipped (no `FIREBASE_SERVICE_ACCOUNT` secret, or the branch moved on): open the run and check the *Deploy Firestore + Storage + Functions* step RAN (needs the secret and the Blaze plan). Otherwise deploy by hand: `firebase deploy --only functions --project not-eat-alone` (no rules or indexes changed in this release).
 
 **Pending native config (blocks live delivery):**
 - Live end-to-end delivery is unverified pending **Blaze plan** upgrade (Cloud Functions can't deploy on Spark), an **APNs auth key** (iOS push), and registering the **Android SHA-256** fingerprint — all user homework, tracked in `docs/CICD.md` / build-state memory. Until then, the Functions triggers are unit/integration-tested in isolation (`firebase/functions/test/`) but not exercised against a real device.

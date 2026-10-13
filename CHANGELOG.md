@@ -39,7 +39,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Changed
 
-- Push notifications now arrive in your app's language (English or French), per device: if you use Convyve in French on one phone and in English on another, each gets its own. Update the app and open it once for a device to switch; until then it keeps getting English.
+- Push notifications now arrive in your app's language (English or French), per device: if you use Convyve in French on one phone and in English on another, each gets its own. Update the app and open it once for a device to switch; until then it keeps getting English. Takes effect once the Cloud Functions are deployed (see `docs/l10n/PUSH-REVIEW.md`).
 - Dates, times and distances follow the app language (for example "sam. 10 oct., 20:00" and "1,2 km" in French).
 - Request inbox: Approve is now a clear coral button and Deny a quiet red one (they stack at large text sizes instead of overflowing), only the request you tapped shows a spinner while the others stay usable, the guest's rating is shown under their name, and the Requests tab has an inbox icon.
 - The report, rating and block screens now say who they are about ("Report Sam", "How was your meal with Sam?", "Block Sam?"), the text box has a visible edge, selected reasons and stars are easier to read, and "Block" is red.

@@ -39,10 +39,8 @@ Push banners are short: the OS truncates long titles and bodies.
   rule already allows the field).
 - Release order is independent. Old app versions never write `lang`, so they stay
   English; a new app against an old Functions deploy only adds a field that is ignored.
-- Functions are deployed by the repository CD after the merge to `develop`
-  ([`docs/CICD.md`](../CICD.md), "Backend CD"); nothing is deployed by hand for this
-  change. After the merge, check that the *Deploy Firebase backend* job succeeded and,
-  once APNs is set up, spot-check one push on a real device in each language.
+- Functions are deployed by the backend CD after the merge to `develop` only when the `FIREBASE_SERVICE_ACCOUNT` secret is set (and the Firebase project is on the Blaze plan); check that the *Deploy Firebase* step actually RAN, not just that the job is green. Until then deploy by hand: `firebase deploy --only functions --project not-eat-alone` (rules/indexes are untouched by this change). Once deployed, spot-check one push on a real device in each
+  language (iOS needs APNs set up).
 
 Known limits:
 
@@ -50,6 +48,7 @@ Known limits:
   at the next app start, not live.
 - A push shown while the app is in the foreground uses the server text as sent.
 - Legacy tokens (no `lang`) stay English until that device updates the app and starts it.
+- With devices in both languages, if one language group's FCM request fails wholesale the post-meal prompt is retried next hour and may repeat on devices that already got it.
 
 ## Strings
 
@@ -90,3 +89,4 @@ Used when the server has no name to show.
 - "L’autre personne" for the match: acceptable, or prefer another neutral wording?
 - "Ton repas, c’est aujourd’hui / demain" vs a plainer "Ton repas est aujourd’hui".
 - The reminder body "{restaurant} à {time}" with the time as 20:00 (24 h): fine, or "20 h 00"?
+- "Quelqu’un veut se joindre à ton repas." (new request push) vs the app's button "Demander à rejoindre": keep, or align (alternative: "Quelqu’un veut rejoindre ton repas.")?

@@ -2,7 +2,7 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { sendToUser } from '../lib/messaging';
-import { buildMessageCreated, messageFallbackTitle } from '../lib/payloads';
+import { messagePayloadFor } from '../lib/payloads';
 
 export const makeMessageCreated = (database: string) =>
   onDocumentCreated(
@@ -21,15 +21,8 @@ export const makeMessageCreated = (database: string) =>
       if (!recipient) return;
 
       const senderSnap = await db.collection('profiles').doc(senderId).get();
-      const senderName = senderSnap.data()?.displayName as string | undefined;
+      const senderName: unknown = senderSnap.data()?.displayName;
 
-      // A real name is language-independent (plain payload); only the fallback title is copy.
-      await sendToUser(
-        database,
-        recipient,
-        senderName === undefined
-          ? (lang) => buildMessageCreated(messageFallbackTitle(lang), text, matchId, lang)
-          : buildMessageCreated(senderName, text, matchId),
-      );
+      await sendToUser(database, recipient, messagePayloadFor(senderName, text, matchId));
     },
   );

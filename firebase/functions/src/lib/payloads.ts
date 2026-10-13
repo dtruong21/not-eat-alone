@@ -135,6 +135,21 @@ export function buildMessageCreated(
   };
 }
 
+/**
+ * Message push for a sender whose `displayName` may be missing: a real name is
+ * language-independent (plain payload); null/undefined/'' falls back to the
+ * per-language title (FCM rejects a null title).
+ */
+export function messagePayloadFor(
+  senderName: unknown,
+  text: string,
+  matchId: string,
+): PushPayload | ((lang: PushLang) => PushPayload) {
+  return typeof senderName === 'string' && senderName !== ''
+    ? buildMessageCreated(senderName, text, matchId)
+    : (lang) => buildMessageCreated(messageFallbackTitle(lang), text, matchId, lang);
+}
+
 export function buildPostMealPrompt(otherName: string, lang: PushLang = 'en'): PushPayload {
   const c = COPY[lang];
   return {

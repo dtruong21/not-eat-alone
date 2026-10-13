@@ -9,6 +9,7 @@ import {
   postMealFallbackName,
   restaurantFallbackName,
   messageFallbackTitle,
+  messagePayloadFor,
 } from '../src/lib/payloads';
 
 test('message payload truncates long text and carries matchId via caller', () => {
@@ -193,4 +194,20 @@ test('per-language fallbacks', () => {
   expect(buildMessageCreated(messageFallbackTitle('fr'), 'salut', 'mt', 'fr').notification.title).toBe(
     'Nouveau message',
   );
+});
+
+describe('messagePayloadFor', () => {
+  test('a real name gives a plain payload', () => {
+    expect(messagePayloadFor('Amélie', 'salut', 'mt1')).toEqual(
+      buildMessageCreated('Amélie', 'salut', 'mt1'),
+    );
+  });
+  test.each([null, undefined, ''])('%p falls back to the per-language title', (name) => {
+    const f = messagePayloadFor(name, 'hi', 'mt1');
+    expect(typeof f).toBe('function');
+    const b = f as (l: 'en' | 'fr') => ReturnType<typeof buildMessageCreated>;
+    expect(b('en').notification.title).toBe('New message');
+    expect(b('fr').notification.title).toBe('Nouveau message');
+    expect(b('en').data).toEqual({ type: 'message', matchId: 'mt1' });
+  });
 });

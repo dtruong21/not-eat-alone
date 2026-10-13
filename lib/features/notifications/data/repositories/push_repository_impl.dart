@@ -109,11 +109,12 @@ class PushRepositoryImpl implements PushRepository {
     final token = await _readToken();
     if (token == null || token.isEmpty) return;
     try {
-      final doc = _tokenDoc(uid, token);
-      // Merge-set would resurrect a doc deleted by sign-out: only touch a
-      // token doc that exists. `updatedAt` is left alone (not a refresh).
-      if (!(await doc.get()).exists) return;
-      await doc.set({'lang': _lang}, SetOptions(merge: true));
+      // `update` (not merge-set) so a doc deleted by sign-out is not
+      // resurrected, atomically; `updatedAt` is left alone (not a refresh).
+      await _tokenDoc(uid, token).update({'lang': _lang});
+    } on FirebaseException catch (e, st) {
+      if (e.code == 'not-found') return;
+      throw RepositoryWriteException('fcmTokens', e, st);
     } catch (e, st) {
       throw RepositoryWriteException('fcmTokens', e, st);
     }

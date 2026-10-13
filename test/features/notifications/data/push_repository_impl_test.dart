@@ -227,6 +227,12 @@ void main() {
       },
     );
 
+    test('updateTokenLanguage on a missing doc is a silent no-op', () async {
+      final repo = repoWith();
+      await expectLater(repo.updateTokenLanguage('u1', 'fr'), completes);
+      expect((await tokenDoc('tok123').get()).exists, isFalse);
+    });
+
     test('a refreshed token carries the CURRENT language', () async {
       final refresh = StreamController<String>();
       addTearDown(refresh.close);
