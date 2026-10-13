@@ -12,6 +12,8 @@
 /// spread. Avatars are served by `tool/ux_images.py` on 127.0.0.1:8765.
 ///
 /// DEV TOOLING ONLY — never imported from `lib/`.
+// Long French messages are adjacent literals, one list entry per message.
+// ignore_for_file: no_adjacent_strings_in_list
 library;
 
 import 'package:not_eat_alone/core/util/geohash.dart';
@@ -177,6 +179,247 @@ const _personas = <_Persona>[
     ratingAvg: 4.7,
   ),
 ];
+
+/// Languages of the seeded text. `en` is the default; `fr` swaps the free text
+/// (bios, meal notes, chat messages, the rating comment) for natural French,
+/// written for the French store captures. Names, restaurants, times, prices
+/// and ids are the same in both.
+const kUxLocales = ['en', 'fr'];
+
+bool _isFr(String locale) {
+  if (!kUxLocales.contains(locale)) {
+    throw ArgumentError.value(locale, 'locale', 'expected one of $kUxLocales');
+  }
+  return locale == 'fr';
+}
+
+/// Persona key -> bio, parallel to the English `bio` of [_personas].
+const _bioFr = <String, String>{
+  'bastien':
+      'Sommelier le jour, nul en small talk le soir. Toujours chaud pour un '
+      'long dîner et un débat sur le meilleur croissant du 11e.',
+  'dario':
+      'Fraîchement débarqué de Naples. Snob de la pizza : je jugerai '
+      'gentiment ta commande.',
+  'emilia':
+      'Architecte. J’aime les endroits avec une histoire et une table près '
+      'de la fenêtre.',
+  'giulia':
+      'Un Erasmus qui n’a jamais fini. Dis-moi ton bistrot caché préféré.',
+  'hugo': 'Cycliste, cuisinier, poète à ses heures.',
+  'ines': 'Plutôt végé. Je partage le dessert, évidemment.',
+  'viewer':
+      'Product designer qui mange beaucoup trop souvent au resto. À la '
+      'recherche de bonne compagnie et de meilleures adresses.',
+};
+
+/// Persona key -> bio in [locale] (Farid has none).
+Map<String, String> uxBios(String locale) => {
+  for (final p in _personas)
+    if (p.bio.isNotEmpty) p.key: _isFr(locale) ? _bioFr[p.key]! : p.bio,
+};
+
+/// Meal label (the `ux-meal-<label>` id) -> note, English.
+const _notesEn = <String, String>{
+  'pizzeria': 'Margherita is non-negotiable. I booked the table in the back.',
+  'chartier':
+      'Classic French on a budget. Expect a queue, bring patience and an '
+      'appetite. I will save us a spot on the right side of the room, '
+      'under the big mirror, and I would love to hear what everyone '
+      'does for a living.',
+  'flore': 'Women-only brunch-ish thing. Hot chocolate and gossip.',
+  'septime': 'Tasting menu, shared.',
+  'gladines': 'Huge portions. Come hungry.',
+  'lipp': 'Dinner and then a walk along the Seine if the weather holds.',
+  'pinkmamma': 'No reservations, so be on time!',
+  'bao': 'Lunch.',
+  'own': 'First time hosting! I will be the one with the red scarf.',
+  'comptoir': 'Taking the 20:00 slot. I will wear a blue jacket.',
+  'pastMatched': 'Sunday brunch.',
+  'pastOpen': 'Coffee and croissants.',
+  'emptyChat': 'Dumplings and a long lunch.',
+};
+
+const _notesFr = <String, String>{
+  'pizzeria':
+      'La margherita, ça ne se discute pas. J’ai réservé la table du fond.',
+  'chartier':
+      'Du classique français à petit prix. Il y aura la queue : prévois '
+      'de la patience et de l’appétit. Je nous garde une place côté droit de '
+      'la salle, sous le grand miroir, et j’adorerais savoir ce que '
+      'chacun fait dans la vie.',
+  'flore': 'Un brunch entre filles, ou presque. Chocolat chaud et potins.',
+  'septime': 'Menu dégustation, à partager.',
+  'gladines': 'Portions énormes. Viens avec la dalle.',
+  'lipp': 'Dîner, puis balade le long de la Seine si la météo suit.',
+  'pinkmamma': 'On ne peut pas réserver, alors sois à l’heure !',
+  'bao': 'Déjeuner.',
+  'own':
+      'Première fois que j’organise un repas ! Je serai celle avec '
+      'l’écharpe rouge.',
+  'comptoir': 'Je prends le créneau de 20 h. Je porterai une veste bleue.',
+  'pastMatched': 'Brunch du dimanche.',
+  'pastOpen': 'Café et croissants.',
+  'emptyChat': 'Des raviolis vapeur et un long déjeuner.',
+};
+
+/// Meal label -> note in [locale].
+Map<String, String> uxNotes(String locale) =>
+    _isFr(locale) ? _notesFr : _notesEn;
+
+typedef UxChatMessage = ({int minutesAgo, bool mine, String text});
+
+const _mainChatEn = <UxChatMessage>[
+  (
+    minutesAgo: 4300,
+    mine: false,
+    text: 'Hi Amélie! Glad to have you at the table on Thursday 🙂',
+  ),
+  (
+    minutesAgo: 4285,
+    mine: true,
+    text:
+        'Hi Bastien! Thanks for accepting. I have wanted to try this '
+        'place for ages.',
+  ),
+  (
+    minutesAgo: 4270,
+    mine: false,
+    text:
+        'Same! Have you been in the area before? It is right by Odéon, '
+        'a short walk from the metro.',
+  ),
+  (
+    minutesAgo: 4100,
+    mine: true,
+    text:
+        'Not for dinner. Is it okay if I am 5 minutes late? I am coming '
+        'straight from work.',
+  ),
+  (
+    minutesAgo: 4090,
+    mine: false,
+    text:
+        'No problem at all. I will grab the table and give the name '
+        'Marchetti.',
+  ),
+  (minutesAgo: 2900, mine: true, text: 'Perfect.'),
+  (
+    minutesAgo: 2895,
+    mine: true,
+    text:
+        'Any allergies I should know about? I am vegetarian but I eat '
+        'fish.',
+  ),
+  (
+    minutesAgo: 2850,
+    mine: false,
+    text:
+        'Good to know, the menu has a great fish dish. I eat '
+        'everything, so no worries on my side.',
+  ),
+  (
+    minutesAgo: 2848,
+    mine: false,
+    text:
+        'Quick plan:\n- 20:00 at the door\n- we split a starter\n'
+        '- no phones at the table 😄',
+  ),
+  (minutesAgo: 2800, mine: true, text: 'Deal!'),
+  (
+    minutesAgo: 1500,
+    mine: true,
+    text:
+        'By the way, I might bring a friend along for the aperitif only. '
+        'She lives around the corner and wants to say hi before dinner. '
+        'Would that be okay with you, or would you rather keep it just '
+        'the two of us? Totally fine either way!',
+  ),
+  (
+    minutesAgo: 1440,
+    mine: false,
+    text: 'Of course, the more the merrier for a drink.',
+  ),
+  (
+    minutesAgo: 190,
+    mine: false,
+    text:
+        'Reminder: tomorrow 20:00, Le Comptoir du Relais. Looking '
+        'forward to it!',
+  ),
+  (minutesAgo: 120, mine: true, text: 'See you there! 🍷'),
+  (
+    minutesAgo: 118,
+    mine: true,
+    text: 'Which entrance, by the way? There seem to be two.',
+  ),
+];
+
+/// The French text of [_mainChatEn], same order (timing and sender come from
+/// the English record).
+const _mainChatFr = <String>[
+  'Salut Amélie ! Content de t’avoir à table jeudi 🙂',
+  'Salut Bastien ! Merci d’avoir accepté. Ça fait une éternité que je '
+      'veux tester cet endroit.',
+  'Pareil ! Tu connais le coin ? C’est juste à côté d’Odéon, à '
+      'deux pas du métro.',
+  'Pas pour dîner. Ça te dérange si j’ai 5 minutes de retard ? Je '
+      'viens directement du boulot.',
+  'Aucun souci. Je prendrai la table et je donnerai le nom Marchetti.',
+  'Parfait.',
+  'Des allergies à signaler ? Je suis végétarienne mais je mange du '
+      'poisson.',
+  'Bon à savoir, il y a un super plat de poisson à la carte. Moi, je mange '
+      'de tout, pas de souci de mon côté.',
+  'Petit programme :\n- 20 h devant la porte\n- on partage une '
+      'entrée\n- pas de téléphone à table 😄',
+  'Deal !',
+  'Au fait, je viendrai peut-être avec une amie, juste pour l’apéro. Elle '
+      'habite à côté et voudrait passer dire bonjour avant le dîner. Ça te '
+      'va, ou tu préfères qu’on reste à deux ? Aucun souci dans les '
+      'deux cas !',
+  'Bien sûr, plus on est de fous, plus on rit, surtout pour un verre.',
+  'Rappel : demain 20 h, Le Comptoir du Relais. J’ai hâte !',
+  'On se retrouve là-bas ! 🍷',
+  'Au fait, quelle entrée ? Il y en a deux, on dirait.',
+];
+
+/// The ~15-message chat between the viewer and Bastien in [locale].
+List<UxChatMessage> uxMainChat(String locale) => _isFr(locale)
+    ? [
+        for (var i = 0; i < _mainChatEn.length; i++)
+          (
+            minutesAgo: _mainChatEn[i].minutesAgo,
+            mine: _mainChatEn[i].mine,
+            text: _mainChatFr[i],
+          ),
+      ]
+    : _mainChatEn;
+
+const _pastChatEn = <({bool mine, String text})>[
+  (mine: false, text: 'Looking forward to brunch!'),
+  (mine: true, text: 'Me too, the bakery opens at 8 so we can queue early.'),
+  (mine: false, text: 'That was such a lovely morning, thank you!'),
+];
+
+const _pastChatFr = <String>[
+  'J’ai hâte d’être à ce brunch !',
+  'Moi aussi, la boulangerie ouvre à 8 h, on peut faire la queue tôt.',
+  'C’était une super matinée, merci !',
+];
+
+/// The short chat of the past, rated meal in [locale].
+List<({bool mine, String text})> uxPastChat(String locale) => _isFr(locale)
+    ? [
+        for (var i = 0; i < _pastChatEn.length; i++)
+          (mine: _pastChatEn[i].mine, text: _pastChatFr[i]),
+      ]
+    : _pastChatEn;
+
+/// Giulia's comment on the past meal in [locale].
+String uxRatingComment(String locale) => _isFr(locale)
+    ? 'Matinée géniale, super discussion et les meilleurs croissants.'
+    : 'Wonderful morning, great conversation and the best croissants.';
 
 String _photo(String key) => '$kAvatarBase/$key.png';
 
@@ -397,7 +640,8 @@ class UxUsers {
 ///
 /// Call after the app is booted (so the sign-in screen can be photographed
 /// first).
-Future<UxUsers> seedUsers() async {
+Future<UxUsers> seedUsers({String locale = 'en'}) async {
+  final bios = uxBios(locale);
   await clearEmulators();
 
   // 1. Mint the Auth users via the real sign-in path. The viewer goes last so
@@ -427,7 +671,7 @@ Future<UxUsers> seedUsers() async {
       'uid': uids[p.key],
       'displayName': p.name,
       'photoUrls': _photoUrls(p),
-      if (p.bio.isNotEmpty) 'bio': p.bio,
+      if (p.bio.isNotEmpty) 'bio': bios[p.key],
       'age': p.age,
       'ratingCount': p.ratingCount,
       'ratingAvg': p.ratingAvg,
@@ -456,7 +700,8 @@ Future<UxUsers> seedUsers() async {
 /// Stage 2 of the world: everything that hangs off the users (meals,
 /// requests, the matches and their chats, a rating). Writes through the admin
 /// REST API; the signed-in app picks the data up through its live streams.
-Future<UxWorld> seedMeals(UxUsers users) async {
+Future<UxWorld> seedMeals(UxUsers users, {String locale = 'en'}) async {
+  final notes = uxNotes(locale);
   final uids = users.uids;
   final viewer = users.viewerUid;
   final bastien = uids['bastien']!;
@@ -501,22 +746,18 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     _at(0, 20, 30).isAfter(now.add(const Duration(hours: 1)))
         ? _at(0, 20, 30)
         : _at(1, 12, 30),
-    note: 'Margherita is non-negotiable. I booked the table in the back.',
+    note: notes['pizzeria'],
   );
   await open(
     'chartier',
     emilia,
     'chartier',
     _at(1, 19, 30),
-    note:
-        'Classic French on a budget. Expect a queue, bring patience and an '
-        'appetite. I will save us a spot on the right side of the room, '
-        'under the big mirror, and I would love to hear what everyone '
-        'does for a living.',
+    note: notes['chartier'],
   );
   await open('cambodge', farid, 'cambodge', _at(1, 12, 30));
   final floreWhen = _at(2, 17);
-  const floreNote = 'Women-only brunch-ish thing. Hot chocolate and gossip.';
+  final floreNote = notes['flore'];
   await open(
     'flore',
     giulia,
@@ -525,40 +766,28 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     note: floreNote,
     womenOnly: true,
   );
-  await open(
-    'septime',
-    hugo,
-    'septime',
-    _at(3, 20),
-    note: 'Tasting menu, shared.',
-  );
+  await open('septime', hugo, 'septime', _at(3, 20), note: notes['septime']);
   await open(
     'gladines',
     dario,
     'gladines',
     _at(3, 20, 15),
-    note: 'Huge portions. Come hungry.',
+    note: notes['gladines'],
   );
-  await open(
-    'lipp',
-    emilia,
-    'lipp',
-    _at(5, 20),
-    note: 'Dinner and then a walk along the Seine if the weather holds.',
-  );
+  await open('lipp', emilia, 'lipp', _at(5, 20), note: notes['lipp']);
   await open('kunitoraya', farid, 'kunitoraya', _at(4, 19));
   await open(
     'pinkmamma',
     giulia,
     'pinkmamma',
     _at(6, 21),
-    note: 'No reservations, so be on time!',
+    note: notes['pinkmamma'],
   );
-  await open('bao', dario, 'bao', _at(7, 13), note: 'Lunch.');
+  await open('bao', dario, 'bao', _at(7, 13), note: notes['bao']);
 
   // The viewer's own upcoming meal, with two pending requests.
   final ownWhen = _at(2, 19, 30);
-  const ownNote = 'First time hosting! I will be the one with the red scarf.';
+  final ownNote = notes['own'];
   final ownMeal = await open('own', viewer, 'pigalle', ownWhen, note: ownNote);
   await _request(
     mealId: ownMeal,
@@ -591,7 +820,7 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     hostId: bastien,
     place: 'comptoir',
     when: _at(1, 20),
-    note: 'Taking the 20:00 slot. I will wear a blue jacket.',
+    note: notes['comptoir'],
     status: 'matched',
     guestId: viewer,
   );
@@ -610,91 +839,7 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     guestId: viewer,
     createdAt: matchCreated,
   );
-  final chat = <({int minutesAgo, bool mine, String text})>[
-    (
-      minutesAgo: 4300,
-      mine: false,
-      text: 'Hi Amélie! Glad to have you at the table on Thursday 🙂',
-    ),
-    (
-      minutesAgo: 4285,
-      mine: true,
-      text:
-          'Hi Bastien! Thanks for accepting. I have wanted to try this '
-          'place for ages.',
-    ),
-    (
-      minutesAgo: 4270,
-      mine: false,
-      text:
-          'Same! Have you been in the area before? It is right by Odéon, '
-          'a short walk from the metro.',
-    ),
-    (
-      minutesAgo: 4100,
-      mine: true,
-      text:
-          'Not for dinner. Is it okay if I am 5 minutes late? I am coming '
-          'straight from work.',
-    ),
-    (
-      minutesAgo: 4090,
-      mine: false,
-      text:
-          'No problem at all. I will grab the table and give the name '
-          'Marchetti.',
-    ),
-    (minutesAgo: 2900, mine: true, text: 'Perfect.'),
-    (
-      minutesAgo: 2895,
-      mine: true,
-      text:
-          'Any allergies I should know about? I am vegetarian but I eat '
-          'fish.',
-    ),
-    (
-      minutesAgo: 2850,
-      mine: false,
-      text:
-          'Good to know, the menu has a great fish dish. I eat '
-          'everything, so no worries on my side.',
-    ),
-    (
-      minutesAgo: 2848,
-      mine: false,
-      text:
-          'Quick plan:\n- 20:00 at the door\n- we split a starter\n'
-          '- no phones at the table 😄',
-    ),
-    (minutesAgo: 2800, mine: true, text: 'Deal!'),
-    (
-      minutesAgo: 1500,
-      mine: true,
-      text:
-          'By the way, I might bring a friend along for the aperitif only. '
-          'She lives around the corner and wants to say hi before dinner. '
-          'Would that be okay with you, or would you rather keep it just '
-          'the two of us? Totally fine either way!',
-    ),
-    (
-      minutesAgo: 1440,
-      mine: false,
-      text: 'Of course, the more the merrier for a drink.',
-    ),
-    (
-      minutesAgo: 190,
-      mine: false,
-      text:
-          'Reminder: tomorrow 20:00, Le Comptoir du Relais. Looking '
-          'forward to it!',
-    ),
-    (minutesAgo: 120, mine: true, text: 'See you there! 🍷'),
-    (
-      minutesAgo: 118,
-      mine: true,
-      text: 'Which entrance, by the way? There seem to be two.',
-    ),
-  ];
+  final chat = uxMainChat(locale);
   for (var i = 0; i < chat.length; i++) {
     final m = chat[i];
     await _message(
@@ -718,7 +863,7 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     hostId: viewer,
     place: 'pain',
     when: now.subtract(const Duration(days: 3, hours: 2)),
-    note: 'Sunday brunch.',
+    note: notes['pastMatched'],
     status: 'matched',
     guestId: giulia,
   );
@@ -736,11 +881,7 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     guestId: giulia,
     createdAt: now.subtract(const Duration(days: 5, hours: 20)),
   );
-  const pastChat = <({bool mine, String text})>[
-    (mine: false, text: 'Looking forward to brunch!'),
-    (mine: true, text: 'Me too, the bakery opens at 8 so we can queue early.'),
-    (mine: false, text: 'That was such a lovely morning, thank you!'),
-  ];
+  final pastChat = uxPastChat(locale);
   for (var i = 0; i < pastChat.length; i++) {
     await _message(
       matchId: past,
@@ -757,7 +898,7 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     'targetUid': viewer,
     'stars': 5,
     'showedUp': true,
-    'comment': 'Wonderful morning, great conversation and the best croissants.',
+    'comment': uxRatingComment(locale),
     'createdAt': now.subtract(const Duration(days: 2)),
     // Already counted in the viewer's aggregate above: tells the
     // ratingCreated function not to count it again.
@@ -771,7 +912,7 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     hostId: viewer,
     place: 'pain',
     when: now.subtract(const Duration(days: 1, hours: 4)),
-    note: 'Coffee and croissants.',
+    note: notes['pastOpen'],
   );
   mealIds['pastOpen'] = pastOpen;
   await _request(
@@ -799,7 +940,7 @@ Future<UxWorld> seedMeals(UxUsers users) async {
     hostId: ines,
     place: 'bao',
     when: _at(4, 12, 30),
-    note: 'Dumplings and a long lunch.',
+    note: notes['emptyChat'],
     status: 'matched',
     guestId: viewer,
   );

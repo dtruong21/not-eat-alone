@@ -214,6 +214,10 @@ void _logFontDiagnostics(WidgetTester tester) {
 
 const _uxLocale = String.fromEnvironment('UX_LOCALE');
 
+/// The language of the seeded text (bios, notes, chats): `en` unless French.
+// A getter (not a const) so the analyzer does not fold it into the default.
+String get _worldLocale => _uxLocale == 'fr' ? 'fr' : 'en';
+
 const _fr = <String, String>{
   'Send code': 'Envoyer le code',
   'Enter a phone number with country code':
@@ -529,11 +533,11 @@ void main() {
     await _captureSignedOut(tester);
 
     // ---- Stage 1 of the world: users only (Discover/Chats/Requests empty).
-    final users = await seedUsers();
+    final users = await seedUsers(locale: _worldLocale);
     await _captureEmptyStates(tester);
 
     // ---- Stage 2: meals, requests, matches, chats.
-    final world = await seedMeals(users);
+    final world = await seedMeals(users, locale: _worldLocale);
     await _captureDiscover(tester, world);
     await _captureMealDetail(tester, world);
     await _captureCreateMeal(tester);
