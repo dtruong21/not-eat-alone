@@ -18,6 +18,7 @@ import 'package:not_eat_alone/core/design/font_license.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/locale/locale_controller.dart';
 import 'package:not_eat_alone/core/routing/router.dart';
+import 'package:not_eat_alone/features/meal/application/paris_notice_provider.dart';
 import 'package:not_eat_alone/l10n/generated/app_localizations.dart';
 
 Future<void> bootstrap({
@@ -74,9 +75,13 @@ Future<void> bootstrap({
   await initializeDateFormatting('en');
   await initializeDateFormatting('fr');
   final savedLocale = await readSavedLocale();
+  final parisNoticeDismissed = await readParisNoticeDismissed();
   runApp(
     ProviderScope(
-      overrides: [localeSeedProvider.overrideWithValue(savedLocale)],
+      overrides: [
+        localeSeedProvider.overrideWithValue(savedLocale),
+        parisNoticeSeedProvider.overrideWithValue(parisNoticeDismissed),
+      ],
       child: const NotEatAloneApp(),
     ),
   );
