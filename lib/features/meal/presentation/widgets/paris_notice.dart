@@ -42,8 +42,7 @@ class ParisNotice extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Convyve is Paris-only for now — '
-                "we're just getting started here.",
+                context.l10n.parisNotice,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colors.onSurface,
                 ),

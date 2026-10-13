@@ -186,5 +186,213 @@
         "type": "String"
       }
     }
+  },
+  "mealWomenOnly": "Women only",
+  "@mealWomenOnly": {
+    "description": "Badge / disabled-button label for a meal only women can join."
+  },
+  "mealHostFallbackName": "Host",
+  "@mealHostFallbackName": {
+    "description": "Name shown for a host whose profile has no display name."
+  },
+  "discoverEmptyTitle": "No meals nearby yet",
+  "@discoverEmptyTitle": {
+    "description": "Headline of the Discover empty state."
+  },
+  "discoverEmptyMessage": "Be the first: host a meal and someone will join.",
+  "@discoverEmptyMessage": {
+    "description": "Supporting text of the Discover empty state."
+  },
+  "discoverCreateMeal": "Create a meal",
+  "@discoverCreateMeal": {
+    "description": "Discover button / floating button that starts meal creation."
+  },
+  "discoverDistanceKm": "{distance} km",
+  "@discoverDistanceKm": {
+    "description": "Distance from the viewer to a meal, in kilometres with one decimal.",
+    "placeholders": {
+      "distance": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {
+          "decimalDigits": 1
+        }
+      }
+    }
+  },
+  "parisNotice": "Convyve is Paris-only for now — we're just getting started here.",
+  "@parisNotice": {
+    "description": "Dismissible banner on Discover explaining the Paris-only launch."
+  },
+  "mealDetailTitle": "Meal details",
+  "@mealDetailTitle": {
+    "description": "App bar title of the meal detail screen."
+  },
+  "mealDetailHostHeading": "Host",
+  "@mealDetailHostHeading": {
+    "description": "Section heading above the host's profile block."
+  },
+  "mealDetailHostUnavailable": "Host unavailable",
+  "@mealDetailHostUnavailable": {
+    "description": "Shown instead of the host block when the host profile no longer exists."
+  },
+  "mealDetailHostNameAge": "{name}, {age}",
+  "@mealDetailHostNameAge": {
+    "description": "Host name followed by age.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "mealDetailReportMeal": "Report this meal",
+  "@mealDetailReportMeal": {
+    "description": "Safety menu item that reports the meal."
+  },
+  "mealDetailReportHost": "Report host",
+  "@mealDetailReportHost": {
+    "description": "Safety menu item that reports the host."
+  },
+  "mealDetailBlockHost": "Block host",
+  "@mealDetailBlockHost": {
+    "description": "Safety menu item that blocks the host."
+  },
+  "mealDetailOpenInMaps": "Open in Maps",
+  "@mealDetailOpenInMaps": {
+    "description": "Button that opens the restaurant in the maps app."
+  },
+  "mealDetailOpenInMapsSemantics": "Open {restaurant} in Maps",
+  "@mealDetailOpenInMapsSemantics": {
+    "description": "Screen-reader label of the Open in Maps button.",
+    "placeholders": {
+      "restaurant": {
+        "type": "String"
+      }
+    }
+  },
+  "mealDetailMapsFailed": "Couldn't open Maps",
+  "@mealDetailMapsFailed": {
+    "description": "Snackbar shown when the maps app could not be launched."
+  },
+  "mealActionRequestToJoin": "Request to join",
+  "@mealActionRequestToJoin": {
+    "description": "Meal action bar: button that sends a join request."
+  },
+  "mealActionSendingRequest": "Sending request…",
+  "@mealActionSendingRequest": {
+    "description": "Meal action bar: button label while the join request is being sent."
+  },
+  "mealActionRequested": "Requested",
+  "@mealActionRequested": {
+    "description": "Meal action bar: disabled button once the request is pending."
+  },
+  "mealActionOpenChat": "Open chat",
+  "@mealActionOpenChat": {
+    "description": "Meal action bar: button that opens the chat after a match."
+  },
+  "mealActionNotSelected": "Not selected",
+  "@mealActionNotSelected": {
+    "description": "Meal action bar: disabled button when the host chose someone else."
+  },
+  "mealActionYourMeal": "This is your meal",
+  "@mealActionYourMeal": {
+    "description": "Meal action bar: disabled button on the viewer's own meal."
+  },
+  "mealActionCancelled": "Meal cancelled",
+  "@mealActionCancelled": {
+    "description": "Meal action bar: disabled button on a cancelled meal."
+  },
+  "mealActionStatusYourMeal": "See requests in the Requests tab.",
+  "@mealActionStatusYourMeal": {
+    "description": "Meal action bar status line (one line only) on the viewer's own meal."
+  },
+  "mealActionStatusCancelled": "The host cancelled this meal.",
+  "@mealActionStatusCancelled": {
+    "description": "Meal action bar status line on a cancelled meal."
+  },
+  "mealActionStatusWomenOnly": "Only women can join this meal.",
+  "@mealActionStatusWomenOnly": {
+    "description": "Meal action bar status line for a women-only meal the viewer cannot join."
+  },
+  "mealActionStatusLoadError": "Couldn't load your request.",
+  "@mealActionStatusLoadError": {
+    "description": "Meal action bar status line when the viewer's request failed to load."
+  },
+  "mealActionStatusPending": "Waiting for the host to reply.",
+  "@mealActionStatusPending": {
+    "description": "Meal action bar status line while the request is pending."
+  },
+  "mealActionStatusApproved": "You're matched. Say hi!",
+  "@mealActionStatusApproved": {
+    "description": "Meal action bar status line after the host approved the request."
+  },
+  "mealActionStatusDenied": "The host chose someone else.",
+  "@mealActionStatusDenied": {
+    "description": "Meal action bar status line after the host declined the request."
+  },
+  "mealActionNoLongerOpen": "This meal is no longer open.",
+  "@mealActionNoLongerOpen": {
+    "description": "Snackbar when the server rejects a request because the meal closed."
+  },
+  "mealActionRequestFailed": "Couldn't send your request. Try again.",
+  "@mealActionRequestFailed": {
+    "description": "Snackbar when sending a join request failed."
+  },
+  "createMealTitle": "Create a meal",
+  "@createMealTitle": {
+    "description": "App bar title of the create-meal screen."
+  },
+  "createMealPickDateTime": "Pick date & time",
+  "@createMealPickDateTime": {
+    "description": "Button that opens the date and time pickers."
+  },
+  "createMealNoteLabel": "Note (optional)",
+  "@createMealNoteLabel": {
+    "description": "Label of the optional note field."
+  },
+  "createMealSubmit": "Create meal",
+  "@createMealSubmit": {
+    "description": "Button that posts the meal."
+  },
+  "createMealCreating": "Creating…",
+  "@createMealCreating": {
+    "description": "Button label while the meal is being posted."
+  },
+  "createMealTooSoon": "Pick a time at least {minutes} minutes from now.",
+  "@createMealTooSoon": {
+    "description": "Snackbar when the picked time is too close to now.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "createMealPosted": "Meal posted. You'll get requests in the Requests tab.",
+  "@createMealPosted": {
+    "description": "Snackbar after a meal was posted."
+  },
+  "restaurantSearchTitle": "Find a restaurant",
+  "@restaurantSearchTitle": {
+    "description": "App bar title of the restaurant search screen."
+  },
+  "restaurantSearchHint": "Search restaurants",
+  "@restaurantSearchHint": {
+    "description": "Hint of the restaurant search field."
+  },
+  "restaurantSearchEmpty": "No restaurants to show yet.",
+  "@restaurantSearchEmpty": {
+    "description": "Shown when the search has no query and no results."
+  },
+  "restaurantSearchNoMatch": "No restaurant called “{query}”. Try another name.",
+  "@restaurantSearchNoMatch": {
+    "description": "Shown when a typed search has no results; query is what the user typed.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
   }
 }

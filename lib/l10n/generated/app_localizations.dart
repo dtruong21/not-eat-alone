@@ -355,6 +355,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Still needed: {summary}.'**
   String profileStillNeeded(String summary);
+
+  /// Badge / disabled-button label for a meal only women can join.
+  ///
+  /// In en, this message translates to:
+  /// **'Women only'**
+  String get mealWomenOnly;
+
+  /// Name shown for a host whose profile has no display name.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get mealHostFallbackName;
+
+  /// Headline of the Discover empty state.
+  ///
+  /// In en, this message translates to:
+  /// **'No meals nearby yet'**
+  String get discoverEmptyTitle;
+
+  /// Supporting text of the Discover empty state.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first: host a meal and someone will join.'**
+  String get discoverEmptyMessage;
+
+  /// Discover button / floating button that starts meal creation.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a meal'**
+  String get discoverCreateMeal;
+
+  /// Distance from the viewer to a meal, in kilometres with one decimal.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} km'**
+  String discoverDistanceKm(double distance);
+
+  /// Dismissible banner on Discover explaining the Paris-only launch.
+  ///
+  /// In en, this message translates to:
+  /// **'Convyve is Paris-only for now — we\'re just getting started here.'**
+  String get parisNotice;
+
+  /// App bar title of the meal detail screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal details'**
+  String get mealDetailTitle;
+
+  /// Section heading above the host's profile block.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get mealDetailHostHeading;
+
+  /// Shown instead of the host block when the host profile no longer exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Host unavailable'**
+  String get mealDetailHostUnavailable;
+
+  /// Host name followed by age.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {age}'**
+  String mealDetailHostNameAge(String name, int age);
+
+  /// Safety menu item that reports the meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this meal'**
+  String get mealDetailReportMeal;
+
+  /// Safety menu item that reports the host.
+  ///
+  /// In en, this message translates to:
+  /// **'Report host'**
+  String get mealDetailReportHost;
+
+  /// Safety menu item that blocks the host.
+  ///
+  /// In en, this message translates to:
+  /// **'Block host'**
+  String get mealDetailBlockHost;
+
+  /// Button that opens the restaurant in the maps app.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Maps'**
+  String get mealDetailOpenInMaps;
+
+  /// Screen-reader label of the Open in Maps button.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {restaurant} in Maps'**
+  String mealDetailOpenInMapsSemantics(String restaurant);
+
+  /// Snackbar shown when the maps app could not be launched.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open Maps'**
+  String get mealDetailMapsFailed;
+
+  /// Meal action bar: button that sends a join request.
+  ///
+  /// In en, this message translates to:
+  /// **'Request to join'**
+  String get mealActionRequestToJoin;
+
+  /// Meal action bar: button label while the join request is being sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending request…'**
+  String get mealActionSendingRequest;
+
+  /// Meal action bar: disabled button once the request is pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get mealActionRequested;
+
+  /// Meal action bar: button that opens the chat after a match.
+  ///
+  /// In en, this message translates to:
+  /// **'Open chat'**
+  String get mealActionOpenChat;
+
+  /// Meal action bar: disabled button when the host chose someone else.
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get mealActionNotSelected;
+
+  /// Meal action bar: disabled button on the viewer's own meal.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your meal'**
+  String get mealActionYourMeal;
+
+  /// Meal action bar: disabled button on a cancelled meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal cancelled'**
+  String get mealActionCancelled;
+
+  /// Meal action bar status line (one line only) on the viewer's own meal.
+  ///
+  /// In en, this message translates to:
+  /// **'See requests in the Requests tab.'**
+  String get mealActionStatusYourMeal;
+
+  /// Meal action bar status line on a cancelled meal.
+  ///
+  /// In en, this message translates to:
+  /// **'The host cancelled this meal.'**
+  String get mealActionStatusCancelled;
+
+  /// Meal action bar status line for a women-only meal the viewer cannot join.
+  ///
+  /// In en, this message translates to:
+  /// **'Only women can join this meal.'**
+  String get mealActionStatusWomenOnly;
+
+  /// Meal action bar status line when the viewer's request failed to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your request.'**
+  String get mealActionStatusLoadError;
+
+  /// Meal action bar status line while the request is pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the host to reply.'**
+  String get mealActionStatusPending;
+
+  /// Meal action bar status line after the host approved the request.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re matched. Say hi!'**
+  String get mealActionStatusApproved;
+
+  /// Meal action bar status line after the host declined the request.
+  ///
+  /// In en, this message translates to:
+  /// **'The host chose someone else.'**
+  String get mealActionStatusDenied;
+
+  /// Snackbar when the server rejects a request because the meal closed.
+  ///
+  /// In en, this message translates to:
+  /// **'This meal is no longer open.'**
+  String get mealActionNoLongerOpen;
+
+  /// Snackbar when sending a join request failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send your request. Try again.'**
+  String get mealActionRequestFailed;
+
+  /// App bar title of the create-meal screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a meal'**
+  String get createMealTitle;
+
+  /// Button that opens the date and time pickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick date & time'**
+  String get createMealPickDateTime;
+
+  /// Label of the optional note field.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get createMealNoteLabel;
+
+  /// Button that posts the meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Create meal'**
+  String get createMealSubmit;
+
+  /// Button label while the meal is being posted.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get createMealCreating;
+
+  /// Snackbar when the picked time is too close to now.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a time at least {minutes} minutes from now.'**
+  String createMealTooSoon(int minutes);
+
+  /// Snackbar after a meal was posted.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal posted. You\'ll get requests in the Requests tab.'**
+  String get createMealPosted;
+
+  /// App bar title of the restaurant search screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a restaurant'**
+  String get restaurantSearchTitle;
+
+  /// Hint of the restaurant search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Search restaurants'**
+  String get restaurantSearchHint;
+
+  /// Shown when the search has no query and no results.
+  ///
+  /// In en, this message translates to:
+  /// **'No restaurants to show yet.'**
+  String get restaurantSearchEmpty;
+
+  /// Shown when a typed search has no results; query is what the user typed.
+  ///
+  /// In en, this message translates to:
+  /// **'No restaurant called “{query}”. Try another name.'**
+  String restaurantSearchNoMatch(String query);
 }
 
 class _AppLocalizationsDelegate

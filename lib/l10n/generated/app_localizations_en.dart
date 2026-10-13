@@ -144,4 +144,157 @@ class AppLocalizationsEn extends AppLocalizations {
   String profileStillNeeded(String summary) {
     return 'Still needed: $summary.';
   }
+
+  @override
+  String get mealWomenOnly => 'Women only';
+
+  @override
+  String get mealHostFallbackName => 'Host';
+
+  @override
+  String get discoverEmptyTitle => 'No meals nearby yet';
+
+  @override
+  String get discoverEmptyMessage =>
+      'Be the first: host a meal and someone will join.';
+
+  @override
+  String get discoverCreateMeal => 'Create a meal';
+
+  @override
+  String discoverDistanceKm(double distance) {
+    final intl.NumberFormat distanceNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String distanceString = distanceNumberFormat.format(distance);
+
+    return '$distanceString km';
+  }
+
+  @override
+  String get parisNotice =>
+      'Convyve is Paris-only for now — we\'re just getting started here.';
+
+  @override
+  String get mealDetailTitle => 'Meal details';
+
+  @override
+  String get mealDetailHostHeading => 'Host';
+
+  @override
+  String get mealDetailHostUnavailable => 'Host unavailable';
+
+  @override
+  String mealDetailHostNameAge(String name, int age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get mealDetailReportMeal => 'Report this meal';
+
+  @override
+  String get mealDetailReportHost => 'Report host';
+
+  @override
+  String get mealDetailBlockHost => 'Block host';
+
+  @override
+  String get mealDetailOpenInMaps => 'Open in Maps';
+
+  @override
+  String mealDetailOpenInMapsSemantics(String restaurant) {
+    return 'Open $restaurant in Maps';
+  }
+
+  @override
+  String get mealDetailMapsFailed => 'Couldn\'t open Maps';
+
+  @override
+  String get mealActionRequestToJoin => 'Request to join';
+
+  @override
+  String get mealActionSendingRequest => 'Sending request…';
+
+  @override
+  String get mealActionRequested => 'Requested';
+
+  @override
+  String get mealActionOpenChat => 'Open chat';
+
+  @override
+  String get mealActionNotSelected => 'Not selected';
+
+  @override
+  String get mealActionYourMeal => 'This is your meal';
+
+  @override
+  String get mealActionCancelled => 'Meal cancelled';
+
+  @override
+  String get mealActionStatusYourMeal => 'See requests in the Requests tab.';
+
+  @override
+  String get mealActionStatusCancelled => 'The host cancelled this meal.';
+
+  @override
+  String get mealActionStatusWomenOnly => 'Only women can join this meal.';
+
+  @override
+  String get mealActionStatusLoadError => 'Couldn\'t load your request.';
+
+  @override
+  String get mealActionStatusPending => 'Waiting for the host to reply.';
+
+  @override
+  String get mealActionStatusApproved => 'You\'re matched. Say hi!';
+
+  @override
+  String get mealActionStatusDenied => 'The host chose someone else.';
+
+  @override
+  String get mealActionNoLongerOpen => 'This meal is no longer open.';
+
+  @override
+  String get mealActionRequestFailed =>
+      'Couldn\'t send your request. Try again.';
+
+  @override
+  String get createMealTitle => 'Create a meal';
+
+  @override
+  String get createMealPickDateTime => 'Pick date & time';
+
+  @override
+  String get createMealNoteLabel => 'Note (optional)';
+
+  @override
+  String get createMealSubmit => 'Create meal';
+
+  @override
+  String get createMealCreating => 'Creating…';
+
+  @override
+  String createMealTooSoon(int minutes) {
+    return 'Pick a time at least $minutes minutes from now.';
+  }
+
+  @override
+  String get createMealPosted =>
+      'Meal posted. You\'ll get requests in the Requests tab.';
+
+  @override
+  String get restaurantSearchTitle => 'Find a restaurant';
+
+  @override
+  String get restaurantSearchHint => 'Search restaurants';
+
+  @override
+  String get restaurantSearchEmpty => 'No restaurants to show yet.';
+
+  @override
+  String restaurantSearchNoMatch(String query) {
+    return 'No restaurant called “$query”. Try another name.';
+  }
 }

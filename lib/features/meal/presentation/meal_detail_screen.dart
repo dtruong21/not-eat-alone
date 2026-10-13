@@ -26,6 +26,7 @@ import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class MealDetailScreen extends ConsumerWidget {
   const MealDetailScreen({required this.meal, super.key});
@@ -40,7 +41,7 @@ class MealDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meal details'),
+        title: Text(context.l10n.mealDetailTitle),
         actions: [_MealSafetyActions(meal: meal)],
       ),
       bottomNavigationBar: MealActionBar(meal: meal),
@@ -103,7 +104,7 @@ class MealDetailScreen extends ConsumerWidget {
               ],
               const SizedBox(height: WarmPlayfulSpacing.s5),
               Text(
-                'Host',
+                context.l10n.mealDetailHostHeading,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colors.onSurface,
                   fontWeight: WarmPlayfulType.h2Weight,
@@ -136,15 +137,16 @@ class _MealSafetyActions extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    final l10n = context.l10n;
     return SafetyActions(
       reportTargetType: 'meal',
       reportTargetId: meal.id,
-      reportLabel: 'Report this meal',
+      reportLabel: l10n.mealDetailReportMeal,
       secondaryReportTargetType: 'user',
       secondaryReportTargetId: meal.hostId,
-      secondaryReportLabel: 'Report host',
+      secondaryReportLabel: l10n.mealDetailReportHost,
       blockUid: meal.hostId,
-      blockLabel: 'Block host',
+      blockLabel: l10n.mealDetailBlockHost,
     );
   }
 }
@@ -214,7 +216,7 @@ class _WomenOnlyBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
       ),
       child: Text(
-        'Women only',
+        context.l10n.mealWomenOnly,
         style: textTheme.bodySmall?.copyWith(
           color: context.wp.onAccent,
           fontWeight: WarmPlayfulType.captionWeight,
@@ -248,7 +250,7 @@ class _HostBlock extends ConsumerWidget {
         }
         if (snapshot.hasError) {
           return Text(
-            'Something went wrong — please try again.',
+            context.l10n.commonSomethingWentWrong,
             style: textTheme.bodyMedium?.copyWith(color: colors.error),
           );
         }
@@ -256,7 +258,7 @@ class _HostBlock extends ConsumerWidget {
         final host = snapshot.data;
         if (host == null) {
           return Text(
-            'Host unavailable',
+            context.l10n.mealDetailHostUnavailable,
             style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
           );
         }
@@ -265,6 +267,7 @@ class _HostBlock extends ConsumerWidget {
             ? host.photoUrls.first
             : null;
         final age = host.ageYears;
+        final hostName = host.displayName ?? context.l10n.mealHostFallbackName;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,10 +276,15 @@ class _HostBlock extends ConsumerWidget {
               radius: WarmPlayfulSpacing.s5,
               backgroundColor: colors.surfaceContainerHighest,
               backgroundImage: photoUrl != null
-                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s5)
+                  ? avatarImage(
+                      context,
+                      photoUrl,
+                      radius: WarmPlayfulSpacing.s5,
+                    )
                   : null,
-              onBackgroundImageError:
-                  photoUrl != null ? ignoreAvatarImageError : null,
+              onBackgroundImageError: photoUrl != null
+                  ? ignoreAvatarImageError
+                  : null,
               child: photoUrl == null
                   ? Icon(
                       Icons.person_rounded,
@@ -292,8 +300,8 @@ class _HostBlock extends ConsumerWidget {
                 children: [
                   Text(
                     age == null
-                        ? (host.displayName ?? 'Host')
-                        : '${host.displayName ?? 'Host'}, $age',
+                        ? hostName
+                        : context.l10n.mealDetailHostNameAge(hostName, age),
                     style: textTheme.bodyMedium?.copyWith(
                       color: colors.onSurface,
                       fontWeight: WarmPlayfulType.h2Weight,
@@ -347,9 +355,9 @@ class _OpenInMapsButtonState extends ConsumerState<_OpenInMapsButton> {
       await analytics.track(const DirectionsOpened());
       final opened = await launch(widget.restaurant);
       if (!opened && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Couldn't open Maps")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.mealDetailMapsFailed)),
+        );
       }
     } finally {
       _launching = false;
@@ -362,14 +370,14 @@ class _OpenInMapsButtonState extends ConsumerState<_OpenInMapsButton> {
     // restaurant name and the tap action.
     return Semantics(
       button: true,
-      label: 'Open ${widget.restaurant.name} in Maps',
+      label: context.l10n.mealDetailOpenInMapsSemantics(widget.restaurant.name),
       excludeSemantics: true,
       onTap: _open,
       child: OutlinedButton.icon(
         key: const Key('meal_detail_open_in_maps_button'),
         onPressed: _open,
         icon: const Icon(Icons.place_outlined),
-        label: const Text('Open in Maps'),
+        label: Text(context.l10n.mealDetailOpenInMaps),
       ),
     );
   }

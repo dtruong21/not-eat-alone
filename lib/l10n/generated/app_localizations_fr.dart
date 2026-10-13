@@ -145,4 +145,158 @@ class AppLocalizationsFr extends AppLocalizations {
   String profileStillNeeded(String summary) {
     return 'Il manque encore : $summary.';
   }
+
+  @override
+  String get mealWomenOnly => 'Entre femmes';
+
+  @override
+  String get mealHostFallbackName => 'Hôte';
+
+  @override
+  String get discoverEmptyTitle => 'Pas encore de repas près de toi';
+
+  @override
+  String get discoverEmptyMessage =>
+      'Lance-toi : propose un repas et quelqu’un te rejoindra.';
+
+  @override
+  String get discoverCreateMeal => 'Proposer un repas';
+
+  @override
+  String discoverDistanceKm(double distance) {
+    final intl.NumberFormat distanceNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String distanceString = distanceNumberFormat.format(distance);
+
+    return '$distanceString km';
+  }
+
+  @override
+  String get parisNotice =>
+      'Convyve n’est disponible qu’à Paris pour l’instant — on ne fait que commencer.';
+
+  @override
+  String get mealDetailTitle => 'Détails du repas';
+
+  @override
+  String get mealDetailHostHeading => 'Hôte';
+
+  @override
+  String get mealDetailHostUnavailable => 'Hôte indisponible';
+
+  @override
+  String mealDetailHostNameAge(String name, int age) {
+    return '$name, $age ans';
+  }
+
+  @override
+  String get mealDetailReportMeal => 'Signaler ce repas';
+
+  @override
+  String get mealDetailReportHost => 'Signaler l’hôte';
+
+  @override
+  String get mealDetailBlockHost => 'Bloquer l’hôte';
+
+  @override
+  String get mealDetailOpenInMaps => 'Ouvrir dans Maps';
+
+  @override
+  String mealDetailOpenInMapsSemantics(String restaurant) {
+    return 'Ouvrir $restaurant dans Maps';
+  }
+
+  @override
+  String get mealDetailMapsFailed => 'Impossible d’ouvrir Maps';
+
+  @override
+  String get mealActionRequestToJoin => 'Demander à rejoindre';
+
+  @override
+  String get mealActionSendingRequest => 'Envoi de la demande…';
+
+  @override
+  String get mealActionRequested => 'Demande envoyée';
+
+  @override
+  String get mealActionOpenChat => 'Ouvrir la discussion';
+
+  @override
+  String get mealActionNotSelected => 'Pas cette fois';
+
+  @override
+  String get mealActionYourMeal => 'C’est ton repas';
+
+  @override
+  String get mealActionCancelled => 'Repas annulé';
+
+  @override
+  String get mealActionStatusYourMeal => 'Tes demandes : onglet Demandes.';
+
+  @override
+  String get mealActionStatusCancelled => 'L’hôte a annulé ce repas.';
+
+  @override
+  String get mealActionStatusWomenOnly => 'Réservé aux femmes.';
+
+  @override
+  String get mealActionStatusLoadError => 'Impossible de charger ta demande.';
+
+  @override
+  String get mealActionStatusPending => 'L’hôte n’a pas encore répondu.';
+
+  @override
+  String get mealActionStatusApproved => 'C’est un match ! Dis bonjour !';
+
+  @override
+  String get mealActionStatusDenied => 'L’hôte a choisi quelqu’un d’autre.';
+
+  @override
+  String get mealActionNoLongerOpen => 'Ce repas n’est plus ouvert.';
+
+  @override
+  String get mealActionRequestFailed =>
+      'Impossible d’envoyer ta demande. Réessaie.';
+
+  @override
+  String get createMealTitle => 'Proposer un repas';
+
+  @override
+  String get createMealPickDateTime => 'Choisir la date et l’heure';
+
+  @override
+  String get createMealNoteLabel => 'Note (facultative)';
+
+  @override
+  String get createMealSubmit => 'Publier le repas';
+
+  @override
+  String get createMealCreating => 'Publication…';
+
+  @override
+  String createMealTooSoon(int minutes) {
+    return 'Choisis une heure dans au moins $minutes minutes.';
+  }
+
+  @override
+  String get createMealPosted =>
+      'Repas publié. Tu recevras les demandes dans l’onglet Demandes.';
+
+  @override
+  String get restaurantSearchTitle => 'Trouver un restaurant';
+
+  @override
+  String get restaurantSearchHint => 'Chercher un restaurant';
+
+  @override
+  String get restaurantSearchEmpty =>
+      'Aucun restaurant à afficher pour l’instant.';
+
+  @override
+  String restaurantSearchNoMatch(String query) {
+    return 'Aucun restaurant ne s’appelle « $query ». Essaie un autre nom.';
+  }
 }

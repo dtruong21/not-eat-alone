@@ -28,6 +28,7 @@ import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal_status.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// Largest text scale inside the bar: the app's tested ceiling, so the main
 /// action honours large text. The bar still has ONE height at a given text
@@ -42,16 +43,19 @@ const _statusTwoLineScale = 1.3;
 /// Every label the bar's button can show, with the width its icon takes: the
 /// action slot is sized for the one that needs the most lines, so all states
 /// share one height.
-const _buttonLabels = <(String, double)>[
-  ('Request to join', 0),
-  ('Sending request…', WarmPlayfulSize.spinner + WarmPlayfulSpacing.s2),
-  ('Requested', 0),
-  ('Open chat', 24 + WarmPlayfulSpacing.s2),
-  ('Not selected', 0),
-  ('This is your meal', 0),
-  ('Women only', 0),
-  ('Meal cancelled', 0),
-  ('Try again', 0),
+List<(String, double)> _buttonLabels(AppLocalizations l10n) => [
+  (l10n.mealActionRequestToJoin, 0),
+  (
+    l10n.mealActionSendingRequest,
+    WarmPlayfulSize.spinner + WarmPlayfulSpacing.s2,
+  ),
+  (l10n.mealActionRequested, 0),
+  (l10n.mealActionOpenChat, 24 + WarmPlayfulSpacing.s2),
+  (l10n.mealActionNotSelected, 0),
+  (l10n.mealActionYourMeal, 0),
+  (l10n.mealWomenOnly, 0),
+  (l10n.mealActionCancelled, 0),
+  (l10n.commonTryAgain, 0),
 ];
 
 /// Most lines a button label may wrap to.
@@ -69,6 +73,7 @@ class MealActionBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Captured synchronously: the listener fires later, off a rebuild.
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     // loading -> error only, so this fires once per failed submit.
     ref.listen<AsyncValue<void>>(createRequestControllerProvider, (
       previous,
@@ -82,8 +87,8 @@ class MealActionBar extends ConsumerWidget {
         SnackBar(
           content: Text(
             next.error is MealNoLongerOpenException
-                ? 'This meal is no longer open.'
-                : "Couldn't send your request. Try again.",
+                ? l10n.mealActionNoLongerOpen
+                : l10n.mealActionRequestFailed,
           ),
         ),
       );
@@ -117,17 +122,18 @@ class _BarContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final viewerUid = ref.watch(authStateProvider).value?.uid;
     if (viewerUid != null && viewerUid == meal.hostId) {
-      return const _Layout(
+      return _Layout(
         action: AppButton(
-          key: Key('meal_detail_your_meal_button'),
-          label: 'This is your meal',
+          key: const Key('meal_detail_your_meal_button'),
+          label: l10n.mealActionYourMeal,
           variant: AppButtonVariant.tonal,
           maxLines: _maxLabelLines,
           onPressed: null,
         ),
-        status: 'See requests in the Requests tab.',
+        status: l10n.mealActionStatusYourMeal,
       );
     }
 
@@ -137,31 +143,31 @@ class _BarContent extends ConsumerWidget {
     // own-meal check (the host keeps their own view) and before the women-only
     // check (eligibility is moot once the meal is gone).
     if (meal.status == MealStatus.cancelled) {
-      return const _Layout(
+      return _Layout(
         action: AppButton(
-          key: Key('meal_detail_cancelled_button'),
-          label: 'Meal cancelled',
+          key: const Key('meal_detail_cancelled_button'),
+          label: l10n.mealActionCancelled,
           variant: AppButtonVariant.tonal,
           maxLines: _maxLabelLines,
           onPressed: null,
         ),
-        status: 'The host cancelled this meal.',
+        status: l10n.mealActionStatusCancelled,
       );
     }
 
     // Client-side mirror of the rules' women-only check on request create.
     final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
     if (meal.womenOnly && viewerGender != Gender.woman) {
-      return const _Layout(
+      return _Layout(
         action: AppButton(
-          key: Key('meal_detail_women_only_disabled_button'),
-          label: 'Women only',
+          key: const Key('meal_detail_women_only_disabled_button'),
+          label: l10n.mealWomenOnly,
           variant: AppButtonVariant.tonal,
           maxLines: _maxLabelLines,
           onPressed: null,
         ),
-        status: 'Only women can join this meal.',
-        statusKey: Key('meal_detail_women_only_note'),
+        status: l10n.mealActionStatusWomenOnly,
+        statusKey: const Key('meal_detail_women_only_note'),
       );
     }
 
@@ -177,12 +183,12 @@ class _BarContent extends ConsumerWidget {
       error: (error, stackTrace) => _Layout(
         action: AppButton(
           key: const Key('meal_detail_request_retry_button'),
-          label: 'Try again',
+          label: l10n.commonTryAgain,
           variant: AppButtonVariant.tonal,
           maxLines: _maxLabelLines,
           onPressed: () => ref.invalidate(mealRequestStateProvider(meal.id)),
         ),
-        status: "Couldn't load your request.",
+        status: l10n.mealActionStatusLoadError,
         isError: true,
       ),
       data: (request) {
@@ -193,8 +199,8 @@ class _BarContent extends ConsumerWidget {
           return _Layout(
             action: AppButton(
               key: const Key('meal_detail_request_to_join_button'),
-              label: 'Request to join',
-              loadingLabel: 'Sending request…',
+              label: l10n.mealActionRequestToJoin,
+              loadingLabel: l10n.mealActionSendingRequest,
               maxLines: _maxLabelLines,
               isLoading: isSubmitting,
               onPressed: isSubmitting
@@ -206,37 +212,37 @@ class _BarContent extends ConsumerWidget {
           );
         }
         return switch (request.status) {
-          RequestStatus.pending => const _Layout(
+          RequestStatus.pending => _Layout(
             action: AppButton(
-              key: Key('meal_detail_requested_button'),
-              label: 'Requested',
+              key: const Key('meal_detail_requested_button'),
+              label: l10n.mealActionRequested,
               variant: AppButtonVariant.tonal,
               maxLines: _maxLabelLines,
               onPressed: null,
             ),
-            status: 'Waiting for the host to reply.',
+            status: l10n.mealActionStatusPending,
           ),
           RequestStatus.approved => _Layout(
             action: AppButton(
               key: const Key('meal_detail_matched_banner'),
-              label: 'Open chat',
+              label: l10n.mealActionOpenChat,
               maxLines: _maxLabelLines,
               icon: const Icon(Icons.chat_bubble_outline_rounded),
               // matchId == mealId: `matches/{mealId}` is the hand-off doc the
               // approve transaction writes, so the meal id is the route param.
               onPressed: () => context.push('/chats/${meal.id}'),
             ),
-            status: "You're matched. Say hi!",
+            status: l10n.mealActionStatusApproved,
           ),
-          RequestStatus.denied => const _Layout(
+          RequestStatus.denied => _Layout(
             action: AppButton(
-              key: Key('meal_detail_not_selected_button'),
-              label: 'Not selected',
+              key: const Key('meal_detail_not_selected_button'),
+              label: l10n.mealActionNotSelected,
               variant: AppButtonVariant.tonal,
               maxLines: _maxLabelLines,
               onPressed: null,
             ),
-            status: 'The host chose someone else.',
+            status: l10n.mealActionStatusDenied,
           ),
         };
       },
@@ -278,7 +284,7 @@ class _Layout extends StatelessWidget {
         // The text width inside a button: its horizontal padding comes off.
         final textWidth = constraints.maxWidth - 2 * WarmPlayfulSpacing.s5;
         var lines = 1;
-        for (final (label, iconWidth) in _buttonLabels) {
+        for (final (label, iconWidth) in _buttonLabels(context.l10n)) {
           final painter =
               TextPainter(
                 text: TextSpan(text: label, style: labelStyle),
