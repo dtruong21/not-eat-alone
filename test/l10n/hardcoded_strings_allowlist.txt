@@ -1,0 +1,12 @@
+# Hard-coded user-facing literals that are allowed to stay in lib/features and
+# lib/core. One per line:  path | literal | reason   (the reason is required).
+# An entry that no longer matches anything fails the guard: delete it.
+#
+# Empty on purpose: everything the guard looks at (Text('…') and the label /
+# hintText / labelText / tooltip / semanticLabel / semanticsLabel arguments) is
+# localized. Things that are intentionally NOT in the ARB files and are not
+# matched by the guard anyway: the Convyve brand, supportEmail, URLs, the
+# language picker's native names (English / Français), the version string, the
+# +33 phone hint example (no letters), backend report reason codes
+# (spam / harassment / ...), the mailto subject, and the fake restaurant names
+# in fake_restaurant_search_datasource.dart.
