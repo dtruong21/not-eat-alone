@@ -9,6 +9,6 @@ export const makeRequestCreated = (database: string) =>
       const data = event.data?.data();
       const hostId = data?.hostId as string | undefined;
       if (!hostId) return;
-      await sendToUser(database, hostId, buildRequestCreated());
+      await sendToUser(database, hostId, (lang) => buildRequestCreated(lang));
     },
   );

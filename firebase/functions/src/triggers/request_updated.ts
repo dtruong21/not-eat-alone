@@ -17,7 +17,7 @@ export const makeRequestUpdated = (database: string) =>
       await sendToUser(
         database,
         guestId,
-        buildRequestUpdated(status, (after.mealId as string) ?? ''),
+        (lang) => buildRequestUpdated(status, (after.mealId as string) ?? '', lang),
       );
     },
   );

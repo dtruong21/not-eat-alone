@@ -194,7 +194,9 @@ export async function releaseMatchedMeals(db: Firestore, databaseId: string, uid
     const hostId = m.hostId as string | undefined;
     if (hostId) {
       try {
-        await sendToUser(databaseId, hostId, buildMatchLeft(plan.reopened, doc.id));
+        await sendToUser(databaseId, hostId, (lang) =>
+          buildMatchLeft(plan.reopened, doc.id, false, lang),
+        );
       } catch (err) {
         console.error(`[deleteAccount] notify host failed for meal ${doc.id}`, err);
       }
@@ -212,7 +214,7 @@ export async function releaseMatchedMeals(db: Firestore, databaseId: string, uid
     const guestId = m.guestId as string | undefined;
     if (guestId && shouldNotifyGuestOfHostLeaving(at, now)) {
       try {
-        await sendToUser(databaseId, guestId, buildMealCancelled(doc.id));
+        await sendToUser(databaseId, guestId, (lang) => buildMealCancelled(doc.id, false, lang));
       } catch (err) {
         console.error(`[deleteAccount] notify guest failed for meal ${doc.id}`, err);
       }
