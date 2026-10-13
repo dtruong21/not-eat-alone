@@ -164,7 +164,10 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                     child: Text(
                       selected == null
                           ? 'Select date of birth'
-                          : formatLongDate(selected),
+                          : formatLongDate(
+                              selected,
+                              locale: Localizations.localeOf(context),
+                            ),
                     ),
                   ),
                   const SizedBox(height: WarmPlayfulSpacing.s5),

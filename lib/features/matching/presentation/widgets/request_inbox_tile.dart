@@ -232,7 +232,10 @@ class RequestInboxTile extends ConsumerWidget {
                               style: mealLineStyle,
                             ),
                             Text(
-                              formatMealDateTime(meal.dateTime),
+                              formatMealDateTime(
+                                meal.dateTime,
+                                locale: Localizations.localeOf(context),
+                              ),
                               style: mealLineStyle,
                             ),
                           ],

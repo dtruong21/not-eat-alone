@@ -13,12 +13,15 @@ const localePrefsKey = 'app_locale';
 /// Reads the persisted language (null = follow the device). Called before
 /// `runApp` so the first frame is already in the right language.
 Future<Locale?> readSavedLocale() async {
-  final code = (await SharedPreferences.getInstance()).getString(
-    localePrefsKey,
-  );
-  if (code == null) return null;
-  for (final l in supportedAppLocales) {
-    if (l.languageCode == code) return l;
+  try {
+    final code = (await SharedPreferences.getInstance()).getString(
+      localePrefsKey,
+    );
+    for (final l in supportedAppLocales) {
+      if (l.languageCode == code) return l;
+    }
+  } on Object {
+    // Unreadable storage must never block startup: follow the device.
   }
   return null;
 }

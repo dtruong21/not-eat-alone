@@ -214,7 +214,10 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                 child: Text(
                   _dateTime == null
                       ? 'Pick date & time'
-                      : formatMealDateTime(_dateTime!),
+                      : formatMealDateTime(
+                          _dateTime!,
+                          locale: Localizations.localeOf(context),
+                        ),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),

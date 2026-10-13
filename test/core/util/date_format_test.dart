@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:ui' show Locale;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 
 /// Independent expectation: shifts the UTC instant by the machine's offset and
@@ -12,7 +14,14 @@ String _hhmm(DateTime shifted) =>
     '${shifted.hour.toString().padLeft(2, '0')}:'
     '${shifted.minute.toString().padLeft(2, '0')}';
 
+const fr = Locale('fr');
+
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('en');
+    await initializeDateFormatting('fr');
+  });
+
   // A fixed local "now": Fri 9 Oct 2026, 15:00. Local DateTimes are
   // zone-independent, so the literals below hold on any machine.
   final now = DateTime(2026, 10, 9, 15);
@@ -201,7 +210,10 @@ void main() {
       expect(formatDayLabel(DateTime(2026, 10, 9, 23, 59), now: now), 'Today');
     });
     test('the previous calendar day reads Yesterday', () {
-      expect(formatDayLabel(DateTime(2026, 10, 8, 23, 59), now: now), 'Yesterday');
+      expect(
+        formatDayLabel(DateTime(2026, 10, 8, 23, 59), now: now),
+        'Yesterday',
+      );
       expect(
         formatDayLabel(
           DateTime(2026, 12, 31, 10),
@@ -221,15 +233,114 @@ void main() {
       );
     });
     test('a time ahead of now (clock skew) still reads Today', () {
-      expect(formatDayLabel(DateTime(2026, 10, 9, 15, 0, 30), now: now), 'Today');
+      expect(
+        formatDayLabel(DateTime(2026, 10, 9, 15, 0, 30), now: now),
+        'Today',
+      );
     });
     test('a UTC instant is placed on its LOCAL calendar day', () {
       final utc = DateTime.utc(2026, 10, 9, 23, 30);
       final shifted = _shifted(utc);
       final sameDay = DateTime(shifted.year, shifted.month, shifted.day, 12);
-      final dayAfter = DateTime(shifted.year, shifted.month, shifted.day + 1, 9);
+      final dayAfter = DateTime(
+        shifted.year,
+        shifted.month,
+        shifted.day + 1,
+        9,
+      );
       expect(formatDayLabel(utc, now: sameDay), 'Today');
       expect(formatDayLabel(utc, now: dayAfter), 'Yesterday');
+    });
+  });
+
+  // French: same boundaries as the English groups, literal expectations
+  // (whatever `intl` gives for fr abbreviations: weekday and month take a dot).
+  group('French (fr)', () {
+    test('formatMealDateTime: Today, Tomorrow, absolute, year, midnight', () {
+      String meal(DateTime v, {DateTime? at}) =>
+          formatMealDateTime(v, now: at ?? now, locale: fr);
+      expect(meal(DateTime(2026, 10, 9, 20, 30)), 'Aujourd’hui 20:30');
+      expect(meal(DateTime(2026, 10, 10, 12, 30)), 'Demain 12:30');
+      expect(
+        meal(DateTime(2027, 1, 1, 0, 30), at: DateTime(2026, 12, 31, 8)),
+        'Demain 00:30',
+      );
+      expect(meal(DateTime(2026, 10, 10, 20)), 'Demain 20:00');
+      expect(meal(DateTime(2026, 10, 11, 20)), 'dim. 11 oct., 20:00');
+      expect(meal(DateTime(2026, 10, 8, 19)), 'jeu. 8 oct., 19:00');
+      expect(meal(DateTime(2027, 1, 5, 19, 30)), 'mar. 5 janv. 2027, 19:30');
+      expect(meal(DateTime(2026, 10, 12, 0, 5)), 'lun. 12 oct., 00:05');
+      expect(meal(DateTime(2026, 12, 25, 19, 15)), 'ven. 25 déc., 19:15');
+    });
+    test('formatMealDateTime: a UTC instant is placed on its local day', () {
+      final utc = DateTime.utc(2026, 10, 9, 23, 30);
+      final shifted = _shifted(utc);
+      final sameDay = DateTime(shifted.year, shifted.month, shifted.day, 12);
+      final dayBefore = DateTime(
+        shifted.year,
+        shifted.month,
+        shifted.day - 1,
+        12,
+      );
+      expect(
+        formatMealDateTime(utc, now: sameDay, locale: fr),
+        'Aujourd’hui ${_hhmm(shifted)}',
+      );
+      expect(
+        formatMealDateTime(utc, now: dayBefore, locale: fr),
+        'Demain ${_hhmm(shifted)}',
+      );
+    });
+    test('formatClockTime is 24 h', () {
+      expect(
+        formatClockTime(DateTime(2027, 1, 5, 19, 30), locale: fr),
+        '19:30',
+      );
+      expect(formatClockTime(DateTime(2027, 1, 5), locale: fr), '00:00');
+      expect(formatClockTime(DateTime(2027, 1, 5, 9, 5), locale: fr), '09:05');
+      final utc = DateTime.utc(2027, 1, 5, 18, 30);
+      expect(formatClockTime(utc, locale: fr), _hhmm(_shifted(utc)));
+    });
+    test('formatMonthDay', () {
+      expect(formatMonthDay(DateTime(2027, 1, 5), locale: fr), '5 janv.');
+      expect(formatMonthDay(DateTime(2027, 12, 31), locale: fr), '31 déc.');
+      expect(formatMonthDay(DateTime(2027, 8, 2), locale: fr), '2 août');
+    });
+    test('formatLongDate', () {
+      expect(
+        formatLongDate(DateTime(2027, 1, 5), locale: fr),
+        '5 janvier 2027',
+      );
+      expect(
+        formatLongDate(DateTime(1999, 12, 31), locale: fr),
+        '31 décembre 1999',
+      );
+    });
+    test('formatDayLabel: Today, Hier, absolute, year, clock skew', () {
+      String label(DateTime v) => formatDayLabel(v, now: now, locale: fr);
+      expect(label(DateTime(2026, 10, 9, 0, 1)), 'Aujourd’hui');
+      expect(label(DateTime(2026, 10, 9, 15, 0, 30)), 'Aujourd’hui');
+      expect(label(DateTime(2026, 10, 8, 23, 59)), 'Hier');
+      expect(
+        formatDayLabel(
+          DateTime(2026, 12, 31, 10),
+          now: DateTime(2027, 1, 1, 0, 5),
+          locale: fr,
+        ),
+        'Hier',
+      );
+      expect(label(DateTime(2026, 10, 5, 8)), 'lun. 5 oct.');
+      expect(label(DateTime(2025, 12, 31, 8)), 'mer. 31 déc. 2025');
+    });
+    test('a language without a table falls back to English', () {
+      expect(
+        formatMealDateTime(
+          DateTime(2026, 10, 9, 20, 30),
+          now: now,
+          locale: const Locale('de'),
+        ),
+        'Today 20:30',
+      );
     });
   });
 
@@ -274,6 +385,32 @@ void main() {
         expect(formatDayLabel(utc, now: DateTime(2026, 11, 1, 22)), 'Today');
         expect(formatDayLabel(utc, now: DateTime(2026, 11, 2, 9)), 'Yesterday');
       });
+      test(
+        'French: Hier across the DST days, Pacific day for a UTC instant',
+        () {
+          expect(
+            formatDayLabel(
+              DateTime(2026, 11, 1, 0, 30),
+              now: DateTime(2026, 11, 2, 0, 15),
+              locale: fr,
+            ),
+            'Hier',
+          );
+          expect(
+            formatDayLabel(
+              DateTime(2027, 3, 13, 23, 45),
+              now: DateTime(2027, 3, 14, 23, 30),
+              locale: fr,
+            ),
+            'Hier',
+          );
+          final utc = DateTime.utc(2026, 11, 2, 3, 30);
+          expect(
+            formatMealDateTime(utc, now: DateTime(2026, 11, 1, 22), locale: fr),
+            'Aujourd’hui 19:30',
+          );
+        },
+      );
     },
   );
 
@@ -323,6 +460,23 @@ void main() {
         expect(
           formatMealDateTime(instant, now: DateTime(2026, 1, 4, 9)),
           'Fri 2 Jan, 13:30',
+        );
+      });
+      test('French: local day and clock, not UTC', () {
+        expect(formatClockTime(instant, locale: fr), '13:30');
+        expect(formatMonthDay(instant, locale: fr), '2 janv.');
+        expect(formatLongDate(instant, locale: fr), '2 janvier 2026');
+        expect(
+          formatMealDateTime(instant, now: DateTime(2026, 1, 1, 9), locale: fr),
+          'Demain 13:30',
+        );
+        expect(
+          formatDayLabel(instant, now: DateTime(2026, 1, 3, 9), locale: fr),
+          'Hier',
+        );
+        expect(
+          formatMealDateTime(instant, now: DateTime(2026, 1, 4, 9), locale: fr),
+          'ven. 2 janv., 13:30',
         );
       });
     },

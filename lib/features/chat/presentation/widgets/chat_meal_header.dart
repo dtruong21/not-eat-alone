@@ -23,6 +23,7 @@ class ChatMealHeader extends ConsumerWidget {
     if (meal == null) return const SizedBox.shrink();
 
     final wp = context.wp;
+    final locale = Localizations.localeOf(context);
     return InkWell(
       key: const Key('chat_meal_header'),
       onTap: () => context.push('/meals/detail', extra: meal),
@@ -37,7 +38,7 @@ class ChatMealHeader extends ConsumerWidget {
               Expanded(
                 child: Text(
                   '${meal.restaurant.name} · '
-                  '${formatMealDateTime(meal.dateTime)}',
+                  '${formatMealDateTime(meal.dateTime, locale: locale)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(

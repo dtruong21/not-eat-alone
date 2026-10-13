@@ -83,7 +83,10 @@ class MealDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
               Text(
-                formatMealDateTime(meal.dateTime),
+                formatMealDateTime(
+                  meal.dateTime,
+                  locale: Localizations.localeOf(context),
+                ),
                 style: textTheme.bodyMedium?.copyWith(
                   color: colors.onSurface,
                   fontWeight: WarmPlayfulType.h2Weight,

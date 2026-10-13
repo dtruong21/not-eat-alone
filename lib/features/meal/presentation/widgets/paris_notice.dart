@@ -3,7 +3,7 @@
 ///
 /// Stateless: the discovery screen owns the per-session dismissed flag (so
 /// the choice survives the list rebuilding or being scrolled). Persisting it
-/// across sessions would need `shared_preferences`, which is not a dependency.
+/// across sessions (`shared_preferences` is now available) is a follow-up.
 library;
 
 import 'package:flutter/material.dart';

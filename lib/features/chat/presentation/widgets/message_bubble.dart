@@ -66,7 +66,10 @@ class MessageBubble extends StatelessWidget {
           if (showTimestamp && message.createdAt != null) ...[
             const SizedBox(height: WarmPlayfulSpacing.s1),
             Text(
-              formatClockTime(message.createdAt!),
+              formatClockTime(
+                message.createdAt!,
+                locale: Localizations.localeOf(context),
+              ),
               style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
             ),
           ],

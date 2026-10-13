@@ -247,6 +247,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   final ordered = groupMessages(
                     messages,
                     now: DateTime.now(),
+                    locale: Localizations.localeOf(context),
                   ).reversed.toList(growable: false);
                   return LayoutBuilder(
                     builder: (context, constraints) {

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:not_eat_alone/core/analytics/analytics_listener.dart';
 import 'package:not_eat_alone/core/config/emulator_config.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
@@ -47,17 +48,16 @@ Future<void> bootstrap({
     await FirebaseStorage.instance.useStorageEmulator(e.host, e.storagePort);
   } else {
     await FirebaseAppCheck.instance.activate(
-      androidProvider: kDebugMode
-          ? AndroidProvider.debug
-          : AndroidProvider.playIntegrity,
-      appleProvider: kDebugMode
-          ? AppleProvider.debug
-          : AppleProvider.deviceCheck,
+      androidProvider:
+          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+      appleProvider:
+          kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
     );
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
       !kDebugMode,
     );
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError =
+        FirebaseCrashlytics.instance.recordFlutterFatalError;
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
@@ -70,6 +70,8 @@ Future<void> bootstrap({
     // Google provider not yet configured in Firebase; sign-in surfaces the
     // error later.
   }
+  await initializeDateFormatting('en');
+  await initializeDateFormatting('fr');
   final savedLocale = await readSavedLocale();
   runApp(
     ProviderScope(

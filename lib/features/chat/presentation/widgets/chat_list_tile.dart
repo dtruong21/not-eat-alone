@@ -19,14 +19,18 @@ import 'package:not_eat_alone/features/user/application/user_providers.dart';
 /// "1m" / "2h" / "3d" / falls back to a short date beyond a week — kept as a
 /// small private helper rather than a shared util, since this is the only
 /// place that needs it.
-String _relativeTime(DateTime dateTime, {DateTime? now}) {
+String _relativeTime(
+  DateTime dateTime, {
+  DateTime? now,
+  Locale locale = const Locale('en'),
+}) {
   final reference = now ?? DateTime.now();
   final diff = reference.difference(dateTime);
   if (diff.inMinutes < 1) return 'now';
   if (diff.inHours < 1) return '${diff.inMinutes}m';
   if (diff.inDays < 1) return '${diff.inHours}h';
   if (diff.inDays < 7) return '${diff.inDays}d';
-  return formatMonthDay(dateTime);
+  return formatMonthDay(dateTime, locale: locale);
 }
 
 /// A single chat row. Watches [userDocProvider] for the other participant's
@@ -59,6 +63,7 @@ class ChatListTile extends ConsumerWidget {
         myUid != null &&
         lastMessage.senderId != myUid;
 
+    final locale = Localizations.localeOf(context);
     final photoUrl =
         (user?.photoUrls.isNotEmpty ?? false) ? user!.photoUrls.first : null;
     final name = user?.displayName ?? 'Chat';
@@ -110,7 +115,7 @@ class ChatListTile extends ConsumerWidget {
                       const SizedBox(height: WarmPlayfulSpacing.s1),
                       Text(
                         '${meal.restaurant.name} · '
-                        '${formatMealDateTime(meal.dateTime)}',
+                        '${formatMealDateTime(meal.dateTime, locale: locale)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(
@@ -136,7 +141,10 @@ class ChatListTile extends ConsumerWidget {
                 children: [
                   if (lastMessage?.createdAt != null)
                     Text(
-                      _relativeTime(lastMessage!.createdAt!),
+                      _relativeTime(
+                        lastMessage!.createdAt!,
+                        locale: locale,
+                      ),
                       style: textTheme.bodySmall?.copyWith(
                         color: context.wp.muted,
                       ),

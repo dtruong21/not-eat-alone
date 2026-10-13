@@ -203,6 +203,7 @@ class _MealCard extends StatelessWidget {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
     final meal = item.meal;
+    final locale = Localizations.localeOf(context);
 
     return Material(
       color: colors.surface,
@@ -239,7 +240,7 @@ class _MealCard extends StatelessWidget {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
-                '${formatMealDateTime(meal.dateTime)} · '
+                '${formatMealDateTime(meal.dateTime, locale: locale)} · '
                 '${_formatDistance(item.distanceMeters)}',
                 // Two lines: at large text the distance wraps instead of
                 // being cut off.
