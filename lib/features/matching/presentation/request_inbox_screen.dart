@@ -15,6 +15,7 @@ import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
 import 'package:not_eat_alone/features/matching/presentation/widgets/request_inbox_tile.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class RequestInboxScreen extends ConsumerWidget {
   const RequestInboxScreen({super.key});
@@ -28,9 +29,9 @@ class RequestInboxScreen extends ConsumerWidget {
       error: (error, stackTrace) =>
           ErrorState(onRetry: () => ref.invalidate(hostInboxProvider)),
       data: (requests) => requests.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               icon: Icons.inbox_rounded,
-              title: 'No pending requests',
+              title: context.l10n.inboxEmptyTitle,
             )
           : ListView.separated(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
@@ -44,7 +45,7 @@ class RequestInboxScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Requests')),
+      appBar: AppBar(title: Text(context.l10n.inboxTitle)),
       body: SafeArea(child: body),
     );
   }

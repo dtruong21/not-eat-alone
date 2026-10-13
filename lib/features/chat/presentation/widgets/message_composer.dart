@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/chat/application/chat_controller.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class MessageComposer extends ConsumerStatefulWidget {
   const MessageComposer({required this.matchId, super.key});
@@ -59,11 +60,9 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
     ref.listen<AsyncValue<void>>(chatControllerProvider, (previous, next) {
       if (previous?.isLoading == true && next.hasError) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Couldn't send your message. Try again."),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.chatSendFailed)));
       }
     });
 
@@ -93,10 +92,11 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => canSend ? _send() : null,
                   decoration: InputDecoration(
-                    hintText: 'Message',
+                    hintText: context.l10n.chatComposerHint,
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(WarmPlayfulRadius.pill),
+                      borderRadius: BorderRadius.circular(
+                        WarmPlayfulRadius.pill,
+                      ),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
@@ -111,7 +111,7 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
               const SizedBox(width: WarmPlayfulSpacing.s2),
               IconButton(
                 key: const Key('message_composer_send_button'),
-                tooltip: 'Send message',
+                tooltip: context.l10n.chatSendTooltip,
                 onPressed: canSend ? _send : null,
                 icon: isSending
                     ? SizedBox(

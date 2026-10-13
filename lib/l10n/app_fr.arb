@@ -394,5 +394,242 @@
         "type": "String"
       }
     }
+  },
+  "inboxTitle": "Demandes",
+  "@inboxTitle": {
+    "description": "App bar title of the host request inbox."
+  },
+  "inboxEmptyTitle": "Aucune demande en attente",
+  "@inboxEmptyTitle": {
+    "description": "Empty state of the host request inbox."
+  },
+  "inboxGuestFallback": "Invité·e",
+  "@inboxGuestFallback": {
+    "description": "Name shown for a requesting guest whose profile is not loaded."
+  },
+  "inboxGuestNameAge": "{name}, {age} ans",
+  "@inboxGuestNameAge": {
+    "description": "Guest name and age on a request row.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "inboxPastMeal": "L’heure du repas est passée",
+  "@inboxPastMeal": {
+    "description": "Chip, tooltip and hint on a request whose meal time is in the past."
+  },
+  "inboxApprove": "Accepter",
+  "@inboxApprove": {
+    "description": "Button that approves a join request."
+  },
+  "inboxApproving": "Acceptation…",
+  "@inboxApproving": {
+    "description": "Approve button label while the action is in flight."
+  },
+  "inboxDeny": "Refuser",
+  "@inboxDeny": {
+    "description": "Button that denies a join request."
+  },
+  "inboxDenying": "Refus…",
+  "@inboxDenying": {
+    "description": "Deny button label while the action is in flight."
+  },
+  "inboxActionChat": "Discuter",
+  "@inboxActionChat": {
+    "description": "Snackbar action that opens the chat after a successful approve."
+  },
+  "inboxOutcomeApproved": "Demande acceptée. Tu peux discuter maintenant.",
+  "@inboxOutcomeApproved": {
+    "description": "Snackbar after a request was approved."
+  },
+  "inboxOutcomeApproveFailed": "Impossible d’accepter cette demande. Elle a peut-être déjà été traitée.",
+  "@inboxOutcomeApproveFailed": {
+    "description": "Snackbar when approving failed for any reason other than the meal being closed."
+  },
+  "inboxOutcomeDenied": "Demande refusée.",
+  "@inboxOutcomeDenied": {
+    "description": "Snackbar after a request was denied."
+  },
+  "inboxOutcomeDenyFailed": "Impossible de refuser cette demande. Elle a peut-être déjà été traitée.",
+  "@inboxOutcomeDenyFailed": {
+    "description": "Snackbar when denying failed."
+  },
+  "chatListTitle": "Discussions",
+  "@chatListTitle": {
+    "description": "App bar title of the chat list."
+  },
+  "chatListEmptyTitle": "Pas encore de discussion",
+  "@chatListEmptyTitle": {
+    "description": "Empty state title of the chat list."
+  },
+  "chatListEmptyMessage": "Fais un match sur un repas pour lancer la discussion.",
+  "@chatListEmptyMessage": {
+    "description": "Empty state message of the chat list."
+  },
+  "chatListFindMeal": "Trouver un repas",
+  "@chatListFindMeal": {
+    "description": "Empty chat list button that opens Discover."
+  },
+  "chatSayHi": "Dis bonjour 👋",
+  "@chatSayHi": {
+    "description": "Preview of a chat with no message yet, and empty thread title."
+  },
+  "chatTitleFallback": "Discussion",
+  "@chatTitleFallback": {
+    "description": "Chat title while the other person’s name is not loaded."
+  },
+  "chatTimeNow": "à l’instant",
+  "@chatTimeNow": {
+    "description": "Relative time for under a minute ago, on the chat list."
+  },
+  "chatTimeMinutes": "{minutes} min",
+  "@chatTimeMinutes": {
+    "description": "Relative time in minutes on the chat list.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeHours": "{hours} h",
+  "@chatTimeHours": {
+    "description": "Relative time in hours on the chat list.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeDays": "{days} j",
+  "@chatTimeDays": {
+    "description": "Relative time in days on the chat list.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "chatUnreadSemantics": "Non lu",
+  "@chatUnreadSemantics": {
+    "description": "Accessibility label of the unread dot on a chat row."
+  },
+  "chatSeen": "Vu",
+  "@chatSeen": {
+    "description": "Marker under the sender’s latest message once the other person read it."
+  },
+  "chatComposerHint": "Message",
+  "@chatComposerHint": {
+    "description": "Hint of the message field."
+  },
+  "chatSendTooltip": "Envoyer le message",
+  "@chatSendTooltip": {
+    "description": "Tooltip and accessibility label of the send button."
+  },
+  "chatSendFailed": "Impossible d’envoyer ton message. Réessaie.",
+  "@chatSendFailed": {
+    "description": "Snackbar when sending a message failed."
+  },
+  "chatUnavailable": "Cette discussion n’est plus disponible — le repas a été annulé.",
+  "@chatUnavailable": {
+    "description": "Shown instead of the thread when the match is gone."
+  },
+  "chatBackToChats": "Retour aux discussions",
+  "@chatBackToChats": {
+    "description": "Button on the unavailable-chat state."
+  },
+  "leaveMatchTooltip": "Je ne peux pas venir",
+  "@leaveMatchTooltip": {
+    "description": "Tooltip of the app bar action that cancels or withdraws from a matched meal."
+  },
+  "leaveMatchOtherFallback": "l’autre personne",
+  "@leaveMatchOtherFallback": {
+    "description": "Stands in for the other person’s name in the leave dialog when it is not loaded."
+  },
+  "leaveMatchHostTitle": "Annuler ce repas ?",
+  "@leaveMatchHostTitle": {
+    "description": "Leave dialog title for the host."
+  },
+  "leaveMatchGuestTitle": "Te retirer de ce repas ?",
+  "@leaveMatchGuestTitle": {
+    "description": "Leave dialog title for the guest."
+  },
+  "leaveMatchHostBody": "On préviendra {name} et le repas sera supprimé.",
+  "@leaveMatchHostBody": {
+    "description": "Leave dialog body for the host; name is the guest.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchGuestBody": "On préviendra {name} et le repas sera de nouveau ouvert aux autres.",
+  "@leaveMatchGuestBody": {
+    "description": "Leave dialog body for the guest; name is the host.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchKeep": "Garder le repas",
+  "@leaveMatchKeep": {
+    "description": "Dialog button that keeps the meal."
+  },
+  "leaveMatchHostConfirm": "Annuler le repas",
+  "@leaveMatchHostConfirm": {
+    "description": "Dialog button that cancels the meal (host)."
+  },
+  "leaveMatchGuestConfirm": "Me retirer",
+  "@leaveMatchGuestConfirm": {
+    "description": "Dialog button that withdraws the guest."
+  },
+  "leaveMatchHostDone": "Repas annulé.",
+  "@leaveMatchHostDone": {
+    "description": "Snackbar after the host cancelled the meal."
+  },
+  "leaveMatchGuestDone": "Tu as annulé ta participation.",
+  "@leaveMatchGuestDone": {
+    "description": "Snackbar after the guest withdrew."
+  },
+  "leaveMatchFailed": "Annulation impossible. Vérifie ta connexion et réessaie.",
+  "@leaveMatchFailed": {
+    "description": "Snackbar when cancelling or withdrawing failed."
+  },
+  "safetyTipsBanner": "Bientôt à table ? Nos conseils de sécurité",
+  "@safetyTipsBanner": {
+    "description": "One-line banner above the chat thread."
+  },
+  "safetyTipsBannerDismiss": "Fermer les conseils de sécurité",
+  "@safetyTipsBannerDismiss": {
+    "description": "Tooltip of the banner close button."
+  },
+  "safetyTipsHeading": "Bientôt à table ? Reste en sécurité",
+  "@safetyTipsHeading": {
+    "description": "Heading of the safety tips sheet and screen."
+  },
+  "safetyTipPublicPlace": "Retrouve-toi dans un lieu public",
+  "@safetyTipPublicPlace": {
+    "description": "Safety tip 1."
+  },
+  "safetyTipTellFriend": "Préviens un proche de l’endroit où tu vas",
+  "@safetyTipTellFriend": {
+    "description": "Safety tip 2."
+  },
+  "safetyTipInstincts": "Fie-toi à ton instinct",
+  "@safetyTipInstincts": {
+    "description": "Safety tip 3."
+  },
+  "safetyTipBlockReport": "Tu peux bloquer ou signaler à tout moment",
+  "@safetyTipBlockReport": {
+    "description": "Safety tip 4."
+  },
+  "safetyTipsGotIt": "Compris",
+  "@safetyTipsGotIt": {
+    "description": "Button that closes the safety tips sheet."
   }
 }

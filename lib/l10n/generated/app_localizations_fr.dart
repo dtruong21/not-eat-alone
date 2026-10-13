@@ -299,4 +299,176 @@ class AppLocalizationsFr extends AppLocalizations {
   String restaurantSearchNoMatch(String query) {
     return 'Aucun restaurant ne s’appelle « $query ». Essaie un autre nom.';
   }
+
+  @override
+  String get inboxTitle => 'Demandes';
+
+  @override
+  String get inboxEmptyTitle => 'Aucune demande en attente';
+
+  @override
+  String get inboxGuestFallback => 'Invité·e';
+
+  @override
+  String inboxGuestNameAge(String name, int age) {
+    return '$name, $age ans';
+  }
+
+  @override
+  String get inboxPastMeal => 'L’heure du repas est passée';
+
+  @override
+  String get inboxApprove => 'Accepter';
+
+  @override
+  String get inboxApproving => 'Acceptation…';
+
+  @override
+  String get inboxDeny => 'Refuser';
+
+  @override
+  String get inboxDenying => 'Refus…';
+
+  @override
+  String get inboxActionChat => 'Discuter';
+
+  @override
+  String get inboxOutcomeApproved =>
+      'Demande acceptée. Tu peux discuter maintenant.';
+
+  @override
+  String get inboxOutcomeApproveFailed =>
+      'Impossible d’accepter cette demande. Elle a peut-être déjà été traitée.';
+
+  @override
+  String get inboxOutcomeDenied => 'Demande refusée.';
+
+  @override
+  String get inboxOutcomeDenyFailed =>
+      'Impossible de refuser cette demande. Elle a peut-être déjà été traitée.';
+
+  @override
+  String get chatListTitle => 'Discussions';
+
+  @override
+  String get chatListEmptyTitle => 'Pas encore de discussion';
+
+  @override
+  String get chatListEmptyMessage =>
+      'Fais un match sur un repas pour lancer la discussion.';
+
+  @override
+  String get chatListFindMeal => 'Trouver un repas';
+
+  @override
+  String get chatSayHi => 'Dis bonjour 👋';
+
+  @override
+  String get chatTitleFallback => 'Discussion';
+
+  @override
+  String get chatTimeNow => 'à l’instant';
+
+  @override
+  String chatTimeMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String chatTimeHours(int hours) {
+    return '$hours h';
+  }
+
+  @override
+  String chatTimeDays(int days) {
+    return '$days j';
+  }
+
+  @override
+  String get chatUnreadSemantics => 'Non lu';
+
+  @override
+  String get chatSeen => 'Vu';
+
+  @override
+  String get chatComposerHint => 'Message';
+
+  @override
+  String get chatSendTooltip => 'Envoyer le message';
+
+  @override
+  String get chatSendFailed => 'Impossible d’envoyer ton message. Réessaie.';
+
+  @override
+  String get chatUnavailable =>
+      'Cette discussion n’est plus disponible — le repas a été annulé.';
+
+  @override
+  String get chatBackToChats => 'Retour aux discussions';
+
+  @override
+  String get leaveMatchTooltip => 'Je ne peux pas venir';
+
+  @override
+  String get leaveMatchOtherFallback => 'l’autre personne';
+
+  @override
+  String get leaveMatchHostTitle => 'Annuler ce repas ?';
+
+  @override
+  String get leaveMatchGuestTitle => 'Te retirer de ce repas ?';
+
+  @override
+  String leaveMatchHostBody(String name) {
+    return 'On préviendra $name et le repas sera supprimé.';
+  }
+
+  @override
+  String leaveMatchGuestBody(String name) {
+    return 'On préviendra $name et le repas sera de nouveau ouvert aux autres.';
+  }
+
+  @override
+  String get leaveMatchKeep => 'Garder le repas';
+
+  @override
+  String get leaveMatchHostConfirm => 'Annuler le repas';
+
+  @override
+  String get leaveMatchGuestConfirm => 'Me retirer';
+
+  @override
+  String get leaveMatchHostDone => 'Repas annulé.';
+
+  @override
+  String get leaveMatchGuestDone => 'Tu as annulé ta participation.';
+
+  @override
+  String get leaveMatchFailed =>
+      'Annulation impossible. Vérifie ta connexion et réessaie.';
+
+  @override
+  String get safetyTipsBanner => 'Bientôt à table ? Nos conseils de sécurité';
+
+  @override
+  String get safetyTipsBannerDismiss => 'Fermer les conseils de sécurité';
+
+  @override
+  String get safetyTipsHeading => 'Bientôt à table ? Reste en sécurité';
+
+  @override
+  String get safetyTipPublicPlace => 'Retrouve-toi dans un lieu public';
+
+  @override
+  String get safetyTipTellFriend => 'Préviens un proche de l’endroit où tu vas';
+
+  @override
+  String get safetyTipInstincts => 'Fie-toi à ton instinct';
+
+  @override
+  String get safetyTipBlockReport =>
+      'Tu peux bloquer ou signaler à tout moment';
+
+  @override
+  String get safetyTipsGotIt => 'Compris';
 }

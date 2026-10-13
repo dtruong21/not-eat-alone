@@ -394,5 +394,242 @@
         "type": "String"
       }
     }
+  },
+  "inboxTitle": "Requests",
+  "@inboxTitle": {
+    "description": "App bar title of the host request inbox."
+  },
+  "inboxEmptyTitle": "No pending requests",
+  "@inboxEmptyTitle": {
+    "description": "Empty state of the host request inbox."
+  },
+  "inboxGuestFallback": "Guest",
+  "@inboxGuestFallback": {
+    "description": "Name shown for a requesting guest whose profile is not loaded."
+  },
+  "inboxGuestNameAge": "{name}, {age}",
+  "@inboxGuestNameAge": {
+    "description": "Guest name and age on a request row.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "inboxPastMeal": "Meal time has passed",
+  "@inboxPastMeal": {
+    "description": "Chip, tooltip and hint on a request whose meal time is in the past."
+  },
+  "inboxApprove": "Approve",
+  "@inboxApprove": {
+    "description": "Button that approves a join request."
+  },
+  "inboxApproving": "Approving…",
+  "@inboxApproving": {
+    "description": "Approve button label while the action is in flight."
+  },
+  "inboxDeny": "Deny",
+  "@inboxDeny": {
+    "description": "Button that denies a join request."
+  },
+  "inboxDenying": "Denying…",
+  "@inboxDenying": {
+    "description": "Deny button label while the action is in flight."
+  },
+  "inboxActionChat": "Chat",
+  "@inboxActionChat": {
+    "description": "Snackbar action that opens the chat after a successful approve."
+  },
+  "inboxOutcomeApproved": "Approved. You can chat now.",
+  "@inboxOutcomeApproved": {
+    "description": "Snackbar after a request was approved."
+  },
+  "inboxOutcomeApproveFailed": "Couldn't approve this request. It may already have been handled.",
+  "@inboxOutcomeApproveFailed": {
+    "description": "Snackbar when approving failed for any reason other than the meal being closed."
+  },
+  "inboxOutcomeDenied": "Request denied.",
+  "@inboxOutcomeDenied": {
+    "description": "Snackbar after a request was denied."
+  },
+  "inboxOutcomeDenyFailed": "Couldn't deny this request. It may already have been handled.",
+  "@inboxOutcomeDenyFailed": {
+    "description": "Snackbar when denying failed."
+  },
+  "chatListTitle": "Chats",
+  "@chatListTitle": {
+    "description": "App bar title of the chat list."
+  },
+  "chatListEmptyTitle": "No chats yet",
+  "@chatListEmptyTitle": {
+    "description": "Empty state title of the chat list."
+  },
+  "chatListEmptyMessage": "Match on a meal to start talking.",
+  "@chatListEmptyMessage": {
+    "description": "Empty state message of the chat list."
+  },
+  "chatListFindMeal": "Find a meal",
+  "@chatListFindMeal": {
+    "description": "Empty chat list button that opens Discover."
+  },
+  "chatSayHi": "Say hi 👋",
+  "@chatSayHi": {
+    "description": "Preview of a chat with no message yet, and empty thread title."
+  },
+  "chatTitleFallback": "Chat",
+  "@chatTitleFallback": {
+    "description": "Chat title while the other person’s name is not loaded."
+  },
+  "chatTimeNow": "now",
+  "@chatTimeNow": {
+    "description": "Relative time for under a minute ago, on the chat list."
+  },
+  "chatTimeMinutes": "{minutes}m",
+  "@chatTimeMinutes": {
+    "description": "Relative time in minutes on the chat list.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeHours": "{hours}h",
+  "@chatTimeHours": {
+    "description": "Relative time in hours on the chat list.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeDays": "{days}d",
+  "@chatTimeDays": {
+    "description": "Relative time in days on the chat list.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "chatUnreadSemantics": "Unread",
+  "@chatUnreadSemantics": {
+    "description": "Accessibility label of the unread dot on a chat row."
+  },
+  "chatSeen": "Seen",
+  "@chatSeen": {
+    "description": "Marker under the sender’s latest message once the other person read it."
+  },
+  "chatComposerHint": "Message",
+  "@chatComposerHint": {
+    "description": "Hint of the message field."
+  },
+  "chatSendTooltip": "Send message",
+  "@chatSendTooltip": {
+    "description": "Tooltip and accessibility label of the send button."
+  },
+  "chatSendFailed": "Couldn't send your message. Try again.",
+  "@chatSendFailed": {
+    "description": "Snackbar when sending a message failed."
+  },
+  "chatUnavailable": "This chat is no longer available — the meal was cancelled.",
+  "@chatUnavailable": {
+    "description": "Shown instead of the thread when the match is gone."
+  },
+  "chatBackToChats": "Back to chats",
+  "@chatBackToChats": {
+    "description": "Button on the unavailable-chat state."
+  },
+  "leaveMatchTooltip": "Can't make it",
+  "@leaveMatchTooltip": {
+    "description": "Tooltip of the app bar action that cancels or withdraws from a matched meal."
+  },
+  "leaveMatchOtherFallback": "Your match",
+  "@leaveMatchOtherFallback": {
+    "description": "Stands in for the other person’s name in the leave dialog when it is not loaded."
+  },
+  "leaveMatchHostTitle": "Cancel this meal?",
+  "@leaveMatchHostTitle": {
+    "description": "Leave dialog title for the host."
+  },
+  "leaveMatchGuestTitle": "Withdraw from this meal?",
+  "@leaveMatchGuestTitle": {
+    "description": "Leave dialog title for the guest."
+  },
+  "leaveMatchHostBody": "{name} will be told and the meal will be removed.",
+  "@leaveMatchHostBody": {
+    "description": "Leave dialog body for the host; name is the guest.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchGuestBody": "{name} will be told and the meal will open up again for others.",
+  "@leaveMatchGuestBody": {
+    "description": "Leave dialog body for the guest; name is the host.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchKeep": "Keep meal",
+  "@leaveMatchKeep": {
+    "description": "Dialog button that keeps the meal."
+  },
+  "leaveMatchHostConfirm": "Cancel meal",
+  "@leaveMatchHostConfirm": {
+    "description": "Dialog button that cancels the meal (host)."
+  },
+  "leaveMatchGuestConfirm": "Withdraw",
+  "@leaveMatchGuestConfirm": {
+    "description": "Dialog button that withdraws the guest."
+  },
+  "leaveMatchHostDone": "Meal cancelled.",
+  "@leaveMatchHostDone": {
+    "description": "Snackbar after the host cancelled the meal."
+  },
+  "leaveMatchGuestDone": "You've withdrawn.",
+  "@leaveMatchGuestDone": {
+    "description": "Snackbar after the guest withdrew."
+  },
+  "leaveMatchFailed": "Couldn't cancel. Check your connection and try again.",
+  "@leaveMatchFailed": {
+    "description": "Snackbar when cancelling or withdrawing failed."
+  },
+  "safetyTipsBanner": "Meeting up? Safety tips",
+  "@safetyTipsBanner": {
+    "description": "One-line banner above the chat thread."
+  },
+  "safetyTipsBannerDismiss": "Dismiss safety tips",
+  "@safetyTipsBannerDismiss": {
+    "description": "Tooltip of the banner close button."
+  },
+  "safetyTipsHeading": "Meeting up? Stay safe",
+  "@safetyTipsHeading": {
+    "description": "Heading of the safety tips sheet and screen."
+  },
+  "safetyTipPublicPlace": "Meet in a public place",
+  "@safetyTipPublicPlace": {
+    "description": "Safety tip 1."
+  },
+  "safetyTipTellFriend": "Tell a friend where you're going",
+  "@safetyTipTellFriend": {
+    "description": "Safety tip 2."
+  },
+  "safetyTipInstincts": "Trust your instincts",
+  "@safetyTipInstincts": {
+    "description": "Safety tip 3."
+  },
+  "safetyTipBlockReport": "You can block or report anytime",
+  "@safetyTipBlockReport": {
+    "description": "Safety tip 4."
+  },
+  "safetyTipsGotIt": "Got it",
+  "@safetyTipsGotIt": {
+    "description": "Button that closes the safety tips sheet."
   }
 }

@@ -9,6 +9,7 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
@@ -42,8 +43,9 @@ class MessageBubble extends StatelessWidget {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
-        crossAxisAlignment:
-            mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: mine
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Container(
             key: Key('message_bubble_${message.id}'),
@@ -75,7 +77,7 @@ class MessageBubble extends StatelessWidget {
           ],
           if (showSeen)
             Text(
-              'Seen',
+              context.l10n.chatSeen,
               style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
             ),
         ],

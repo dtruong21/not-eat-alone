@@ -619,6 +619,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No restaurant called “{query}”. Try another name.'**
   String restaurantSearchNoMatch(String query);
+
+  /// App bar title of the host request inbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get inboxTitle;
+
+  /// Empty state of the host request inbox.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get inboxEmptyTitle;
+
+  /// Name shown for a requesting guest whose profile is not loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get inboxGuestFallback;
+
+  /// Guest name and age on a request row.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {age}'**
+  String inboxGuestNameAge(String name, int age);
+
+  /// Chip, tooltip and hint on a request whose meal time is in the past.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal time has passed'**
+  String get inboxPastMeal;
+
+  /// Button that approves a join request.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get inboxApprove;
+
+  /// Approve button label while the action is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Approving…'**
+  String get inboxApproving;
+
+  /// Button that denies a join request.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get inboxDeny;
+
+  /// Deny button label while the action is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Denying…'**
+  String get inboxDenying;
+
+  /// Snackbar action that opens the chat after a successful approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get inboxActionChat;
+
+  /// Snackbar after a request was approved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved. You can chat now.'**
+  String get inboxOutcomeApproved;
+
+  /// Snackbar when approving failed for any reason other than the meal being closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t approve this request. It may already have been handled.'**
+  String get inboxOutcomeApproveFailed;
+
+  /// Snackbar after a request was denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Request denied.'**
+  String get inboxOutcomeDenied;
+
+  /// Snackbar when denying failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t deny this request. It may already have been handled.'**
+  String get inboxOutcomeDenyFailed;
+
+  /// App bar title of the chat list.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get chatListTitle;
+
+  /// Empty state title of the chat list.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet'**
+  String get chatListEmptyTitle;
+
+  /// Empty state message of the chat list.
+  ///
+  /// In en, this message translates to:
+  /// **'Match on a meal to start talking.'**
+  String get chatListEmptyMessage;
+
+  /// Empty chat list button that opens Discover.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a meal'**
+  String get chatListFindMeal;
+
+  /// Preview of a chat with no message yet, and empty thread title.
+  ///
+  /// In en, this message translates to:
+  /// **'Say hi 👋'**
+  String get chatSayHi;
+
+  /// Chat title while the other person’s name is not loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chatTitleFallback;
+
+  /// Relative time for under a minute ago, on the chat list.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get chatTimeNow;
+
+  /// Relative time in minutes on the chat list.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String chatTimeMinutes(int minutes);
+
+  /// Relative time in hours on the chat list.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h'**
+  String chatTimeHours(int hours);
+
+  /// Relative time in days on the chat list.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d'**
+  String chatTimeDays(int days);
+
+  /// Accessibility label of the unread dot on a chat row.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get chatUnreadSemantics;
+
+  /// Marker under the sender’s latest message once the other person read it.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get chatSeen;
+
+  /// Hint of the message field.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get chatComposerHint;
+
+  /// Tooltip and accessibility label of the send button.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get chatSendTooltip;
+
+  /// Snackbar when sending a message failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send your message. Try again.'**
+  String get chatSendFailed;
+
+  /// Shown instead of the thread when the match is gone.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat is no longer available — the meal was cancelled.'**
+  String get chatUnavailable;
+
+  /// Button on the unavailable-chat state.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to chats'**
+  String get chatBackToChats;
+
+  /// Tooltip of the app bar action that cancels or withdraws from a matched meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t make it'**
+  String get leaveMatchTooltip;
+
+  /// Stands in for the other person’s name in the leave dialog when it is not loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Your match'**
+  String get leaveMatchOtherFallback;
+
+  /// Leave dialog title for the host.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this meal?'**
+  String get leaveMatchHostTitle;
+
+  /// Leave dialog title for the guest.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw from this meal?'**
+  String get leaveMatchGuestTitle;
+
+  /// Leave dialog body for the host; name is the guest.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will be told and the meal will be removed.'**
+  String leaveMatchHostBody(String name);
+
+  /// Leave dialog body for the guest; name is the host.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will be told and the meal will open up again for others.'**
+  String leaveMatchGuestBody(String name);
+
+  /// Dialog button that keeps the meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep meal'**
+  String get leaveMatchKeep;
+
+  /// Dialog button that cancels the meal (host).
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel meal'**
+  String get leaveMatchHostConfirm;
+
+  /// Dialog button that withdraws the guest.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get leaveMatchGuestConfirm;
+
+  /// Snackbar after the host cancelled the meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal cancelled.'**
+  String get leaveMatchHostDone;
+
+  /// Snackbar after the guest withdrew.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve withdrawn.'**
+  String get leaveMatchGuestDone;
+
+  /// Snackbar when cancelling or withdrawing failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t cancel. Check your connection and try again.'**
+  String get leaveMatchFailed;
+
+  /// One-line banner above the chat thread.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting up? Safety tips'**
+  String get safetyTipsBanner;
+
+  /// Tooltip of the banner close button.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss safety tips'**
+  String get safetyTipsBannerDismiss;
+
+  /// Heading of the safety tips sheet and screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting up? Stay safe'**
+  String get safetyTipsHeading;
+
+  /// Safety tip 1.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet in a public place'**
+  String get safetyTipPublicPlace;
+
+  /// Safety tip 2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell a friend where you\'re going'**
+  String get safetyTipTellFriend;
+
+  /// Safety tip 3.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust your instincts'**
+  String get safetyTipInstincts;
+
+  /// Safety tip 4.
+  ///
+  /// In en, this message translates to:
+  /// **'You can block or report anytime'**
+  String get safetyTipBlockReport;
+
+  /// Button that closes the safety tips sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get safetyTipsGotIt;
 }
 
 class _AppLocalizationsDelegate

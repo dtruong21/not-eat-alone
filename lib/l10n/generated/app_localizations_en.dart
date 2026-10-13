@@ -297,4 +297,173 @@ class AppLocalizationsEn extends AppLocalizations {
   String restaurantSearchNoMatch(String query) {
     return 'No restaurant called “$query”. Try another name.';
   }
+
+  @override
+  String get inboxTitle => 'Requests';
+
+  @override
+  String get inboxEmptyTitle => 'No pending requests';
+
+  @override
+  String get inboxGuestFallback => 'Guest';
+
+  @override
+  String inboxGuestNameAge(String name, int age) {
+    return '$name, $age';
+  }
+
+  @override
+  String get inboxPastMeal => 'Meal time has passed';
+
+  @override
+  String get inboxApprove => 'Approve';
+
+  @override
+  String get inboxApproving => 'Approving…';
+
+  @override
+  String get inboxDeny => 'Deny';
+
+  @override
+  String get inboxDenying => 'Denying…';
+
+  @override
+  String get inboxActionChat => 'Chat';
+
+  @override
+  String get inboxOutcomeApproved => 'Approved. You can chat now.';
+
+  @override
+  String get inboxOutcomeApproveFailed =>
+      'Couldn\'t approve this request. It may already have been handled.';
+
+  @override
+  String get inboxOutcomeDenied => 'Request denied.';
+
+  @override
+  String get inboxOutcomeDenyFailed =>
+      'Couldn\'t deny this request. It may already have been handled.';
+
+  @override
+  String get chatListTitle => 'Chats';
+
+  @override
+  String get chatListEmptyTitle => 'No chats yet';
+
+  @override
+  String get chatListEmptyMessage => 'Match on a meal to start talking.';
+
+  @override
+  String get chatListFindMeal => 'Find a meal';
+
+  @override
+  String get chatSayHi => 'Say hi 👋';
+
+  @override
+  String get chatTitleFallback => 'Chat';
+
+  @override
+  String get chatTimeNow => 'now';
+
+  @override
+  String chatTimeMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String chatTimeHours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String chatTimeDays(int days) {
+    return '${days}d';
+  }
+
+  @override
+  String get chatUnreadSemantics => 'Unread';
+
+  @override
+  String get chatSeen => 'Seen';
+
+  @override
+  String get chatComposerHint => 'Message';
+
+  @override
+  String get chatSendTooltip => 'Send message';
+
+  @override
+  String get chatSendFailed => 'Couldn\'t send your message. Try again.';
+
+  @override
+  String get chatUnavailable =>
+      'This chat is no longer available — the meal was cancelled.';
+
+  @override
+  String get chatBackToChats => 'Back to chats';
+
+  @override
+  String get leaveMatchTooltip => 'Can\'t make it';
+
+  @override
+  String get leaveMatchOtherFallback => 'Your match';
+
+  @override
+  String get leaveMatchHostTitle => 'Cancel this meal?';
+
+  @override
+  String get leaveMatchGuestTitle => 'Withdraw from this meal?';
+
+  @override
+  String leaveMatchHostBody(String name) {
+    return '$name will be told and the meal will be removed.';
+  }
+
+  @override
+  String leaveMatchGuestBody(String name) {
+    return '$name will be told and the meal will open up again for others.';
+  }
+
+  @override
+  String get leaveMatchKeep => 'Keep meal';
+
+  @override
+  String get leaveMatchHostConfirm => 'Cancel meal';
+
+  @override
+  String get leaveMatchGuestConfirm => 'Withdraw';
+
+  @override
+  String get leaveMatchHostDone => 'Meal cancelled.';
+
+  @override
+  String get leaveMatchGuestDone => 'You\'ve withdrawn.';
+
+  @override
+  String get leaveMatchFailed =>
+      'Couldn\'t cancel. Check your connection and try again.';
+
+  @override
+  String get safetyTipsBanner => 'Meeting up? Safety tips';
+
+  @override
+  String get safetyTipsBannerDismiss => 'Dismiss safety tips';
+
+  @override
+  String get safetyTipsHeading => 'Meeting up? Stay safe';
+
+  @override
+  String get safetyTipPublicPlace => 'Meet in a public place';
+
+  @override
+  String get safetyTipTellFriend => 'Tell a friend where you\'re going';
+
+  @override
+  String get safetyTipInstincts => 'Trust your instincts';
+
+  @override
+  String get safetyTipBlockReport => 'You can block or report anytime';
+
+  @override
+  String get safetyTipsGotIt => 'Got it';
 }

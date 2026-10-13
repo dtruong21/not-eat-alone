@@ -13,7 +13,7 @@
 /// the meal at all (the server rules remain the source of truth).
 ///
 /// Every Approve/Deny outcome is surfaced as a SnackBar via
-/// `inboxActionMessage`; a successful approve adds a **Chat** action.
+/// `inboxOutcome`; a successful approve adds a **Chat** action.
 library;
 
 import 'package:flutter/material.dart';
@@ -31,8 +31,8 @@ import 'package:not_eat_alone/features/matching/domain/entities/join_request.dar
 import 'package:not_eat_alone/features/matching/presentation/widgets/inbox_action_message.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
-const _pastMealLabel = 'Meal time has passed';
 const _snackBarDuration = Duration(seconds: 6);
 const _a11ySnackBarDuration = Duration(seconds: 8);
 
@@ -62,6 +62,7 @@ class RequestInboxTile extends ConsumerWidget {
     // The screen's `ScaffoldMessenger` and the router are ANCESTORS that stay
     // mounted, so the captured references still work.
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final router = GoRouter.maybeOf(context);
     final accessibleNavigation = MediaQuery.accessibleNavigationOf(context);
     final controller = ref.read(inboxActionControllerProvider.notifier);
@@ -79,7 +80,9 @@ class RequestInboxTile extends ConsumerWidget {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(inboxActionMessage(action, error)),
+          content: Text(
+            localizeInboxOutcome(l10n, inboxOutcome(action, error)),
+          ),
           persist: false,
           showCloseIcon: hasChat,
           duration: accessibleNavigation
@@ -87,7 +90,7 @@ class RequestInboxTile extends ConsumerWidget {
               : _snackBarDuration,
           action: hasChat
               ? SnackBarAction(
-                  label: 'Chat',
+                  label: l10n.inboxActionChat,
                   onPressed: () => router.push('/chats/${request.mealId}'),
                 )
               : null,
@@ -107,12 +110,14 @@ class RequestInboxTile extends ConsumerWidget {
         ? guest.photoUrls.first
         : null;
     final guestAge = guest?.ageYears;
+    final l10n = context.l10n;
+    final pastMealLabel = l10n.inboxPastMeal;
+    final guestName = guest?.displayName ?? l10n.inboxGuestFallback;
     final label = guest == null
-        ? 'Guest'
-        : [
-            guest.displayName ?? 'Guest',
-            if (guestAge != null) guestAge,
-          ].join(', ');
+        ? l10n.inboxGuestFallback
+        : guestAge == null
+        ? guestName
+        : l10n.inboxGuestNameAge(guestName, guestAge);
 
     // Busy only for THIS request (the controller's own state is shared).
     final pendingAction = ref.watch(
@@ -134,11 +139,11 @@ class RequestInboxTile extends ConsumerWidget {
     // why Approve is disabled.
     final approveButton = MergeSemantics(
       child: Semantics(
-        hint: isPast ? _pastMealLabel : null,
+        hint: isPast ? pastMealLabel : null,
         child: AppButton(
           key: Key('request_inbox_approve_button_${request.id}'),
-          label: 'Approve',
-          loadingLabel: 'Approving…',
+          label: l10n.inboxApprove,
+          loadingLabel: l10n.inboxApproving,
           expand: false,
           maxLines: 1,
           isLoading: pendingAction == InboxAction.approve,
@@ -156,8 +161,8 @@ class RequestInboxTile extends ConsumerWidget {
       ),
       child: AppButton(
         key: Key('request_inbox_deny_button_${request.id}'),
-        label: 'Deny',
-        loadingLabel: 'Denying…',
+        label: l10n.inboxDeny,
+        loadingLabel: l10n.inboxDenying,
         variant: AppButtonVariant.text,
         expand: false,
         maxLines: 1,
@@ -256,7 +261,7 @@ class RequestInboxTile extends ConsumerWidget {
                             ),
                           ),
                           child: Text(
-                            _pastMealLabel,
+                            pastMealLabel,
                             // One line always: at 320 px and large text scales
                             // the label may ellipsize; the meaning is also
                             // carried by the disabled Approve's tooltip and
@@ -287,7 +292,7 @@ class RequestInboxTile extends ConsumerWidget {
               children: [
                 denyButton,
                 if (isPast)
-                  Tooltip(message: _pastMealLabel, child: approveButton)
+                  Tooltip(message: pastMealLabel, child: approveButton)
                 else
                   approveButton,
               ],

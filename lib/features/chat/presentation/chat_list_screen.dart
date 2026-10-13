@@ -17,6 +17,7 @@ import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart';
 import 'package:not_eat_alone/features/chat/presentation/widgets/chat_list_tile.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
@@ -26,7 +27,7 @@ class ChatListScreen extends ConsumerWidget {
     final chatsAsync = ref.watch(chatListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
+      appBar: AppBar(title: Text(context.l10n.chatListTitle)),
       body: SafeArea(
         child: chatsAsync.when(
           loading: () => const SkeletonList(),
@@ -36,10 +37,10 @@ class ChatListScreen extends ConsumerWidget {
             if (items.isEmpty) {
               return EmptyState(
                 icon: Icons.chat_bubble_outline_rounded,
-                title: 'No chats yet',
-                message: 'Match on a meal to start talking.',
+                title: context.l10n.chatListEmptyTitle,
+                message: context.l10n.chatListEmptyMessage,
                 action: AppButton(
-                  label: 'Find a meal',
+                  label: context.l10n.chatListFindMeal,
                   onPressed: () => context.go('/discover'),
                 ),
               );
@@ -49,8 +50,7 @@ class ChatListScreen extends ConsumerWidget {
               itemCount: items.length,
               separatorBuilder: (context, index) =>
                   const SizedBox(height: WarmPlayfulSpacing.s2),
-              itemBuilder: (context, index) =>
-                  ChatListTile(item: items[index]),
+              itemBuilder: (context, index) => ChatListTile(item: items[index]),
             );
           },
         ),
