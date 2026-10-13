@@ -87,5 +87,12 @@ void main() {
         'en',
       );
     });
+
+    test('an unsupported explicit choice is ignored', () {
+      expect(
+        resolveAppLanguage(const Locale('de'), const [Locale('fr')]),
+        'fr',
+      );
+    });
   });
 }

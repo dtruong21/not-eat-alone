@@ -42,10 +42,12 @@ class PushRegistrationController extends _$PushRegistrationController {
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
         final repo = ref.read(pushRepositoryProvider);
-        final lang = _currentLang();
         final granted = await repo.requestPermission();
         await analytics.track(PushPermissionGranted(granted: granted));
         if (granted) {
+          // After the permission await: a language change made while the
+          // prompt was up is not lost.
+          final lang = _currentLang();
           await repo.registerToken(uid, lang: lang);
           _registeredLink?.close();
           _registeredUid = uid;

@@ -145,6 +145,22 @@ void main() {
       },
     );
 
+    test('a locale change during the permission prompt is not lost', () async {
+      final gate = Completer<bool>();
+      when(
+        () => pushRepository.requestPermission(),
+      ).thenAnswer((_) => gate.future);
+      final registering = container
+          .read(pushRegistrationControllerProvider.notifier)
+          .register('uid_1');
+      container.read(localeControllerProvider.notifier).state = const Locale(
+        'fr',
+      );
+      gate.complete(true);
+      await registering;
+      verify(() => pushRepository.registerToken('uid_1', lang: 'fr')).called(1);
+    });
+
     test('a locale change triggers exactly one updateTokenLanguage', () async {
       await registerGranted();
       container.read(localeControllerProvider.notifier).state = const Locale(
