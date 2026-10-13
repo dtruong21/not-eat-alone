@@ -237,6 +237,18 @@ Forgetting `part 'routes.g.dart';` in `routes.dart` results in cryptic "unresolv
 
 `flutter_animate` schedules a `Future.delayed` that is never cancelled, so a test that builds a skeleton (`SkeletonCard`/`SkeletonList`/`SkeletonMessages`) must advance a frame with `await tester.pump(const Duration(milliseconds: 1))` (a bare `pump()` never fires it) and must **never** `pumpAndSettle()` (the shimmer loop never settles; it times out). Symptom: "A Timer is still pending" or a `pumpAndSettle` timeout. Fix: `pump(Duration)`, or `MediaQueryData(disableAnimations: true)` to render the skeleton still.
 
+### Gotcha 7 — Localization (apostrophes, plurals, generated files, test setup)
+
+- **Apostrophes (gen_l10n 3.47, `use-escaping` off in `l10n.yaml`, the default):** `'` is a plain character in EVERY message, plurals and selects included (verified on a generated plural), so write a single `'` (or `’`). `''` is NOT an escape here: it renders twice (`Couldn''t`). The "write `''`" advice you will read elsewhere only holds with `use-escaping: true`, which we do not set. French copy uses `’` throughout. `test/l10n/arb_lint_test.dart` enforces it: no `''` in any message, no ASCII `'` in French, every plural has `other`, and `use-escaping` stays off.
+- **French plurals** use `one`/`other` (0 and 1 are `one`), not `=1`; write the `{count}` in both branches.
+- **Both ARBs, always.** `test/l10n/arb_parity_test.dart` fails when keys or placeholder names/types differ, a value is empty or an `@key` description is missing. Never edit only `app_en.arb`.
+- **Generated l10n is committed** (`lib/l10n/generated/`): CI does not run `gen-l10n`. After any ARB change run `fvm flutter gen-l10n` and commit the diff.
+- **`context.l10n`** (`lib/l10n/l10n.dart`) falls back to English when the tree has no localization delegates, so tests with a bare `MaterialApp` keep working; to test French use `pumpLocalized(tester, widget, locale: const Locale('fr'))` (`test/support/pump_localized.dart`).
+- **`AppLocalizations` only in `presentation/` and `core/` UI helpers.** Domain/application return enums/typed values and presentation maps them to text (see `inbox_action_message.dart`).
+- **Dates:** `test/flutter_test_config.dart` runs `initializeDateFormatting` for `en` and `fr` before each test file; the list must match `main_common.dart` and `supportedAppLocales`. Without it `DateFormat` throws `LocaleDataException`.
+- **No hard-coded UI text:** `test/l10n/hardcoded_strings_guard_test.dart` scans `lib/features` and `lib/core` for `Text('…')` and `label:`/`hintText:`/`labelText:`/`tooltip:`/`semanticLabel:`/`semanticsLabel:` literals; extract to the ARBs or allow-list in `test/l10n/hardcoded_strings_allowlist.txt` with a reason.
+- **Review table:** `fvm dart run tool/l10n_review.dart` regenerates `docs/l10n/FRENCH-REVIEW.md`.
+
 ---
 
 ## 6. When this doc changes

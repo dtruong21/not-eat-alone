@@ -167,6 +167,20 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
 - [ ] **Cancelled meal.** Host cancels a matched meal from the chat; the guest taps the meal header in the chat: the meal page shows "Meal cancelled" and "The host cancelled this meal." (a screen already open on the meal does not update until reopened: known).
 - [ ] **Large text.** Largest text size on a small iPhone: inbox buttons stack with Approve on top, the chat post-meal card shows the Rate button full width below the text, the rating row on Profile wraps, and Settings and Blocked people rows stay readable.
 
+### French + English, language switch (UX plan 19) — automated
+
+- [x] `test/l10n/arb_parity_test.dart` (same keys, placeholder names/types, no empty values, every key described), `test/l10n/arb_lint_test.dart` (no `''` anywhere because `use-escaping` is off, no ASCII `'` in French, plurals have `other`), `test/l10n/hardcoded_strings_guard_test.dart` (no new hard-coded `Text('…')` / `label:` / `hintText:` / `labelText:` / `tooltip:` / `semanticLabel:` literal in `lib/features` or `lib/core`; allow-list in `hardcoded_strings_allowlist.txt` with a reason per entry), `test/l10n/l10n_test.dart` (`context.l10n` English fallback, French under `pumpLocalized`, live switch via `LocaleController`).
+- [x] `test/core/locale/locale_controller_test.dart` (seed, persistence, device-following), `test/features/settings/presentation/language_picker_test.dart` (Language row, live switch, saved and restored, System default follows the device, selected option announced, tapping the selected option closes, 320 px / 2.0x), `test/core/util/date_format_test.dart` (French dates; also run under `TZ=Pacific/Kiritimati` and `TZ=America/Los_Angeles`).
+- [x] One `*_fr_test.dart` per area: auth (`signin_screen_fr`, `phone_verify_screen_fr`), `onboarding_fr`, `discovery_fr`, `meal_detail_fr` (all 9 action-bar states on one line at 1.3x / 320 px), `create_meal_fr`, `restaurant_search_fr`, `request_inbox_fr`, `chat_fr`, `safety_fr`, `rating_fr`, `settings_fr`, `profile_fr`, `app_shell_fr`, `error_state_fr`: French present, English absent, NBSP typography, apostrophe names, plural counts, no overflow at 320 px / 2.0x.
+- [ ] Manual QA (device or simulator; cannot run headless):
+  - **Switch language.** Settings > Language > Français: Settings turns French at once, the bottom tabs and the open screens follow; back to English; "System default" with the phone in French shows French.
+  - **Device language at first launch.** Fresh install with the device set to French: the sign-in screen is French with no manual step; set to German/Spanish: English.
+  - **Persisted language.** Choose Français, force-quit and reopen: still French; choose System default, reopen: follows the device.
+  - **VoiceOver in French.** French voice: tab names, buttons, the meal action bar, "Non lu", "Débloquer <nom>", star ratings ("3 étoiles") and the language dialog (selected option announced) read sensibly; times like "5 min" read as minutes.
+  - **Typography.** No line starts with "?", "!", ":" or "»" at 320 px wide (NBSP held).
+  - **Native review** of `docs/l10n/FRENCH-REVIEW.md` by a French speaker, applied to `lib/l10n/app_fr.arb` (then `fvm flutter gen-l10n`, update the `*_fr_test.dart` expectations, `fvm dart run tool/l10n_review.dart`) before store submission.
+  - Known gap: push notification text from Cloud Functions is still English (needs server-side i18n and the user's language stored server-side).
+
 ---
 
 ## Feature checklists
