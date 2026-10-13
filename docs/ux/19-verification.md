@@ -72,7 +72,7 @@ Not defects: apostrophes are curly everywhere, a non-breaking space keeps "?", "
 | Native French review of `docs/l10n/FRENCH-REVIEW.md` (the table was regenerated: "Messages", "Créer un repas" and the Paris notice changed in this task) | P2 | Native reviewer |
 | Android notification settings row (needs an Android settings intent, so a package) | P3 | Follow-up (Android) |
 | `ci.yml` runs the date tests only under Pacific/Kiritimati, so the America/Los_Angeles DST group never runs in CI (run by hand here, green) | P3 | CI owner |
-| The Paris notice is not remembered after dismissal (comes back on the next launch) | P3 | Follow-up (persist the dismissal, e.g. in `SharedPreferences`) |
+| ~~The Paris notice is not remembered after dismissal~~ | P3 | Fixed (follow-ups plan 21): the dismissal is stored on this device (`SharedPreferences`, `paris_notice_dismissed`) |
 | Meal line in the chat list ellipsized at default size for some dates | P3 | Later polish |
 | Language picker: re-tapping the selected option is not reachable by screen readers (the barrier still dismisses the dialog) | P3 | Follow-up (a11y) |
 | `ci.yml` path filter does not include `l10n.yaml`, so a change to it alone does not trigger the PR gate | P3 | CI owner (`ci.yml`) |
@@ -80,6 +80,10 @@ Not defects: apostrophes are curly everywhere, a non-breaking space keeps "?", "
 | Native French review items beyond the table: `ratingBadgeNew` ("Nouveau"), "Ouvrir dans Maps" vs "Plans", "Nous"/"On" register, "Réglages", `createMealNoteLabel` ("Note (facultative)") | P2 | Native reviewer |
 | Seeded demo content (restaurant names, bios, messages) stays English because it is data; user-written content is never translated | Info | none |
 | The harness `_fr` map must follow `app_fr.arb` by hand (a changed French string shows up as a failed step, not silently) | P3 (tooling) | Harness |
-| Carried over from plan 18 and not touched by this plan: `settleOrQueue` 3 s wait, live meal stream while the detail screen is open, "Meal ended" bar state, snackbar persistence, Google "G" asset, Android phone auto-verification, `AppButton` loading colour, `RatingBadge` semantics, `93_discover_error` not producible | P2-P3 | See `docs/ux/18-verification.md` |
+| Carried over from plan 18 and not touched by this plan: Google "G" asset, Android phone auto-verification, `AppButton` loading colour, `RatingBadge` semantics, `93_discover_error` not producible | P2-P3 | See `docs/ux/18-verification.md` |
+| ~~Post-meal rating card: the Rate button read "Rate Giulia Pe…"~~ | P3 | Fixed (follow-ups plan 21): short "Rate" / "Noter" button, the person is named in the card subtitle and the button's screen-reader label |
+| ~~Joining a meal that just closed showed a generic failure~~ | P3 | Fixed (follow-ups plan 21): "This meal is no longer open." |
+| ~~A write refused after the 3 s offline grace was only logged, so the user believed it went through~~ | P2 | Fixed (follow-ups plan 21): the user is told |
+| ~~Meal detail was a static snapshot (a meal cancelled while open stayed "Request to join"; no "Meal ended" state)~~ | P2 | Fixed (follow-ups plan 21): live `meals/{id}` stream, new "Meal ended" state, deleted/hidden meal shows "This meal is no longer open." |
 
 Widget-tested only (not seen in the capture): the language picker sheet and its live rebuild, the Settings licence page, the iOS notification row opening Settings, "Meal cancelled" on meal detail.
