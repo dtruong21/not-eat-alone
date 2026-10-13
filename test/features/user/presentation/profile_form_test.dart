@@ -231,9 +231,9 @@ void main() {
       user: _user(),
     );
     expect(captured!.missingFields, [
-      'a photo',
-      'your name',
-      'how you identify',
+      ProfileMissingField.photo,
+      ProfileMissingField.name,
+      ProfileMissingField.gender,
     ]);
 
     const complete = ProfileFormData(
@@ -250,7 +250,7 @@ void main() {
         bio: null,
         photoCount: 2,
       ).missingFields,
-      ['your name'],
+      [ProfileMissingField.name],
     );
   });
 

@@ -466,4 +466,294 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get safetyTipsGotIt => 'Got it';
+
+  @override
+  String get commonSubmit => 'Submit';
+
+  @override
+  String get commonSubmitting => 'Submitting…';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String get safetyReportAction => 'Report';
+
+  @override
+  String get safetyBlockAction => 'Block';
+
+  @override
+  String safetyBlockTitleNamed(String name) {
+    return 'Block $name?';
+  }
+
+  @override
+  String get safetyBlockTitleGeneric => 'Block this person?';
+
+  @override
+  String get safetyBlockBody => 'You won\'t see each other in Convyve anymore.';
+
+  @override
+  String get safetyBlockFailed => 'Couldn\'t block. Try again.';
+
+  @override
+  String get safetyBlockDone => 'Blocked.';
+
+  @override
+  String get safetyTipsTitle => 'Safety tips';
+
+  @override
+  String reportTitleNamed(String name) {
+    return 'Report $name';
+  }
+
+  @override
+  String get reportTitleMeal => 'Report this meal';
+
+  @override
+  String get reportReasonInappropriate => 'Inappropriate content';
+
+  @override
+  String get reportReasonSpam => 'Spam';
+
+  @override
+  String get reportReasonHarassment => 'Harassment';
+
+  @override
+  String get reportReasonFake => 'Fake profile';
+
+  @override
+  String get reportReasonOther => 'Other';
+
+  @override
+  String get reportNoteHint => 'Add a note (optional)';
+
+  @override
+  String get reportFailed => 'Couldn\'t submit your report. Try again.';
+
+  @override
+  String get reportThanks => 'Thanks — we\'ll review this.';
+
+  @override
+  String get blockedTitle => 'Blocked people';
+
+  @override
+  String get blockedEmptyTitle => 'You haven\'t blocked anyone';
+
+  @override
+  String get blockedEmptyMessage =>
+      'People you block are hidden from your meals and chats.';
+
+  @override
+  String get blockedUnknownUser => 'Unknown user';
+
+  @override
+  String get blockedUnblock => 'Unblock';
+
+  @override
+  String blockedUnblockSemantics(String name) {
+    return 'Unblock $name';
+  }
+
+  @override
+  String get blockedUnblocking => 'Unblocking…';
+
+  @override
+  String blockedUnblocked(String name) {
+    return 'Unblocked $name.';
+  }
+
+  @override
+  String get blockedUnblockFailed => 'Couldn\'t unblock. Try again.';
+
+  @override
+  String ratingTitleNamed(String name) {
+    return 'How was your meal with $name?';
+  }
+
+  @override
+  String get ratingTitle => 'How was your meal?';
+
+  @override
+  String ratingStarTooltip(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stars',
+      one: '1 star',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ratingShowedUp => 'Did they show up?';
+
+  @override
+  String get ratingCommentHint => 'Add a comment (optional)';
+
+  @override
+  String get ratingFailed => 'Couldn\'t submit your rating. Try again.';
+
+  @override
+  String get ratingThanks => 'Thanks for the feedback!';
+
+  @override
+  String get ratingCardSubtitle => 'It only takes a moment.';
+
+  @override
+  String get ratingRate => 'Rate';
+
+  @override
+  String ratingRateNamed(String name) {
+    return 'Rate $name';
+  }
+
+  @override
+  String get ratingBadgeNew => 'New';
+
+  @override
+  String ratingBadgeScore(double average, int count) {
+    final intl.NumberFormat averageNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String averageString = averageNumberFormat.format(average);
+
+    return '$averageString ($count)';
+  }
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsSectionAccount => 'Account';
+
+  @override
+  String get settingsEditProfile => 'Edit profile';
+
+  @override
+  String get settingsPhoneNumber => 'Phone number';
+
+  @override
+  String get settingsSignOut => 'Sign out';
+
+  @override
+  String get settingsSignOutTitle => 'Sign out?';
+
+  @override
+  String get settingsSectionSafety => 'Safety';
+
+  @override
+  String get settingsContactSupport => 'Contact support';
+
+  @override
+  String settingsMailFailed(String email) {
+    return 'Couldn\'t open your mail app. Write to $email';
+  }
+
+  @override
+  String get settingsSectionNotifications => 'Notifications';
+
+  @override
+  String get settingsNotificationSettings => 'Notification settings';
+
+  @override
+  String get settingsNotificationSubtitle =>
+      'Manage notifications in iOS Settings';
+
+  @override
+  String get settingsSectionLegal => 'Legal';
+
+  @override
+  String get settingsPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get settingsTermsOfService => 'Terms of Service';
+
+  @override
+  String get settingsLicenses => 'Open-source licences';
+
+  @override
+  String get settingsSectionAbout => 'About';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String get settingsVersionLoading => 'Loading…';
+
+  @override
+  String get settingsVersionUnavailable => 'Unavailable';
+
+  @override
+  String get settingsDeleteAccount => 'Delete account';
+
+  @override
+  String get settingsDeleteTitle => 'Delete account?';
+
+  @override
+  String get settingsDeleteBody =>
+      'This permanently deletes your account and all your data. This can\'t be undone.';
+
+  @override
+  String get settingsDeleteFailed => 'Couldn\'t delete account. Try again.';
+
+  @override
+  String get profileSaved => 'Profile saved';
+
+  @override
+  String get profileYourRating => 'Your rating';
+
+  @override
+  String get profileNoRatings => 'No ratings yet';
+
+  @override
+  String get profileFormPhotos => 'Photos';
+
+  @override
+  String get profileFormRemovePhoto => 'Remove photo';
+
+  @override
+  String get profileFormAddPhoto => 'Add photo';
+
+  @override
+  String get profileFormUploadingPhoto => 'Uploading photo';
+
+  @override
+  String get profileFormName => 'Name';
+
+  @override
+  String get profileFormGenderHeading => 'I am a';
+
+  @override
+  String get profileFormBio => 'Bio';
+
+  @override
+  String get genderWoman => 'Woman';
+
+  @override
+  String get genderMan => 'Man';
+
+  @override
+  String get genderNonBinary => 'Non-binary';
+
+  @override
+  String get profileMissingPhoto => 'a photo';
+
+  @override
+  String get profileMissingName => 'your name';
+
+  @override
+  String get profileMissingGender => 'how you identify';
+
+  @override
+  String profileMissingTwo(String first, String second) {
+    return '$first and $second';
+  }
+
+  @override
+  String profileMissingThree(String first, String second, String third) {
+    return '$first, $second and $third';
+  }
 }

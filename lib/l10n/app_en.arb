@@ -631,5 +631,412 @@
   "safetyTipsGotIt": "Got it",
   "@safetyTipsGotIt": {
     "description": "Button that closes the safety tips sheet."
+  },
+  "commonSubmit": "Submit",
+  "@commonSubmit": {
+    "description": "Primary button that sends a short form (report, rating)."
+  },
+  "commonSubmitting": "Submitting…",
+  "@commonSubmitting": {
+    "description": "Label shown on a submit button while it is in flight."
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Primary button that saves edits."
+  },
+  "safetyReportAction": "Report",
+  "@safetyReportAction": {
+    "description": "Safety menu item and report sheet title when the target is unnamed."
+  },
+  "safetyBlockAction": "Block",
+  "@safetyBlockAction": {
+    "description": "Safety menu item and confirm button that blocks a person."
+  },
+  "safetyBlockTitleNamed": "Block {name}?",
+  "@safetyBlockTitleNamed": {
+    "description": "Title of the block confirmation dialog when the person is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyBlockTitleGeneric": "Block this person?",
+  "@safetyBlockTitleGeneric": {
+    "description": "Title of the block confirmation dialog when the name is unknown."
+  },
+  "safetyBlockBody": "You won't see each other in Convyve anymore.",
+  "@safetyBlockBody": {
+    "description": "Body of the block confirmation dialog."
+  },
+  "safetyBlockFailed": "Couldn't block. Try again.",
+  "@safetyBlockFailed": {
+    "description": "Snackbar when blocking failed."
+  },
+  "safetyBlockDone": "Blocked.",
+  "@safetyBlockDone": {
+    "description": "Snackbar after a successful block."
+  },
+  "safetyTipsTitle": "Safety tips",
+  "@safetyTipsTitle": {
+    "description": "App bar title of the Safety tips screen and Settings row label."
+  },
+  "reportTitleNamed": "Report {name}",
+  "@reportTitleNamed": {
+    "description": "Report sheet title when the person is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTitleMeal": "Report this meal",
+  "@reportTitleMeal": {
+    "description": "Report sheet title when the target is a meal."
+  },
+  "reportReasonInappropriate": "Inappropriate content",
+  "@reportReasonInappropriate": {
+    "description": "Report reason chip."
+  },
+  "reportReasonSpam": "Spam",
+  "@reportReasonSpam": {
+    "description": "Report reason chip."
+  },
+  "reportReasonHarassment": "Harassment",
+  "@reportReasonHarassment": {
+    "description": "Report reason chip."
+  },
+  "reportReasonFake": "Fake profile",
+  "@reportReasonFake": {
+    "description": "Report reason chip."
+  },
+  "reportReasonOther": "Other",
+  "@reportReasonOther": {
+    "description": "Report reason chip."
+  },
+  "reportNoteHint": "Add a note (optional)",
+  "@reportNoteHint": {
+    "description": "Hint of the optional note field in the report sheet."
+  },
+  "reportFailed": "Couldn't submit your report. Try again.",
+  "@reportFailed": {
+    "description": "Snackbar when sending a report failed."
+  },
+  "reportThanks": "Thanks — we'll review this.",
+  "@reportThanks": {
+    "description": "Snackbar after a report was sent."
+  },
+  "blockedTitle": "Blocked people",
+  "@blockedTitle": {
+    "description": "Title of the blocked people screen and Settings row."
+  },
+  "blockedEmptyTitle": "You haven't blocked anyone",
+  "@blockedEmptyTitle": {
+    "description": "Empty-state title of the blocked people screen."
+  },
+  "blockedEmptyMessage": "People you block are hidden from your meals and chats.",
+  "@blockedEmptyMessage": {
+    "description": "Empty-state message of the blocked people screen."
+  },
+  "blockedUnknownUser": "Unknown user",
+  "@blockedUnknownUser": {
+    "description": "Name shown for a blocked person whose profile cannot be loaded."
+  },
+  "blockedUnblock": "Unblock",
+  "@blockedUnblock": {
+    "description": "Button that unblocks a person."
+  },
+  "blockedUnblockSemantics": "Unblock {name}",
+  "@blockedUnblockSemantics": {
+    "description": "Screen-reader label of the Unblock button, naming the person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblocking": "Unblocking…",
+  "@blockedUnblocking": {
+    "description": "Label of the Unblock button while it is in flight."
+  },
+  "blockedUnblocked": "Unblocked {name}.",
+  "@blockedUnblocked": {
+    "description": "Snackbar after unblocking a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblockFailed": "Couldn't unblock. Try again.",
+  "@blockedUnblockFailed": {
+    "description": "Snackbar when unblocking failed."
+  },
+  "ratingTitleNamed": "How was your meal with {name}?",
+  "@ratingTitleNamed": {
+    "description": "Rating sheet title when the partner is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingTitle": "How was your meal?",
+  "@ratingTitle": {
+    "description": "Rating sheet title and post-meal card headline."
+  },
+  "ratingStarTooltip": "{count, plural, =1{1 star} other{{count} stars}}",
+  "@ratingStarTooltip": {
+    "description": "Tooltip and screen-reader label of one star button in the rating sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ratingShowedUp": "Did they show up?",
+  "@ratingShowedUp": {
+    "description": "Label of the show-up switch in the rating sheet."
+  },
+  "ratingCommentHint": "Add a comment (optional)",
+  "@ratingCommentHint": {
+    "description": "Hint of the optional comment field in the rating sheet."
+  },
+  "ratingFailed": "Couldn't submit your rating. Try again.",
+  "@ratingFailed": {
+    "description": "Snackbar when sending a rating failed."
+  },
+  "ratingThanks": "Thanks for the feedback!",
+  "@ratingThanks": {
+    "description": "Snackbar after a rating was sent."
+  },
+  "ratingCardSubtitle": "It only takes a moment.",
+  "@ratingCardSubtitle": {
+    "description": "Subtitle of the post-meal card."
+  },
+  "ratingRate": "Rate",
+  "@ratingRate": {
+    "description": "Post-meal card button when the partner is unnamed."
+  },
+  "ratingRateNamed": "Rate {name}",
+  "@ratingRateNamed": {
+    "description": "Post-meal card button naming the partner.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingBadgeNew": "New",
+  "@ratingBadgeNew": {
+    "description": "Badge shown instead of a score when a person has no ratings yet."
+  },
+  "ratingBadgeScore": "{average} ({count})",
+  "@ratingBadgeScore": {
+    "description": "Rating badge: average (one decimal) and number of ratings.",
+    "placeholders": {
+      "average": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {
+          "decimalDigits": 1
+        }
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings screen title and the Profile app bar tooltip."
+  },
+  "settingsSectionAccount": "Account",
+  "@settingsSectionAccount": {
+    "description": "Settings section header."
+  },
+  "settingsEditProfile": "Edit profile",
+  "@settingsEditProfile": {
+    "description": "Settings row that opens the Profile tab."
+  },
+  "settingsPhoneNumber": "Phone number",
+  "@settingsPhoneNumber": {
+    "description": "Settings row showing the signed-in phone number."
+  },
+  "settingsSignOut": "Sign out",
+  "@settingsSignOut": {
+    "description": "Settings row and confirm button that signs the user out."
+  },
+  "settingsSignOutTitle": "Sign out?",
+  "@settingsSignOutTitle": {
+    "description": "Title of the sign-out confirmation dialog."
+  },
+  "settingsSectionSafety": "Safety",
+  "@settingsSectionSafety": {
+    "description": "Settings section header."
+  },
+  "settingsContactSupport": "Contact support",
+  "@settingsContactSupport": {
+    "description": "Settings row that opens a mail to support."
+  },
+  "settingsMailFailed": "Couldn't open your mail app. Write to {email}",
+  "@settingsMailFailed": {
+    "description": "Snackbar when the mail app could not be opened; email is the support address.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSectionNotifications": "Notifications",
+  "@settingsSectionNotifications": {
+    "description": "Settings section header (iOS)."
+  },
+  "settingsNotificationSettings": "Notification settings",
+  "@settingsNotificationSettings": {
+    "description": "Settings row that opens the iOS Settings page of the app."
+  },
+  "settingsNotificationSubtitle": "Manage notifications in iOS Settings",
+  "@settingsNotificationSubtitle": {
+    "description": "Subtitle of the notification settings row."
+  },
+  "settingsSectionLegal": "Legal",
+  "@settingsSectionLegal": {
+    "description": "Settings section header."
+  },
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "@settingsPrivacyPolicy": {
+    "description": "Settings row that opens the privacy policy."
+  },
+  "settingsTermsOfService": "Terms of Service",
+  "@settingsTermsOfService": {
+    "description": "Settings row that opens the terms of service."
+  },
+  "settingsLicenses": "Open-source licences",
+  "@settingsLicenses": {
+    "description": "Settings row that opens the open-source licences page."
+  },
+  "settingsSectionAbout": "About",
+  "@settingsSectionAbout": {
+    "description": "Settings section header."
+  },
+  "settingsVersion": "Version",
+  "@settingsVersion": {
+    "description": "Settings row showing the app version."
+  },
+  "settingsVersionLoading": "Loading…",
+  "@settingsVersionLoading": {
+    "description": "Subtitle of the version row while it loads."
+  },
+  "settingsVersionUnavailable": "Unavailable",
+  "@settingsVersionUnavailable": {
+    "description": "Subtitle of the version row when it could not be read."
+  },
+  "settingsDeleteAccount": "Delete account",
+  "@settingsDeleteAccount": {
+    "description": "Settings row and confirm button that deletes the account."
+  },
+  "settingsDeleteTitle": "Delete account?",
+  "@settingsDeleteTitle": {
+    "description": "Title of the delete-account confirmation dialog."
+  },
+  "settingsDeleteBody": "This permanently deletes your account and all your data. This can't be undone.",
+  "@settingsDeleteBody": {
+    "description": "Body of the delete-account confirmation dialog."
+  },
+  "settingsDeleteFailed": "Couldn't delete account. Try again.",
+  "@settingsDeleteFailed": {
+    "description": "Snackbar when deleting the account failed."
+  },
+  "profileSaved": "Profile saved",
+  "@profileSaved": {
+    "description": "Snackbar after saving the profile."
+  },
+  "profileYourRating": "Your rating",
+  "@profileYourRating": {
+    "description": "Label before the rating badge on the Profile tab."
+  },
+  "profileNoRatings": "No ratings yet",
+  "@profileNoRatings": {
+    "description": "Shown on the Profile tab when the user has no ratings."
+  },
+  "profileFormPhotos": "Photos",
+  "@profileFormPhotos": {
+    "description": "Heading of the photo grid in the profile form."
+  },
+  "profileFormRemovePhoto": "Remove photo",
+  "@profileFormRemovePhoto": {
+    "description": "Tooltip and screen-reader label of the remove button on a photo."
+  },
+  "profileFormAddPhoto": "Add photo",
+  "@profileFormAddPhoto": {
+    "description": "Label of the add-photo tile."
+  },
+  "profileFormUploadingPhoto": "Uploading photo",
+  "@profileFormUploadingPhoto": {
+    "description": "Screen-reader label of the add-photo tile while a photo uploads."
+  },
+  "profileFormName": "Name",
+  "@profileFormName": {
+    "description": "Label of the name field."
+  },
+  "profileFormGenderHeading": "I am a",
+  "@profileFormGenderHeading": {
+    "description": "Heading above the gender choices; the choice completes the phrase."
+  },
+  "profileFormBio": "Bio",
+  "@profileFormBio": {
+    "description": "Label of the bio field."
+  },
+  "genderWoman": "Woman",
+  "@genderWoman": {
+    "description": "Gender choice."
+  },
+  "genderMan": "Man",
+  "@genderMan": {
+    "description": "Gender choice."
+  },
+  "genderNonBinary": "Non-binary",
+  "@genderNonBinary": {
+    "description": "Gender choice."
+  },
+  "profileMissingPhoto": "a photo",
+  "@profileMissingPhoto": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingName": "your name",
+  "@profileMissingName": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingGender": "how you identify",
+  "@profileMissingGender": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingTwo": "{first} and {second}",
+  "@profileMissingTwo": {
+    "description": "Joins two missing profile fields.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "profileMissingThree": "{first}, {second} and {third}",
+  "@profileMissingThree": {
+    "description": "Joins three missing profile fields.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "third": {
+        "type": "String"
+      }
+    }
   }
 }

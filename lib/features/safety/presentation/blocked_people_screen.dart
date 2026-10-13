@@ -17,6 +17,7 @@ import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/safety/application/block_providers.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class BlockedPeopleScreen extends ConsumerWidget {
   const BlockedPeopleScreen({super.key});
@@ -25,7 +26,7 @@ class BlockedPeopleScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final blocked = ref.watch(blockedByMeProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked people')),
+      appBar: AppBar(title: Text(context.l10n.blockedTitle)),
       body: SafeArea(
         child: blocked.when(
           skipLoadingOnReload: true,
@@ -33,11 +34,10 @@ class BlockedPeopleScreen extends ConsumerWidget {
           error: (error, stackTrace) =>
               ErrorState(onRetry: () => ref.invalidate(blockedByMeProvider)),
           data: (uids) => uids.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: Icons.block_rounded,
-                  title: "You haven't blocked anyone",
-                  message:
-                      'People you block are hidden from your meals and chats.',
+                  title: context.l10n.blockedEmptyTitle,
+                  message: context.l10n.blockedEmptyMessage,
                 )
               : ListView(
                   children: [
@@ -64,6 +64,7 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
   bool _busy = false;
 
   Future<void> _unblock(String name) async {
+    final l10n = context.l10n;
     // Everything the post-await code needs is read first: the stream drops
     // this row (and unmounts it) as soon as the delete applies locally.
     final messenger = ScaffoldMessenger.of(context);
@@ -75,24 +76,23 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
       await repo.unblock(me, widget.uid);
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text('Unblocked $name.')));
+        ..showSnackBar(SnackBar(content: Text(l10n.blockedUnblocked(name))));
       // Normally the stream drops this row first; if it lags or errors the
       // row must not spin forever.
       if (mounted) setState(() => _busy = false);
     } on Object {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text("Couldn't unblock. Try again.")),
-        );
+        ..showSnackBar(SnackBar(content: Text(l10n.blockedUnblockFailed)));
       if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final user = ref.watch(userDocProvider(widget.uid)).value;
-    final name = user?.displayName ?? 'Unknown user';
+    final name = user?.displayName ?? l10n.blockedUnknownUser;
     final photoUrl = (user != null && user.photoUrls.isNotEmpty)
         ? user.photoUrls.first
         : null;
@@ -100,10 +100,10 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
 
     final button = AppButton(
       key: Key('unblock_button_${widget.uid}'),
-      label: 'Unblock',
+      label: l10n.blockedUnblock,
       // Several rows say 'Unblock': screen readers need to know who.
-      semanticLabel: 'Unblock $name',
-      loadingLabel: 'Unblocking…',
+      semanticLabel: l10n.blockedUnblockSemantics(name),
+      loadingLabel: l10n.blockedUnblocking,
       variant: AppButtonVariant.outlined,
       expand: false,
       maxLines: 1,

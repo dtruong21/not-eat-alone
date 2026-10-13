@@ -925,6 +925,510 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Got it'**
   String get safetyTipsGotIt;
+
+  /// Primary button that sends a short form (report, rating).
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get commonSubmit;
+
+  /// Label shown on a submit button while it is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get commonSubmitting;
+
+  /// Primary button that saves edits.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// Safety menu item and report sheet title when the target is unnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get safetyReportAction;
+
+  /// Safety menu item and confirm button that blocks a person.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get safetyBlockAction;
+
+  /// Title of the block confirmation dialog when the person is named.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String safetyBlockTitleNamed(String name);
+
+  /// Title of the block confirmation dialog when the name is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this person?'**
+  String get safetyBlockTitleGeneric;
+
+  /// Body of the block confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t see each other in Convyve anymore.'**
+  String get safetyBlockBody;
+
+  /// Snackbar when blocking failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t block. Try again.'**
+  String get safetyBlockFailed;
+
+  /// Snackbar after a successful block.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked.'**
+  String get safetyBlockDone;
+
+  /// App bar title of the Safety tips screen and Settings row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety tips'**
+  String get safetyTipsTitle;
+
+  /// Report sheet title when the person is named.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {name}'**
+  String reportTitleNamed(String name);
+
+  /// Report sheet title when the target is a meal.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this meal'**
+  String get reportTitleMeal;
+
+  /// Report reason chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate content'**
+  String get reportReasonInappropriate;
+
+  /// Report reason chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get reportReasonSpam;
+
+  /// Report reason chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment'**
+  String get reportReasonHarassment;
+
+  /// Report reason chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Fake profile'**
+  String get reportReasonFake;
+
+  /// Report reason chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportReasonOther;
+
+  /// Hint of the optional note field in the report sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a note (optional)'**
+  String get reportNoteHint;
+
+  /// Snackbar when sending a report failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t submit your report. Try again.'**
+  String get reportFailed;
+
+  /// Snackbar after a report was sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks — we\'ll review this.'**
+  String get reportThanks;
+
+  /// Title of the blocked people screen and Settings row.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked people'**
+  String get blockedTitle;
+
+  /// Empty-state title of the blocked people screen.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t blocked anyone'**
+  String get blockedEmptyTitle;
+
+  /// Empty-state message of the blocked people screen.
+  ///
+  /// In en, this message translates to:
+  /// **'People you block are hidden from your meals and chats.'**
+  String get blockedEmptyMessage;
+
+  /// Name shown for a blocked person whose profile cannot be loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown user'**
+  String get blockedUnknownUser;
+
+  /// Button that unblocks a person.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get blockedUnblock;
+
+  /// Screen-reader label of the Unblock button, naming the person.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock {name}'**
+  String blockedUnblockSemantics(String name);
+
+  /// Label of the Unblock button while it is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocking…'**
+  String get blockedUnblocking;
+
+  /// Snackbar after unblocking a person.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocked {name}.'**
+  String blockedUnblocked(String name);
+
+  /// Snackbar when unblocking failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t unblock. Try again.'**
+  String get blockedUnblockFailed;
+
+  /// Rating sheet title when the partner is named.
+  ///
+  /// In en, this message translates to:
+  /// **'How was your meal with {name}?'**
+  String ratingTitleNamed(String name);
+
+  /// Rating sheet title and post-meal card headline.
+  ///
+  /// In en, this message translates to:
+  /// **'How was your meal?'**
+  String get ratingTitle;
+
+  /// Tooltip and screen-reader label of one star button in the rating sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 star} other{{count} stars}}'**
+  String ratingStarTooltip(int count);
+
+  /// Label of the show-up switch in the rating sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Did they show up?'**
+  String get ratingShowedUp;
+
+  /// Hint of the optional comment field in the rating sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment (optional)'**
+  String get ratingCommentHint;
+
+  /// Snackbar when sending a rating failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t submit your rating. Try again.'**
+  String get ratingFailed;
+
+  /// Snackbar after a rating was sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for the feedback!'**
+  String get ratingThanks;
+
+  /// Subtitle of the post-meal card.
+  ///
+  /// In en, this message translates to:
+  /// **'It only takes a moment.'**
+  String get ratingCardSubtitle;
+
+  /// Post-meal card button when the partner is unnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get ratingRate;
+
+  /// Post-meal card button naming the partner.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate {name}'**
+  String ratingRateNamed(String name);
+
+  /// Badge shown instead of a score when a person has no ratings yet.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get ratingBadgeNew;
+
+  /// Rating badge: average (one decimal) and number of ratings.
+  ///
+  /// In en, this message translates to:
+  /// **'{average} ({count})'**
+  String ratingBadgeScore(double average, int count);
+
+  /// Settings screen title and the Profile app bar tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// Settings section header.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsSectionAccount;
+
+  /// Settings row that opens the Profile tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get settingsEditProfile;
+
+  /// Settings row showing the signed-in phone number.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get settingsPhoneNumber;
+
+  /// Settings row and confirm button that signs the user out.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get settingsSignOut;
+
+  /// Title of the sign-out confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get settingsSignOutTitle;
+
+  /// Settings section header.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get settingsSectionSafety;
+
+  /// Settings row that opens a mail to support.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact support'**
+  String get settingsContactSupport;
+
+  /// Snackbar when the mail app could not be opened; email is the support address.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open your mail app. Write to {email}'**
+  String settingsMailFailed(String email);
+
+  /// Settings section header (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsSectionNotifications;
+
+  /// Settings row that opens the iOS Settings page of the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification settings'**
+  String get settingsNotificationSettings;
+
+  /// Subtitle of the notification settings row.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage notifications in iOS Settings'**
+  String get settingsNotificationSubtitle;
+
+  /// Settings section header.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal'**
+  String get settingsSectionLegal;
+
+  /// Settings row that opens the privacy policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get settingsPrivacyPolicy;
+
+  /// Settings row that opens the terms of service.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get settingsTermsOfService;
+
+  /// Settings row that opens the open-source licences page.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licences'**
+  String get settingsLicenses;
+
+  /// Settings section header.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsSectionAbout;
+
+  /// Settings row showing the app version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsVersion;
+
+  /// Subtitle of the version row while it loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get settingsVersionLoading;
+
+  /// Subtitle of the version row when it could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get settingsVersionUnavailable;
+
+  /// Settings row and confirm button that deletes the account.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get settingsDeleteAccount;
+
+  /// Title of the delete-account confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account?'**
+  String get settingsDeleteTitle;
+
+  /// Body of the delete-account confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account and all your data. This can\'t be undone.'**
+  String get settingsDeleteBody;
+
+  /// Snackbar when deleting the account failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete account. Try again.'**
+  String get settingsDeleteFailed;
+
+  /// Snackbar after saving the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved'**
+  String get profileSaved;
+
+  /// Label before the rating badge on the Profile tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating'**
+  String get profileYourRating;
+
+  /// Shown on the Profile tab when the user has no ratings.
+  ///
+  /// In en, this message translates to:
+  /// **'No ratings yet'**
+  String get profileNoRatings;
+
+  /// Heading of the photo grid in the profile form.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get profileFormPhotos;
+
+  /// Tooltip and screen-reader label of the remove button on a photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get profileFormRemovePhoto;
+
+  /// Label of the add-photo tile.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get profileFormAddPhoto;
+
+  /// Screen-reader label of the add-photo tile while a photo uploads.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading photo'**
+  String get profileFormUploadingPhoto;
+
+  /// Label of the name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get profileFormName;
+
+  /// Heading above the gender choices; the choice completes the phrase.
+  ///
+  /// In en, this message translates to:
+  /// **'I am a'**
+  String get profileFormGenderHeading;
+
+  /// Label of the bio field.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get profileFormBio;
+
+  /// Gender choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Woman'**
+  String get genderWoman;
+
+  /// Gender choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Man'**
+  String get genderMan;
+
+  /// Gender choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-binary'**
+  String get genderNonBinary;
+
+  /// Missing profile field, as part of the still-needed list.
+  ///
+  /// In en, this message translates to:
+  /// **'a photo'**
+  String get profileMissingPhoto;
+
+  /// Missing profile field, as part of the still-needed list.
+  ///
+  /// In en, this message translates to:
+  /// **'your name'**
+  String get profileMissingName;
+
+  /// Missing profile field, as part of the still-needed list.
+  ///
+  /// In en, this message translates to:
+  /// **'how you identify'**
+  String get profileMissingGender;
+
+  /// Joins two missing profile fields.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String profileMissingTwo(String first, String second);
+
+  /// Joins three missing profile fields.
+  ///
+  /// In en, this message translates to:
+  /// **'{first}, {second} and {third}'**
+  String profileMissingThree(String first, String second, String third);
 }
 
 class _AppLocalizationsDelegate

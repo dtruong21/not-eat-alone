@@ -471,4 +471,296 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get safetyTipsGotIt => 'Compris';
+
+  @override
+  String get commonSubmit => 'Envoyer';
+
+  @override
+  String get commonSubmitting => 'Envoi…';
+
+  @override
+  String get commonSave => 'Enregistrer';
+
+  @override
+  String get safetyReportAction => 'Signaler';
+
+  @override
+  String get safetyBlockAction => 'Bloquer';
+
+  @override
+  String safetyBlockTitleNamed(String name) {
+    return 'Bloquer $name ?';
+  }
+
+  @override
+  String get safetyBlockTitleGeneric => 'Bloquer cette personne ?';
+
+  @override
+  String get safetyBlockBody =>
+      'Tu ne verras plus cette personne sur Convyve, et elle ne te verra plus.';
+
+  @override
+  String get safetyBlockFailed => 'Impossible de bloquer. Réessaie.';
+
+  @override
+  String get safetyBlockDone => 'Personne bloquée.';
+
+  @override
+  String get safetyTipsTitle => 'Conseils de sécurité';
+
+  @override
+  String reportTitleNamed(String name) {
+    return 'Signaler $name';
+  }
+
+  @override
+  String get reportTitleMeal => 'Signaler ce repas';
+
+  @override
+  String get reportReasonInappropriate => 'Contenu inapproprié';
+
+  @override
+  String get reportReasonSpam => 'Spam';
+
+  @override
+  String get reportReasonHarassment => 'Harcèlement';
+
+  @override
+  String get reportReasonFake => 'Faux profil';
+
+  @override
+  String get reportReasonOther => 'Autre';
+
+  @override
+  String get reportNoteHint => 'Ajoute une note (facultatif)';
+
+  @override
+  String get reportFailed => 'Impossible d’envoyer ton signalement. Réessaie.';
+
+  @override
+  String get reportThanks => 'Merci, on va examiner ça.';
+
+  @override
+  String get blockedTitle => 'Personnes bloquées';
+
+  @override
+  String get blockedEmptyTitle => 'Tu n’as bloqué personne';
+
+  @override
+  String get blockedEmptyMessage =>
+      'Les personnes que tu bloques sont masquées de tes repas et de tes discussions.';
+
+  @override
+  String get blockedUnknownUser => 'Utilisateur inconnu';
+
+  @override
+  String get blockedUnblock => 'Débloquer';
+
+  @override
+  String blockedUnblockSemantics(String name) {
+    return 'Débloquer $name';
+  }
+
+  @override
+  String get blockedUnblocking => 'Déblocage…';
+
+  @override
+  String blockedUnblocked(String name) {
+    return 'Tu as débloqué $name.';
+  }
+
+  @override
+  String get blockedUnblockFailed => 'Impossible de débloquer. Réessaie.';
+
+  @override
+  String ratingTitleNamed(String name) {
+    return 'Comment s’est passé ton repas avec $name ?';
+  }
+
+  @override
+  String get ratingTitle => 'Comment s’est passé ton repas ?';
+
+  @override
+  String ratingStarTooltip(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count étoiles',
+      one: '$count étoile',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ratingShowedUp => 'La personne est-elle venue ?';
+
+  @override
+  String get ratingCommentHint => 'Ajoute un commentaire (facultatif)';
+
+  @override
+  String get ratingFailed => 'Impossible d’envoyer ta note. Réessaie.';
+
+  @override
+  String get ratingThanks => 'Merci pour ton retour !';
+
+  @override
+  String get ratingCardSubtitle => 'Ça ne prend qu’un instant.';
+
+  @override
+  String get ratingRate => 'Noter';
+
+  @override
+  String ratingRateNamed(String name) {
+    return 'Noter $name';
+  }
+
+  @override
+  String get ratingBadgeNew => 'Nouveau';
+
+  @override
+  String ratingBadgeScore(double average, int count) {
+    final intl.NumberFormat averageNumberFormat =
+        intl.NumberFormat.decimalPatternDigits(
+          locale: localeName,
+          decimalDigits: 1,
+        );
+    final String averageString = averageNumberFormat.format(average);
+
+    return '$averageString ($count)';
+  }
+
+  @override
+  String get settingsTitle => 'Réglages';
+
+  @override
+  String get settingsSectionAccount => 'Compte';
+
+  @override
+  String get settingsEditProfile => 'Modifier le profil';
+
+  @override
+  String get settingsPhoneNumber => 'Numéro de téléphone';
+
+  @override
+  String get settingsSignOut => 'Se déconnecter';
+
+  @override
+  String get settingsSignOutTitle => 'Te déconnecter ?';
+
+  @override
+  String get settingsSectionSafety => 'Sécurité';
+
+  @override
+  String get settingsContactSupport => 'Contacter l’assistance';
+
+  @override
+  String settingsMailFailed(String email) {
+    return 'Impossible d’ouvrir ta messagerie. Écris à $email';
+  }
+
+  @override
+  String get settingsSectionNotifications => 'Notifications';
+
+  @override
+  String get settingsNotificationSettings => 'Réglages des notifications';
+
+  @override
+  String get settingsNotificationSubtitle =>
+      'Gère les notifications dans les Réglages iOS';
+
+  @override
+  String get settingsSectionLegal => 'Mentions légales';
+
+  @override
+  String get settingsPrivacyPolicy => 'Politique de confidentialité';
+
+  @override
+  String get settingsTermsOfService => 'Conditions d’utilisation';
+
+  @override
+  String get settingsLicenses => 'Licences open source';
+
+  @override
+  String get settingsSectionAbout => 'À propos';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String get settingsVersionLoading => 'Chargement…';
+
+  @override
+  String get settingsVersionUnavailable => 'Indisponible';
+
+  @override
+  String get settingsDeleteAccount => 'Supprimer le compte';
+
+  @override
+  String get settingsDeleteTitle => 'Supprimer ton compte ?';
+
+  @override
+  String get settingsDeleteBody =>
+      'Cela supprime définitivement ton compte et toutes tes données. Cette action est irréversible.';
+
+  @override
+  String get settingsDeleteFailed =>
+      'Impossible de supprimer le compte. Réessaie.';
+
+  @override
+  String get profileSaved => 'Profil enregistré';
+
+  @override
+  String get profileYourRating => 'Ta note';
+
+  @override
+  String get profileNoRatings => 'Aucune note pour le moment';
+
+  @override
+  String get profileFormPhotos => 'Photos';
+
+  @override
+  String get profileFormRemovePhoto => 'Supprimer la photo';
+
+  @override
+  String get profileFormAddPhoto => 'Ajouter une photo';
+
+  @override
+  String get profileFormUploadingPhoto => 'Envoi de la photo';
+
+  @override
+  String get profileFormName => 'Nom';
+
+  @override
+  String get profileFormGenderHeading => 'Je suis';
+
+  @override
+  String get profileFormBio => 'Bio';
+
+  @override
+  String get genderWoman => 'Femme';
+
+  @override
+  String get genderMan => 'Homme';
+
+  @override
+  String get genderNonBinary => 'Non-binaire';
+
+  @override
+  String get profileMissingPhoto => 'une photo';
+
+  @override
+  String get profileMissingName => 'ton nom';
+
+  @override
+  String get profileMissingGender => 'ton genre';
+
+  @override
+  String profileMissingTwo(String first, String second) {
+    return '$first et $second';
+  }
+
+  @override
+  String profileMissingThree(String first, String second, String third) {
+    return '$first, $second et $third';
+  }
 }

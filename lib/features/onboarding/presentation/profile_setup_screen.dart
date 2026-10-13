@@ -80,7 +80,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final isSubmitting = state.isLoading;
     final isValid = _formData?.isValid ?? false;
     // Before the form's first report nothing is known: show no hint.
-    final missing = _formData?.missingFields ?? const <String>[];
+    final missing = _formData?.missingFields ?? const <ProfileMissingField>[];
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -130,7 +130,10 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           ),
                           child: Text(
                             context.l10n.profileStillNeeded(
-                              _formData!.missingSummary,
+                              localizeMissingFields(
+                                context.l10n,
+                                _formData!.missingFields,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(

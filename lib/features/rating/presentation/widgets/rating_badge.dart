@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class RatingBadge extends ConsumerWidget {
   const RatingBadge({required this.uid, super.key});
@@ -34,7 +35,7 @@ class RatingBadge extends ConsumerWidget {
 
     if (user.ratingCount == 0) {
       return Text(
-        'New',
+        context.l10n.ratingBadgeNew,
         key: const Key('rating_badge_new'),
         style: textTheme.bodySmall?.copyWith(
           color: context.wp.muted,
@@ -54,7 +55,7 @@ class RatingBadge extends ConsumerWidget {
         ),
         const SizedBox(width: WarmPlayfulSpacing.s1),
         Text(
-          '${user.ratingAvg.toStringAsFixed(1)} (${user.ratingCount})',
+          context.l10n.ratingBadgeScore(user.ratingAvg, user.ratingCount),
           style: textTheme.bodySmall?.copyWith(
             color: colors.onSurface,
             fontWeight: WarmPlayfulType.captionWeight,

@@ -20,6 +20,7 @@ import 'package:not_eat_alone/features/rating/application/match_meal_provider.da
 import 'package:not_eat_alone/features/rating/application/my_rating_provider.dart';
 import 'package:not_eat_alone/features/rating/presentation/rating_sheet.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class PostMealCard extends ConsumerStatefulWidget {
   const PostMealCard({
@@ -78,21 +79,23 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'How was your meal?',
+          context.l10n.ratingTitle,
           style: textTheme.titleMedium?.copyWith(
             fontWeight: WarmPlayfulType.h2Weight,
           ),
         ),
         const SizedBox(height: WarmPlayfulSpacing.s1),
         Text(
-          'It only takes a moment.',
+          context.l10n.ratingCardSubtitle,
           style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
         ),
       ],
     );
     Widget rateButton({required bool expand}) => AppButton(
       key: const Key('post_meal_card_rate_button'),
-      label: targetName != null ? 'Rate $targetName' : 'Rate',
+      label: targetName != null
+          ? context.l10n.ratingRateNamed(targetName)
+          : context.l10n.ratingRate,
       expand: expand,
       onPressed: () => showRatingSheet(
         context,
