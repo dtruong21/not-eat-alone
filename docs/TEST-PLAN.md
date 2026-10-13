@@ -459,6 +459,16 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 - [ ] Foreground message while the relevant screen is already open shows an in-app banner, not a duplicate system notification.
 - [ ] Triggers fire correctly against **both** Firestore databases (`(default)`=prod, `stage`=stage) — each is registered separately in `index.ts`.
 
+**Push language (plan 22; manual, needs a real device with APNs set up; strings in `docs/l10n/PUSH-REVIEW.md`):**
+- [ ] Settings -> Language -> Français, then trigger each push (request created/approved/denied, post-meal prompt, 24 h and 2 h reminders, match left, meal cancelled): the title and body are French, exactly as in `PUSH-REVIEW.md`; chat messages show the sender and text unchanged.
+- [ ] Switch back to English in Settings: the next pushes are English (the token doc's `lang` flips within seconds; check in the Firebase console).
+- [ ] Fresh install with the phone set to French and "System default": first launch, grant notifications, the next push is French (`lang: fr` on the token doc).
+- [ ] A device that never updated the app (token doc without `lang`) still gets English.
+- [ ] The same account signed in on two devices, one French and one English: each gets the push in its own language, once.
+- [ ] Known limit: change the phone's language in the OS while "System default" is selected: pushes follow it only after the app is started again.
+- [ ] Known limit: a push that arrives while the app is open shows the server text as sent.
+- [ ] After the merge to `develop`: the *Deploy Firebase backend* job succeeded (no rules or indexes changed in this release).
+
 **Pending native config (blocks live delivery):**
 - Live end-to-end delivery is unverified pending **Blaze plan** upgrade (Cloud Functions can't deploy on Spark), an **APNs auth key** (iOS push), and registering the **Android SHA-256** fingerprint — all user homework, tracked in `docs/CICD.md` / build-state memory. Until then, the Functions triggers are unit/integration-tested in isolation (`firebase/functions/test/`) but not exercised against a real device.
 
