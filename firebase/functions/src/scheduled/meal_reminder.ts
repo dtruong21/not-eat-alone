@@ -2,7 +2,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { sendToUser } from '../lib/messaging';
-import { buildMealReminder } from '../lib/payloads';
+import { buildMealReminder, restaurantFallbackName } from '../lib/payloads';
 import { PushLang } from '../lib/push_lang';
 import { REMINDER_FLAG, REMINDER_KINDS, reminderWindow } from '../lib/reminders';
 
@@ -28,9 +28,16 @@ export const makeMealReminder = (database: string) =>
           const flag = REMINDER_FLAG[kind];
           if (m[flag] === true) continue;
           const mealAt = (m.dateTime as Timestamp).toDate();
-          const restaurantName = (m.restaurant?.name as string | undefined) ?? 'your restaurant';
+          const restaurantName = m.restaurant?.name as string | undefined;
           const payload = (lang: PushLang) =>
-            buildMealReminder(kind, restaurantName, mealAt, now, doc.id, lang);
+            buildMealReminder(
+              kind,
+              restaurantName ?? restaurantFallbackName(lang),
+              mealAt,
+              now,
+              doc.id,
+              lang,
+            );
           const recipients = [m.hostId, m.guestId].filter(
             (u): u is string => typeof u === 'string' && u !== '',
           );

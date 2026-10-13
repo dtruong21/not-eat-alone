@@ -7,6 +7,8 @@ import {
   buildMatchLeft,
   buildMealCancelled,
   postMealFallbackName,
+  restaurantFallbackName,
+  messageFallbackTitle,
 } from '../src/lib/payloads';
 
 test('message payload truncates long text and carries matchId via caller', () => {
@@ -30,7 +32,7 @@ test('post-meal prompt carries otherName in body and rate type, matchId filled b
 });
 
 // ---- Plan 22: language-aware copy. English pinned from the pre-i18n source. ----
-const NB = ' ';
+const NB = '\u00a0';
 const meal = new Date('2026-10-14T18:00:00Z'); // 20:00 Paris (CEST)
 const sameDay = new Date('2026-10-14T06:00:00Z');
 const dayBefore = new Date('2026-10-13T18:00:00Z');
@@ -61,10 +63,11 @@ test('en: request updated', () => {
 });
 test('fr: request updated (NBSP before ! and :)', () => {
   expect(buildRequestUpdated('approved', 'm1', 'fr').notification).toEqual({
-    title: `C’est bon${NB}!`,
+    title: `C’est validé${NB}!`,
     body: `Ta demande a été acceptée${NB}: dis bonjour.`,
   });
-  expect(buildRequestUpdated('approved', 'm1', 'fr').notification.title).toBe('C’est bon !');
+  expect(buildRequestUpdated('approved', 'm1', 'fr').notification.title).toBe('C’est validé\u00a0!');
+  expect(buildRequestUpdated('approved', 'm1', 'fr').notification.body).toContain('acceptée\u00a0: dis');
   expect(buildRequestUpdated('denied', 'm1', 'fr').notification).toEqual({
     title: 'Mise à jour de ta demande',
     body: 'Ta demande a été refusée.',
@@ -143,7 +146,7 @@ test('fr: match left', () => {
     body: 'Ton repas est de nouveau ouvert aux autres.',
   });
   expect(buildMatchLeft(false, 'm1', true, 'fr').notification).toEqual({
-    title: 'L’autre personne s’est retirée',
+    title: 'L’autre personne a annulé sa participation',
     body: 'Ton repas a été annulé.',
   });
 });
@@ -177,4 +180,17 @@ test('data is language-independent for every builder', () => {
     [() => buildMealCancelled('m1', true, 'en'), () => buildMealCancelled('m1', true, 'fr')],
   ];
   for (const [en, fr] of pairs) expect(fr().data).toEqual(en().data);
+});
+
+test('per-language fallbacks', () => {
+  expect(restaurantFallbackName()).toBe('your restaurant');
+  expect(restaurantFallbackName('fr')).toBe('ton restaurant');
+  expect(messageFallbackTitle()).toBe('New message');
+  expect(messageFallbackTitle('fr')).toBe('Nouveau message');
+  expect(
+    buildMealReminder('2h', restaurantFallbackName('fr'), meal, sameDay, 'm1', 'fr').notification.body,
+  ).toBe('ton restaurant à 20:00');
+  expect(buildMessageCreated(messageFallbackTitle('fr'), 'salut', 'mt', 'fr').notification.title).toBe(
+    'Nouveau message',
+  );
 });

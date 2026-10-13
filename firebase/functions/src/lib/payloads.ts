@@ -15,7 +15,7 @@ type Day = 'today' | 'tomorrow';
  * All push copy, one table per language (review the French column in one place;
  * docs/l10n/PUSH-REVIEW.md mirrors it). `data` payloads are language-independent
  * and live in the builders below. French: informal tu, typographic apostrophe,
- * NBSP ( ) before ? ! : ;
+ * NBSP (\u00a0) before ? ! : ;
  */
 const COPY: Record<
   PushLang,
@@ -26,6 +26,8 @@ const COPY: Record<
     postMealTitle: string;
     postMealBody: (otherName: string) => string;
     postMealFallbackName: string;
+    restaurantFallbackName: string;
+    messageFallbackTitle: string;
     reminderTitle24h: (day: Day) => string;
     reminderTitle2h: string;
     reminderBody: (restaurant: string, time: string) => string;
@@ -42,6 +44,8 @@ const COPY: Record<
     postMealTitle: 'How was it?',
     postMealBody: (n) => `Rate your meal with ${n}.`,
     postMealFallbackName: 'your match',
+    restaurantFallbackName: 'your restaurant',
+    messageFallbackTitle: 'New message',
     reminderTitle24h: (day) => `Your meal is ${day}`,
     reminderTitle2h: 'Your meal is coming up',
     reminderBody: (r, t) => `${r} at ${t}`,
@@ -59,19 +63,21 @@ const COPY: Record<
   fr: {
     requestCreated: { title: 'Nouvelle demande', body: 'Quelqu’un veut se joindre à ton repas.' },
     requestApproved: {
-      title: 'C’est bon !',
-      body: 'Ta demande a été acceptée : dis bonjour.',
+      title: 'C’est validé\u00a0!',
+      body: 'Ta demande a été acceptée\u00a0: dis bonjour.',
     },
     requestDenied: { title: 'Mise à jour de ta demande', body: 'Ta demande a été refusée.' },
-    postMealTitle: 'Comment c’était ?',
+    postMealTitle: 'Comment c’était\u00a0?',
     postMealBody: (n) => `Note ton repas avec ${n}.`,
     postMealFallbackName: 'l’autre personne',
+    restaurantFallbackName: 'ton restaurant',
+    messageFallbackTitle: 'Nouveau message',
     reminderTitle24h: (day) => `Ton repas, c’est ${day === 'today' ? 'aujourd’hui' : 'demain'}`,
     reminderTitle2h: 'Ton repas approche',
     reminderBody: (r, t) => `${r} à ${t}`,
     matchLeftTitle: {
       left: 'L’autre personne a quitté Convyve',
-      withdrew: 'L’autre personne s’est retirée',
+      withdrew: 'L’autre personne a annulé sa participation',
     },
     matchLeftBody: {
       reopened: 'Ton repas est de nouveau ouvert aux autres.',
@@ -88,6 +94,14 @@ const COPY: Record<
 /** Stands in for the other person's name in the post-meal prompt when it is unknown. */
 export const postMealFallbackName = (lang: PushLang = 'en'): string =>
   COPY[lang].postMealFallbackName;
+
+/** Stands in for a missing restaurant name in reminders. */
+export const restaurantFallbackName = (lang: PushLang = 'en'): string =>
+  COPY[lang].restaurantFallbackName;
+
+/** Title of a message push when the sender has no display name. */
+export const messageFallbackTitle = (lang: PushLang = 'en'): string =>
+  COPY[lang].messageFallbackTitle;
 
 export function buildRequestCreated(lang: PushLang = 'en'): PushPayload {
   return {
