@@ -80,7 +80,9 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text('Ce code n’a pas fonctionné. Vérifie-le ou renvoie-le.'),
+      find.text(
+        'Ce code n’a pas fonctionné. Vérifie-le ou demande un nouveau code.',
+      ),
       findsOneWidget,
     );
     await tester.pumpWidget(const SizedBox.shrink());

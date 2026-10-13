@@ -336,7 +336,7 @@ void main() {
       expect(find.byTooltip('Envoyer le message'), findsOneWidget);
       expect(find.byTooltip('Je ne peux pas venir'), findsOneWidget);
       expect(
-        find.text('Bientôt à table\u00a0? Nos conseils de sécurité'),
+        find.text('Bientôt à table\u00a0? Conseils de sécurité'),
         findsOneWidget,
       );
       expect(find.byTooltip('Fermer les conseils de sécurité'), findsOneWidget);
@@ -351,14 +351,17 @@ void main() {
       await pump(tester, home: chatScreen, messages: thread, meal: _meal());
 
       await tester.tap(
-        find.text('Bientôt à table\u00a0? Nos conseils de sécurité'),
+        find.text('Bientôt à table\u00a0? Conseils de sécurité'),
       );
       await tester.pumpAndSettle();
       expect(
         find.text('Bientôt à table\u00a0? Reste en sécurité'),
         findsOneWidget,
       );
-      expect(find.text('Retrouve-toi dans un lieu public'), findsOneWidget);
+      expect(
+        find.text('Donne rendez-vous dans un lieu public'),
+        findsOneWidget,
+      );
       expect(
         find.text('Préviens un proche de l’endroit où tu vas'),
         findsOneWidget,
@@ -425,7 +428,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Retour aux discussions'), findsOneWidget);
+      expect(find.text('Retour aux messages'), findsOneWidget);
       expect(find.text('Back to chats'), findsNothing);
       await tester.tap(find.byKey(const Key('chat_unavailable_back_button')));
       await tester.pumpAndSettle();
@@ -465,7 +468,7 @@ void main() {
         textScale: 2,
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('Retour aux discussions'), findsOneWidget);
+      expect(find.text('Retour aux messages'), findsOneWidget);
     });
   });
 

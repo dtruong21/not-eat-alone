@@ -42,9 +42,10 @@ buttons are fixed width: check any longer rewording at 320 px.
 - `mealActionStatusYourMeal`: "Tes demandes : onglet Demandes." (terse: width) -> now "Tes demandes⍽: onglet Demandes."
 - `mealActionStatusWomenOnly`: "Réservé aux femmes." (terse: width) -> now "Réservé aux femmes."
 - `mealWomenOnly`: "Entre femmes" for "Women only" -> now "Entre femmes"
-- `safetyTipsBanner`: free translation of "Meeting up?" -> now "Bientôt à table⍽? Nos conseils de sécurité"
+- `safetyTipsBanner`: free translation of "Meeting up?" -> now "Bientôt à table⍽? Conseils de sécurité"
+- `createMealNoteLabel`: "Note" (facultative) for the meal note field -> now "Note (facultative)"
 - `inboxActionChat`: "Discuter" vs "Ouvrir la discussion" -> now "Discuter"
-- `settingsSectionLegal`: "Mentions légales" -> now "Mentions légales"
+- `settingsSectionLegal`: "Informations légales" -> now "Informations légales"
 - `setupSubtitle`: "genre" for gender -> now "Nom, photo et genre. C’est tout."
 - `errorStateTitle`: "Chargement impossible" (generic, many screens) -> now "Chargement impossible"
 - `discoverEmptyMessage`: avoids the gendered "Sois le premier / la première" -> now "Lance-toi⍽: propose un repas et quelqu’un te rejoindra."
@@ -60,8 +61,8 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `inboxOutcomeApproveFailed` | 71 | Impossible d’accepter cette demande. Elle a peut-être déjà été traitée. | lib/features/matching/presentation/widgets/inbox_action_message.dart |
 | `signinPhoneError` | 68 | Saisis un numéro avec l’indicatif du pays, par ex. +33 6 12 34 56 78 | lib/features/auth/presentation/signin_screen.dart |
 | `leaveMatchGuestBody` | 67 | On préviendra {name} et le repas sera de nouveau ouvert aux autres. | lib/features/chat/presentation/widgets/leave_match_action.dart |
+| `phoneWrongCode` | 66 | Ce code n’a pas fonctionné. Vérifie-le ou demande un nouveau code. | lib/features/auth/presentation/phone_verify_screen.dart |
 | `parisNotice` | 64 | Convyve n’est qu’à Paris pour l’instant — on démarre tout juste. | lib/features/meal/presentation/widgets/paris_notice.dart |
-| `chatUnavailable` | 63 | Cette discussion n’est plus disponible — le repas a été annulé. | lib/features/chat/presentation/chat_screen.dart |
 | `restaurantSearchNoMatch` | 63 | Aucun restaurant ne s’appelle «⍽{query}⍽». Essaie un autre nom. | lib/features/meal/presentation/restaurant_search_screen.dart |
 
 ## All strings (224)
@@ -97,7 +98,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `phoneChange` | Change | Modifier | Button that goes back to change the phone number. |
 | `phoneChangeSemantics` | Change phone number | Modifier le numéro de téléphone | Screen-reader label of the Change button. |
 | `phoneCodeLabel` | 6-digit code | Code à 6 chiffres | Label of the SMS code field. |
-| `phoneWrongCode` | That code didn't work. Check it or resend. | Ce code n’a pas fonctionné. Vérifie-le ou renvoie-le. | Error under the code field when the code was rejected. |
+| `phoneWrongCode` | That code didn't work. Check it or resend. | Ce code n’a pas fonctionné. Vérifie-le ou demande un nouveau code. | Error under the code field when the code was rejected. |
 | `phoneVerify` | Verify | Valider | Button that submits the SMS code. |
 | `phoneVerifying` | Verifying… | Vérification… | Button label while the code is being checked. |
 | `phoneResend` | Resend code | Renvoyer le code | Button that requests a new SMS code. |
@@ -120,7 +121,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `mealDetailTitle` | Meal details | Détails du repas | App bar title of the meal detail screen. |
 | `mealDetailHostHeading` | Host | Hôte | Section heading above the host's profile block. |
 | `mealDetailHostUnavailable` | Host unavailable | Hôte indisponible | Shown instead of the host block when the host profile no longer exists. |
-| `mealDetailHostNameAge` | {name}, {age} | {name}, {age} ans | Host name followed by age. |
+| `mealDetailHostNameAge` | {name}, {age} | {name}, {age}⍽ans | Host name followed by age. |
 | `mealDetailReportMeal` | Report this meal | Signaler ce repas | Safety menu item that reports the meal. |
 | `mealDetailReportHost` | Report host | Signaler l’hôte | Safety menu item that reports the host. |
 | `mealDetailBlockHost` | Block host | Bloquer l’hôte | Safety menu item that blocks the host. |
@@ -157,7 +158,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `inboxTitle` | Requests | Demandes | App bar title of the host request inbox. |
 | `inboxEmptyTitle` | No pending requests | Aucune demande en attente | Empty state of the host request inbox. |
 | `inboxGuestFallback` | Guest | Convive | Name shown for a requesting guest whose profile is not loaded. |
-| `inboxGuestNameAge` | {name}, {age} | {name}, {age} ans | Guest name and age on a request row. |
+| `inboxGuestNameAge` | {name}, {age} | {name}, {age}⍽ans | Guest name and age on a request row. |
 | `inboxPastMeal` | Meal time has passed | L’heure du repas est passée | Chip, tooltip and hint on a request whose meal time is in the past. |
 | `inboxApprove` | Approve | Accepter | Button that approves a join request. |
 | `inboxApproving` | Approving… | Acceptation… | Approve button label while the action is in flight. |
@@ -184,7 +185,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `chatSendTooltip` | Send message | Envoyer le message | Tooltip and accessibility label of the send button. |
 | `chatSendFailed` | Couldn't send your message. Try again. | Impossible d’envoyer ton message. Réessaie. | Snackbar when sending a message failed. |
 | `chatUnavailable` | This chat is no longer available — the meal was cancelled. | Cette discussion n’est plus disponible — le repas a été annulé. | Shown instead of the thread when the match is gone. |
-| `chatBackToChats` | Back to chats | Retour aux discussions | Button on the unavailable-chat state. |
+| `chatBackToChats` | Back to chats | Retour aux messages | Button on the unavailable-chat state. |
 | `leaveMatchTooltip` | Can't make it | Je ne peux pas venir | Tooltip of the app bar action that cancels or withdraws from a matched meal. |
 | `leaveMatchOtherFallback` | Your match | l’autre personne | Stands in for the other person’s name in the leave dialog when it is not loaded. |
 | `leaveMatchHostTitle` | Cancel this meal? | Annuler ce repas⍽? | Leave dialog title for the host. |
@@ -197,10 +198,10 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `leaveMatchHostDone` | Meal cancelled. | Repas annulé. | Snackbar after the host cancelled the meal. |
 | `leaveMatchGuestDone` | You've withdrawn. | Tu as annulé ta participation. | Snackbar after the guest withdrew. |
 | `leaveMatchFailed` | Couldn't cancel. Check your connection and try again. | Annulation impossible. Vérifie ta connexion et réessaie. | Snackbar when cancelling or withdrawing failed. |
-| `safetyTipsBanner` | Meeting up? Safety tips | Bientôt à table⍽? Nos conseils de sécurité | One-line banner above the chat thread. |
+| `safetyTipsBanner` | Meeting up? Safety tips | Bientôt à table⍽? Conseils de sécurité | One-line banner above the chat thread. |
 | `safetyTipsBannerDismiss` | Dismiss safety tips | Fermer les conseils de sécurité | Tooltip of the banner close button. |
 | `safetyTipsHeading` | Meeting up? Stay safe | Bientôt à table⍽? Reste en sécurité | Heading of the safety tips sheet and screen. |
-| `safetyTipPublicPlace` | Meet in a public place | Retrouve-toi dans un lieu public | Safety tip 1. |
+| `safetyTipPublicPlace` | Meet in a public place | Donne rendez-vous dans un lieu public | Safety tip 1. |
 | `safetyTipTellFriend` | Tell a friend where you're going | Préviens un proche de l’endroit où tu vas | Safety tip 2. |
 | `safetyTipInstincts` | Trust your instincts | Fie-toi à ton instinct | Safety tip 3. |
 | `safetyTipBlockReport` | You can block or report anytime | Tu peux bloquer ou signaler à tout moment | Safety tip 4. |
@@ -223,7 +224,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `reportReasonHarassment` | Harassment | Harcèlement | Report reason chip. |
 | `reportReasonFake` | Fake profile | Faux profil | Report reason chip. |
 | `reportReasonOther` | Other | Autre | Report reason chip. |
-| `reportNoteHint` | Add a note (optional) | Ajoute une note (facultatif) | Hint of the optional note field in the report sheet. |
+| `reportNoteHint` | Add a note (optional) | Ajoute un commentaire (facultatif) | Hint of the optional note field in the report sheet. |
 | `reportFailed` | Couldn't submit your report. Try again. | Impossible d’envoyer ton signalement. Réessaie. | Snackbar when sending a report failed. |
 | `reportThanks` | Thanks — we'll review this. | Merci. Nous allons examiner ton signalement. | Snackbar after a report was sent. |
 | `blockedTitle` | Blocked people | Personnes bloquées | Title of the blocked people screen and Settings row. |
@@ -259,7 +260,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `settingsSectionNotifications` | Notifications | Notifications | Settings section header (iOS). |
 | `settingsNotificationSettings` | Notification settings | Réglages des notifications | Settings row that opens the iOS Settings page of the app. |
 | `settingsNotificationSubtitle` | Manage notifications in iOS Settings | Gère les notifications dans les Réglages iOS | Subtitle of the notification settings row. |
-| `settingsSectionLegal` | Legal | Mentions légales | Settings section header. |
+| `settingsSectionLegal` | Legal | Informations légales | Settings section header. |
 | `settingsPrivacyPolicy` | Privacy Policy | Politique de confidentialité | Settings row that opens the privacy policy. |
 | `settingsTermsOfService` | Terms of Service | Conditions d’utilisation | Settings row that opens the terms of service. |
 | `settingsLicenses` | Open-source licences | Licences open source | Settings row that opens the open-source licences page. |

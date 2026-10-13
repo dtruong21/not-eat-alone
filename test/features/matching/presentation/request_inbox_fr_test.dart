@@ -138,7 +138,7 @@ void main() {
     expect(find.text('Demandes'), findsOneWidget);
     expect(find.text('Accepter'), findsOneWidget);
     expect(find.text('Refuser'), findsOneWidget);
-    expect(find.text('$_longName, 31 ans'), findsOneWidget);
+    expect(find.text('$_longName, 31\u00a0ans'), findsOneWidget);
     expect(find.textContaining('janv.'), findsOneWidget);
     for (final english in ['Requests', 'Approve', 'Deny', 'Guest']) {
       expect(find.text(english), findsNothing);

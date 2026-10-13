@@ -102,7 +102,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get phoneWrongCode =>
-      'Ce code n’a pas fonctionné. Vérifie-le ou renvoie-le.';
+      'Ce code n’a pas fonctionné. Vérifie-le ou demande un nouveau code.';
 
   @override
   String get phoneVerify => 'Valider';
@@ -187,7 +187,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String mealDetailHostNameAge(String name, int age) {
-    return '$name, $age ans';
+    return '$name, $age ans';
   }
 
   @override
@@ -309,7 +309,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String inboxGuestNameAge(String name, int age) {
-    return '$name, $age ans';
+    return '$name, $age ans';
   }
 
   @override
@@ -402,7 +402,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Cette discussion n’est plus disponible — le repas a été annulé.';
 
   @override
-  String get chatBackToChats => 'Retour aux discussions';
+  String get chatBackToChats => 'Retour aux messages';
 
   @override
   String get leaveMatchTooltip => 'Je ne peux pas venir';
@@ -446,7 +446,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Annulation impossible. Vérifie ta connexion et réessaie.';
 
   @override
-  String get safetyTipsBanner => 'Bientôt à table ? Nos conseils de sécurité';
+  String get safetyTipsBanner => 'Bientôt à table ? Conseils de sécurité';
 
   @override
   String get safetyTipsBannerDismiss => 'Fermer les conseils de sécurité';
@@ -455,7 +455,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get safetyTipsHeading => 'Bientôt à table ? Reste en sécurité';
 
   @override
-  String get safetyTipPublicPlace => 'Retrouve-toi dans un lieu public';
+  String get safetyTipPublicPlace => 'Donne rendez-vous dans un lieu public';
 
   @override
   String get safetyTipTellFriend => 'Préviens un proche de l’endroit où tu vas';
@@ -530,7 +530,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get reportReasonOther => 'Autre';
 
   @override
-  String get reportNoteHint => 'Ajoute une note (facultatif)';
+  String get reportNoteHint => 'Ajoute un commentaire (facultatif)';
 
   @override
   String get reportFailed => 'Impossible d’envoyer ton signalement. Réessaie.';
@@ -667,7 +667,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Gère les notifications dans les Réglages iOS';
 
   @override
-  String get settingsSectionLegal => 'Mentions légales';
+  String get settingsSectionLegal => 'Informations légales';
 
   @override
   String get settingsPrivacyPolicy => 'Politique de confidentialité';

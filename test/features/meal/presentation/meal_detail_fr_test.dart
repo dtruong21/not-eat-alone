@@ -259,7 +259,10 @@ void main() {
   testWidgets('host name and age use the French pattern', (tester) async {
     await pump(tester, meal: _meal);
 
-    expect(find.textContaining(RegExp(r'^Alex, \d+ ans$')), findsOneWidget);
+    expect(
+      find.textContaining(RegExp(r'^Alex, \d+\u00a0ans$')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a host without a name falls back to "Hôte"', (tester) async {
@@ -268,7 +271,10 @@ void main() {
     );
     await pump(tester, meal: _meal);
 
-    expect(find.textContaining(RegExp(r'^Hôte, \d+ ans$')), findsOneWidget);
+    expect(
+      find.textContaining(RegExp(r'^Hôte, \d+\u00a0ans$')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a missing host says "Hôte indisponible"', (tester) async {

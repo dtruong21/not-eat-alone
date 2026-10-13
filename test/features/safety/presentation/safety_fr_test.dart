@@ -237,7 +237,7 @@ void main() {
       ]) {
         expect(find.text(fr), findsOneWidget);
       }
-      expect(find.text('Ajoute une note (facultatif)'), findsOneWidget);
+      expect(find.text('Ajoute un commentaire (facultatif)'), findsOneWidget);
       for (final en in [
         'Inappropriate content',
         'Harassment',

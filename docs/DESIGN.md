@@ -407,7 +407,7 @@ The app ships in English and French (`lib/l10n/app_en.arb`, `app_fr.arb`; the te
 French copy rules:
 
 - Informal "tu" everywhere; short, warm, same tone as the English. Gender-neutral wording where the English is neutral ("Pas cette fois", "cette personne", "Convive" for a guest).
-- Brand stays "Convyve". "Women only" is "Entre femmes". Terminology: meal = repas, request = demande, chat = discussion, host = hôte, match = match, block = bloquer, report = signaler, Settings = Réglages, profile = profil.
+- Brand stays "Convyve". "Women only" is "Entre femmes". Terminology: meal = repas, request = demande, chat = discussion (the chat list/tab = Messages), host = hôte, match = match, block = bloquer, report = signaler, Settings = Réglages, profile = profil.
 - Typographic apostrophe `’` (never ASCII `'`). A non-breaking space (U+00A0, written ⍽ in this doc) before `:` `!` `?` `;`, inside « » (`«⍽query⍽»`) and between a number and min/h/j/s/km. Write them as real NBSPs in the ARB; `docs/l10n/FRENCH-REVIEW.md` shows them as a visible mark.
 - Dates and times: see "Date and time formats". Relative words: Aujourd’hui / Demain / Hier; chat age: `à l’instant`, `5⍽min`, `3⍽h`, `2⍽j`.
 - Not translated: analytics names, log text, `supportEmail`, URLs, restaurant names and user content, the language picker's own labels (`English`, `Français`).

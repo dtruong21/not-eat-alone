@@ -110,7 +110,7 @@ void main() {
         'Notifications',
         'Réglages des notifications',
         'Gère les notifications dans les Réglages iOS',
-        'Mentions légales',
+        'Informations légales',
         'Politique de confidentialité',
         'Conditions d’utilisation',
         'Licences open source',

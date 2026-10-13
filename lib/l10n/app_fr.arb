@@ -121,7 +121,7 @@
   "@phoneCodeLabel": {
     "description": "Label of the SMS code field."
   },
-  "phoneWrongCode": "Ce code n’a pas fonctionné. Vérifie-le ou renvoie-le.",
+  "phoneWrongCode": "Ce code n’a pas fonctionné. Vérifie-le ou demande un nouveau code.",
   "@phoneWrongCode": {
     "description": "Error under the code field when the code was rejected."
   },
@@ -232,7 +232,7 @@
   "@mealDetailHostUnavailable": {
     "description": "Shown instead of the host block when the host profile no longer exists."
   },
-  "mealDetailHostNameAge": "{name}, {age} ans",
+  "mealDetailHostNameAge": "{name}, {age} ans",
   "@mealDetailHostNameAge": {
     "description": "Host name followed by age.",
     "placeholders": {
@@ -403,7 +403,7 @@
   "@inboxGuestFallback": {
     "description": "Name shown for a requesting guest whose profile is not loaded."
   },
-  "inboxGuestNameAge": "{name}, {age} ans",
+  "inboxGuestNameAge": "{name}, {age} ans",
   "@inboxGuestNameAge": {
     "description": "Guest name and age on a request row.",
     "placeholders": {
@@ -534,7 +534,7 @@
   "@chatUnavailable": {
     "description": "Shown instead of the thread when the match is gone."
   },
-  "chatBackToChats": "Retour aux discussions",
+  "chatBackToChats": "Retour aux messages",
   "@chatBackToChats": {
     "description": "Button on the unavailable-chat state."
   },
@@ -596,7 +596,7 @@
   "@leaveMatchFailed": {
     "description": "Snackbar when cancelling or withdrawing failed."
   },
-  "safetyTipsBanner": "Bientôt à table ? Nos conseils de sécurité",
+  "safetyTipsBanner": "Bientôt à table ? Conseils de sécurité",
   "@safetyTipsBanner": {
     "description": "One-line banner above the chat thread."
   },
@@ -608,7 +608,7 @@
   "@safetyTipsHeading": {
     "description": "Heading of the safety tips sheet and screen."
   },
-  "safetyTipPublicPlace": "Retrouve-toi dans un lieu public",
+  "safetyTipPublicPlace": "Donne rendez-vous dans un lieu public",
   "@safetyTipPublicPlace": {
     "description": "Safety tip 1."
   },
@@ -710,7 +710,7 @@
   "@reportReasonOther": {
     "description": "Report reason chip."
   },
-  "reportNoteHint": "Ajoute une note (facultatif)",
+  "reportNoteHint": "Ajoute un commentaire (facultatif)",
   "@reportNoteHint": {
     "description": "Hint of the optional note field in the report sheet."
   },
@@ -896,7 +896,7 @@
   "@settingsNotificationSubtitle": {
     "description": "Subtitle of the notification settings row."
   },
-  "settingsSectionLegal": "Mentions légales",
+  "settingsSectionLegal": "Informations légales",
   "@settingsSectionLegal": {
     "description": "Settings section header."
   },
