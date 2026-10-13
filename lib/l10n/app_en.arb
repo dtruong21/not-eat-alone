@@ -812,11 +812,11 @@
   },
   "ratingRate": "Rate",
   "@ratingRate": {
-    "description": "Post-meal card button when the partner is unnamed."
+    "description": "Post-meal card button label (short and constant; the partner is named in the title)."
   },
   "ratingRateNamed": "Rate {name}",
   "@ratingRateNamed": {
-    "description": "Post-meal card button naming the partner.",
+    "description": "Screen-reader label of the post-meal card button, naming the partner (the visible label is just ratingRate).",
     "placeholders": {
       "name": {
         "type": "String"

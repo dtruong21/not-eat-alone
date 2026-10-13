@@ -79,7 +79,13 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          context.l10n.ratingTitle,
+          targetName != null
+              ? context.l10n.ratingTitleNamed(targetName)
+              : context.l10n.ratingTitle,
+          // The name lives here, not in the button: it may wrap, and only a
+          // pathological name is cut.
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: textTheme.titleMedium?.copyWith(
             fontWeight: WarmPlayfulType.h2Weight,
           ),
@@ -93,9 +99,12 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
     );
     Widget rateButton({required bool expand}) => AppButton(
       key: const Key('post_meal_card_rate_button'),
-      label: targetName != null
+      // Constant and short so it never truncates; screen readers still hear
+      // who is being rated.
+      label: context.l10n.ratingRate,
+      semanticLabel: targetName != null
           ? context.l10n.ratingRateNamed(targetName)
-          : context.l10n.ratingRate,
+          : null,
       expand: expand,
       onPressed: () => showRatingSheet(
         context,
@@ -124,12 +133,11 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
               )
             : Row(
                 children: [
-                  // 3:2, not 1:1: the title keeps its line at 360 px and the
-                  // button only wraps its label (never the title and the
-                  // label both).
-                  Expanded(flex: 3, child: prompt),
+                  // The label is short and constant, so the button takes its
+                  // natural width and the title gets the rest.
+                  Expanded(child: prompt),
                   const SizedBox(width: WarmPlayfulSpacing.s3),
-                  Flexible(flex: 2, child: rateButton(expand: false)),
+                  rateButton(expand: false),
                 ],
               ),
       ),
