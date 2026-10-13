@@ -8,12 +8,183 @@
   "@commonCancel": {
     "description": "Button label that dismisses a dialog or sheet without acting."
   },
-  "commonDismiss": "Ignorer",
+  "commonDismiss": "Fermer",
   "@commonDismiss": {
     "description": "Tooltip / accessibility label of a close button on a dismissible notice."
   },
   "commonRetry": "Réessayer",
   "@commonRetry": {
     "description": "Short button label that retries a failed action."
+  },
+  "commonLoading": "Chargement",
+  "@commonLoading": {
+    "description": "Screen-reader label of a loading placeholder."
+  },
+  "commonContinue": "Continuer",
+  "@commonContinue": {
+    "description": "Primary button that moves to the next step."
+  },
+  "commonSaving": "Enregistrement…",
+  "@commonSaving": {
+    "description": "Label shown on a button while a save is in flight."
+  },
+  "commonSomethingWentWrong": "Un problème est survenu. Réessaie.",
+  "@commonSomethingWentWrong": {
+    "description": "Generic inline error shown when a step fails for an unknown reason."
+  },
+  "errorStateTitle": "Chargement impossible",
+  "@errorStateTitle": {
+    "description": "Default headline of the error block shown when a screen fails to load."
+  },
+  "errorStateMessage": "Vérifie ta connexion et réessaie.",
+  "@errorStateMessage": {
+    "description": "Default supporting text of the error block."
+  },
+  "navDiscover": "Découvrir",
+  "@navDiscover": {
+    "description": "Bottom navigation tab: browse meals."
+  },
+  "navChats": "Discussions",
+  "@navChats": {
+    "description": "Bottom navigation tab: conversations."
+  },
+  "navRequests": "Demandes",
+  "@navRequests": {
+    "description": "Bottom navigation tab: join requests inbox."
+  },
+  "navProfile": "Profil",
+  "@navProfile": {
+    "description": "Bottom navigation tab: the user's own profile."
+  },
+  "authSendingCode": "Envoi du code…",
+  "@authSendingCode": {
+    "description": "Button label while an SMS code is being sent."
+  },
+  "signinTitle": "Bienvenue sur Convyve",
+  "@signinTitle": {
+    "description": "Headline of the sign-in screen."
+  },
+  "signinSubtitle": "Rencontre quelqu’un autour d’un repas à Paris.",
+  "@signinSubtitle": {
+    "description": "Sub-headline of the sign-in screen."
+  },
+  "signinContinueGoogle": "Continuer avec Google",
+  "@signinContinueGoogle": {
+    "description": "Button that signs in with a Google account."
+  },
+  "signinContinueApple": "Continuer avec Apple",
+  "@signinContinueApple": {
+    "description": "Label of the Sign in with Apple button."
+  },
+  "signinSigningIn": "Connexion…",
+  "@signinSigningIn": {
+    "description": "Button / screen-reader label while a sign-in is in flight."
+  },
+  "signinOr": "ou",
+  "@signinOr": {
+    "description": "Divider word between social sign-in and phone sign-in."
+  },
+  "signinPhoneLabel": "Numéro de téléphone",
+  "@signinPhoneLabel": {
+    "description": "Label of the phone number field."
+  },
+  "signinPhoneError": "Saisis un numéro avec l’indicatif du pays, par ex. +33 6 12 34 56 78",
+  "@signinPhoneError": {
+    "description": "Error under the phone field when the number is not valid."
+  },
+  "signinSendCode": "Envoyer le code",
+  "@signinSendCode": {
+    "description": "Button that sends the SMS code."
+  },
+  "commonUnderageNotice": "Tu dois avoir 18 ans ou plus pour utiliser Convyve.",
+  "@commonUnderageNotice": {
+    "description": "Notice shown on sign-in (and on the blocked age-gate screen) after an under-18 attempt."
+  },
+  "phoneTitle": "Saisis le code",
+  "@phoneTitle": {
+    "description": "Headline of the SMS code screen."
+  },
+  "phoneSentTo": "Envoyé au {phone}",
+  "@phoneSentTo": {
+    "description": "Line under the headline naming the number the code was sent to.",
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneChange": "Modifier",
+  "@phoneChange": {
+    "description": "Button that goes back to change the phone number."
+  },
+  "phoneChangeSemantics": "Modifier le numéro de téléphone",
+  "@phoneChangeSemantics": {
+    "description": "Screen-reader label of the Change button."
+  },
+  "phoneCodeLabel": "Code à 6 chiffres",
+  "@phoneCodeLabel": {
+    "description": "Label of the SMS code field."
+  },
+  "phoneWrongCode": "Ce code n’a pas fonctionné. Vérifie-le ou renvoie-le.",
+  "@phoneWrongCode": {
+    "description": "Error under the code field when the code was rejected."
+  },
+  "phoneVerify": "Valider",
+  "@phoneVerify": {
+    "description": "Button that submits the SMS code."
+  },
+  "phoneVerifying": "Vérification…",
+  "@phoneVerifying": {
+    "description": "Button label while the code is being checked."
+  },
+  "phoneResend": "Renvoyer le code",
+  "@phoneResend": {
+    "description": "Button that requests a new SMS code."
+  },
+  "phoneResendIn": "Renvoyer le code dans {seconds} s",
+  "@phoneResendIn": {
+    "description": "Disabled resend button showing the cooldown; \"s\" is the seconds symbol.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneResent": "Code renvoyé",
+  "@phoneResent": {
+    "description": "Confirmation shown after a new SMS code was sent."
+  },
+  "agegateTitle": "Confirme ta date de naissance",
+  "@agegateTitle": {
+    "description": "Headline of the age-gate screen."
+  },
+  "agegateSelect": "Choisis ta date de naissance",
+  "@agegateSelect": {
+    "description": "Button that opens the date picker before a date is chosen."
+  },
+  "agegateHelp": "Ta date de naissance",
+  "@agegateHelp": {
+    "description": "Help text at the top of the date picker."
+  },
+  "agegateFieldLabel": "Date de naissance",
+  "@agegateFieldLabel": {
+    "description": "Field label of the date picker text-entry mode."
+  },
+  "setupTitle": "Configure ton profil",
+  "@setupTitle": {
+    "description": "Headline of the profile setup screen."
+  },
+  "setupSubtitle": "Nom, photo et genre. C’est tout.",
+  "@setupSubtitle": {
+    "description": "Sub-headline of the profile setup screen."
+  },
+  "profileStillNeeded": "Il manque encore : {summary}.",
+  "@profileStillNeeded": {
+    "description": "Hint under the Continue button listing the required fields still empty; summary is a pre-built list such as \"name and photo\".",
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
   }
 }

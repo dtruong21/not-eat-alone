@@ -12,18 +12,20 @@ Future<void> pumpLocalized(
   double? textScale,
   Brightness brightness = Brightness.light,
 }) async {
-  Widget home = Scaffold(body: child);
-  if (size != null || textScale != null) {
-    home = Builder(
-      builder: (context) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          size: size,
-          textScaler: textScale == null ? null : TextScaler.linear(textScale),
-        ),
-        child: home,
-      ),
-    );
-  }
+  final body = Scaffold(body: child);
+  final home = size != null || textScale != null
+      ? Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              size: size,
+              textScaler: textScale == null
+                  ? null
+                  : TextScaler.linear(textScale),
+            ),
+            child: body,
+          ),
+        )
+      : body;
   await tester.pumpWidget(
     MaterialApp(
       theme: buildTheme(brightness),

@@ -29,13 +29,13 @@ import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 const _codeLength = 6;
 const _resendCooldown = 30;
 
 /// How long "Resend code" waits for `codeSent` / `onError` before giving up.
 const _resendTimeout = Duration(seconds: 60);
-const _wrongCodeText = "That code didn't work. Check it or resend.";
 
 /// The phone-code screen; see the library comment.
 class PhoneVerifyScreen extends ConsumerStatefulWidget {
@@ -200,7 +200,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Enter the code',
+                context.l10n.phoneTitle,
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   color: colors.onSurface,
@@ -213,7 +213,9 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
-                    'Sent to ${formatPhoneDisplay(widget.args.phoneE164)}',
+                    context.l10n.phoneSentTo(
+                      formatPhoneDisplay(widget.args.phoneE164),
+                    ),
                     style: textTheme.bodyMedium?.copyWith(color: wp.muted),
                   ),
                   TextButton(
@@ -224,9 +226,9 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                       ),
                     ),
                     onPressed: () => Navigator.of(context).maybePop(),
-                    child: const Text(
-                      'Change',
-                      semanticsLabel: 'Change phone number',
+                    child: Text(
+                      context.l10n.phoneChange,
+                      semanticsLabel: context.l10n.phoneChangeSemantics,
                     ),
                   ),
                 ],
@@ -254,10 +256,10 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 },
                 onSubmitted: (_) => _verify(),
                 decoration: InputDecoration(
-                  labelText: '6-digit code',
+                  labelText: context.l10n.phoneCodeLabel,
                   // The "0/6" counter would be re-announced on every digit.
                   counterText: '',
-                  errorText: _wrongCode ? _wrongCodeText : null,
+                  errorText: _wrongCode ? context.l10n.phoneWrongCode : null,
                   errorStyle: TextStyle(color: wp.dangerText),
                   errorMaxLines: 3,
                   border: OutlineInputBorder(
@@ -267,17 +269,17 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s4),
               AppButton(
-                label: 'Verify',
-                loadingLabel: 'Verifying…',
+                label: context.l10n.phoneVerify,
+                loadingLabel: context.l10n.phoneVerifying,
                 isLoading: _isSubmitting,
                 onPressed: _isSubmitting ? null : _verify,
               ),
               const SizedBox(height: WarmPlayfulSpacing.s3),
               AppButton(
                 label: _secondsLeft > 0
-                    ? 'Resend code in $_secondsLeft s'
-                    : 'Resend code',
-                loadingLabel: 'Sending code…',
+                    ? context.l10n.phoneResendIn(_secondsLeft)
+                    : context.l10n.phoneResend,
+                loadingLabel: context.l10n.authSendingCode,
                 variant: AppButtonVariant.text,
                 isLoading: _isResending,
                 onPressed: _secondsLeft > 0 || _isResending || _isSubmitting
@@ -292,8 +294,8 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                   container: true,
                   child: Text(
                     _resendFailed || _verifyFailed
-                        ? 'Something went wrong — please try again.'
-                        : 'Code sent again',
+                        ? context.l10n.commonSomethingWentWrong
+                        : context.l10n.phoneResent,
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(
                       color: _resendFailed || _verifyFailed

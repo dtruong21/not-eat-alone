@@ -26,6 +26,7 @@ import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/onboarding/application/age_gate_controller.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class AgeGateScreen extends ConsumerStatefulWidget {
   const AgeGateScreen({super.key});
@@ -61,8 +62,8 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
       firstDate: _firstDate,
       lastDate: _lastDate,
       initialDatePickerMode: DatePickerMode.year,
-      helpText: 'Your date of birth',
-      fieldLabelText: 'Date of birth',
+      helpText: context.l10n.agegateHelp,
+      fieldLabelText: context.l10n.agegateFieldLabel,
     );
     if (picked != null) {
       setState(() => _selectedDate = picked);
@@ -107,7 +108,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                   ),
                   const SizedBox(height: WarmPlayfulSpacing.s4),
                   Text(
-                    'You must be 18 or older to use Convyve.',
+                    context.l10n.commonUnderageNotice,
                     textAlign: TextAlign.center,
                     style: textTheme.titleMedium?.copyWith(
                       color: colors.onSurface,
@@ -143,7 +144,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Confirm your date of birth',
+                    context.l10n.agegateTitle,
                     textAlign: TextAlign.center,
                     style: textTheme.headlineSmall?.copyWith(
                       color: colors.onSurface,
@@ -152,7 +153,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                   ),
                   const SizedBox(height: WarmPlayfulSpacing.s2),
                   Text(
-                    'You must be 18 or older to use Convyve.',
+                    context.l10n.commonUnderageNotice,
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(
                       color: context.wp.muted,
@@ -163,7 +164,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                     onPressed: isSubmitting ? null : _pickDate,
                     child: Text(
                       selected == null
-                          ? 'Select date of birth'
+                          ? context.l10n.agegateSelect
                           : formatLongDate(
                               selected,
                               locale: Localizations.localeOf(context),
@@ -173,7 +174,7 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                   const SizedBox(height: WarmPlayfulSpacing.s5),
                   if (hasError) ...[
                     Text(
-                      'Something went wrong — please try again.',
+                      context.l10n.commonSomethingWentWrong,
                       textAlign: TextAlign.center,
                       style: textTheme.bodyMedium?.copyWith(
                         color: colors.error,
@@ -182,8 +183,8 @@ class AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                     const SizedBox(height: WarmPlayfulSpacing.s4),
                   ],
                   AppButton(
-                    label: 'Continue',
-                    loadingLabel: 'Saving…',
+                    label: context.l10n.commonContinue,
+                    loadingLabel: context.l10n.commonSaving,
                     isLoading: isSubmitting,
                     onPressed: (selected == null || isSubmitting)
                         ? null

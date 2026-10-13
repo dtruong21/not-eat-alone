@@ -38,14 +38,12 @@ import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/presentation/phone_verify_args.dart';
 import 'package:not_eat_alone/features/onboarding/application/underage_notice_provider.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Route path for the phone OTP screen this screen pushes to. Kept in sync
 /// with `_phoneVerifyPath` in `lib/core/routing/router.dart`.
 const phoneVerifyRoutePath = '/auth/phone';
-
-const _phoneErrorText =
-    'Enter a phone number with country code, e.g. +33 6 12 34 56 78';
 
 /// How long "Send code" waits for `codeSent` / `onError` before giving up.
 const _smsTimeout = Duration(seconds: 60);
@@ -195,7 +193,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               ] else
                 const SizedBox(height: WarmPlayfulSpacing.s6),
               Text(
-                'Welcome to Convyve',
+                context.l10n.signinTitle,
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   color: colors.onSurface,
@@ -204,14 +202,14 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s2),
               Text(
-                'Meet one person over a meal in Paris.',
+                context.l10n.signinSubtitle,
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s6),
               AppButton(
-                label: 'Continue with Google',
-                loadingLabel: 'Signing in…',
+                label: context.l10n.signinContinueGoogle,
+                loadingLabel: context.l10n.signinSigningIn,
                 variant: AppButtonVariant.outlined,
                 height: WarmPlayfulSize.actionHeight,
                 icon: const Icon(Icons.g_mobiledata_rounded),
@@ -234,7 +232,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                       horizontal: WarmPlayfulSpacing.s3,
                     ),
                     child: Text(
-                      'or',
+                      context.l10n.signinOr,
                       style: textTheme.bodyMedium?.copyWith(
                         color: context.wp.muted,
                       ),
@@ -262,9 +260,11 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                   if (_phoneInvalid) setState(() => _phoneInvalid = false);
                 },
                 decoration: InputDecoration(
-                  labelText: 'Phone number',
+                  labelText: context.l10n.signinPhoneLabel,
                   hintText: '+33 6 12 34 56 78',
-                  errorText: _phoneInvalid ? _phoneErrorText : null,
+                  errorText: _phoneInvalid
+                      ? context.l10n.signinPhoneError
+                      : null,
                   errorMaxLines: 3,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
@@ -273,8 +273,8 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s4),
               AppButton(
-                label: 'Send code',
-                loadingLabel: 'Sending code…',
+                label: context.l10n.signinSendCode,
+                loadingLabel: context.l10n.authSendingCode,
                 height: WarmPlayfulSize.actionHeight,
                 isLoading: _pendingMethod == SigninMethod.phone,
                 onPressed: isBusy ? null : _sendPhoneCode,
@@ -287,7 +287,7 @@ class _SigninScreenState extends ConsumerState<SigninScreen> {
                   liveRegion: true,
                   container: true,
                   child: Text(
-                    'Something went wrong — please try again.',
+                    context.l10n.commonSomethingWentWrong,
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(color: colors.error),
                   ),
@@ -324,7 +324,7 @@ class _AppleButton extends StatelessWidget {
     var button = MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1,
       child: SignInWithAppleButton(
-        text: 'Continue with Apple',
+        text: context.l10n.signinContinueApple,
         height: WarmPlayfulSize.actionHeight,
         style: dark
             ? SignInWithAppleButtonStyle.white
@@ -346,7 +346,7 @@ class _AppleButton extends StatelessWidget {
         button: true,
         enabled: false,
         liveRegion: true,
-        label: 'Signing in…',
+        label: context.l10n.signinSigningIn,
         excludeSemantics: true,
         child: button,
       );
@@ -380,7 +380,7 @@ class _UnderageBanner extends ConsumerWidget {
                   vertical: WarmPlayfulSpacing.s3,
                 ),
                 child: Text(
-                  'You must be 18 or older to use Convyve.',
+                  context.l10n.commonUnderageNotice,
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: colors.onSurface),
@@ -388,7 +388,7 @@ class _UnderageBanner extends ConsumerWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Dismiss',
+              tooltip: context.l10n.commonDismiss,
               constraints: const BoxConstraints(
                 minWidth: WarmPlayfulSize.minTap,
                 minHeight: WarmPlayfulSize.minTap,

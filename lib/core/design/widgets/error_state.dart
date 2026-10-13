@@ -8,25 +8,25 @@ class ErrorState extends StatelessWidget {
   /// Creates an error state whose button calls [onRetry].
   const ErrorState({
     required this.onRetry,
-    this.title = "Couldn't load this",
-    this.message = 'Check your connection and try again.',
+    this.title,
+    this.message,
     super.key,
   });
 
   /// Called when the user taps Try again.
   final VoidCallback onRetry;
 
-  /// Headline.
-  final String title;
+  /// Headline; defaults to the localised "Couldn't load this".
+  final String? title;
 
-  /// Supporting text under [title].
-  final String message;
+  /// Supporting text under [title]; defaults to the localised connection hint.
+  final String? message;
 
   @override
   Widget build(BuildContext context) => EmptyState(
     icon: Icons.cloud_off_rounded,
-    title: title,
-    message: message,
+    title: title ?? context.l10n.errorStateTitle,
+    message: message ?? context.l10n.errorStateMessage,
     mutedTitle: false,
     announce: true,
     action: AppButton(

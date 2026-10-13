@@ -15,5 +15,176 @@
   "commonRetry": "Retry",
   "@commonRetry": {
     "description": "Short button label that retries a failed action."
+  },
+  "commonLoading": "Loading",
+  "@commonLoading": {
+    "description": "Screen-reader label of a loading placeholder."
+  },
+  "commonContinue": "Continue",
+  "@commonContinue": {
+    "description": "Primary button that moves to the next step."
+  },
+  "commonSaving": "Saving…",
+  "@commonSaving": {
+    "description": "Label shown on a button while a save is in flight."
+  },
+  "commonSomethingWentWrong": "Something went wrong — please try again.",
+  "@commonSomethingWentWrong": {
+    "description": "Generic inline error shown when a step fails for an unknown reason."
+  },
+  "errorStateTitle": "Couldn't load this",
+  "@errorStateTitle": {
+    "description": "Default headline of the error block shown when a screen fails to load."
+  },
+  "errorStateMessage": "Check your connection and try again.",
+  "@errorStateMessage": {
+    "description": "Default supporting text of the error block."
+  },
+  "navDiscover": "Discover",
+  "@navDiscover": {
+    "description": "Bottom navigation tab: browse meals."
+  },
+  "navChats": "Chats",
+  "@navChats": {
+    "description": "Bottom navigation tab: conversations."
+  },
+  "navRequests": "Requests",
+  "@navRequests": {
+    "description": "Bottom navigation tab: join requests inbox."
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Bottom navigation tab: the user's own profile."
+  },
+  "authSendingCode": "Sending code…",
+  "@authSendingCode": {
+    "description": "Button label while an SMS code is being sent."
+  },
+  "signinTitle": "Welcome to Convyve",
+  "@signinTitle": {
+    "description": "Headline of the sign-in screen."
+  },
+  "signinSubtitle": "Meet one person over a meal in Paris.",
+  "@signinSubtitle": {
+    "description": "Sub-headline of the sign-in screen."
+  },
+  "signinContinueGoogle": "Continue with Google",
+  "@signinContinueGoogle": {
+    "description": "Button that signs in with a Google account."
+  },
+  "signinContinueApple": "Continue with Apple",
+  "@signinContinueApple": {
+    "description": "Label of the Sign in with Apple button."
+  },
+  "signinSigningIn": "Signing in…",
+  "@signinSigningIn": {
+    "description": "Button / screen-reader label while a sign-in is in flight."
+  },
+  "signinOr": "or",
+  "@signinOr": {
+    "description": "Divider word between social sign-in and phone sign-in."
+  },
+  "signinPhoneLabel": "Phone number",
+  "@signinPhoneLabel": {
+    "description": "Label of the phone number field."
+  },
+  "signinPhoneError": "Enter a phone number with country code, e.g. +33 6 12 34 56 78",
+  "@signinPhoneError": {
+    "description": "Error under the phone field when the number is not valid."
+  },
+  "signinSendCode": "Send code",
+  "@signinSendCode": {
+    "description": "Button that sends the SMS code."
+  },
+  "commonUnderageNotice": "You must be 18 or older to use Convyve.",
+  "@commonUnderageNotice": {
+    "description": "Notice shown on sign-in (and on the blocked age-gate screen) after an under-18 attempt."
+  },
+  "phoneTitle": "Enter the code",
+  "@phoneTitle": {
+    "description": "Headline of the SMS code screen."
+  },
+  "phoneSentTo": "Sent to {phone}",
+  "@phoneSentTo": {
+    "description": "Line under the headline naming the number the code was sent to.",
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneChange": "Change",
+  "@phoneChange": {
+    "description": "Button that goes back to change the phone number."
+  },
+  "phoneChangeSemantics": "Change phone number",
+  "@phoneChangeSemantics": {
+    "description": "Screen-reader label of the Change button."
+  },
+  "phoneCodeLabel": "6-digit code",
+  "@phoneCodeLabel": {
+    "description": "Label of the SMS code field."
+  },
+  "phoneWrongCode": "That code didn't work. Check it or resend.",
+  "@phoneWrongCode": {
+    "description": "Error under the code field when the code was rejected."
+  },
+  "phoneVerify": "Verify",
+  "@phoneVerify": {
+    "description": "Button that submits the SMS code."
+  },
+  "phoneVerifying": "Verifying…",
+  "@phoneVerifying": {
+    "description": "Button label while the code is being checked."
+  },
+  "phoneResend": "Resend code",
+  "@phoneResend": {
+    "description": "Button that requests a new SMS code."
+  },
+  "phoneResendIn": "Resend code in {seconds} s",
+  "@phoneResendIn": {
+    "description": "Disabled resend button showing the cooldown; \"s\" is the seconds symbol.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneResent": "Code sent again",
+  "@phoneResent": {
+    "description": "Confirmation shown after a new SMS code was sent."
+  },
+  "agegateTitle": "Confirm your date of birth",
+  "@agegateTitle": {
+    "description": "Headline of the age-gate screen."
+  },
+  "agegateSelect": "Select date of birth",
+  "@agegateSelect": {
+    "description": "Button that opens the date picker before a date is chosen."
+  },
+  "agegateHelp": "Your date of birth",
+  "@agegateHelp": {
+    "description": "Help text at the top of the date picker."
+  },
+  "agegateFieldLabel": "Date of birth",
+  "@agegateFieldLabel": {
+    "description": "Field label of the date picker text-entry mode."
+  },
+  "setupTitle": "Set up your profile",
+  "@setupTitle": {
+    "description": "Headline of the profile setup screen."
+  },
+  "setupSubtitle": "Name, photo and gender. That's it.",
+  "@setupSubtitle": {
+    "description": "Sub-headline of the profile setup screen."
+  },
+  "profileStillNeeded": "Still needed: {summary}.",
+  "@profileStillNeeded": {
+    "description": "Hint under the Continue button listing the required fields still empty; summary is a pre-built list such as \"name and photo\".",
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
   }
 }
