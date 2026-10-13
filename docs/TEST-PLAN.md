@@ -180,7 +180,7 @@ Failure modes that bite mobile + Firebase apps regardless of feature:
   - **VoiceOver in French.** French voice: tab names, buttons, the meal action bar, "Non lu", "Débloquer <nom>", star ratings ("3 étoiles") and the language dialog (selected option announced) read sensibly; times like "5 min" read as minutes.
   - **Typography.** No line starts with "?", "!", ":" or "»" at 320 px wide (NBSP held).
   - **Native review** of `docs/l10n/FRENCH-REVIEW.md` by a French speaker, applied to `lib/l10n/app_fr.arb` (then `fvm flutter gen-l10n`, update the `*_fr_test.dart` expectations, `fvm dart run tool/l10n_review.dart`) before store submission.
-  - Known gap: push notification text from Cloud Functions is still English (needs server-side i18n and the user's language stored server-side).
+  - ~~Known gap: push notification text from Cloud Functions is still English~~ Done (push i18n plan 22): see the push-language manual cases in this file and `docs/l10n/PUSH-REVIEW.md` (needs server-side i18n and the user's language stored server-side).
 
 ---
 
@@ -458,6 +458,16 @@ Related PRD entry: `docs/PRD.md § Push notifications`
 - [ ] Cold-start tap on a push (app not running) deep-links correctly without crashing on a disposed/uninitialized router state.
 - [ ] Foreground message while the relevant screen is already open shows an in-app banner, not a duplicate system notification.
 - [ ] Triggers fire correctly against **both** Firestore databases (`(default)`=prod, `stage`=stage) — each is registered separately in `index.ts`.
+
+**Push language (plan 22; manual, needs a real device with APNs set up; strings in `docs/l10n/PUSH-REVIEW.md`):**
+- [ ] Settings -> Language -> Français, then trigger each push (request created/approved/denied, post-meal prompt, 24 h and 2 h reminders, match left, meal cancelled): the title and body are French, exactly as in `PUSH-REVIEW.md`; chat messages show the sender and text unchanged.
+- [ ] Switch back to English in Settings: the next pushes are English (the token doc's `lang` flips within seconds; check in the Firebase console).
+- [ ] Fresh install with the phone set to French and "System default": first launch, grant notifications, the next push is French (`lang: fr` on the token doc).
+- [ ] A device that never updated the app (token doc without `lang`) still gets English.
+- [ ] The same account signed in on two devices, one French and one English: each gets the push in its own language, once.
+- [ ] Known limit: change the phone's language in the OS while "System default" is selected: pushes follow it only after the app is started again.
+- [ ] Known limit: a push that arrives while the app is open shows the server text as sent.
+- [ ] After the merge to `develop`: the Functions are actually deployed. The *Deploy Firebase backend* job is green even when the deploy is skipped (no `FIREBASE_SERVICE_ACCOUNT` secret, or the branch moved on): open the run and check the *Deploy Firestore + Storage + Functions* step RAN (needs the secret and the Blaze plan). Otherwise deploy by hand: `firebase deploy --only functions --project not-eat-alone` (no rules or indexes changed in this release).
 
 **Pending native config (blocks live delivery):**
 - Live end-to-end delivery is unverified pending **Blaze plan** upgrade (Cloud Functions can't deploy on Spark), an **APNs auth key** (iOS push), and registering the **Android SHA-256** fingerprint — all user homework, tracked in `docs/CICD.md` / build-state memory. Until then, the Functions triggers are unit/integration-tested in isolation (`firebase/functions/test/`) but not exercised against a real device.

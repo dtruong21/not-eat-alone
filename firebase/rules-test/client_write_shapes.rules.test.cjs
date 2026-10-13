@@ -196,8 +196,11 @@ test('report, block, unblock and fcm token shapes', async () => {
   await assertSucceeds(deleteDoc(doc(as('bob'), 'blocks/bob_alice')));
   // PushRepositoryImpl.registerToken / unregister
   await assertSucceeds(setDoc(doc(as('bob'), 'users/bob/fcmTokens/tok1'), {
-    token: 'tok1', platform: 'ios', updatedAt: serverTimestamp(),
+    token: 'tok1', platform: 'ios', lang: 'fr', updatedAt: serverTimestamp(),
   }));
+  // PushRepositoryImpl.updateTokenLanguage: update({lang}) on the own token doc
+  await assertSucceeds(updateDoc(doc(as('bob'), 'users/bob/fcmTokens/tok1'), { lang: 'en' }));
+  await assertFails(updateDoc(doc(as('alice'), 'users/bob/fcmTokens/tok1'), { lang: 'fr' }));
   await assertSucceeds(deleteDoc(doc(as('bob'), 'users/bob/fcmTokens/tok1')));
   await assertFails(setDoc(doc(as('alice'), 'users/bob/fcmTokens/tok2'), { token: 'tok2' }));
 });

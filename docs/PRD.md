@@ -127,7 +127,7 @@ As a host or guest with a matched meal, I want a reminder the day before and a c
 **Acceptance criteria:**
 - [ ] Both participants of a `matched` meal get one push ~24h before (window 22–24h) and one ~2h before (window 1–2h) the meal time. Meals matched inside a window get that reminder at the next run; a meal matched later than a window's start never gets the stale reminder.
 - [ ] Each reminder is sent at most once per meal (idempotency flag on the meal); a scheduler retry or overlap never duplicates it. A lost reminder is preferred over a duplicate.
-- [ ] Content: title "Your meal is today/tomorrow" (24h) or "Your meal is coming up" (2h); body "<restaurant> at <HH:mm>" in Paris time (v1 is Paris-only), restaurant name truncated. No other PII.
+- [ ] Content (English; French when the device's `fcmTokens` doc has `lang: 'fr'`, see `docs/l10n/PUSH-REVIEW.md`): title "Your meal is today/tomorrow" (24h) or "Your meal is coming up" (2h); body "<restaurant> at <HH:mm>" in Paris time (v1 is Paris-only), restaurant name truncated. No other PII.
 - [ ] Tap opens the match chat (`/chats/:mealId`) and fires `push_opened` with `type: 'meal_reminder'`.
 - [ ] Cancelled, open (unmatched) and already-past meals get nothing.
 - [ ] Empty: a user with no registered device token is skipped silently. Offline: delivery is FCM's job (delivered when the device is back). Error: a failing send for one participant or meal is logged and does not block the rest of the run.

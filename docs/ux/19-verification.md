@@ -67,9 +67,9 @@ Not defects: apostrophes are curly everywhere, a non-breaking space keeps "?", "
 
 | Item | Severity | Owner |
 |---|---|---|
-| Push-notification text from Cloud Functions is English: needs server-side i18n and the user's language stored server-side (a field on `users/{uid}`, written from the language picker) | P2 | Follow-up (functions + user doc) |
+| ~~Push-notification text from Cloud Functions is English~~ | P2 | Done (push i18n plan 22): the app language is stored on each device's token document (`lang`) and Cloud Functions send each push in it; the French is drafted, review it in [`docs/l10n/PUSH-REVIEW.md`](../l10n/PUSH-REVIEW.md) (native reviewer, see the French review row below) |
 | Store listing in French: **drafted** in [`docs/store/listing.fr.md`](../store/listing.fr.md) (plan 20, needs native review). French privacy policy, terms and support pages are still to do | P3 | Native reviewer / owner |
-| Native French review of `docs/l10n/FRENCH-REVIEW.md` (the table was regenerated: "Messages", "Créer un repas" and the Paris notice changed in this task) | P2 | Native reviewer |
+| Native French review of `docs/l10n/FRENCH-REVIEW.md` and `docs/l10n/PUSH-REVIEW.md` | P2 | Native reviewer |
 | Android notification settings row (needs an Android settings intent, so a package) | P3 | Follow-up (Android) |
 | `ci.yml` runs the date tests only under Pacific/Kiritimati, so the America/Los_Angeles DST group never runs in CI (run by hand here, green) | P3 | CI owner |
 | ~~The Paris notice is not remembered after dismissal~~ | P3 | Fixed (follow-ups plan 21): the dismissal is stored on this device (`SharedPreferences`, `paris_notice_dismissed`) |

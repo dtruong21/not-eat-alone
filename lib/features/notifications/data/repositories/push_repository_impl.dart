@@ -21,11 +21,11 @@ class PushRepositoryImpl implements PushRepository {
     PermissionRequester? requestPermissionFn,
     String? platformName,
     Stream<String>? tokenRefreshStream,
-  })  : _firestore = firestore ?? db,
-        _readToken = readToken ?? _defaultReadToken,
-        _requestPermission = requestPermissionFn ?? _defaultRequestPermission,
-        _platform = platformName ?? _defaultPlatform(),
-        _tokenRefreshStream = tokenRefreshStream;
+  }) : _firestore = firestore ?? db,
+       _readToken = readToken ?? _defaultReadToken,
+       _requestPermission = requestPermissionFn ?? _defaultRequestPermission,
+       _platform = platformName ?? _defaultPlatform(),
+       _tokenRefreshStream = tokenRefreshStream;
 
   final FirebaseFirestore _firestore;
   final TokenReader _readToken;
@@ -33,6 +33,10 @@ class PushRepositoryImpl implements PushRepository {
   final String _platform;
   final Stream<String>? _tokenRefreshStream;
   StreamSubscription<String>? _refreshSubscription;
+  // Current language, so a token refresh after a language change writes it.
+  String _lang = 'en';
+
+  static String _normalizeLang(String lang) => lang == 'fr' ? 'fr' : 'en';
 
   static Future<String?> _defaultReadToken() =>
       FirebaseMessaging.instance.getToken();
@@ -60,7 +64,8 @@ class PushRepositoryImpl implements PushRepository {
   Future<bool> requestPermission() => _requestPermission();
 
   @override
-  Future<void> registerToken(String uid) async {
+  Future<void> registerToken(String uid, {required String lang}) async {
+    _lang = _normalizeLang(lang);
     // Cancel any existing refresh subscription to avoid duplicates
     await _refreshSubscription?.cancel();
     _refreshSubscription = null;
@@ -72,6 +77,7 @@ class PushRepositoryImpl implements PushRepository {
       await _tokenDoc(uid, token).set({
         'token': token,
         'platform': _platform,
+        'lang': _lang,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e, st) {
@@ -81,20 +87,36 @@ class PushRepositoryImpl implements PushRepository {
     // Subscribe to refresh stream to keep token fresh on FCM rotation
     final refreshStream = _getRefreshStream();
     if (refreshStream != null) {
-      _refreshSubscription = refreshStream.listen(
-        (newToken) {
-          if (newToken.isEmpty) return;
-          _tokenDoc(uid, newToken)
-              .set({
-                'token': newToken,
-                'platform': _platform,
-                'updatedAt': FieldValue.serverTimestamp(),
-              })
-              .catchError((Object e, StackTrace st) {
-                throw RepositoryWriteException('fcmTokens', e, st);
-              });
-        },
-      );
+      _refreshSubscription = refreshStream.listen((newToken) {
+        if (newToken.isEmpty) return;
+        _tokenDoc(uid, newToken)
+            .set({
+              'token': newToken,
+              'platform': _platform,
+              'lang': _lang,
+              'updatedAt': FieldValue.serverTimestamp(),
+            })
+            .catchError((Object e, StackTrace st) {
+              throw RepositoryWriteException('fcmTokens', e, st);
+            });
+      });
+    }
+  }
+
+  @override
+  Future<void> updateTokenLanguage(String uid, String lang) async {
+    _lang = _normalizeLang(lang);
+    final token = await _readToken();
+    if (token == null || token.isEmpty) return;
+    try {
+      // `update` (not merge-set) so a doc deleted by sign-out is not
+      // resurrected, atomically; `updatedAt` is left alone (not a refresh).
+      await _tokenDoc(uid, token).update({'lang': _lang});
+    } on FirebaseException catch (e, st) {
+      if (e.code == 'not-found') return;
+      throw RepositoryWriteException('fcmTokens', e, st);
+    } catch (e, st) {
+      throw RepositoryWriteException('fcmTokens', e, st);
     }
   }
 
@@ -116,5 +138,9 @@ class PushRepositoryImpl implements PushRepository {
   }
 
   DocumentReference<Map<String, Object?>> _tokenDoc(String uid, String token) =>
-      _firestore.collection('users').doc(uid).collection('fcmTokens').doc(token);
+      _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('fcmTokens')
+          .doc(token);
 }

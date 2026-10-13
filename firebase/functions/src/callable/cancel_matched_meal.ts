@@ -82,7 +82,10 @@ export async function applyCancel(
     await sendToUser(
       databaseId,
       decision.notifyUid,
-      decision.role === 'host' ? buildMealCancelled(mealId, true) : buildMatchLeft(true, mealId, true),
+      (lang) =>
+        decision.role === 'host'
+          ? buildMealCancelled(mealId, true, lang)
+          : buildMatchLeft(true, mealId, true, lang),
     );
   } catch (err) {
     console.error(`[cancelMatchedMeal] notify failed for meal ${mealId}`, err);

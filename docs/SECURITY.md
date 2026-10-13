@@ -82,7 +82,7 @@ Each person has two Firestore documents:
 
 | Doc | Readable by | Holds |
 |---|---|---|
-| `users/{uid}` (private) | the owner only (rules may also `get()` it, e.g. women-only checks read `gender`) | date of birth, age-verified flag, gender, created-at; `fcmTokens` subcollection |
+| `users/{uid}` (private) | the owner only (rules may also `get()` it, e.g. women-only checks read `gender`) | date of birth, age-verified flag, gender, created-at; `fcmTokens` subcollection (per device: `token`, `platform`, `lang` = app language `en`/`fr` for localized pushes, absent = `en`, and `updatedAt`; re-written on every app start, so an OS-language change under "System default" applies at the next start) |
 | `profiles/{uid}` (public) | any signed-in user, **one doc at a time — `list`/queries are denied** | display name, photos, bio, age in years, rating count/average |
 
 - Only the owner writes either doc. The rating fields on `profiles` are written only by Cloud Functions (Admin SDK).
