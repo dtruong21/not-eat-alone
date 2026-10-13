@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "commonTryAgain": "Try again",
+  "@commonTryAgain": {
+    "description": "Button label that retries a failed load or action."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Button label that dismisses a dialog or sheet without acting."
+  },
+  "commonDismiss": "Dismiss",
+  "@commonDismiss": {
+    "description": "Tooltip / accessibility label of a close button on a dismissible notice."
+  },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Short button label that retries a failed action."
+  }
+}

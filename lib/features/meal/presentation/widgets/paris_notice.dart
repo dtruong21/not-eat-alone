@@ -9,6 +9,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// A dismissible banner informing users that Convyve is Paris-only for now.
 class ParisNotice extends StatelessWidget {
@@ -50,7 +51,7 @@ class ParisNotice extends StatelessWidget {
             ),
             IconButton(
               key: const Key('paris_notice_close_button'),
-              tooltip: 'Dismiss',
+              tooltip: context.l10n.commonDismiss,
               icon: const Icon(Icons.close_rounded),
               onPressed: onDismiss,
               constraints: const BoxConstraints(

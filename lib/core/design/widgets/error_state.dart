@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/design/widgets/empty_state.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// "Couldn't load" block with a Try again button for failed feed loads.
 class ErrorState extends StatelessWidget {
@@ -29,7 +30,7 @@ class ErrorState extends StatelessWidget {
     mutedTitle: false,
     announce: true,
     action: AppButton(
-      label: 'Try again',
+      label: context.l10n.commonTryAgain,
       variant: AppButtonVariant.tonal,
       expand: false,
       onPressed: onRetry,
