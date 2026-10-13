@@ -86,16 +86,25 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
         ),
         const SizedBox(height: WarmPlayfulSpacing.s1),
         Text(
-          context.l10n.ratingCardSubtitle,
+          // The person's name is readable here (the button only says
+          // "Rate"); it wraps to two lines and only a pathological name is cut.
+          targetName != null
+              ? context.l10n.ratingCardSubtitleNamed(targetName)
+              : context.l10n.ratingCardSubtitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
         ),
       ],
     );
     Widget rateButton({required bool expand}) => AppButton(
       key: const Key('post_meal_card_rate_button'),
-      label: targetName != null
+      // Constant and short so it never truncates; screen readers still hear
+      // who is being rated.
+      label: context.l10n.ratingRate,
+      semanticLabel: targetName != null
           ? context.l10n.ratingRateNamed(targetName)
-          : context.l10n.ratingRate,
+          : null,
       expand: expand,
       onPressed: () => showRatingSheet(
         context,
@@ -124,12 +133,11 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
               )
             : Row(
                 children: [
-                  // 3:2, not 1:1: the title keeps its line at 360 px and the
-                  // button only wraps its label (never the title and the
-                  // label both).
-                  Expanded(flex: 3, child: prompt),
+                  // The label is short and constant, so the button takes its
+                  // natural width and the prompt gets the rest.
+                  Expanded(child: prompt),
                   const SizedBox(width: WarmPlayfulSpacing.s3),
-                  Flexible(flex: 2, child: rateButton(expand: false)),
+                  rateButton(expand: false),
                 ],
               ),
       ),

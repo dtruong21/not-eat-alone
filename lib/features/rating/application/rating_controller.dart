@@ -9,6 +9,7 @@ library;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:not_eat_alone/core/util/queued_write.dart';
+import 'package:not_eat_alone/core/util/queued_write_failures.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -35,6 +36,7 @@ class RatingController extends _$RatingController {
 
     // Keep alive until settled — see CreateRequestController.request.
     final link = ref.keepAlive();
+    final failures = ref.read(queuedWriteFailuresProvider.notifier);
     try {
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
@@ -48,7 +50,10 @@ class RatingController extends _$RatingController {
           showedUp: showedUp,
           comment: comment,
         );
-        await settleOrQueue(ref.read(ratingRepositoryProvider).submit(rating));
+        await settleOrQueue(
+          ref.read(ratingRepositoryProvider).submit(rating),
+          onLateError: (_, _) => failures.report(QueuedWriteKind.rating),
+        );
         await analytics.track(MealRated(stars: stars, showedUp: showedUp));
       });
     } finally {

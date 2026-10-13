@@ -309,6 +309,14 @@
   "@mealActionStatusCancelled": {
     "description": "Meal action bar status line on a cancelled meal."
   },
+  "mealActionEnded": "Meal ended",
+  "@mealActionEnded": {
+    "description": "Meal action bar: disabled button on a meal that has taken place (completed), for anyone but the host."
+  },
+  "mealActionStatusEnded": "This meal has ended.",
+  "@mealActionStatusEnded": {
+    "description": "Meal action bar status line (one line only) on a meal that has ended."
+  },
   "mealActionStatusWomenOnly": "Only women can join this meal.",
   "@mealActionStatusWomenOnly": {
     "description": "Meal action bar status line for a women-only meal the viewer cannot join."
@@ -529,6 +537,22 @@
   "chatSendFailed": "Couldn't send your message. Try again.",
   "@chatSendFailed": {
     "description": "Snackbar when sending a message failed."
+  },
+  "queuedWriteJoinRequestFailed": "Your join request didn't go through. Try again.",
+  "@queuedWriteJoinRequestFailed": {
+    "description": "Snackbar when a join request that was queued offline was rejected after the app moved on."
+  },
+  "queuedWriteMealFailed": "Your meal wasn't posted. Try again.",
+  "@queuedWriteMealFailed": {
+    "description": "Snackbar when a meal that was queued offline was rejected after the app moved on."
+  },
+  "queuedWriteRatingFailed": "Your rating wasn't saved.",
+  "@queuedWriteRatingFailed": {
+    "description": "Snackbar when a rating that was queued offline was rejected after the app moved on."
+  },
+  "queuedWriteMessageFailed": "A message didn't send.",
+  "@queuedWriteMessageFailed": {
+    "description": "Snackbar when a chat message that was queued offline was rejected after the app moved on."
   },
   "chatUnavailable": "This chat is no longer available — the meal was cancelled.",
   "@chatUnavailable": {
@@ -810,13 +834,22 @@
   "@ratingCardSubtitle": {
     "description": "Subtitle of the post-meal card."
   },
+  "ratingCardSubtitleNamed": "With {name}",
+  "@ratingCardSubtitleNamed": {
+    "description": "Post-meal card subtitle naming the partner (the button only says Rate).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "ratingRate": "Rate",
   "@ratingRate": {
-    "description": "Post-meal card button when the partner is unnamed."
+    "description": "Post-meal card button label (short and constant; the partner is named in the subtitle)."
   },
   "ratingRateNamed": "Rate {name}",
   "@ratingRateNamed": {
-    "description": "Post-meal card button naming the partner.",
+    "description": "Screen-reader label of the post-meal card button, naming the partner (the visible label is just ratingRate).",
     "placeholders": {
       "name": {
         "type": "String"

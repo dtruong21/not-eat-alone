@@ -1,7 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+// Transitive dependency of fake_cloud_firestore (its documented way to make a
+// fake call throw); not worth a direct pubspec entry for these tests.
+// ignore: depend_on_referenced_packages
+import 'package:mock_exceptions/mock_exceptions.dart';
+import 'package:not_eat_alone/core/firebase/repository_exception.dart';
 import 'package:not_eat_alone/features/matching/data/repositories/request_repository_impl.dart';
 import 'package:not_eat_alone/features/matching/domain/entities/request_status.dart';
+import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 
 void main() {
   late FakeFirebaseFirestore db;
@@ -41,5 +48,99 @@ void main() {
     await repo.deny(r);
     final after = await db.collection('requests').doc('m1_g1').get();
     expect(after.data()!['status'], 'denied');
+  });
+
+  group('createRequest failure classification', () {
+    final denied = FirebaseException(
+      plugin: 'firestore',
+      code: 'permission-denied',
+    );
+
+    Future<Object> classify(
+      Object error,
+      Future<String?> Function(String) read,
+    ) => classifyRequestFailure(
+      mealId: 'm1',
+      error: error,
+      stack: StackTrace.empty,
+      readMealStatus: read,
+    );
+
+    for (final status in ['cancelled', 'matched', 'completed', null]) {
+      test(
+        'permission-denied + meal ${status ?? 'missing'} -> no longer open',
+        () async {
+          expect(
+            await classify(denied, (_) async => status),
+            isA<MealNoLongerOpenException>().having(
+              (e) => e.mealId,
+              'mealId',
+              'm1',
+            ),
+          );
+        },
+      );
+    }
+
+    test('permission-denied + meal open -> RepositoryWriteException', () async {
+      expect(
+        await classify(denied, (_) async => 'open'),
+        isA<RepositoryWriteException>().having((e) => e.cause, 'cause', denied),
+      );
+    });
+
+    test('non permission-denied errors skip the read', () async {
+      var reads = 0;
+      final result = await classify(
+        FirebaseException(plugin: 'firestore', code: 'unavailable'),
+        (_) async {
+          reads++;
+          return 'cancelled';
+        },
+      );
+      expect(result, isA<RepositoryWriteException>());
+      expect(
+        await classify(StateError('x'), (_) async => null),
+        isA<RepositoryWriteException>(),
+      );
+      expect(reads, 0);
+    });
+
+    test('a failing meal read never masks the original error', () async {
+      final result = await classify(
+        denied,
+        (_) async =>
+            throw FirebaseException(plugin: 'firestore', code: 'unavailable'),
+      );
+      expect(
+        result,
+        isA<RepositoryWriteException>().having((e) => e.cause, 'cause', denied),
+      );
+    });
+
+    test('createRequest: rules rejection on a cancelled meal', () async {
+      await db.collection('meals').doc('m1').set({'status': 'cancelled'});
+      whenCalling(
+        Invocation.method(#set, null),
+      ).on(db.collection('requests').doc('m1_g1')).thenThrow(denied);
+      await expectLater(
+        repo.createRequest(mealId: 'm1', guestId: 'g1', hostId: 'h1'),
+        throwsA(isA<MealNoLongerOpenException>()),
+      );
+    });
+
+    test(
+      'createRequest: rejection on an open meal stays a write failure',
+      () async {
+        await db.collection('meals').doc('m1').set({'status': 'open'});
+        whenCalling(
+          Invocation.method(#set, null),
+        ).on(db.collection('requests').doc('m1_g1')).thenThrow(denied);
+        await expectLater(
+          repo.createRequest(mealId: 'm1', guestId: 'g1', hostId: 'h1'),
+          throwsA(isA<RepositoryWriteException>()),
+        );
+      },
+    );
   });
 }

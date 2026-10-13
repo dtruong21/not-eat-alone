@@ -236,6 +236,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealActionStatusCancelled => 'The host cancelled this meal.';
 
   @override
+  String get mealActionEnded => 'Meal ended';
+
+  @override
+  String get mealActionStatusEnded => 'This meal has ended.';
+
+  @override
   String get mealActionStatusWomenOnly => 'Only women can join this meal.';
 
   @override
@@ -391,6 +397,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatSendFailed => 'Couldn\'t send your message. Try again.';
+
+  @override
+  String get queuedWriteJoinRequestFailed =>
+      'Your join request didn\'t go through. Try again.';
+
+  @override
+  String get queuedWriteMealFailed => 'Your meal wasn\'t posted. Try again.';
+
+  @override
+  String get queuedWriteRatingFailed => 'Your rating wasn\'t saved.';
+
+  @override
+  String get queuedWriteMessageFailed => 'A message didn\'t send.';
 
   @override
   String get chatUnavailable =>
@@ -596,6 +615,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ratingCardSubtitle => 'It only takes a moment.';
+
+  @override
+  String ratingCardSubtitleNamed(String name) {
+    return 'With $name';
+  }
 
   @override
   String get ratingRate => 'Rate';

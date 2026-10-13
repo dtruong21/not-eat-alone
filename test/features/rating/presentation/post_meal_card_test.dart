@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
@@ -10,6 +11,7 @@ import 'package:not_eat_alone/features/rating/application/my_rating_provider.dar
 import 'package:not_eat_alone/features/rating/presentation/widgets/post_meal_card.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
+import 'package:not_eat_alone/l10n/generated/app_localizations.dart';
 
 import '../../../helpers/load_app_fonts.dart';
 
@@ -27,8 +29,9 @@ final _past = Meal(
   geohash: 'u09tvw',
 );
 
-/// UX plan 18, task 3: the post-meal card's call to action is a primary
-/// button that names the person.
+/// UX plan 18, task 3 / follow-ups plan 21, task 2: the post-meal card's call
+/// to action is a short, constant primary button; the person is named in the
+/// subtitle and in the button's screen-reader label.
 void main() {
   setUpAll(loadAppFonts);
 
@@ -37,6 +40,7 @@ void main() {
     String? name,
     double scale = 1,
     Size size = const Size(360, 800),
+    Locale locale = const Locale('en'),
   }) async {
     tester.view
       ..devicePixelRatio = 1
@@ -54,6 +58,9 @@ void main() {
           ),
         ],
         child: MaterialApp(
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: buildTheme(Brightness.light),
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
@@ -77,15 +84,23 @@ void main() {
     find.byKey(const Key('post_meal_card_rate_button')),
   );
 
-  testWidgets('Rate is a primary AppButton naming the person', (tester) async {
-    await pump(tester, name: 'Giulia');
-    expect(button(tester).label, 'Rate Giulia');
-    expect(button(tester).variant, AppButtonVariant.primary);
-  });
+  testWidgets(
+    'Rate is a short primary AppButton; the subtitle names the person',
+    (tester) async {
+      await pump(tester, name: 'Giulia');
+      expect(button(tester).label, 'Rate');
+      expect(button(tester).semanticLabel, 'Rate Giulia');
+      expect(button(tester).variant, AppButtonVariant.primary);
+      expect(find.text('How was your meal?'), findsOneWidget);
+      expect(find.text('With Giulia'), findsOneWidget);
+    },
+  );
 
-  testWidgets('Rate falls back to plain "Rate"', (tester) async {
+  testWidgets('unnamed: plain title and "Rate"', (tester) async {
     await pump(tester);
     expect(button(tester).label, 'Rate');
+    expect(button(tester).semanticLabel, isNull);
+    expect(find.text('How was your meal?'), findsOneWidget);
   });
 
   testWidgets('long name at 320 px / 2.0x does not overflow', (tester) async {
@@ -141,5 +156,75 @@ void main() {
       expect(button.top, greaterThanOrEqualTo(text.bottom));
       expect(cardHeight(tester), lessThan(358));
     });
+  }
+
+  // Follow-ups plan 21, task 2: the Rate button never truncates and the
+  // person's name stays readable, in either language, at any text size.
+  const ordinary = ['Giulia Pellegrini', 'Bastien', 'D’Artagnan'];
+  const names = [...ordinary, 'Emilia Vasquez-Hernandez'];
+  for (final locale in [const Locale('en'), const Locale('fr')]) {
+    for (final name in names) {
+      for (final width in [320.0, 360.0]) {
+        // The long hyphenated name is only required at the narrowest width.
+        if (width == 360 && !ordinary.contains(name)) continue;
+        for (final scale in [1.0, 1.3, 2.0]) {
+          testWidgets(
+            '${locale.languageCode} ${width.toInt()} px ${scale}x ($name): '
+            'Rate and name not cut, semantics name the person',
+            (tester) async {
+              final semantics = tester.ensureSemantics();
+              await pump(
+                tester,
+                name: name,
+                scale: scale,
+                size: Size(width, 640),
+                locale: locale,
+              );
+              expect(tester.takeException(), isNull);
+
+              final rate = find.byKey(const Key('post_meal_card_rate_button'));
+              final buttonParagraphs = tester.renderObjectList<RenderParagraph>(
+                find.descendant(
+                  of: rate,
+                  matching: find.byType(RichText),
+                  skipOffstage: false,
+                ),
+              );
+              expect(buttonParagraphs, isNotEmpty);
+              for (final p in buttonParagraphs) {
+                expect(p.didExceedMaxLines, isFalse);
+              }
+              final verb = locale.languageCode == 'fr' ? 'Noter' : 'Rate';
+              expect(find.bySemanticsLabel('$verb $name'), findsOneWidget);
+              expect(find.text(verb), findsOneWidget);
+
+              // The name is readable in the card; only the long hyphenated
+              // name may be ellipsized.
+              final nameLine = tester.renderObject<RenderParagraph>(
+                find.descendant(
+                  of: find.byKey(const Key('post_meal_card')),
+                  matching: find.textContaining(name),
+                ),
+              );
+              if (ordinary.contains(name)) {
+                expect(nameLine.didExceedMaxLines, isFalse);
+                // Never taller than the card was before this change (measured:
+                // 108 at 1.0x, 154 en / 188 fr at 1.3x, 408 at 2.0x), and
+                // within the 126 / 358 ceilings at 1.0x / 2.0x.
+                expect(
+                  cardHeight(tester),
+                  lessThanOrEqualTo(switch (scale) {
+                    1.0 => 126,
+                    1.3 => 188,
+                    _ => 357,
+                  }),
+                );
+              }
+              semantics.dispose();
+            },
+          );
+        }
+      }
+    }
   }
 }

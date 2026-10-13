@@ -56,16 +56,16 @@ buttons are fixed width: check any longer rewording at 320 px.
 | --- | ---: | --- | --- |
 | `settingsDeleteBody` | 93 | Cela supprime définitivement ton compte et toutes tes données. Cette action est irréversible. | lib/features/settings/presentation/settings_screen.dart |
 | `blockedEmptyMessage` | 78 | Les personnes que tu bloques sont masquées de tes repas et de tes discussions. | lib/features/safety/presentation/blocked_people_screen.dart |
-| `inboxOutcomeDenyFailed` | 71 | Impossible de refuser cette demande. Elle a peut-être déjà été traitée. | lib/features/matching/presentation/widgets/inbox_action_message.dart |
 | `safetyBlockBody` | 71 | Tu ne verras plus cette personne sur Convyve, et elle ne te verra plus. | lib/features/safety/presentation/widgets/safety_actions.dart |
 | `inboxOutcomeApproveFailed` | 71 | Impossible d’accepter cette demande. Elle a peut-être déjà été traitée. | lib/features/matching/presentation/widgets/inbox_action_message.dart |
+| `inboxOutcomeDenyFailed` | 71 | Impossible de refuser cette demande. Elle a peut-être déjà été traitée. | lib/features/matching/presentation/widgets/inbox_action_message.dart |
 | `signinPhoneError` | 68 | Saisis un numéro avec l’indicatif du pays, par ex. +33 6 12 34 56 78 | lib/features/auth/presentation/signin_screen.dart |
 | `leaveMatchGuestBody` | 67 | On préviendra {name} et le repas sera de nouveau ouvert aux autres. | lib/features/chat/presentation/widgets/leave_match_action.dart |
 | `phoneWrongCode` | 66 | Ce code n’a pas fonctionné. Vérifie-le ou demande un nouveau code. | lib/features/auth/presentation/phone_verify_screen.dart |
 | `parisNotice` | 64 | Convyve n’est qu’à Paris pour l’instant — on démarre tout juste. | lib/features/meal/presentation/widgets/paris_notice.dart |
-| `restaurantSearchNoMatch` | 63 | Aucun restaurant ne s’appelle «⍽{query}⍽». Essaie un autre nom. | lib/features/meal/presentation/restaurant_search_screen.dart |
+| `chatUnavailable` | 63 | Cette discussion n’est plus disponible — le repas a été annulé. | lib/features/chat/presentation/chat_screen.dart |
 
-## All strings (224)
+## All strings (225)
 
 | key | English | French | description |
 | --- | --- | --- | --- |
@@ -244,8 +244,9 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `ratingFailed` | Couldn't submit your rating. Try again. | Impossible d’envoyer ta note. Réessaie. | Snackbar when sending a rating failed. |
 | `ratingThanks` | Thanks for the feedback! | Merci pour ton retour⍽! | Snackbar after a rating was sent. |
 | `ratingCardSubtitle` | It only takes a moment. | Ça ne prend qu’un instant. | Subtitle of the post-meal card. |
-| `ratingRate` | Rate | Noter | Post-meal card button when the partner is unnamed. |
-| `ratingRateNamed` | Rate {name} | Noter {name} | Post-meal card button naming the partner. |
+| `ratingCardSubtitleNamed` | With {name} | Avec {name} | Post-meal card subtitle naming the partner (the button only says Rate). |
+| `ratingRate` | Rate | Noter | Post-meal card button label (short and constant; the partner is named in the subtitle). |
+| `ratingRateNamed` | Rate {name} | Noter {name} | Screen-reader label of the post-meal card button, naming the partner (the visible label is just ratingRate). |
 | `ratingBadgeNew` | New | Nouveau | Badge shown instead of a score when a person has no ratings yet. |
 | `ratingBadgeScore` | {average} ({count}) | {average} ({count}) | Rating badge: average (one decimal) and number of ratings. |
 | `settingsTitle` | Settings | Réglages | Settings screen title and the Profile app bar tooltip. |

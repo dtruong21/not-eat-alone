@@ -238,6 +238,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealActionStatusCancelled => 'L’hôte a annulé ce repas.';
 
   @override
+  String get mealActionEnded => 'Repas terminé';
+
+  @override
+  String get mealActionStatusEnded => 'Ce repas est terminé.';
+
+  @override
   String get mealActionStatusWomenOnly => 'Réservé aux femmes.';
 
   @override
@@ -396,6 +402,19 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatSendFailed => 'Impossible d’envoyer ton message. Réessaie.';
+
+  @override
+  String get queuedWriteJoinRequestFailed =>
+      'Ta demande n’a pas abouti. Réessaie.';
+
+  @override
+  String get queuedWriteMealFailed => 'Ton repas n’a pas été publié. Réessaie.';
+
+  @override
+  String get queuedWriteRatingFailed => 'Ta note n’a pas été enregistrée.';
+
+  @override
+  String get queuedWriteMessageFailed => 'Un message n’a pas été envoyé.';
 
   @override
   String get chatUnavailable =>
@@ -603,6 +622,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get ratingCardSubtitle => 'Ça ne prend qu’un instant.';
+
+  @override
+  String ratingCardSubtitleNamed(String name) {
+    return 'Avec $name';
+  }
 
   @override
   String get ratingRate => 'Noter';

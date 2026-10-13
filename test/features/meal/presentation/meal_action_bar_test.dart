@@ -47,6 +47,8 @@ final _meal = Meal(
 
 final Meal _cancelledMeal = _meal.copyWith(status: MealStatus.cancelled);
 
+final Meal _endedMeal = _meal.copyWith(status: MealStatus.completed);
+
 final _womenOnlyMeal = Meal(
   id: 'm1',
   hostId: 'host1',
@@ -197,6 +199,28 @@ final _cases = <_Case>[
     status: 'The host cancelled this meal.',
     enabled: false,
     buttonKey: 'meal_detail_cancelled_button',
+  ),
+  (
+    name: 'ended, no request',
+    viewer: 'guest1',
+    meal: _endedMeal,
+    gender: null,
+    request: null,
+    label: 'Meal ended',
+    status: 'This meal has ended.',
+    enabled: false,
+    buttonKey: 'meal_detail_ended_button',
+  ),
+  (
+    name: 'ended, approved request',
+    viewer: 'guest1',
+    meal: _endedMeal,
+    gender: null,
+    request: _request(RequestStatus.approved),
+    label: 'Meal ended',
+    status: 'This meal has ended.',
+    enabled: false,
+    buttonKey: 'meal_detail_ended_button',
   ),
 ];
 
@@ -612,6 +636,15 @@ void main() {
 
     expect(find.text('This is your meal'), findsOneWidget);
     expect(find.text('Meal cancelled'), findsNothing);
+  });
+
+  testWidgets('the host still sees "This is your meal" when it has ended', (
+    tester,
+  ) async {
+    await pump(tester, meal: _endedMeal, viewer: 'host1');
+
+    expect(find.text('This is your meal'), findsOneWidget);
+    expect(find.text('Meal ended'), findsNothing);
   });
 
   testWidgets('cancelled + approved: no Open chat button', (tester) async {

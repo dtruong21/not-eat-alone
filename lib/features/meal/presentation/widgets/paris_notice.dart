@@ -1,9 +1,8 @@
 /// A soft, dismissible info banner notifying users that Convyve is
 /// currently Paris-only. Shown as the first item of the discovery feed.
 ///
-/// Stateless: the discovery screen owns the per-session dismissed flag (so
-/// the choice survives the list rebuilding or being scrolled). Persisting it
-/// across sessions (`shared_preferences` is now available) is a follow-up.
+/// Stateless: the dismissed flag lives in `parisNoticeControllerProvider`,
+/// which remembers it on this device so the notice never comes back.
 library;
 
 import 'package:flutter/material.dart';

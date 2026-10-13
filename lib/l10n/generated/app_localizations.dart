@@ -506,6 +506,18 @@ abstract class AppLocalizations {
   /// **'The host cancelled this meal.'**
   String get mealActionStatusCancelled;
 
+  /// Meal action bar: disabled button on a meal that has taken place (completed), for anyone but the host.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal ended'**
+  String get mealActionEnded;
+
+  /// Meal action bar status line (one line only) on a meal that has ended.
+  ///
+  /// In en, this message translates to:
+  /// **'This meal has ended.'**
+  String get mealActionStatusEnded;
+
   /// Meal action bar status line for a women-only meal the viewer cannot join.
   ///
   /// In en, this message translates to:
@@ -787,6 +799,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t send your message. Try again.'**
   String get chatSendFailed;
+
+  /// Snackbar when a join request that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'Your join request didn\'t go through. Try again.'**
+  String get queuedWriteJoinRequestFailed;
+
+  /// Snackbar when a meal that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'Your meal wasn\'t posted. Try again.'**
+  String get queuedWriteMealFailed;
+
+  /// Snackbar when a rating that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating wasn\'t saved.'**
+  String get queuedWriteRatingFailed;
+
+  /// Snackbar when a chat message that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'A message didn\'t send.'**
+  String get queuedWriteMessageFailed;
 
   /// Shown instead of the thread when the match is gone.
   ///
@@ -1148,13 +1184,19 @@ abstract class AppLocalizations {
   /// **'It only takes a moment.'**
   String get ratingCardSubtitle;
 
-  /// Post-meal card button when the partner is unnamed.
+  /// Post-meal card subtitle naming the partner (the button only says Rate).
+  ///
+  /// In en, this message translates to:
+  /// **'With {name}'**
+  String ratingCardSubtitleNamed(String name);
+
+  /// Post-meal card button label (short and constant; the partner is named in the subtitle).
   ///
   /// In en, this message translates to:
   /// **'Rate'**
   String get ratingRate;
 
-  /// Post-meal card button naming the partner.
+  /// Screen-reader label of the post-meal card button, naming the partner (the visible label is just ratingRate).
   ///
   /// In en, this message translates to:
   /// **'Rate {name}'**

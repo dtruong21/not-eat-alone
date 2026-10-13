@@ -4,6 +4,9 @@ abstract class RequestRepository {
   /// Guest ([guestId], the current auth uid supplied by the application layer)
   /// creates a pending request for [mealId] hosted by [hostId].
   /// Document id is `"${mealId}_${guestId}"`.
+  /// Throws MealNoLongerOpenException when the server rejects the request
+  /// because the meal is missing or no longer `open`; other failures throw
+  /// RepositoryWriteException.
   Future<void> createRequest({
     required String mealId,
     required String guestId,

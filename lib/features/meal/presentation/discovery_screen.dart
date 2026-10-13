@@ -35,6 +35,7 @@ import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/core/location/location_providers.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/meal/application/discovery_controller.dart';
+import 'package:not_eat_alone/features/meal/application/paris_notice_provider.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/discoverable_meal.dart';
 import 'package:not_eat_alone/features/meal/presentation/widgets/paris_notice.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
@@ -50,9 +51,6 @@ class DiscoveryScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
-  // Per session only: remembering it across launches needs shared_preferences.
-  bool _noticeDismissed = false;
-
   Future<void> _onRefresh() async {
     ref
       ..invalidate(locationProvider)
@@ -71,19 +69,22 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
 
   void _createMeal() => unawaited(context.push('/meals/new'));
 
-  Widget _notice() =>
-      ParisNotice(onDismiss: () => setState(() => _noticeDismissed = true));
+  Widget _notice() => ParisNotice(
+    onDismiss: () =>
+        unawaited(ref.read(parisNoticeControllerProvider.notifier).dismiss()),
+  );
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final state = ref.watch(discoveryControllerProvider);
+    final noticeDismissed = ref.watch(parisNoticeControllerProvider);
     final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
 
     // Loading / empty / error: the shared state widget under the notice.
     Widget stateBody(Widget child) => Column(
       children: [
-        if (!_noticeDismissed)
+        if (!noticeDismissed)
           Padding(
             padding: const EdgeInsets.fromLTRB(
               WarmPlayfulSpacing.s4,
@@ -121,7 +122,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
             ),
           );
         }
-        final lead = _noticeDismissed ? 0 : 1;
+        final lead = noticeDismissed ? 0 : 1;
         final count = meals.length + lead;
         return ListView.builder(
           // Clears the extended FAB so the last card is never hidden by it.

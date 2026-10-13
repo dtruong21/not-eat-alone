@@ -194,8 +194,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Comment s’est passé ton repas\u00a0?'), findsOneWidget);
-      expect(find.text('Ça ne prend qu’un instant.'), findsOneWidget);
-      expect(find.text("Noter Jean d'Arc"), findsOneWidget);
+      expect(find.text("Avec Jean d'Arc"), findsOneWidget);
+      expect(find.text('Noter'), findsOneWidget);
       expect(find.text('How was your meal?'), findsNothing);
     });
 

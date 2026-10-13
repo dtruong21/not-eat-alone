@@ -4,6 +4,12 @@
 /// (photo/name/derived age/bio via `UserRepository.watch(hostId)`),
 /// date/time, note (if any), and a "Women only" badge when applicable.
 ///
+/// The screen renders the [Meal] it was opened with at once, then follows the
+/// live `meals/{id}` document (`mealStreamProvider`): a meal the host cancels
+/// or that ends while the screen is open updates in place. A stream error
+/// keeps what is shown; a deleted/hidden meal keeps the last known meal with
+/// its action disabled.
+///
 /// The request control lives in the pinned [MealActionBar] (bottom bar), not
 /// in the scroll body.
 library;
@@ -19,22 +25,60 @@ import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/meal/application/maps_launcher_provider.dart';
+import 'package:not_eat_alone/features/meal/application/meal_providers.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/widgets/meal_action_bar.dart';
 import 'package:not_eat_alone/features/rating/presentation/widgets/rating_badge.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
-import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/l10n/l10n.dart';
 
-class MealDetailScreen extends ConsumerWidget {
+class MealDetailScreen extends ConsumerStatefulWidget {
   const MealDetailScreen({required this.meal, super.key});
 
+  /// The meal as it was when the screen was opened.
   final Meal meal;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MealDetailScreen> createState() => _MealDetailScreenState();
+}
+
+class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
+  late Meal _meal = widget.meal;
+  var _available = true;
+
+  ProviderSubscription<AsyncValue<Meal?>>? _live;
+
+  @override
+  void initState() {
+    super.initState();
+    // Only a changed snapshot rebuilds (`Meal` is freezed, so `==` is by
+    // value); an error keeps the meal on screen. `fireImmediately` so a
+    // provider already alive with data (same meal stacked twice) is applied.
+    _live = ref.listenManual(mealStreamProvider(widget.meal.id), (_, next) {
+      // Loading and error keep what is on screen; only a snapshot (a meal or
+      // null) counts.
+      if (!next.hasValue) return;
+      final live = next.value;
+      final available = live != null;
+      if ((live == null || live == _meal) && available == _available) return;
+      setState(() {
+        _meal = live ?? _meal;
+        _available = available;
+      });
+    }, fireImmediately: true);
+  }
+
+  @override
+  void dispose() {
+    _live?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final meal = _meal;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -44,7 +88,7 @@ class MealDetailScreen extends ConsumerWidget {
         title: Text(context.l10n.mealDetailTitle),
         actions: [_MealSafetyActions(meal: meal)],
       ),
-      bottomNavigationBar: MealActionBar(meal: meal),
+      bottomNavigationBar: MealActionBar(meal: meal, available: _available),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
@@ -226,10 +270,9 @@ class _WomenOnlyBadge extends StatelessWidget {
   }
 }
 
-/// Host block — photo, display name, derived age, bio — driven directly off
-/// `UserRepository.watch(hostId)` via a [StreamBuilder]. See
-/// `discovery_screen.dart`'s `_HostInfo` for why this is a raw stream
-/// rather than a new Riverpod provider.
+/// Host block — photo, display name, derived age, bio — off the shared
+/// [userDocProvider], so the subscription survives the rebuilds a live meal
+/// update causes (no spinner flash or height jump in the host row).
 class _HostBlock extends ConsumerWidget {
   const _HostBlock({required this.hostId});
 
@@ -237,94 +280,90 @@ class _HostBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final repository = ref.watch(userRepositoryProvider);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    return StreamBuilder<AppUser?>(
-      stream: repository.watch(hostId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Text(
+    return ref
+        .watch(userDocProvider(hostId))
+        .when(
+          skipLoadingOnReload: true,
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => Text(
             context.l10n.commonSomethingWentWrong,
             style: textTheme.bodyMedium?.copyWith(color: colors.error),
-          );
-        }
+          ),
+          data: (host) {
+            if (host == null) {
+              return Text(
+                context.l10n.mealDetailHostUnavailable,
+                style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
+              );
+            }
 
-        final host = snapshot.data;
-        if (host == null) {
-          return Text(
-            context.l10n.mealDetailHostUnavailable,
-            style: textTheme.bodyMedium?.copyWith(color: context.wp.muted),
-          );
-        }
+            final photoUrl = host.photoUrls.isNotEmpty
+                ? host.photoUrls.first
+                : null;
+            final age = host.ageYears;
+            final hostName =
+                host.displayName ?? context.l10n.mealHostFallbackName;
 
-        final photoUrl = host.photoUrls.isNotEmpty
-            ? host.photoUrls.first
-            : null;
-        final age = host.ageYears;
-        final hostName = host.displayName ?? context.l10n.mealHostFallbackName;
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: WarmPlayfulSpacing.s5,
-              backgroundColor: colors.surfaceContainerHighest,
-              backgroundImage: photoUrl != null
-                  ? avatarImage(
-                      context,
-                      photoUrl,
-                      radius: WarmPlayfulSpacing.s5,
-                    )
-                  : null,
-              onBackgroundImageError: photoUrl != null
-                  ? ignoreAvatarImageError
-                  : null,
-              child: photoUrl == null
-                  ? Icon(
-                      Icons.person_rounded,
-                      size: WarmPlayfulSpacing.s5,
-                      color: context.wp.muted,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: WarmPlayfulSpacing.s3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    age == null
-                        ? hostName
-                        : context.l10n.mealDetailHostNameAge(hostName, age),
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colors.onSurface,
-                      fontWeight: WarmPlayfulType.h2Weight,
-                    ),
-                  ),
-                  const SizedBox(height: WarmPlayfulSpacing.s1),
-                  RatingBadge(uid: hostId),
-                  if (host.bio != null && host.bio!.trim().isNotEmpty) ...[
-                    const SizedBox(height: WarmPlayfulSpacing.s1),
-                    Text(
-                      host.bio!,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: context.wp.muted,
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: WarmPlayfulSpacing.s5,
+                  backgroundColor: colors.surfaceContainerHighest,
+                  backgroundImage: photoUrl != null
+                      ? avatarImage(
+                          context,
+                          photoUrl,
+                          radius: WarmPlayfulSpacing.s5,
+                        )
+                      : null,
+                  onBackgroundImageError: photoUrl != null
+                      ? ignoreAvatarImageError
+                      : null,
+                  child: photoUrl == null
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: WarmPlayfulSpacing.s5,
+                          color: context.wp.muted,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: WarmPlayfulSpacing.s3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        age == null
+                            ? hostName
+                            : context.l10n.mealDetailHostNameAge(hostName, age),
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.onSurface,
+                          fontWeight: WarmPlayfulType.h2Weight,
+                        ),
                       ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+                      const SizedBox(height: WarmPlayfulSpacing.s1),
+                      RatingBadge(uid: hostId),
+                      if (host.bio != null && host.bio!.trim().isNotEmpty) ...[
+                        const SizedBox(height: WarmPlayfulSpacing.s1),
+                        Text(
+                          host.bio!,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: context.wp.muted,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         );
-      },
-    );
   }
 }
 
