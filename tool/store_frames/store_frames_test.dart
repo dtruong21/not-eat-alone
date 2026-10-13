@@ -207,12 +207,6 @@ void main() {
               );
               expect(caption.split('\n').length, lessThanOrEqualTo(2));
 
-              // The whole phone stays on the canvas (nothing interactive cut).
-              expect(
-                spec.phoneTop + spec.phoneWidth * 2622 / 1206,
-                lessThanOrEqualTo(spec.height),
-              );
-
               tester.view
                 ..physicalSize = Size(
                   spec.width.toDouble(),
@@ -228,6 +222,11 @@ void main() {
                 final codec = await ui.instantiateImageCodec(bytes);
                 shot = (await codec.getNextFrame()).image;
               });
+              // The whole phone stays on the canvas (nothing interactive cut).
+              expect(
+                spec.phoneTop + spec.phoneWidth * shot.height / shot.width,
+                lessThanOrEqualTo(spec.height),
+              );
               final key = GlobalKey();
               await tester.pumpWidget(
                 RepaintBoundary(

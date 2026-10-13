@@ -16,9 +16,9 @@ const storeCaptions = <String, List<String>>{
   ],
   'fr': [
     'Trouve un repas\nprès de chez toi',
-    'Le repas en détail,\npuis demande à venir',
+    'Le repas en détail,\npuis rejoins la table',
     'L’hôte choisit\nune seule personne',
-    'Fais connaissance\navant de vous voir',
+    'Discute d’abord,\ndîne ensuite',
     'La sécurité d’abord :\nbloque ou signale',
   ],
 };

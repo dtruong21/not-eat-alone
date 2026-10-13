@@ -5,9 +5,9 @@ Five framed shots per locale (`en`, `fr`), generated from real app captures.
 | # | File | Shows | EN caption | FR caption (draft, needs native review) |
 |---|------|-------|-----------|------|
 | 1 | `01_discover.png` | Discover feed | Find meals near you | Trouve un repas près de chez toi |
-| 2 | `02_meal_detail.png` | Meal detail | See the full meal, then ask to join | Le repas en détail, puis demande à venir |
+| 2 | `02_meal_detail.png` | Meal detail | See the full meal, then ask to join | Le repas en détail, puis rejoins la table |
 | 3 | `03_requests.png` | Requests | Hosts pick one match. No group chaos | L’hôte choisit une seule personne |
-| 4 | `04_chat.png` | Chat | Get to know them before you meet | Fais connaissance avant de vous voir |
+| 4 | `04_chat.png` | Chat | Get to know them before you meet | Discute d’abord, dîne ensuite |
 | 5 | `05_safety.png` | Safety tips sheet | Safety built in: block or report | La sécurité d’abord : bloque ou signale |
 
 Folders (per locale): `ios-6.9/` 1290 x 2796 px (App Store 6.9"),
