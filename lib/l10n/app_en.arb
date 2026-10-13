@@ -821,7 +821,7 @@
   },
   "ratingRate": "Rate",
   "@ratingRate": {
-    "description": "Post-meal card button label (short and constant; the partner is named in the title)."
+    "description": "Post-meal card button label (short and constant; the partner is named in the subtitle)."
   },
   "ratingRateNamed": "Rate {name}",
   "@ratingRateNamed": {

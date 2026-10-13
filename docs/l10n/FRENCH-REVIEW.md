@@ -245,7 +245,7 @@ buttons are fixed width: check any longer rewording at 320 px.
 | `ratingThanks` | Thanks for the feedback! | Merci pour ton retour⍽! | Snackbar after a rating was sent. |
 | `ratingCardSubtitle` | It only takes a moment. | Ça ne prend qu’un instant. | Subtitle of the post-meal card. |
 | `ratingCardSubtitleNamed` | With {name} | Avec {name} | Post-meal card subtitle naming the partner (the button only says Rate). |
-| `ratingRate` | Rate | Noter | Post-meal card button label (short and constant; the partner is named in the title). |
+| `ratingRate` | Rate | Noter | Post-meal card button label (short and constant; the partner is named in the subtitle). |
 | `ratingRateNamed` | Rate {name} | Noter {name} | Screen-reader label of the post-meal card button, naming the partner (the visible label is just ratingRate). |
 | `ratingBadgeNew` | New | Nouveau | Badge shown instead of a score when a person has no ratings yet. |
 | `ratingBadgeScore` | {average} ({count}) | {average} ({count}) | Rating badge: average (one decimal) and number of ratings. |
