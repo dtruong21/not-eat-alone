@@ -530,6 +530,22 @@
   "@chatSendFailed": {
     "description": "Snackbar when sending a message failed."
   },
+  "queuedWriteJoinRequestFailed": "Your join request didn't go through. Try again.",
+  "@queuedWriteJoinRequestFailed": {
+    "description": "Snackbar when a join request that was queued offline was rejected after the app moved on."
+  },
+  "queuedWriteMealFailed": "Your meal wasn't posted. Try again.",
+  "@queuedWriteMealFailed": {
+    "description": "Snackbar when a meal that was queued offline was rejected after the app moved on."
+  },
+  "queuedWriteRatingFailed": "Your rating wasn't saved.",
+  "@queuedWriteRatingFailed": {
+    "description": "Snackbar when a rating that was queued offline was rejected after the app moved on."
+  },
+  "queuedWriteMessageFailed": "A message didn't send.",
+  "@queuedWriteMessageFailed": {
+    "description": "Snackbar when a chat message that was queued offline was rejected after the app moved on."
+  },
   "chatUnavailable": "This chat is no longer available — the meal was cancelled.",
   "@chatUnavailable": {
     "description": "Shown instead of the thread when the match is gone."

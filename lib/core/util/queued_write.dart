@@ -9,7 +9,9 @@
 /// Normal (online) behaviour is unchanged: a write acknowledged within
 /// [grace] resolves, and one REJECTED within [grace] (rules, validation)
 /// still throws so the caller can show its error state. A rejection that only
-/// arrives later (after the UI moved on) is logged, because the screen is gone.
+/// arrives later (after the UI moved on) is logged and, when the caller passes
+/// `onLateError`, reported through it (the screen is gone, so the caller
+/// routes it to an app-level surface — see `queued_write_failures.dart`).
 library;
 
 import 'dart:async';
@@ -21,10 +23,12 @@ const queuedWriteGrace = Duration(seconds: 3);
 
 /// Awaits [write] for up to [grace]; completes normally on acknowledgement or
 /// when the grace period ends with the write still pending (queued); throws if
-/// the write fails within [grace].
+/// the write fails within [grace]. A failure that arrives after the grace is
+/// logged and handed to [onLateError] (never called for in-grace failures).
 Future<void> settleOrQueue(
   Future<void> write, {
   Duration grace = queuedWriteGrace,
+  void Function(Object error, StackTrace stack)? onLateError,
 }) {
   final settled = Completer<void>();
   final timer = Timer(grace, () {
@@ -41,8 +45,13 @@ Future<void> settleOrQueue(
       if (!settled.isCompleted) {
         settled.completeError(error, stack);
       } else {
-        // The caller already moved on (offline); nobody can show this error.
+        // The caller already moved on (offline); its screen can't show this.
         debugPrint('[queued write] failed after it was queued: $error');
+        try {
+          onLateError?.call(error, stack);
+        } on Object catch (e) {
+          debugPrint('[queued write] late-error callback failed: $e');
+        }
       }
     },
   );

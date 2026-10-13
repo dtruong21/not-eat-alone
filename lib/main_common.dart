@@ -17,6 +17,7 @@ import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/font_license.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/locale/locale_controller.dart';
+import 'package:not_eat_alone/core/routing/queued_write_failure_listener.dart';
 import 'package:not_eat_alone/core/routing/router.dart';
 import 'package:not_eat_alone/features/meal/application/paris_notice_provider.dart';
 import 'package:not_eat_alone/l10n/generated/app_localizations.dart';
@@ -98,6 +99,8 @@ class NotEatAloneApp extends ConsumerWidget {
         theme: buildTheme(Brightness.light),
         darkTheme: buildTheme(Brightness.dark),
         routerConfig: router,
+        builder: (context, child) =>
+            QueuedWriteFailureListener(child: child ?? const SizedBox.shrink()),
         locale: ref.watch(localeControllerProvider),
         supportedLocales: supportedAppLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

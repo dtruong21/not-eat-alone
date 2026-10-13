@@ -788,6 +788,30 @@ abstract class AppLocalizations {
   /// **'Couldn\'t send your message. Try again.'**
   String get chatSendFailed;
 
+  /// Snackbar when a join request that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'Your join request didn\'t go through. Try again.'**
+  String get queuedWriteJoinRequestFailed;
+
+  /// Snackbar when a meal that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'Your meal wasn\'t posted. Try again.'**
+  String get queuedWriteMealFailed;
+
+  /// Snackbar when a rating that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating wasn\'t saved.'**
+  String get queuedWriteRatingFailed;
+
+  /// Snackbar when a chat message that was queued offline was rejected after the app moved on.
+  ///
+  /// In en, this message translates to:
+  /// **'A message didn\'t send.'**
+  String get queuedWriteMessageFailed;
+
   /// Shown instead of the thread when the match is gone.
   ///
   /// In en, this message translates to:

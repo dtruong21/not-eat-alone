@@ -393,6 +393,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatSendFailed => 'Couldn\'t send your message. Try again.';
 
   @override
+  String get queuedWriteJoinRequestFailed =>
+      'Your join request didn\'t go through. Try again.';
+
+  @override
+  String get queuedWriteMealFailed => 'Your meal wasn\'t posted. Try again.';
+
+  @override
+  String get queuedWriteRatingFailed => 'Your rating wasn\'t saved.';
+
+  @override
+  String get queuedWriteMessageFailed => 'A message didn\'t send.';
+
+  @override
   String get chatUnavailable =>
       'This chat is no longer available — the meal was cancelled.';
 

@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:not_eat_alone/core/util/queued_write.dart';
+import 'package:not_eat_alone/core/util/queued_write_failures.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -19,6 +20,7 @@ class ChatController extends _$ChatController {
     if (text.trim().isEmpty) return;
     // Keep alive until settled — see CreateRequestController.request.
     final link = ref.keepAlive();
+    final failures = ref.read(queuedWriteFailuresProvider.notifier);
     try {
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
@@ -27,6 +29,7 @@ class ChatController extends _$ChatController {
           ref
               .read(chatRepositoryProvider)
               .sendMessage(matchId: matchId, senderId: uid, text: text),
+          onLateError: (_, _) => failures.report(QueuedWriteKind.message),
         );
         await analytics.track(const MessageSent());
       });

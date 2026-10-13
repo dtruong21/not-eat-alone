@@ -398,6 +398,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatSendFailed => 'Impossible d’envoyer ton message. Réessaie.';
 
   @override
+  String get queuedWriteJoinRequestFailed =>
+      'Ta demande n’a pas abouti. Réessaie.';
+
+  @override
+  String get queuedWriteMealFailed => 'Ton repas n’a pas été publié. Réessaie.';
+
+  @override
+  String get queuedWriteRatingFailed => 'Ta note n’a pas été enregistrée.';
+
+  @override
+  String get queuedWriteMessageFailed => 'Un message n’a pas été envoyé.';
+
+  @override
   String get chatUnavailable =>
       'Cette discussion n’est plus disponible — le repas a été annulé.';
 

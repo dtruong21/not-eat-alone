@@ -60,9 +60,76 @@ void main() {
   test('works with writes that return a value (createMeal returns the id)', () {
     fakeAsync((async) {
       var done = false;
-      unawaited(settleOrQueue(Future<String>.value('id')).then((_) => done = true));
+      unawaited(
+        settleOrQueue(Future<String>.value('id')).then((_) => done = true),
+      );
       async.flushMicrotasks();
       expect(done, isTrue);
+    });
+  });
+
+  group('onLateError', () {
+    test('a rejection after the grace calls it exactly once', () {
+      fakeAsync((async) {
+        final server = Completer<void>();
+        final late = <Object>[];
+        unawaited(
+          settleOrQueue(server.future, onLateError: (e, _) => late.add(e)),
+        );
+        async.elapse(queuedWriteGrace + const Duration(seconds: 1));
+        expect(late, isEmpty);
+
+        server.completeError(StateError('rejected after reconnect'));
+        async.flushMicrotasks();
+        expect(late, hasLength(1));
+        expect(late.single, isA<StateError>());
+      });
+    });
+
+    test('a rejection inside the grace throws and does not call it', () {
+      fakeAsync((async) {
+        var calls = 0;
+        Object? thrown;
+        unawaited(
+          settleOrQueue(
+            Future<void>.error(StateError('permission-denied')),
+            onLateError: (_, _) => calls++,
+          ).then((_) {}, onError: (Object e) => thrown = e),
+        );
+        async.elapse(queuedWriteGrace + const Duration(seconds: 1));
+        expect(thrown, isA<StateError>());
+        expect(calls, 0);
+      });
+    });
+
+    test('a success never calls it, before or after the grace', () {
+      fakeAsync((async) {
+        var calls = 0;
+        final server = Completer<void>();
+        unawaited(
+          settleOrQueue(Future<void>.value(), onLateError: (_, _) => calls++),
+        );
+        unawaited(settleOrQueue(server.future, onLateError: (_, _) => calls++));
+        async.elapse(queuedWriteGrace + const Duration(seconds: 1));
+        server.complete();
+        async.flushMicrotasks();
+        expect(calls, 0);
+      });
+    });
+
+    test('a callback that throws does not leak an unhandled error', () {
+      fakeAsync((async) {
+        final server = Completer<void>();
+        unawaited(
+          settleOrQueue(
+            server.future,
+            onLateError: (_, _) => throw StateError('x'),
+          ),
+        );
+        async.elapse(queuedWriteGrace + const Duration(seconds: 1));
+        server.completeError(StateError('late'));
+        async.flushMicrotasks();
+      });
     });
   });
 }

@@ -17,6 +17,7 @@ library;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:not_eat_alone/core/util/queued_write.dart';
+import 'package:not_eat_alone/core/util/queued_write_failures.dart';
 import 'package:not_eat_alone/core/analytics/client.dart' as analytics;
 import 'package:not_eat_alone/core/analytics/events.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
@@ -42,6 +43,7 @@ class CreateMealController extends _$CreateMealController {
   }) async {
     // Keep alive until settled — see CreateRequestController.request.
     final link = ref.keepAlive();
+    final failures = ref.read(queuedWriteFailuresProvider.notifier);
     try {
       state = const AsyncValue.loading();
       state = await AsyncValue.guard(() async {
@@ -55,7 +57,10 @@ class CreateMealController extends _$CreateMealController {
           note: note,
           womenOnly: womenOnly,
         );
-        await settleOrQueue(ref.read(mealRepositoryProvider).createMeal(meal));
+        await settleOrQueue(
+          ref.read(mealRepositoryProvider).createMeal(meal),
+          onLateError: (_, _) => failures.report(QueuedWriteKind.meal),
+        );
         await analytics.track(MealCreated(womenOnly: womenOnly));
       });
     } finally {
