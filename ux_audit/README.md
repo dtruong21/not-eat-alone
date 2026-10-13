@@ -23,6 +23,19 @@ Needs the same tools as `make e2e` (fvm, Firebase CLI, Java 21, npm) and
 Python 3 (placeholder avatars). Output: `ux_audit/out/<device>-<theme>-<size>/NN_name.png`
 (gitignored), plus `ux_audit/out/logs/<cell>.log` and `<cell>.findings.txt`.
 
+French (plan 19): run the app in French without touching the simulator's language:
+
+    make ux-capture DEVICE='Convyve E2E' OUT=19-fr-light-default UX_LOCALE=fr
+    tool/ux_matrix.sh --only se3-light-xxl --locale fr   # cell se3-light-xxl-fr
+
+`UX_LOCALE` is passed to `flutter drive` as `--dart-define=UX_LOCALE=...`; the capture test
+then seeds `localeSeedProvider` with `fr` (what `app_locale` = `fr` in `SharedPreferences`
+gives at boot) in the scope it re-pumps after boot. The test's finders take the English
+string and look up its French twin in the `_fr` map at the top of `capture_test.dart`
+(keep it in step with `lib/l10n/app_fr.arb`); a string missing from the map stays English
+and the step fails visibly. Material-owned strings ("OK") need no entry. Seeded data
+(restaurant names, bios, messages) stays English: it is data.
+
 | Cell part | Values |
 |---|---|
 | device | `iphone17` = simulator "Convyve E2E" (iPhone 17 Pro, 402x874 pt); `se3` = "Convyve UX Small" (iPhone SE 3rd gen, 375x667 pt, same iOS runtime) |

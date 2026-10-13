@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
+import 'package:not_eat_alone/core/locale/locale_controller.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_providers.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/domain/repositories/restaurant_search_repository.dart';
@@ -205,6 +206,52 @@ void _logFontDiagnostics(WidgetTester tester) {
 }
 
 // ---------------------------------------------------------------------------
+// Locale: `UX_LOCALE=fr make ux-capture ...` runs the app in French without
+// touching the simulator language. The finders below take the ENGLISH string
+// and look up its French twin (kept in step with lib/l10n/app_fr.arb by hand).
+// ---------------------------------------------------------------------------
+
+const _uxLocale = String.fromEnvironment('UX_LOCALE');
+
+const _fr = <String, String>{
+  'Send code': 'Envoyer le code',
+  'Enter a phone number with country code':
+      'Saisis un numéro avec l’indicatif du pays',
+  'Resend code': 'Renvoyer le code',
+  'Code sent again': 'Code renvoyé',
+  'No meals nearby yet': 'Pas encore de repas près de toi',
+  'Find a meal': 'Trouver un repas',
+  'No pending requests': 'Aucune demande en attente',
+  'No restaurant called': 'Aucun restaurant ne s’appelle',
+  'Meal posted.': 'Repas publié.',
+  'Approve': 'Accepter',
+  'Got it': 'Compris',
+  'Say hi \u{1F44B}': 'Dis bonjour \u{1F44B}',
+  'Save': 'Enregistrer',
+  "You haven't blocked anyone": 'Tu n’as bloqué personne',
+  'Select date of birth': 'Choisis ta date de naissance',
+  'Continue': 'Continuer',
+  'You must be 18 or older to use Convyve.':
+      'Tu dois avoir 18 ans ou plus pour utiliser Convyve.',
+  "Couldn't load this": 'Chargement impossible',
+  'Something went wrong': 'Oups, un problème est survenu',
+  "didn't work": 'n’a pas fonctionné',
+  'Woman': 'Femme',
+  'Back': 'Retour',
+  'Chats': 'Messages',
+  'Requests': 'Demandes',
+  'Profile': 'Profil',
+  'Discover': 'Découvrir',
+};
+
+/// [en] in the language of this run (unchanged for English and for strings the
+/// Material localizations own, such as "OK").
+String _l(String en) => _uxLocale == 'fr' ? (_fr[en] ?? en) : en;
+
+Finder _text(String en) => find.text(_l(en));
+Finder _textContaining(String en) => find.textContaining(_l(en));
+
+// ---------------------------------------------------------------------------
 // Interaction helpers
 // ---------------------------------------------------------------------------
 
@@ -218,7 +265,7 @@ GoRouter _router(WidgetTester tester) => GoRouter.of(_context(tester));
 
 /// A destination of the bottom navigation bar.
 Finder _tab(String label) =>
-    find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
+    find.descendant(of: find.byType(NavigationBar), matching: _text(label));
 
 /// Scrolls [target] into view (builds lazy list items if needed), bounded.
 Future<void> _reveal(
@@ -346,7 +393,13 @@ Future<void> _tapBarrier(WidgetTester tester) async {
 /// when there is none, e.g. after a failed step already recovered.
 Future<void> _back(WidgetTester tester) async {
   try {
-    await tester.pageBack();
+    // `pageBack` only knows the English "Back" tooltip (French: "Retour").
+    final back = find.byTooltip(_l('Back'));
+    if (back.evaluate().isNotEmpty) {
+      await tester.tap(back.first);
+    } else {
+      await tester.pageBack();
+    }
   } on Object {
     // Nothing to go back from.
   }
@@ -457,6 +510,8 @@ void main() {
       ProviderScope(
         key: UniqueKey(),
         overrides: [
+          if (_uxLocale == 'fr')
+            localeSeedProvider.overrideWithValue(const Locale('fr')),
           restaurantSearchRepositoryProvider.overrideWithValue(
             _FixedRestaurantSearch(),
           ),
@@ -523,10 +578,10 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
       '+33 12',
     );
     await _settle(tester);
-    await _tap(tester, find.text('Send code'));
+    await _tap(tester, _text('Send code'));
     await _pumpUntilFound(
       tester,
-      find.textContaining('Enter a phone number with country code'),
+      _textContaining('Enter a phone number with country code'),
       timeout: const Duration(seconds: 20),
     );
     await _snap(tester, '02_signin_phone_error');
@@ -544,7 +599,7 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
     // `codeSent` arrives, so the frozen Auth emulator shows it.
     await _tapInFlight(
       tester,
-      find.text('Send code'),
+      _text('Send code'),
       '03_signin_phone_waiting',
       freeze: 'auth',
       mustShow: _spinner,
@@ -585,13 +640,13 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
       tester,
       find.byWidgetPredicate((w) {
         final text = w is Text ? w.data ?? '' : '';
-        return text.contains("didn't work") ||
-            text.contains('Something went wrong');
+        return text.contains(_l("didn't work")) ||
+            text.contains(_l('Something went wrong'));
       }),
       timeout: const Duration(seconds: 20),
     );
     final fieldError = find
-        .textContaining("didn't work")
+        .textContaining(_l("didn't work"))
         .evaluate()
         .isNotEmpty;
     // Run-log result for the verification doc; dev tooling has no logger.
@@ -606,11 +661,11 @@ Future<void> _captureSignedOut(WidgetTester tester) async {
   await _step(tester, '07_phone_verify_resent', () async {
     await _pumpUntilFound(
       tester,
-      find.text('Resend code'),
+      _text('Resend code'),
       timeout: const Duration(seconds: 45),
     );
-    await _tap(tester, find.text('Resend code'));
-    await _pumpUntilFound(tester, find.text('Code sent again'));
+    await _tap(tester, _text('Resend code'));
+    await _pumpUntilFound(tester, _text('Code sent again'));
     await _snap(tester, '07_phone_verify_resent');
   });
 }
@@ -647,7 +702,7 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
   });
 
   await _step(tester, '21_discover_empty', () async {
-    await _pumpUntilFound(tester, find.text('No meals nearby yet'));
+    await _pumpUntilFound(tester, _text('No meals nearby yet'));
     await _snap(tester, '21_discover_empty');
   });
 
@@ -666,7 +721,7 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
 
   await _step(tester, '61_chats_empty', () async {
     // Plan 18: "No chats yet", a hint and a "Find a meal" button.
-    await _pumpUntilFound(tester, find.text('Find a meal'));
+    await _pumpUntilFound(tester, _text('Find a meal'));
     await _snap(tester, '61_chats_empty');
   });
 
@@ -674,7 +729,7 @@ Future<void> _captureEmptyStates(WidgetTester tester) async {
   // it is loaded before the tab is first opened.)
   await _step(tester, '51_requests_empty', () async {
     await _tap(tester, _tab('Requests'));
-    await _pumpUntilFound(tester, find.text('No pending requests'));
+    await _pumpUntilFound(tester, _text('No pending requests'));
     await _snap(tester, '51_requests_empty');
   });
 
@@ -877,7 +932,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
       tester,
       find.byKey(const Key('restaurant_search_field')),
     );
-    await _pumpUntilFound(tester, find.text('Le Comptoir du Relais'));
+    await _pumpUntilFound(tester, _text('Le Comptoir du Relais'));
     await _snap(tester, '30_restaurant_search');
   });
 
@@ -886,7 +941,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
       find.byKey(const Key('restaurant_search_field')),
       'zzzz',
     );
-    await _pumpUntilFound(tester, find.textContaining('No restaurant called'));
+    await _pumpUntilFound(tester, _textContaining('No restaurant called'));
     await _snap(tester, '31_restaurant_search_no_matches');
   });
 
@@ -895,7 +950,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
       find.byKey(const Key('restaurant_search_field')),
       'Chez',
     );
-    await _pumpUntilFound(tester, find.text('Chez Georges'));
+    await _pumpUntilFound(tester, _text('Chez Georges'));
     await _snap(tester, '32_restaurant_search_filtered');
   });
 
@@ -910,15 +965,15 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
 
   await _step(tester, '34_create_meal_date_picker', () async {
     await _tap(tester, find.byKey(const Key('create_meal_datetime_button')));
-    await _pumpUntilFound(tester, find.text('OK'));
+    await _pumpUntilFound(tester, _text('OK'));
     await _snap(tester, '34_create_meal_date_picker');
-    await _tap(tester, find.text('OK'));
+    await _tap(tester, _text('OK'));
   });
 
   await _step(tester, '35_create_meal_time_picker', () async {
-    await _pumpUntilFound(tester, find.text('OK'));
+    await _pumpUntilFound(tester, _text('OK'));
     await _snap(tester, '35_create_meal_time_picker');
-    await _tap(tester, find.text('OK'));
+    await _tap(tester, _text('OK'));
   });
 
   await _step(tester, '36_create_meal_filled', () async {
@@ -945,7 +1000,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
   await _step(tester, '26_discover_meal_created', () async {
     await _pumpUntilFound(
       tester,
-      find.textContaining('Meal posted.'),
+      _textContaining('Meal posted.'),
       timeout: const Duration(seconds: 60),
     );
     await _snap(tester, '26_discover_meal_created');
@@ -957,7 +1012,7 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
 Future<void> _captureRequests(WidgetTester tester) async {
   await _step(tester, '52_requests_data', () async {
     await _tap(tester, _tab('Requests'));
-    await _pumpUntilFound(tester, find.text('Approve'));
+    await _pumpUntilFound(tester, _text('Approve'));
     // Let the per-row meal lookups (restaurant line, past-meal chip) land.
     await _awaitAssets(tester);
     await _snap(tester, '52_requests_data');
@@ -1054,12 +1109,12 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
     await _tap(tester, find.byKey(const Key('safety_tips_banner')));
     await _pumpUntilFound(tester, find.byKey(const Key('safety_tips_sheet')));
     await _snap(tester, '76_chat_safety_sheet');
-    await _tap(tester, find.text('Got it'));
+    await _tap(tester, _text('Got it'));
   });
 
   await _step(tester, '65_chat_empty', () async {
     await _openChatFromList(tester, world.mealIds['emptyChat']!);
-    await _pumpUntilFound(tester, find.text('Say hi \u{1F44B}'));
+    await _pumpUntilFound(tester, _text('Say hi \u{1F44B}'));
     await _snap(tester, '65_chat_empty');
   });
 
@@ -1161,7 +1216,7 @@ Future<void> _captureProfileAndSettings(
     final original = tester.widget<TextFormField>(name).controller!.text;
     await tester.enterText(name, '$original B.');
     await _settle(tester);
-    await _reveal(tester, find.text('Save'));
+    await _reveal(tester, _text('Save'));
     await _snap(tester, '82_profile_edited');
     await tester.enterText(name, '');
     await _settle(tester);
@@ -1173,11 +1228,11 @@ Future<void> _captureProfileAndSettings(
 
   await _step(tester, '83_settings', () async {
     await _tap(tester, find.byKey(const Key('profile_settings_button')));
-    // The first row, not the version line at the bottom: the list is lazy and
-    // the version is not built until scrolled to (at large text).
+    // The first row, not a later one: the list is lazy and rows further down
+    // are not built until scrolled to (large text, or French's longer labels).
     await _pumpUntilFound(
       tester,
-      find.byKey(const Key('settings_contact_support')),
+      find.byKey(const Key('settings_edit_profile')),
     );
     await _snap(tester, '83_settings');
   });
@@ -1216,7 +1271,7 @@ Future<void> _captureProfileAndSettings(
 
   await _step(tester, '87_blocked_people_empty', () async {
     await _tap(tester, find.byKey(Key('unblock_button_${world.uids['hugo']}')));
-    await _pumpUntilFound(tester, find.text("You haven't blocked anyone"));
+    await _pumpUntilFound(tester, _text("You haven't blocked anyone"));
     await _clearSnackBars(tester);
     await _snap(tester, '87_blocked_people_empty');
     await _back(tester);
@@ -1242,7 +1297,7 @@ Future<void> _captureInboxInFlight(WidgetTester tester, UxWorld world) async {
 
   await _step(tester, '54_requests_approve_in_flight', () async {
     await _tap(tester, _tab('Requests'));
-    await _pumpUntilFound(tester, find.text('Approve'));
+    await _pumpUntilFound(tester, _text('Approve'));
     await tester.drag(inbox.first, const Offset(0, 2000));
     await _settle(tester);
     await _tapInFlight(
@@ -1283,12 +1338,12 @@ Future<void> _pickYear(WidgetTester tester, int year) async {
   if (find.byType(YearPicker).evaluate().isEmpty) {
     await _tap(tester, monthYear);
   }
-  await _tap(tester, find.text('$year'));
-  await _tap(tester, find.text('OK'));
+  await _tap(tester, _text('$year'));
+  await _tap(tester, _text('OK'));
 }
 
 Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
-  final selectDob = find.text('Select date of birth');
+  final selectDob = _text('Select date of birth');
   final adultYear = DateTime.now().year - 10;
 
   // A brand-new Auth user has no user doc, so the router sends them to the
@@ -1301,14 +1356,14 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
 
   await _step(tester, '11_age_gate_picker', () async {
     await _tap(tester, selectDob);
-    await _pumpUntilFound(tester, find.text('OK'));
+    await _pumpUntilFound(tester, _text('OK'));
     await _snap(tester, '11_age_gate_picker');
   });
 
   // Under 18: a 10-year-old's birth year.
   await _step(tester, '12_age_gate_under18_selected', () async {
     await _pickYear(tester, adultYear);
-    await _pumpUntilFound(tester, find.text('Continue'));
+    await _pumpUntilFound(tester, _text('Continue'));
     await _snap(tester, '12_age_gate_under18_selected');
   });
 
@@ -1317,12 +1372,12 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
   // harness can photograph, and there is no server round trip to hold (see
   // ux_audit/README.md).
   await _step(tester, 'under18_submit', () async {
-    await _tap(tester, find.text('Continue'));
+    await _tap(tester, _text('Continue'));
     await _pumpUntilFound(tester, find.byKey(const Key('signin_phone_field')));
     // Plan 17a: the sign-in screen tells them why (dismissible banner).
     await _pumpUntilFound(
       tester,
-      find.text('You must be 18 or older to use Convyve.'),
+      _text('You must be 18 or older to use Convyve.'),
     );
     await _snap(tester, '13_signin_underage_notice');
   });
@@ -1333,11 +1388,11 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
     await signInTestUser(uid: 'ux-newbie');
     await _pumpUntilFound(tester, selectDob);
     await _tap(tester, selectDob);
-    await _pumpUntilFound(tester, find.text('OK'));
-    await _tap(tester, find.text('OK'));
+    await _pumpUntilFound(tester, _text('OK'));
+    await _tap(tester, _text('OK'));
     // (The age write is applied locally at once, so the router leaves the
     // age gate before any spinner could be photographed: no in-flight shot.)
-    await _tap(tester, find.text('Continue'));
+    await _tap(tester, _text('Continue'));
   });
 
   await _step(tester, '14_profile_setup_empty', () async {
@@ -1352,7 +1407,7 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
       find.byKey(const Key('profile_name_field')),
       'Noor Haddad',
     );
-    await _tap(tester, find.text('Woman'));
+    await _tap(tester, _text('Woman'));
     await tester.enterText(
       find.byKey(const Key('profile_bio_field')),
       'New to Paris and hungry for good company.',
@@ -1377,18 +1432,19 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
       matching: find.byType(EditableText),
     );
     final kept =
-        tester.widget<EditableText>(nameField).controller.text ==
-        'Noor Haddad';
+        tester.widget<EditableText>(nameField).controller.text == 'Noor Haddad';
     // Run-log result for the verification doc; dev tooling has no logger.
     // ignore: avoid_print
-    print('UXCHECK router: profile form kept its input after a user-doc '
-        'write: $kept');
+    print(
+      'UXCHECK router: profile form kept its input after a user-doc '
+      'write: $kept',
+    );
     if (!kept) {
       await tester.enterText(
         find.byKey(const Key('profile_name_field')),
         'Noor Haddad',
       );
-      await _tap(tester, find.text('Woman'));
+      await _tap(tester, _text('Woman'));
     }
     await _snap(tester, '16_profile_setup_ready');
   });
@@ -1427,7 +1483,7 @@ Future<void> _captureWomenOnlyAsMan(WidgetTester tester, UxWorld world) async {
 /// in its error state. Order matters: the chat first (it is opened from the
 /// chats list, which is poisoned third).
 Future<void> _captureFeedErrors(WidgetTester tester, UxWorld world) async {
-  final error = find.text("Couldn't load this");
+  final error = _text("Couldn't load this");
 
   await _step(tester, 'errors_viewer_signin', () async {
     await signInTestUser(uid: 'ux-viewer');
