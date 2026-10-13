@@ -1,9 +1,9 @@
 /// The meal-detail screen's pinned action bar.
 ///
 /// One full-width [AppButton] plus a reserved status line for every request
-/// state (own meal, cancelled meal, women-only block, loading, error, none,
-/// pending, approved, denied), so the bar never changes size as the state
-/// changes (at a given text size and width). It is also the
+/// state (own meal, cancelled meal, ended meal, women-only block, loading,
+/// error, none, pending, approved, denied), so the bar never changes size as
+/// the state changes (at a given text size and width). It is also the
 /// always-mounted home of the server-rejection snackbar: the "Request to join"
 /// button is swapped for "Requested" by the optimistic write before the server
 /// answers, so the listener cannot live on that button.
@@ -55,6 +55,7 @@ List<(String, double)> _buttonLabels(AppLocalizations l10n) => [
   (l10n.mealActionYourMeal, 0),
   (l10n.mealWomenOnly, 0),
   (l10n.mealActionCancelled, 0),
+  (l10n.mealActionEnded, 0),
   (l10n.commonTryAgain, 0),
 ];
 
@@ -64,10 +65,14 @@ const _maxLabelLines = 2;
 /// Pinned bottom bar for [meal]; use as `Scaffold.bottomNavigationBar`.
 class MealActionBar extends ConsumerWidget {
   /// Creates the bar for [meal].
-  const MealActionBar({required this.meal, super.key});
+  const MealActionBar({required this.meal, this.available = true, super.key});
 
   /// The meal being viewed.
   final Meal meal;
+
+  /// False once the live meal is gone (deleted or hidden by the rules): the
+  /// bar then shows [meal], the last known one, with no action.
+  final bool available;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,7 +109,7 @@ class MealActionBar extends ConsumerWidget {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
-            child: _BarContent(meal: meal),
+            child: _BarContent(meal: meal, available: available),
           ),
         ),
       ),
@@ -115,9 +120,10 @@ class MealActionBar extends ConsumerWidget {
 /// Resolves the viewer's state into an action + status, in the order the
 /// screen has always applied it.
 class _BarContent extends ConsumerWidget {
-  const _BarContent({required this.meal});
+  const _BarContent({required this.meal, required this.available});
 
   final Meal meal;
+  final bool available;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -151,6 +157,34 @@ class _BarContent extends ConsumerWidget {
           onPressed: null,
         ),
         status: l10n.mealActionStatusCancelled,
+      );
+    }
+
+    // A completed meal is terminal for every non-host viewer, like a
+    // cancelled one (an approved request must not read as "Open chat").
+    if (meal.status == MealStatus.completed) {
+      return _Layout(
+        action: AppButton(
+          key: const Key('meal_detail_ended_button'),
+          label: l10n.mealActionEnded,
+          variant: AppButtonVariant.tonal,
+          onPressed: null,
+        ),
+        status: l10n.mealActionStatusEnded,
+      );
+    }
+
+    // The live meal disappeared (deleted, or hidden by the rules): nothing to
+    // request any more. Reuses the join-rejection copy, no new label.
+    if (!available) {
+      return _Layout(
+        action: AppButton(
+          key: const Key('meal_detail_unavailable_button'),
+          label: l10n.mealActionRequestToJoin,
+          variant: AppButtonVariant.tonal,
+          onPressed: null,
+        ),
+        status: l10n.mealActionNoLongerOpen,
       );
     }
 

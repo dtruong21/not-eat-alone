@@ -57,6 +57,7 @@ final _meal = Meal(
 );
 final Meal _womenOnlyMeal = _meal.copyWith(womenOnly: true);
 final Meal _cancelled = _meal.copyWith(status: MealStatus.cancelled);
+final Meal _ended = _meal.copyWith(status: MealStatus.completed);
 
 JoinRequest _request(RequestStatus status) => JoinRequest(
   id: 'm1_guest1',
@@ -97,6 +98,26 @@ final _cases = <_Case>[
     loadError: false,
     label: 'Repas annulé',
     status: 'L’hôte a annulé ce repas.',
+  ),
+  (
+    name: 'ended',
+    viewer: 'guest1',
+    meal: _ended,
+    gender: null,
+    request: null,
+    loadError: false,
+    label: 'Repas terminé',
+    status: 'Ce repas est terminé.',
+  ),
+  (
+    name: 'ended, approved request',
+    viewer: 'guest1',
+    meal: _ended,
+    gender: null,
+    request: _request(RequestStatus.approved),
+    loadError: false,
+    label: 'Repas terminé',
+    status: 'Ce repas est terminé.',
   ),
   (
     name: 'women only, not a woman',

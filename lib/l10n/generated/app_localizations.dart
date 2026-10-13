@@ -506,6 +506,18 @@ abstract class AppLocalizations {
   /// **'The host cancelled this meal.'**
   String get mealActionStatusCancelled;
 
+  /// Meal action bar: disabled button on a meal that has taken place (completed), for anyone but the host.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal ended'**
+  String get mealActionEnded;
+
+  /// Meal action bar status line (one line only) on a meal that has ended.
+  ///
+  /// In en, this message translates to:
+  /// **'This meal has ended.'**
+  String get mealActionStatusEnded;
+
   /// Meal action bar status line for a women-only meal the viewer cannot join.
   ///
   /// In en, this message translates to:

@@ -236,6 +236,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealActionStatusCancelled => 'The host cancelled this meal.';
 
   @override
+  String get mealActionEnded => 'Meal ended';
+
+  @override
+  String get mealActionStatusEnded => 'This meal has ended.';
+
+  @override
   String get mealActionStatusWomenOnly => 'Only women can join this meal.';
 
   @override

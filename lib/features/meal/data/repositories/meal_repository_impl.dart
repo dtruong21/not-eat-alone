@@ -6,6 +6,8 @@
 /// directly.
 library;
 
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:not_eat_alone/core/firebase/firebase_client.dart';
@@ -26,7 +28,7 @@ class MealRepositoryImpl implements MealRepository {
   /// Creates a repository over [firestore], or the flavor-aware default
   /// Firestore instance ([db]) when omitted. Tests should inject a fake.
   MealRepositoryImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? db;
+    : _firestore = firestore ?? db;
 
   final FirebaseFirestore _firestore;
 
@@ -95,10 +97,9 @@ class MealRepositoryImpl implements MealRepository {
         .map(
           (snapshot) => snapshot.docs
               .where(
-                (doc) =>
-                    ((doc.data()['geohash'] as String?) ?? '').startsWith(
-                      geohashPrefix,
-                    ),
+                (doc) => ((doc.data()['geohash'] as String?) ?? '').startsWith(
+                  geohashPrefix,
+                ),
               )
               .map(_tryMealFromDoc)
               .whereType<Meal>()
@@ -114,9 +115,51 @@ class MealRepositoryImpl implements MealRepository {
     return _mealFromData(id, snapshot.data()!);
   }
 
+  /// Streams `meals/{id}`; see [MealRepository.watchMeal].
+  @override
+  Stream<Meal?> watchMeal(String id) =>
+      mapMealSnapshots(id, _firestore.collection('meals').doc(id).snapshots());
+
+  /// Maps raw doc snapshots to meals. A missing doc emits `null`, and so does
+  /// `permission-denied` / `not-found` (the meal was deleted or hidden by the
+  /// rules); every other error propagates.
+  @visibleForTesting
+  static Stream<Meal?> mapMealSnapshots(
+    String id,
+    Stream<DocumentSnapshot<Map<String, dynamic>>> snapshots,
+  ) => snapshots.transform(
+    StreamTransformer<
+      DocumentSnapshot<Map<String, dynamic>>,
+      Meal?
+    >.fromHandlers(
+      handleData: (snapshot, sink) {
+        final data = snapshot.data();
+        if (!snapshot.exists || data == null) {
+          sink.add(null);
+          return;
+        }
+        try {
+          sink.add(_mealFromData(id, data));
+        } on RepositoryParseException catch (e, st) {
+          sink.addError(e, st);
+        }
+      },
+      handleError: (error, stackTrace, sink) {
+        if (error is FirebaseException &&
+            (error.code == 'permission-denied' || error.code == 'not-found')) {
+          sink.add(null);
+        } else {
+          sink.addError(error, stackTrace);
+        }
+      },
+    ),
+  );
+
   /// A malformed document (schema drift or a hostile write) is skipped and
   /// logged, so one bad meal can never fail the whole feed for everyone.
-  static Meal? _tryMealFromDoc(QueryDocumentSnapshot<Map<String, Object?>> doc) {
+  static Meal? _tryMealFromDoc(
+    QueryDocumentSnapshot<Map<String, Object?>> doc,
+  ) {
     try {
       return _mealFromDoc(doc);
     } on RepositoryParseException catch (e) {

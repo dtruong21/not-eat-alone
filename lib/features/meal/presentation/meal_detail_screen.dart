@@ -4,6 +4,12 @@
 /// (photo/name/derived age/bio via `UserRepository.watch(hostId)`),
 /// date/time, note (if any), and a "Women only" badge when applicable.
 ///
+/// The screen renders the [Meal] it was opened with at once, then follows the
+/// live `meals/{id}` document (`mealStreamProvider`): a meal the host cancels
+/// or that ends while the screen is open updates in place. A stream error
+/// keeps what is shown; a deleted/hidden meal keeps the last known meal with
+/// its action disabled.
+///
 /// The request control lives in the pinned [MealActionBar] (bottom bar), not
 /// in the scroll body.
 library;
@@ -19,6 +25,7 @@ import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/meal/application/maps_launcher_provider.dart';
+import 'package:not_eat_alone/features/meal/application/meal_providers.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/meal.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
 import 'package:not_eat_alone/features/meal/presentation/widgets/meal_action_bar.dart';
@@ -28,13 +35,37 @@ import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/l10n/l10n.dart';
 
-class MealDetailScreen extends ConsumerWidget {
+class MealDetailScreen extends ConsumerStatefulWidget {
   const MealDetailScreen({required this.meal, super.key});
 
+  /// The meal as it was when the screen was opened.
   final Meal meal;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MealDetailScreen> createState() => _MealDetailScreenState();
+}
+
+class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
+  late Meal _meal = widget.meal;
+  var _available = true;
+
+  @override
+  Widget build(BuildContext context) {
+    // Only a changed snapshot rebuilds (`Meal` is freezed, so `==` is by
+    // value); an error keeps the meal on screen.
+    ref.listen(mealStreamProvider(widget.meal.id), (_, next) {
+      // Loading and error keep what is on screen; only a snapshot (a meal or
+      // null) counts.
+      if (!next.hasValue) return;
+      final live = next.value;
+      final available = live != null;
+      if ((live == null || live == _meal) && available == _available) return;
+      setState(() {
+        _meal = live ?? _meal;
+        _available = available;
+      });
+    });
+    final meal = _meal;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -44,7 +75,7 @@ class MealDetailScreen extends ConsumerWidget {
         title: Text(context.l10n.mealDetailTitle),
         actions: [_MealSafetyActions(meal: meal)],
       ),
-      bottomNavigationBar: MealActionBar(meal: meal),
+      bottomNavigationBar: MealActionBar(meal: meal, available: _available),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),

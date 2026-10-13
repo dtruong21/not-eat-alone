@@ -238,6 +238,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealActionStatusCancelled => 'L’hôte a annulé ce repas.';
 
   @override
+  String get mealActionEnded => 'Repas terminé';
+
+  @override
+  String get mealActionStatusEnded => 'Ce repas est terminé.';
+
+  @override
   String get mealActionStatusWomenOnly => 'Réservé aux femmes.';
 
   @override

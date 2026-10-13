@@ -35,6 +35,8 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 - A feed that can't load now shows a "Couldn't load this" message with a Try again button (Discover, requests, chats, chat messages, restaurant search).
 
+- A meal page now updates while you are looking at it: if the host cancels the meal it switches to "Meal cancelled" at once, and once a meal has taken place it reads "Meal ended" (instead of a "Request to join" button that no longer works).
+
 ### Changed
 
 - Dates, times and distances follow the app language (for example "sam. 10 oct., 20:00" and "1,2 km" in French).
@@ -66,6 +68,10 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 - Your exact date of birth and gender are now private. Other people only see your name, photos, bio, age and rating.
 
 ### Fixed
+- The Paris-only notice on Discover stays dismissed on this device once you close it, instead of coming back every time you open the app.
+- The rating card in a chat now has a short "Rate" button that always fits (the person's name moved to the line above it), in English and French, at any text size.
+- Requesting to join a meal that has just closed now says "This meal is no longer open." instead of a generic failure.
+- If something you did while offline (a message, a request, a meal, a rating) is refused by the server once your connection returns, you are now told, instead of the app letting you believe it went through.
 - The chat is usable at large text sizes and with the keyboard open (the safety tips no longer fill the screen).
 - Chat of a cancelled meal / deleted account now says "This chat is no longer available" with a way back, instead of a generic error; no more false crash reports from it.
 

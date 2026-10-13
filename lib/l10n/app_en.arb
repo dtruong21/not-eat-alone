@@ -309,6 +309,14 @@
   "@mealActionStatusCancelled": {
     "description": "Meal action bar status line on a cancelled meal."
   },
+  "mealActionEnded": "Meal ended",
+  "@mealActionEnded": {
+    "description": "Meal action bar: disabled button on a meal that has taken place (completed), for anyone but the host."
+  },
+  "mealActionStatusEnded": "This meal has ended.",
+  "@mealActionStatusEnded": {
+    "description": "Meal action bar status line (one line only) on a meal that has ended."
+  },
   "mealActionStatusWomenOnly": "Only women can join this meal.",
   "@mealActionStatusWomenOnly": {
     "description": "Meal action bar status line for a women-only meal the viewer cannot join."
