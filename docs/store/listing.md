@@ -2,7 +2,29 @@
 
 **DRAFT — Refine, review for accuracy, and upload at submission. All sections require final review before publication.**
 
-*Last updated: 2026-09-23*
+*Last updated: 2026-10-13* · French version: [`listing.fr.md`](listing.fr.md) (DRAFT, needs native review)
+
+---
+
+## Verify before submission
+
+The English text below was drafted before the app shipped and was checked against `docs/PRD.md`, `CHANGELOG.md` and the app strings on 2026-10-13. These promises do not match the product (or are not decided). The text is left as written so the owner can choose; the French draft already drops them.
+
+| # | Where | What the text says | What the product does | Suggested fix |
+|---|---|---|---|---|
+| 1 | Long description, "Free to use, forever"; positioning statement ("free") | Free forever | PRD: v1 is free; ads/subscription are only deferred ("later"). No in-app purchases or ads today. | "Free to use. No ads, no in-app purchases." Do not promise "forever". |
+| 2 | Long description, "Ratings & show-up records ... rate and review their companions before matching"; What's New "Rate and review"; screenshot 5 (old) | Users see ratings, reviews and show-up records before matching | Ratings (stars, average and count) show on profiles, meal host, requests and chat. After a meal people are asked "Did they show up?" but show-up is never displayed to others. Written comments are not shown (PRD defers "Comments on ratings"). | "Ratings: see a diner's average rating before you accept or request." Drop "reviews" and "show-up records". |
+| 3 | Long description, "Post" bullet | "date, time, cuisine, dietary notes, and add a photo" | Create a meal = restaurant (Paris search), date/time and an optional note. No cuisine or dietary field, no meal photo (profile photos only). | "Post the meal: restaurant, date, time and a note." |
+| 4 | Long description + What's New: "more cities coming soon" | A promise of expansion | PRD: geo-expansion is post-v1, not scheduled. The app only says "we're just getting started here". | "We're just getting started." Keep the promise only if the owner commits. |
+| 5 | §8 checklist (age-rating questionnaire), §10 Store Compliance, §12 item 7 (these three held stale 17+ / "appeal to 4+" text; now 18+) | Apple 17+ | The questionnaire and age tiers change (Apple has moved to 13+/16+/18+). The app is 18+ (self-declared date of birth, not verified). | Answer the current questionnaire in App Store Connect; expect 18+ and do not appeal to 4+. The questionnaire answers are the owner's call. |
+| 6 | Long description: "Women-only meals" | Reads as guaranteed women-only | Women-only is self-declared gender in v1 (PRD), enforced by rules but not identity-verified. | Keep, but the privacy policy / FAQ must say gender is self-declared. |
+| 7 | Long description: "18 and older" | Reads as verified | Age gate is self-attested; no ID check (PRD). | Wording is fine; never say "verified". |
+| 8 | Section 8 checklist: "Settings > Delete Account (permanent, instant)", "Your data is yours ... instantly" | All data removed instantly | Ratings are kept after deletion (section 11, privacy policy). | Reword as "delete your account anytime"; keep the ratings note in the privacy policy. |
+| 9 | Section 10: "App version is `1.2.0`" | 1.2.0 | `pubspec.yaml` is `1.1.0+2`. | Fixed below: "consistent with `pubspec.yaml`". No version bump was made here. |
+| 10 | PRD open question (Apple 1.2 / Google UGC) | n/a | No automated profanity/image moderation; reviewers may reject. | See PRD "Moderation" decision; have a blocklist fallback ready. |
+| 11 | Counts under Subtitle, Short description, Keywords | 29 / 60 / 92 characters | Actual: 15 / 58 / 83. | Corrected in §1 (15 and 58) and §2 (83). |
+| 12 | PRD "Moderation" note and feature list: "report (user/meal/message)" | Messages can be reported | Not true in the app: reports exist only for a person (`user`) and a meal (`meal`); there is no message reporting. | Do not claim message reporting in store copy or in the Apple 1.2 / Google UGC answers. Say "block and report a person or a meal". Fix the PRD line separately. |
+| 13 | §9 Demo Account (`demo@convyve.test` + password) | Reviewers log in with email and password | The app only supports Apple, Google and phone sign-in; an email/password account cannot exist. | Create a Firebase Auth test phone number with a fixed verification code and give both in the review notes (recommendation; see §9). |
 
 ---
 
@@ -15,18 +37,19 @@
 ```
 Don't eat alone
 ```
-*(29 characters)*
+*(15 characters)*
 
 ### Short description (Google Play, ≤80 characters)
 ```
 Meet over a meal — post a table, match 1:1, dine together.
 ```
-*(60 characters)*
+*(58 characters)*
 
 ### Promotional text / One-liner
 ```
 Never eat at a restaurant alone again. Find your dining companion.
 ```
+*(66 characters; the iOS limit is 170)*
 
 ---
 
@@ -35,7 +58,7 @@ Never eat at a restaurant alone again. Find your dining companion.
 ```
 meal,dinner,dining,solo,restaurant,friends,meet,social,table,foodie,companion,paris
 ```
-*(92 characters, excluding comma-spaces)*
+*(83 characters, counted with `len()`; limit 100)*
 
 **Rationale:** Targets meal discovery, social dining, and Paris soft-launch. Avoids dating app keywords (swipe, match, etc.) to signal meal-first positioning and stay compliant with App Store social-app rules.
 
@@ -85,7 +108,7 @@ Download Convyve and find your next dining companion.
 
 ## 4. Category
 
-- **Primary:** Social (Apple) / Social & Messaging (Google Play)
+- **Primary:** Social (Apple) / Social (Google Play)
 - **Secondary:** Lifestyle (optional)
 
 ---
@@ -100,44 +123,30 @@ Download Convyve and find your next dining companion.
 
 ## 6. Screenshots & Captions (5 total, in order)
 
-### Screenshot 1: Discovery Feed
-**Image:** Browse meals posted by nearby users in your city.
-**Caption:**
-```
-Find meals near you. Browse restaurants and discover dining companions in your area.
-```
+Framed screenshots are committed under `docs/store/screenshots/` (real captures of the real app, demo data, coral background with caption). Regenerate with `tool/store_frames/` (see its README).
 
-### Screenshot 2: Meal Detail
-**Image:** View full meal details, cuisine, dietary notes, and request to join.
-**Caption:**
-```
-See the full meal — restaurant, time, cuisine, and host profile. Request to join.
-```
+| Store | Folder (English) | Size |
+|---|---|---|
+| App Store, iPhone 6.9" | `docs/store/screenshots/en/ios-6.9/` | 1290 × 2796 px |
+| Google Play, phone portrait | `docs/store/screenshots/en/play-phone/` | 1080 × 1920 px |
 
-### Screenshot 3: Request & Match
-**Image:** Send a request; host approves one companion.
-**Caption:**
-```
-Send a request. The host picks one match. No group chaos, just two diners.
-```
+French set: `docs/store/screenshots/fr/` (same names and sizes; captions in `listing.fr.md`). PNG, opaque RGB (no alpha), 20 files in total.
 
-### Screenshot 4: Chat
-**Image:** Direct messaging with your matched companion.
-**Caption:**
-```
-Chat to plan the meal. Get to know your companion before you meet.
-```
+**Re-check the stores' current screenshot size and count requirements at submission time; they change.**
 
-### Screenshot 5: Ratings & Safety
-**Image:** Rate and review companions; see others' ratings before matching.
-**Caption:**
-```
-Rate your companion. See ratings and build trust. Safety at the core.
-```
+| # | File | Shows | Caption (identical to `tool/store_frames/captions.dart`) |
+|---|---|---|---|
+| 1 | `01_discover.png` | Discover feed | `Find meals near you` |
+| 2 | `02_meal_detail.png` | Meal detail with "Request to join" | `See the full meal, then ask to join` |
+| 3 | `03_requests.png` | Requests inbox, host picks one | `Hosts pick one match. No group chaos` |
+| 4 | `04_chat.png` | Chat with the match | `Get to know them before you meet` |
+| 5 | `05_safety.png` | Safety tips sheet (block / report) | `Safety built in: block or report` |
+
+(Caption lines are broken in the image; shown on one line here.) Screenshot 5 replaces the old "Ratings & Safety" idea: see "Verify before submission" #2.
 
 ---
 
-## 7. What's New (First Release, v1.2.0)
+## 7. What's New (First Release)
 
 ```
 🍽️ Welcome to Convyve!
@@ -165,7 +174,7 @@ Enjoy your meal!
 
 - [ ] **Privacy Policy URL**: `https://convyve.com/privacy` (hosted; currently in `docs/legal/privacy.md` — DRAFT, needs legal review before hosting)
 - [ ] **Terms of Service URL**: `https://convyve.com/terms` (hosted; currently in `docs/legal/terms.md` — DRAFT, needs legal review)
-- [ ] **Support/Contact URL**: `placeholder@convyve.com` (email, configure in both store consoles)
+- [ ] **Support/Contact**: email `support@convyve.com` (the address the app ships, `lib/core/config/legal_urls.dart:12`; must be monitored; use it as Google Play's contact email). Apple's **Support URL** field needs a hosted web page (`https://convyve.com/support`, placeholder), not an email. The in-app legal links (`legal_urls.dart:7-8`) point to the English `/privacy` and `/terms` URLs.
 - [ ] **Privacy Policy**: Review `docs/legal/privacy.md` (DRAFT). Verify sections on data collection, retention, deletion, GDPR rights, and 18+ policy align with the app.
 - [ ] **Terms of Service**: Review `docs/legal/terms.md` (DRAFT). Verify 18+ age gate, user conduct, safety disclaimer, and no liability for real-world meetups.
 
@@ -179,7 +188,7 @@ Answer in App Store Connect > App Information > Age Rating:
 - [ ] Prolonged scenes of violence? **No**
 - [ ] Realistic violence? **No**
 - [ ] All other categories? **No**
-- **Expected rating:** 17+ (due to social interaction with adults / potential safety concerns in real-world meetups). *Note: If rated 17+, submit for review to confirm or appeal to 4+.*
+- **Expected rating:** 18+ (the app is 18+ only: self-declared date of birth, social interaction with strangers and real-world meetups). Apple's current questionnaire and age tiers change, so the final answers are the owner's call; do not appeal to a lower rating.
 
 #### Google Play — Data Safety Form
 Complete in Google Play Console > App Content > Data Safety:
@@ -193,7 +202,7 @@ Complete in Google Play Console > App Content > Data Safety:
 - [ ] Analytics (Firebase Analytics — usage, crashes)
 
 **Data sharing:**
-- [ ] Shared with third parties: **Yes** — Google Firebase (Firestore, Auth, Storage, Analytics, Crashlytics, Cloud Messaging)
+- [ ] Data is processed by Google Firebase as a service provider (Firestore, Auth, Storage, Analytics, Crashlytics, Cloud Messaging). Under Google Play's definitions, transfer to a service provider acting on our behalf is not "sharing", so the expected answer is **No** to "shared with third parties". **Owner to confirm** against the current Data Safety definitions (Firebase Analytics may be counted differently).
 - [ ] Shared with unaffiliated third parties? **No**
 
 **Data retention:**
@@ -216,10 +225,12 @@ Complete in Google Play Console > App Content > Data Safety:
 
 **App Store & Google Play review teams may request test credentials.** Provide:
 
-- **Demo Account Email:** `demo@convyve.test` (or similar; configure before submission)
-- **Password:** [Configure a stable demo account in Firebase Auth; use a strong password]
+**An email/password demo account cannot work**: the app only offers Apple, Google and phone sign-in (see "Verify before submission" #13). Recommendation:
+
+- **Test phone number:** add a fictional number in Firebase Console > Authentication > Sign-in method > Phone > "Phone numbers for testing", with a fixed 6-digit verification code. Firebase skips the real SMS for it.
+- **Review notes:** give the reviewer that phone number and code, and say the app signs in by phone, Apple or Google.
 - **Pre-populated data:** Create a few test meals, a match, and sample messages for the reviewer to explore without friction.
-- **Note in submission:** "Demo account available upon request. Please use `demo@convyve.test` to test the full flow (post a meal, match, chat, rate)."
+- **Note in submission:** "Sign in with the phone number <test number> and verification code <code>, then you can test the full flow (post a meal, request, chat, rate)."
 
 ---
 
@@ -234,9 +245,10 @@ Complete in Google Play Console > App Content > Data Safety:
 
 ### Content & Metadata
 - [ ] App name, subtitle, description, and keywords proofread for typos and consistency
-- [ ] Screenshots are high-quality, localized (English), and match captions
+- [x] Screenshots are high-quality and match captions (framed EN and FR sets generated, see section 6). Re-check store size requirements at submission.
+- [ ] **Localizations**: French listing drafted in [`listing.fr.md`](listing.fr.md) (DRAFT: native French review needed). French privacy policy, terms and support pages are the owner's homework. Add the `fr-FR` localization in both store consoles and upload `screenshots/fr/`.
 - [ ] Privacy Policy and Terms of Service hosted and reachable from Settings
-- [ ] App version (`package_info_plus` / `lib/main.dart`) is `1.2.0` or consistent with the store submission
+- [ ] App version (`package_info_plus` / `lib/main.dart`) matches `pubspec.yaml` (currently `1.1.0+2`) and the store submission
 - [ ] Privacy policy and terms are **legally reviewed** (currently DRAFT)
 
 ### Functionality
@@ -249,8 +261,8 @@ Complete in Google Play Console > App Content > Data Safety:
 - [ ] Push notifications (optional) are disabled or have opt-in UX (if enabled, test APNs / Firebase Cloud Messaging setup)
 
 ### Store Compliance
-- [ ] App Store category: Social; content rating: 17+ or 4+ (pending review)
-- [ ] Google Play category: Social & Messaging; content rating: All / Mature (pending review; depends on data-safety questionnaire response)
+- [ ] App Store category: Social; content rating: expect 18+ (set in the questionnaire)
+- [ ] Google Play category: Social; content rating: All / Mature (pending review; depends on data-safety questionnaire response)
 - [ ] Both store policies reviewed:
   - [ ] App Store: No dating/swipe app marketing (accurate — meal-first, 1:1, not dating)
   - [ ] Google Play: Compliant with community guidelines (no hate speech, fraud, or safety violations)
@@ -278,18 +290,18 @@ Complete in Google Play Console > App Content > Data Safety:
 
 Before uploading to App Store and Google Play:
 
-1. **Customize URLs**: Replace `https://convyve.com/privacy`, `/terms`, and `placeholder@convyve.com` with real, hosted URLs and a monitored email address.
+1. **Customize URLs**: Replace `https://convyve.com/privacy`, `/terms` and `/support` with real, hosted URLs, and make sure `support@convyve.com` is a monitored mailbox.
 2. **Legal review**: Have a lawyer review `docs/legal/privacy.md` and `docs/legal/terms.md`. Ensure GDPR compliance (Paris/France), age-gating, and safety disclaimers are correct.
-3. **Marketing assets**: Generate or design the 5 screenshots. Ensure they are high-res, English (or localized per store), and match captions. Both stores have specific size requirements:
-   - **App Store:** 6.5" (1284 × 2778 px) or 5.5" (1125 × 2436 px) iPhone screenshots
-   - **Google Play:** Landscape (1024 × 500 px) or portrait (1080 × 1920 px) phone screenshots
+3. **Marketing assets**: The 5 screenshots per language are done (section 6). Re-check each store's current size and count requirements at submission; the sets use:
+   - **App Store:** 6.9" iPhone, 1290 × 2796 px
+   - **Google Play:** portrait phone, 1080 × 1920 px
 4. **App icon**: Ensure icon is 1024 × 1024 px, follows store guidelines (no rounded corners, safe-zone padding), and is uploaded to both consoles.
-5. **Demo account**: Create a stable test account in Firebase; provide credentials to both store review teams.
+5. **Demo account**: Create a Firebase Auth test phone number with a fixed code (see §9); provide both to the store review teams.
 6. **Build signing**: Generate signed APK (Android) and IPA (iOS) using your private keys / certificates. Store the keys securely.
 7. **App Store specific**:
    - [ ] Provide App Store Connect credentials or invite Apple to review via invitation
    - [ ] Complete "App Privacy" section in App Store Connect (privacy questions align with the privacy policy)
-   - [ ] Respond to the age-rating questionnaire (likely 17+ for social interaction with real-world meetups; coordinate with legal)
+   - [ ] Respond to the age-rating questionnaire (expect 18+, the app is 18+ only; the answers are the owner's call, coordinate with legal)
    - [ ] Submit for review and monitor for feedback
 8. **Google Play specific**:
    - [ ] Complete "Data Safety" questionnaire (sections outlined in this checklist)

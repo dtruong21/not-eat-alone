@@ -214,6 +214,10 @@ void _logFontDiagnostics(WidgetTester tester) {
 
 const _uxLocale = String.fromEnvironment('UX_LOCALE');
 
+/// The language of the seeded text (bios, notes, chats): `en` unless French.
+// A getter (not a const) so the analyzer does not fold it into the default.
+String get _worldLocale => _uxLocale == 'fr' ? 'fr' : 'en';
+
 const _fr = <String, String>{
   'Send code': 'Envoyer le code',
   'Enter a phone number with country code':
@@ -248,6 +252,9 @@ const _fr = <String, String>{
 /// [en] in the language of this run (unchanged for English and for strings the
 /// Material localizations own, such as "OK").
 String _l(String en) => _uxLocale == 'fr' ? (_fr[en] ?? en) : en;
+
+/// Text the test types itself, in the language of this run.
+String _t(String en, String fr) => _uxLocale == 'fr' ? fr : en;
 
 Finder _text(String en) => find.text(_l(en));
 Finder _textContaining(String en) => find.textContaining(_l(en));
@@ -529,11 +536,11 @@ void main() {
     await _captureSignedOut(tester);
 
     // ---- Stage 1 of the world: users only (Discover/Chats/Requests empty).
-    final users = await seedUsers();
+    final users = await seedUsers(locale: _worldLocale);
     await _captureEmptyStates(tester);
 
     // ---- Stage 2: meals, requests, matches, chats.
-    final world = await seedMeals(users);
+    final world = await seedMeals(users, locale: _worldLocale);
     await _captureDiscover(tester, world);
     await _captureMealDetail(tester, world);
     await _captureCreateMeal(tester);
@@ -981,7 +988,11 @@ Future<void> _captureCreateMeal(WidgetTester tester) async {
   await _step(tester, '36_create_meal_filled', () async {
     await tester.enterText(
       find.byKey(const Key('create_meal_note_field')),
-      'Looking for a lively table. I will bring a book in case I am early.',
+      _t(
+        'Looking for a lively table. I will bring a book in case I am early.',
+        'Je cherche une table animée. J’apporterai un livre au cas où '
+            'j’arrive en avance.',
+      ),
     );
     await _tap(tester, find.byKey(const Key('create_meal_women_only_switch')));
     await _snap(tester, '36_create_meal_filled');
@@ -1074,7 +1085,10 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
     await _tap(tester, find.byKey(const Key('report_reason_chip_harassment')));
     await tester.enterText(
       find.byKey(const Key('report_note_field')),
-      'Keeps messaging after I asked to stop.',
+      _t(
+        'Keeps messaging after I asked to stop.',
+        'Continue à m’écrire alors que je lui ai demandé d’arrêter.',
+      ),
     );
     await _settle(tester);
     await _snap(tester, '69_chat_report_filled');
@@ -1125,7 +1139,10 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
     await _ensureChat(tester, world.mealIds['emptyChat']!);
     await tester.enterText(
       find.byKey(const Key('message_composer_field')),
-      'Hi Inès! Looking forward to the dumplings.',
+      _t(
+        'Hi Inès! Looking forward to the dumplings.',
+        'Salut Inès ! J’ai hâte de goûter les raviolis.',
+      ),
     );
     await _settle(tester);
     await _tapInFlight(
@@ -1165,7 +1182,10 @@ Future<void> _captureChats(WidgetTester tester, UxWorld world) async {
     await _tap(tester, find.byKey(const Key('rating_star_4')));
     await tester.enterText(
       find.byKey(const Key('rating_comment_field')),
-      'Great company, we talked for hours.',
+      _t(
+        'Great company, we talked for hours.',
+        'Super compagnie, on a discuté pendant des heures.',
+      ),
     );
     await _settle(tester);
     await _snap(tester, '74_rating_sheet_filled');
@@ -1412,7 +1432,10 @@ Future<void> _captureOnboarding(WidgetTester tester, UxWorld world) async {
     await _tap(tester, _text('Woman'));
     await tester.enterText(
       find.byKey(const Key('profile_bio_field')),
-      'New to Paris and hungry for good company.',
+      _t(
+        'New to Paris and hungry for good company.',
+        'Nouvelle à Paris et avide de bonne compagnie.',
+      ),
     );
     await _settle(tester);
     await _snap(tester, '15_profile_setup_filled');
