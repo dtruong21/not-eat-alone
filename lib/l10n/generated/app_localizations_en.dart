@@ -678,6 +678,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSectionAbout => 'About';
 
   @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageSystem => 'System default';
+
+  @override
+  String get settingsLanguageTitle => 'Language';
+
+  @override
   String get settingsVersion => 'Version';
 
   @override

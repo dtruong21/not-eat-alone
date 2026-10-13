@@ -1280,6 +1280,24 @@ abstract class AppLocalizations {
   /// **'About'**
   String get settingsSectionAbout;
 
+  /// Settings row that opens the language picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// Language picker option and row subtitle: follow the device language.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get settingsLanguageSystem;
+
+  /// Title of the language picker dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguageTitle;
+
   /// Settings row showing the app version.
   ///
   /// In en, this message translates to:

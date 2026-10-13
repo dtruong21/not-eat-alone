@@ -920,6 +920,18 @@
   "@settingsSectionAbout": {
     "description": "Settings section header."
   },
+  "settingsLanguage": "Langue",
+  "@settingsLanguage": {
+    "description": "Settings row that opens the language picker."
+  },
+  "settingsLanguageSystem": "Langue du système",
+  "@settingsLanguageSystem": {
+    "description": "Language picker option and row subtitle: follow the device language."
+  },
+  "settingsLanguageTitle": "Langue",
+  "@settingsLanguageTitle": {
+    "description": "Title of the language picker dialog."
+  },
   "settingsVersion": "Version",
   "@settingsVersion": {
     "description": "Settings row showing the app version."

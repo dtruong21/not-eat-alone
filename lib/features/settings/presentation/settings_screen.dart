@@ -20,12 +20,14 @@ import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/config/legal_urls.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/locale/locale_controller.dart';
 import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
 import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
 import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
+import 'package:not_eat_alone/features/settings/presentation/language_picker.dart';
 import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// The app's display version + build number, e.g. "v1.1.0 (build 2)".
@@ -265,6 +267,16 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const Divider(),
             _SectionHeader(l10n.settingsSectionAbout),
+            ListTile(
+              key: const Key('settings_language'),
+              leading: const Icon(Icons.language_rounded),
+              title: Text(l10n.settingsLanguage),
+              subtitle: Text(
+                languageLabel(context, ref.watch(localeControllerProvider)),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => unawaited(showLanguagePicker(context)),
+            ),
             ListTile(
               key: const Key('settings_app_version'),
               leading: const Icon(Icons.info_outline_rounded),

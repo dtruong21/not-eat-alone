@@ -684,6 +684,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsSectionAbout => 'À propos';
 
   @override
+  String get settingsLanguage => 'Langue';
+
+  @override
+  String get settingsLanguageSystem => 'Langue du système';
+
+  @override
+  String get settingsLanguageTitle => 'Langue';
+
+  @override
   String get settingsVersion => 'Version';
 
   @override
