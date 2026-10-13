@@ -38,7 +38,10 @@ class _NoopPushRepository implements PushRepository {
   Future<bool> requestPermission() async => false;
 
   @override
-  Future<void> registerToken(String uid) async {}
+  Future<void> registerToken(String uid, {required String lang}) async {}
+
+  @override
+  Future<void> updateTokenLanguage(String uid, String lang) async {}
 
   @override
   Future<void> unregisterCurrentToken(String uid) async {}

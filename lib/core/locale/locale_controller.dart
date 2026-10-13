@@ -26,6 +26,27 @@ Future<Locale?> readSavedLocale() async {
   return null;
 }
 
+/// The language (`en`/`fr`) the UI shows: the explicit [choice] when it is
+/// supported, else the first device locale whose language is supported, else
+/// English. Mirrors Flutter's default resolution against [supportedAppLocales]
+/// (pinned by a test) so the push language always matches what the user sees.
+String resolveAppLanguage(Locale? choice, List<Locale> deviceLocales) {
+  bool supported(String code) =>
+      supportedAppLocales.any((l) => l.languageCode == code);
+  if (choice != null && supported(choice.languageCode)) {
+    return choice.languageCode;
+  }
+  for (final l in deviceLocales) {
+    if (supported(l.languageCode)) return l.languageCode;
+  }
+  return 'en';
+}
+
+/// The device's preferred locales; overridable in tests.
+final deviceLocalesProvider = Provider<List<Locale>>(
+  (ref) => PlatformDispatcher.instance.locales,
+);
+
 /// The locale read at bootstrap; overridden in `bootstrap`, null elsewhere.
 final localeSeedProvider = Provider<Locale?>((ref) => null);
 

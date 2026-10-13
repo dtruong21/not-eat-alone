@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/widgets.dart' show basicLocaleListResolution;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/locale/locale_controller.dart';
@@ -55,4 +56,36 @@ void main() {
       );
     },
   );
+
+  group('resolveAppLanguage', () {
+    const devices = <List<Locale>>[
+      [Locale('fr', 'FR')],
+      [Locale('fr', 'CA')],
+      [Locale('es'), Locale('fr')],
+      [Locale('de')],
+      [],
+      [Locale('en', 'US'), Locale('fr')],
+    ];
+
+    test('follows the device exactly like the UI default resolution', () {
+      for (final d in devices) {
+        expect(
+          resolveAppLanguage(null, d),
+          basicLocaleListResolution(d, supportedAppLocales).languageCode,
+          reason: '$d',
+        );
+      }
+    });
+
+    test('an explicit choice wins over the device', () {
+      expect(
+        resolveAppLanguage(const Locale('fr'), const [Locale('en')]),
+        'fr',
+      );
+      expect(
+        resolveAppLanguage(const Locale('en'), const [Locale('fr')]),
+        'en',
+      );
+    });
+  });
 }
