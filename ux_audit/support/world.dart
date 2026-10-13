@@ -199,7 +199,7 @@ const _bioFr = <String, String>{
       'Sommelier le jour, nul en small talk le soir. Toujours chaud pour un '
       'long dîner et un débat sur le meilleur croissant du 11e.',
   'dario':
-      'Fraîchement débarqué de Naples. Snob de la pizza : je jugerai '
+      'Fraîchement débarqué de Naples à Paris. Snob de la pizza : je jugerai '
       'gentiment ta commande.',
   'emilia':
       'Architecte. J’aime les endroits avec une histoire et une table près '
@@ -244,7 +244,7 @@ const _notesFr = <String, String>{
   'pizzeria':
       'La margherita, ça ne se discute pas. J’ai réservé la table du fond.',
   'chartier':
-      'Du classique français à petit prix. Il y aura la queue : prévois '
+      'Du classique français à petit prix. Il faudra faire la queue : prévois '
       'de la patience et de l’appétit. Je nous garde une place côté droit de '
       'la salle, sous le grand miroir, et j’adorerais savoir ce que '
       'chacun fait dans la vie.',
@@ -365,7 +365,7 @@ const _mainChatFr = <String>[
       'deux pas du métro.',
   'Pas pour dîner. Ça te dérange si j’ai 5 minutes de retard ? Je '
       'viens directement du boulot.',
-  'Aucun souci. Je prendrai la table et je donnerai le nom Marchetti.',
+  'Aucun souci. Je m’occupe de la table, ce sera au nom de Marchetti.',
   'Parfait.',
   'Des allergies à signaler ? Je suis végétarienne mais je mange du '
       'poisson.',
@@ -381,12 +381,14 @@ const _mainChatFr = <String>[
   'Bien sûr, plus on est de fous, plus on rit, surtout pour un verre.',
   'Rappel : demain 20 h, Le Comptoir du Relais. J’ai hâte !',
   'On se retrouve là-bas ! 🍷',
-  'Au fait, quelle entrée ? Il y en a deux, on dirait.',
+  'Par quelle porte, au fait ? Il y en a deux, on dirait.',
 ];
 
 /// The ~15-message chat between the viewer and Bastien in [locale].
 List<UxChatMessage> uxMainChat(String locale) => _isFr(locale)
     ? [
+        if (_mainChatFr.length != _mainChatEn.length)
+          throw StateError('_mainChatFr is not parallel to _mainChatEn'),
         for (var i = 0; i < _mainChatEn.length; i++)
           (
             minutesAgo: _mainChatEn[i].minutesAgo,
@@ -411,6 +413,8 @@ const _pastChatFr = <String>[
 /// The short chat of the past, rated meal in [locale].
 List<({bool mine, String text})> uxPastChat(String locale) => _isFr(locale)
     ? [
+        if (_pastChatFr.length != _pastChatEn.length)
+          throw StateError('_pastChatFr is not parallel to _pastChatEn'),
         for (var i = 0; i < _pastChatEn.length; i++)
           (mine: _pastChatEn[i].mine, text: _pastChatFr[i]),
       ]

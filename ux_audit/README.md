@@ -33,11 +33,10 @@ then seeds `localeSeedProvider` with `fr` (what `app_locale` = `fr` in `SharedPr
 gives at boot) in the scope it re-pumps after boot. The test's finders take the English
 string and look up its French twin in the `_fr` map at the top of `capture_test.dart`
 (keep it in step with `lib/l10n/app_fr.arb`); a string missing from the map stays English
-and the step fails visibly. Material-owned strings ("OK") need no entry. Under `UX_LOCALE=fr` the seeded free text
-(bios, meal notes, the chat messages, the rating comment) is French too (plan 20, tables
-`_bioFr`, `_notesFr`, `_mainChatFr`, `_pastChatFr` in `support/world.dart`, parallel to the English ones;
-`seedUsers`/`seedMeals` take `locale:`); names, restaurants, times and ids are unchanged. The test
-finders never look seeded text up, so nothing else depends on it.
+and the step fails visibly. Material-owned strings ("OK") need no entry. Under `UX_LOCALE=fr` the seeded free text (bios, meal notes, chats, the rating comment) and the text the test
+types itself (`_t(en, fr)` in `capture_test.dart`) are French too; the seeded tables are
+`_bioFr`, `_notesFr`, `_mainChatFr`, `_pastChatFr` in `support/world.dart`, parallel to the English ones, and
+`seedUsers`/`seedMeals` take `locale:`. Names, restaurants (which the finders do look up), times and ids are unchanged.
 `fvm flutter test test/ux_audit/world_locale_test.dart` checks the two languages stay parallel.
 
 | Cell part | Values |

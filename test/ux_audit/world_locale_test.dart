@@ -56,6 +56,33 @@ void main() {
     }
   });
 
+  test(
+    'French messages keep the emoji, newlines and digits of the English',
+    () {
+      String digits(String t) => t.replaceAll(RegExp(r'\D'), '');
+      String emoji(String t) => RegExp(
+        r'[\u{1F300}-\u{1FAFF}]',
+        unicode: true,
+      ).allMatches(t).map((m) => m.group(0)).join();
+      int lines(String t) => '\n'.allMatches(t).length;
+      final pairs = <(String, String)>[
+        for (var i = 0; i < uxMainChat('en').length; i++)
+          (uxMainChat('en')[i].text, uxMainChat('fr')[i].text),
+        for (var i = 0; i < uxPastChat('en').length; i++)
+          (uxPastChat('en')[i].text, uxPastChat('fr')[i].text),
+        for (final k in uxNotes('en').keys)
+          (uxNotes('en')[k]!, uxNotes('fr')[k]!),
+        for (final k in uxBios('en').keys) (uxBios('en')[k]!, uxBios('fr')[k]!),
+      ];
+      for (final (en, fr) in pairs) {
+        expect(emoji(fr), emoji(en), reason: fr);
+        expect(lines(fr), lines(en), reason: fr);
+        // Same digits (times: "20:00" is "20 h" in French).
+        expect(digits(fr), digits(en.replaceAll(':00', '')), reason: fr);
+      }
+    },
+  );
+
   test('an unknown locale is refused', () {
     expect(() => uxMainChat('de'), throwsArgumentError);
   });
