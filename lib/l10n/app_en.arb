@@ -810,6 +810,15 @@
   "@ratingCardSubtitle": {
     "description": "Subtitle of the post-meal card."
   },
+  "ratingCardSubtitleNamed": "With {name}",
+  "@ratingCardSubtitleNamed": {
+    "description": "Post-meal card subtitle naming the partner (the button only says Rate).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "ratingRate": "Rate",
   "@ratingRate": {
     "description": "Post-meal card button label (short and constant; the partner is named in the title)."

@@ -84,15 +84,17 @@ void main() {
     find.byKey(const Key('post_meal_card_rate_button')),
   );
 
-  testWidgets('Rate is a short primary AppButton; the title names the person', (
-    tester,
-  ) async {
-    await pump(tester, name: 'Giulia');
-    expect(button(tester).label, 'Rate');
-    expect(button(tester).semanticLabel, 'Rate Giulia');
-    expect(button(tester).variant, AppButtonVariant.primary);
-    expect(find.text('How was your meal with Giulia?'), findsOneWidget);
-  });
+  testWidgets(
+    'Rate is a short primary AppButton; the subtitle names the person',
+    (tester) async {
+      await pump(tester, name: 'Giulia');
+      expect(button(tester).label, 'Rate');
+      expect(button(tester).semanticLabel, 'Rate Giulia');
+      expect(button(tester).variant, AppButtonVariant.primary);
+      expect(find.text('How was your meal?'), findsOneWidget);
+      expect(find.text('With Giulia'), findsOneWidget);
+    },
+  );
 
   testWidgets('unnamed: plain title and "Rate"', (tester) async {
     await pump(tester);
@@ -121,10 +123,10 @@ void main() {
 
   // Heights before the layout fix (measured with the 1:1 Row, name 'Bastien'):
   // 108 at 360 px, 126 at 320 px, 358 at 320 px / 2.0x.
-  testWidgets('360 px: unnamed title on one line, card no taller than before', (
+  testWidgets('360 px: title on one line, card no taller than before', (
     tester,
   ) async {
-    await pump(tester);
+    await pump(tester, name: 'Bastien');
     expect(
       isOneLine(
         tester,
@@ -133,13 +135,6 @@ void main() {
       ),
       isTrue,
     );
-    expect(cardHeight(tester), lessThanOrEqualTo(108));
-  });
-
-  testWidgets('360 px: named title may wrap, card no taller than before', (
-    tester,
-  ) async {
-    await pump(tester, name: 'Bastien');
     expect(cardHeight(tester), lessThanOrEqualTo(108));
   });
 
@@ -154,7 +149,7 @@ void main() {
         'shorter than before (358)', (tester) async {
       await pump(tester, name: name, scale: 2, size: const Size(320, 640));
       expect(tester.takeException(), isNull);
-      final text = tester.getRect(find.textContaining('How was your meal'));
+      final text = tester.getRect(find.text('How was your meal?'));
       final button = tester.getRect(
         find.byKey(const Key('post_meal_card_rate_button')),
       );
@@ -163,39 +158,72 @@ void main() {
     });
   }
 
-  // Follow-ups plan 21, task 2: the Rate button never truncates, in either
-  // language, at any text size, with a long or an apostrophe name.
+  // Follow-ups plan 21, task 2: the Rate button never truncates and the
+  // person's name stays readable, in either language, at any text size.
+  const ordinary = ['Giulia Pellegrini', 'Bastien', 'D’Artagnan'];
+  const names = [...ordinary, 'Emilia Vasquez-Hernandez'];
   for (final locale in [const Locale('en'), const Locale('fr')]) {
-    for (final name in ['Emilia Vasquez-Hernandez', 'D’Artagnan']) {
-      for (final scale in [1.0, 1.3, 2.0]) {
-        testWidgets('${locale.languageCode} 320 px ${scale}x ($name): '
-            'Rate not ellipsized, semantics name the person', (tester) async {
-          final semantics = tester.ensureSemantics();
-          await pump(
-            tester,
-            name: name,
-            scale: scale,
-            size: const Size(320, 640),
-            locale: locale,
+    for (final name in names) {
+      for (final width in [320.0, 360.0]) {
+        // The long hyphenated name is only required at the narrowest width.
+        if (width == 360 && !ordinary.contains(name)) continue;
+        for (final scale in [1.0, 1.3, 2.0]) {
+          testWidgets(
+            '${locale.languageCode} ${width.toInt()} px ${scale}x ($name): '
+            'Rate and name not cut, semantics name the person',
+            (tester) async {
+              final semantics = tester.ensureSemantics();
+              await pump(
+                tester,
+                name: name,
+                scale: scale,
+                size: Size(width, 640),
+                locale: locale,
+              );
+              expect(tester.takeException(), isNull);
+
+              final rate = find.byKey(const Key('post_meal_card_rate_button'));
+              final buttonParagraphs = tester.renderObjectList<RenderParagraph>(
+                find.descendant(
+                  of: rate,
+                  matching: find.byType(RichText),
+                  skipOffstage: false,
+                ),
+              );
+              expect(buttonParagraphs, isNotEmpty);
+              for (final p in buttonParagraphs) {
+                expect(p.didExceedMaxLines, isFalse);
+              }
+              final verb = locale.languageCode == 'fr' ? 'Noter' : 'Rate';
+              expect(find.bySemanticsLabel('$verb $name'), findsOneWidget);
+              expect(find.text(verb), findsOneWidget);
+
+              // The name is readable in the card; only the long hyphenated
+              // name may be ellipsized.
+              final nameLine = tester.renderObject<RenderParagraph>(
+                find.descendant(
+                  of: find.byKey(const Key('post_meal_card')),
+                  matching: find.textContaining(name),
+                ),
+              );
+              if (ordinary.contains(name)) {
+                expect(nameLine.didExceedMaxLines, isFalse);
+                // Never taller than the card was before this change (measured:
+                // 108 at 1.0x, 154 en / 188 fr at 1.3x, 408 at 2.0x), and
+                // within the 126 / 358 ceilings at 1.0x / 2.0x.
+                expect(
+                  cardHeight(tester),
+                  lessThanOrEqualTo(switch (scale) {
+                    1.0 => 126,
+                    1.3 => 188,
+                    _ => 357,
+                  }),
+                );
+              }
+              semantics.dispose();
+            },
           );
-          expect(tester.takeException(), isNull);
-          final rate = find.byKey(const Key('post_meal_card_rate_button'));
-          final paragraphs = tester.renderObjectList<RenderParagraph>(
-            find.descendant(
-              of: rate,
-              matching: find.byType(RichText),
-              skipOffstage: false,
-            ),
-          );
-          expect(paragraphs, isNotEmpty);
-          for (final p in paragraphs) {
-            expect(p.didExceedMaxLines, isFalse);
-          }
-          final verb = locale.languageCode == 'fr' ? 'Noter' : 'Rate';
-          expect(find.bySemanticsLabel('$verb $name'), findsOneWidget);
-          expect(find.text(verb), findsOneWidget);
-          semantics.dispose();
-        });
+        }
       }
     }
   }

@@ -598,6 +598,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratingCardSubtitle => 'It only takes a moment.';
 
   @override
+  String ratingCardSubtitleNamed(String name) {
+    return 'With $name';
+  }
+
+  @override
   String get ratingRate => 'Rate';
 
   @override

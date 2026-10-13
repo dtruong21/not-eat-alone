@@ -1148,6 +1148,12 @@ abstract class AppLocalizations {
   /// **'It only takes a moment.'**
   String get ratingCardSubtitle;
 
+  /// Post-meal card subtitle naming the partner (the button only says Rate).
+  ///
+  /// In en, this message translates to:
+  /// **'With {name}'**
+  String ratingCardSubtitleNamed(String name);
+
   /// Post-meal card button label (short and constant; the partner is named in the title).
   ///
   /// In en, this message translates to:

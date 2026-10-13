@@ -79,20 +79,20 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          targetName != null
-              ? context.l10n.ratingTitleNamed(targetName)
-              : context.l10n.ratingTitle,
-          // The name lives here, not in the button: it may wrap, and only a
-          // pathological name is cut.
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+          context.l10n.ratingTitle,
           style: textTheme.titleMedium?.copyWith(
             fontWeight: WarmPlayfulType.h2Weight,
           ),
         ),
         const SizedBox(height: WarmPlayfulSpacing.s1),
         Text(
-          context.l10n.ratingCardSubtitle,
+          // The person's name is readable here (the button only says
+          // "Rate"); it wraps to two lines and only a pathological name is cut.
+          targetName != null
+              ? context.l10n.ratingCardSubtitleNamed(targetName)
+              : context.l10n.ratingCardSubtitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
         ),
       ],
@@ -134,7 +134,7 @@ class _PostMealCardState extends ConsumerState<PostMealCard> {
             : Row(
                 children: [
                   // The label is short and constant, so the button takes its
-                  // natural width and the title gets the rest.
+                  // natural width and the prompt gets the rest.
                   Expanded(child: prompt),
                   const SizedBox(width: WarmPlayfulSpacing.s3),
                   rateButton(expand: false),

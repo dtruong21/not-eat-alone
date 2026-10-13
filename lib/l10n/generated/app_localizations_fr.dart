@@ -605,6 +605,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ratingCardSubtitle => 'Ça ne prend qu’un instant.';
 
   @override
+  String ratingCardSubtitleNamed(String name) {
+    return 'Avec $name';
+  }
+
+  @override
   String get ratingRate => 'Noter';
 
   @override
