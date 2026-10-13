@@ -12,9 +12,38 @@ import 'package:not_eat_alone/features/matching/domain/entities/join_request.dar
 import 'package:not_eat_alone/features/matching/domain/meal_no_longer_open_exception.dart';
 import 'package:not_eat_alone/features/matching/domain/repositories/request_repository.dart';
 
+/// Kept well under `queuedWriteGrace` (3 s) so the classified rejection still
+/// reaches the caller inside the grace period.
+const _mealReadTimeout = Duration(seconds: 1);
+
+/// What `createRequest` should throw for a failed request write: the domain
+/// [MealNoLongerOpenException] when the rules rejected it (`permission-denied`)
+/// and one follow-up read of the meal shows it is missing or not `open`;
+/// otherwise the [RepositoryWriteException] for [error]. A failing
+/// [readMealStatus] never masks the original error. [readMealStatus] returns
+/// the meal's `status`, or null when the meal doc does not exist.
+@visibleForTesting
+Future<Exception> classifyRequestFailure({
+  required String mealId,
+  required Object error,
+  required StackTrace stack,
+  required Future<String?> Function(String mealId) readMealStatus,
+}) async {
+  final original = RepositoryWriteException('requests', error, stack);
+  if (error is! FirebaseException || error.code != 'permission-denied') {
+    return original;
+  }
+  try {
+    final status = await readMealStatus(mealId);
+    return status == 'open' ? original : MealNoLongerOpenException(mealId);
+  } on Object {
+    return original;
+  }
+}
+
 class RequestRepositoryImpl implements RequestRepository {
   RequestRepositoryImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? db;
+    : _firestore = firestore ?? db;
 
   final FirebaseFirestore _firestore;
 
@@ -37,8 +66,27 @@ class RequestRepositoryImpl implements RequestRepository {
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e, st) {
-      throw RepositoryWriteException('requests', e, st);
+      throw await classifyRequestFailure(
+        mealId: mealId,
+        error: e,
+        stack: st,
+        readMealStatus: _readMealStatus,
+      );
     }
+  }
+
+  /// The meal's `status` (null = the doc is missing). Server first, so a stale
+  /// cached `open` can't hide a closed meal; the cache answers when the
+  /// server can't be reached quickly. Throws when neither answers.
+  Future<String?> _readMealStatus(String mealId) async {
+    final ref = _firestore.collection('meals').doc(mealId);
+    DocumentSnapshot<Map<String, dynamic>> snap;
+    try {
+      snap = await ref.get().timeout(_mealReadTimeout);
+    } on Object {
+      snap = await ref.get(const GetOptions(source: Source.cache));
+    }
+    return snap.exists ? snap.data()!['status'] as String? : null;
   }
 
   @override
@@ -61,18 +109,19 @@ class RequestRepositoryImpl implements RequestRepository {
         .where('status', isEqualTo: 'pending')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((s) => s.docs
-            .map((d) => _fromDoc(d.id, d.data()))
-            .toList(growable: false));
+        .map(
+          (s) => s.docs
+              .map((d) => _fromDoc(d.id, d.data()))
+              .toList(growable: false),
+        );
   }
 
   @override
   Future<void> deny(JoinRequest request) async {
     try {
-      await _firestore
-          .collection('requests')
-          .doc(request.id)
-          .update({'status': 'denied'});
+      await _firestore.collection('requests').doc(request.id).update({
+        'status': 'denied',
+      });
     } catch (e, st) {
       throw RepositoryWriteException('requests', e, st);
     }

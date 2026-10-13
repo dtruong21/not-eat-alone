@@ -80,9 +80,8 @@ class MealActionBar extends ConsumerWidget {
       next,
     ) {
       if (previous?.isLoading != true || !next.hasError) return;
-      // Note: createRequest currently wraps every failure in
-      // RepositoryWriteException, so the no-longer-open copy only shows if a
-      // future repository change throws MealNoLongerOpenException.
+      // createRequest throws MealNoLongerOpenException when the rules reject
+      // a request for a closed meal; every other failure is generic.
       messenger.showSnackBar(
         SnackBar(
           content: Text(
