@@ -20,6 +20,7 @@ import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/meal/application/create_meal_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 const _maxNoteLength = 200;
 
@@ -115,8 +116,8 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
     // past or too soon, and say why.
     if (!isMealTimeFarEnough(combined)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pick a time at least 5 minutes from now.'),
+        SnackBar(
+          content: Text(context.l10n.createMealTooSoon(mealMinLead.inMinutes)),
         ),
       );
       return;
@@ -150,13 +151,9 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
     ) {
       if (previous?.isLoading == true && next.hasValue && !next.hasError) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Meal posted. You'll get requests in the Requests tab.",
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.createMealPosted)));
         context.go('/discover');
       }
     });
@@ -170,7 +167,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create a meal')),
+      appBar: AppBar(title: Text(context.l10n.createMealTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s5),
@@ -213,8 +210,11 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                 onPressed: isSubmitting ? null : _pickDateTime,
                 child: Text(
                   _dateTime == null
-                      ? 'Pick date & time'
-                      : formatMealDateTime(_dateTime!),
+                      ? context.l10n.createMealPickDateTime
+                      : formatMealDateTime(
+                          _dateTime!,
+                          locale: Localizations.localeOf(context),
+                        ),
                 ),
               ),
               const SizedBox(height: WarmPlayfulSpacing.s5),
@@ -229,7 +229,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                   bottom: WarmPlayfulSize.keyboardReveal,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Note (optional)',
+                  labelText: context.l10n.createMealNoteLabel,
                   alignLabelWithHint: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
@@ -241,7 +241,7 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Women only',
+                      context.l10n.mealWomenOnly,
                       style: textTheme.bodyMedium?.copyWith(
                         color: colors.onSurface,
                         fontWeight: WarmPlayfulType.h2Weight,
@@ -260,15 +260,15 @@ class CreateMealScreenState extends ConsumerState<CreateMealScreen> {
               const SizedBox(height: WarmPlayfulSpacing.s5),
               if (hasError) ...[
                 Text(
-                  'Something went wrong — please try again.',
+                  context.l10n.commonSomethingWentWrong,
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(color: colors.error),
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s4),
               ],
               AppButton(
-                label: 'Create meal',
-                loadingLabel: 'Creating…',
+                label: context.l10n.createMealSubmit,
+                loadingLabel: context.l10n.createMealCreating,
                 isLoading: isSubmitting,
                 key: const Key('create_meal_submit_button'),
                 onPressed: (_dateTime == null || isSubmitting) ? null : _submit,

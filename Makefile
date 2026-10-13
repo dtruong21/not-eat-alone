@@ -161,6 +161,8 @@ e2e: ios-plist ios-sim-boot ios-privacy
 # non-interactive sh starts with SIGINT ignored. Exit status is non-zero if
 # the test failed or any screenshot was missing/empty.
 OUT ?= default
+# App language of a capture (empty = English; fr = French), whatever the simulator language is. Passed to ux_audit/capture_test.dart.
+UX_LOCALE ?=
 .PHONY: ux-capture
 ux-capture: ios-plist ios-sim-boot ios-privacy
 	cd firebase/functions && npm ci && npm run build
@@ -184,7 +186,7 @@ ux-capture: ios-plist ios-sim-boot ios-privacy
 	if [ $$up -ne 1 ]; then echo "[ux-capture] host script did not come up"; exit 1; fi; \
 	firebase emulators:exec --only "auth,firestore:(default),functions,storage" \
 		--project not-eat-alone \
-		"fvm flutter drive --driver ux_audit/driver.dart --target ux_audit/capture_test.dart -d '$(DEVICE)'"; \
+		"fvm flutter drive --driver ux_audit/driver.dart --target ux_audit/capture_test.dart -d '$(DEVICE)' --dart-define=UX_LOCALE=$(UX_LOCALE)"; \
 	status=$$?; \
 	touch /tmp/convyve-ux/.done; \
 	wait $$host; hoststatus=$$?; \

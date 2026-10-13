@@ -27,6 +27,7 @@ import 'package:not_eat_alone/core/design/widgets/error_state.dart';
 import 'package:not_eat_alone/core/design/widgets/skeleton_card.dart';
 import 'package:not_eat_alone/features/meal/application/restaurant_search_controller.dart';
 import 'package:not_eat_alone/features/meal/domain/entities/restaurant.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// Route path this screen pushes to when a restaurant is selected. Kept in
 /// sync with the route wired in Task 7.
@@ -106,9 +107,8 @@ class _RestaurantSearchScreenState
                 ),
                 child: Text(
                   _searchedQuery.isEmpty
-                      ? 'No restaurants to show yet.'
-                      : 'No restaurant called \u201c$_searchedQuery\u201d. '
-                            'Try another name.',
+                      ? context.l10n.restaurantSearchEmpty
+                      : context.l10n.restaurantSearchNoMatch(_searchedQuery),
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
                     color: context.wp.muted,
@@ -132,7 +132,7 @@ class _RestaurantSearchScreenState
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Find a restaurant')),
+      appBar: AppBar(title: Text(context.l10n.restaurantSearchTitle)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(WarmPlayfulSpacing.s4),
@@ -145,7 +145,7 @@ class _RestaurantSearchScreenState
                 onChanged: _onQueryTyped,
                 onSubmitted: _onQueryChanged,
                 decoration: InputDecoration(
-                  hintText: 'Search restaurants',
+                  hintText: context.l10n.restaurantSearchHint,
                   prefixIcon: const Icon(Icons.search_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),

@@ -3,12 +3,13 @@
 ///
 /// Stateless: the discovery screen owns the per-session dismissed flag (so
 /// the choice survives the list rebuilding or being scrolled). Persisting it
-/// across sessions would need `shared_preferences`, which is not a dependency.
+/// across sessions (`shared_preferences` is now available) is a follow-up.
 library;
 
 import 'package:flutter/material.dart';
 
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// A dismissible banner informing users that Convyve is Paris-only for now.
 class ParisNotice extends StatelessWidget {
@@ -41,8 +42,7 @@ class ParisNotice extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Convyve is Paris-only for now — '
-                "we're just getting started here.",
+                context.l10n.parisNotice,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colors.onSurface,
                 ),
@@ -50,7 +50,7 @@ class ParisNotice extends StatelessWidget {
             ),
             IconButton(
               key: const Key('paris_notice_close_button'),
-              tooltip: 'Dismiss',
+              tooltip: context.l10n.commonDismiss,
               icon: const Icon(Icons.close_rounded),
               onPressed: onDismiss,
               constraints: const BoxConstraints(

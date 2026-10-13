@@ -24,6 +24,7 @@ import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// Maximum number of profile photos a user may have. Mirrors
 /// `ProfileController`'s `_maxPhotos` — kept in sync manually since that
@@ -55,6 +56,43 @@ const EdgeInsets kProfileFieldScrollPadding = EdgeInsets.fromLTRB(
 const double _removeBadge = WarmPlayfulSize.badge;
 const double _removeHit = WarmPlayfulSize.minTap;
 
+/// A required profile field that is still unset (see
+/// [ProfileFormData.missingFields]); [localizeMissingFields] turns a list of
+/// them into the sentence part of the "Still needed: …" hint.
+enum ProfileMissingField {
+  /// No photo yet.
+  photo,
+
+  /// Blank name.
+  name,
+
+  /// No gender chosen.
+  gender,
+}
+
+/// "a photo, your name and how you identify" in the language of [l10n]: each
+/// field is localised, then joined with a localised "and" (no English
+/// fragments are concatenated here).
+String localizeMissingFields(
+  AppLocalizations l10n,
+  List<ProfileMissingField> fields,
+) {
+  final labels = [
+    for (final f in fields)
+      switch (f) {
+        ProfileMissingField.photo => l10n.profileMissingPhoto,
+        ProfileMissingField.name => l10n.profileMissingName,
+        ProfileMissingField.gender => l10n.profileMissingGender,
+      },
+  ];
+  return switch (labels.length) {
+    0 => '',
+    1 => labels[0],
+    2 => l10n.profileMissingTwo(labels[0], labels[1]),
+    _ => l10n.profileMissingThree(labels[0], labels[1], labels[2]),
+  };
+}
+
 /// Snapshot of the form's current values, reported to the parent screen on
 /// every change via [ProfileForm.onChanged].
 @immutable
@@ -75,21 +113,13 @@ class ProfileFormData {
   /// gender, and at least one photo.
   bool get isValid => missingFields.isEmpty;
 
-  /// Phrases for the required fields still unset, in screen order, ready to
-  /// drop into a sentence (e.g. "Still needed: a photo and your name.").
-  List<String> get missingFields => [
-    if (photoCount <= 0) 'a photo',
-    if (name.trim().isEmpty) 'your name',
-    if (gender == null) 'how you identify',
+  /// The required fields still unset, in screen order. Presentation words
+  /// them with [localizeMissingFields].
+  List<ProfileMissingField> get missingFields => [
+    if (photoCount <= 0) ProfileMissingField.photo,
+    if (name.trim().isEmpty) ProfileMissingField.name,
+    if (gender == null) ProfileMissingField.gender,
   ];
-
-  /// [missingFields] as a sentence part: "a, b and c".
-  String get missingSummary {
-    final parts = missingFields;
-    return parts.length < 2
-        ? parts.join()
-        : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
-  }
 
   @override
   bool operator ==(Object other) =>
@@ -104,11 +134,11 @@ class ProfileFormData {
   int get hashCode => Object.hash(name, gender, bio, photoCount);
 }
 
-const _genderOptions = <(Gender, String)>[
-  (Gender.woman, 'Woman'),
-  (Gender.man, 'Man'),
-  (Gender.nonBinary, 'Non-binary'),
-];
+String _genderLabel(AppLocalizations l10n, Gender gender) => switch (gender) {
+  Gender.woman => l10n.genderWoman,
+  Gender.man => l10n.genderMan,
+  Gender.nonBinary => l10n.genderNonBinary,
+};
 
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({required this.onChanged, super.key});
@@ -218,6 +248,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
     final controllerState = ref.watch(profileControllerProvider);
     final isBusy = controllerState.isLoading;
 
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -228,7 +259,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Photos',
+          l10n.profileFormPhotos,
           style: textTheme.bodyMedium?.copyWith(
             color: colors.onSurface,
             fontWeight: WarmPlayfulType.h2Weight,
@@ -244,7 +275,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
         if (controllerState.hasError) ...[
           const SizedBox(height: WarmPlayfulSpacing.s2),
           Text(
-            'Something went wrong — please try again.',
+            l10n.commonSomethingWentWrong,
             style: textTheme.bodyMedium?.copyWith(color: colors.error),
           ),
         ],
@@ -256,7 +287,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
           textCapitalization: TextCapitalization.words,
           scrollPadding: kProfileFieldScrollPadding,
           decoration: InputDecoration(
-            labelText: 'Name',
+            labelText: l10n.profileFormName,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
             ),
@@ -265,7 +296,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
         ),
         const SizedBox(height: WarmPlayfulSpacing.s4),
         Text(
-          'I am a',
+          l10n.profileFormGenderHeading,
           style: textTheme.bodyMedium?.copyWith(
             color: colors.onSurface,
             fontWeight: WarmPlayfulType.h2Weight,
@@ -275,8 +306,11 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
         SegmentedButton<Gender>(
           emptySelectionAllowed: true,
           segments: [
-            for (final (value, label) in _genderOptions)
-              ButtonSegment(value: value, label: Text(label)),
+            for (final value in Gender.values)
+              ButtonSegment(
+                value: value,
+                label: Text(_genderLabel(l10n, value)),
+              ),
           ],
           selected: {?_gender},
           onSelectionChanged: (selected) {
@@ -292,7 +326,7 @@ class ProfileFormState extends ConsumerState<ProfileForm> {
           scrollPadding: kProfileFieldScrollPadding,
           minLines: 3,
           decoration: InputDecoration(
-            labelText: 'Bio',
+            labelText: l10n.profileFormBio,
             alignLabelWithHint: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(WarmPlayfulRadius.sm),
@@ -383,7 +417,7 @@ class _PhotoThumbnail extends StatelessWidget {
           child: IconButton(
             onPressed: onRemove,
             // Tooltip text doubles as the semantics label.
-            tooltip: 'Remove photo',
+            tooltip: context.l10n.profileFormRemovePhoto,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(
               width: _removeHit,
@@ -437,7 +471,9 @@ class _AddPhotoTile extends StatelessWidget {
           child: Semantics(
             button: true,
             enabled: onTap != null,
-            label: isBusy ? 'Uploading photo' : 'Add photo',
+            label: isBusy
+                ? context.l10n.profileFormUploadingPhoto
+                : context.l10n.profileFormAddPhoto,
             excludeSemantics: true,
             child: Padding(
               padding: const EdgeInsets.all(WarmPlayfulSpacing.s1),
@@ -460,7 +496,7 @@ class _AddPhotoTile extends StatelessWidget {
                     else
                       Icon(Icons.add_a_photo_outlined, color: colors.onSurface),
                     Text(
-                      'Add photo',
+                      context.l10n.profileFormAddPhoto,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: colors.onSurface,
                       ),

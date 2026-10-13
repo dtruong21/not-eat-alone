@@ -15,6 +15,7 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/rating/application/rating_controller.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// Opens the rating sheet for [targetUid] within [matchId]. [partnerName]
 /// titles it "How was your meal with NAME?".
@@ -80,18 +81,16 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
     if (!mounted) return;
     final error = ref.read(ratingControllerProvider).error;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't submit your rating. Try again."),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.ratingFailed)));
       return;
     }
 
     Navigator.of(context).pop();
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Thanks for the feedback!')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.ratingThanks)));
   }
 
   @override
@@ -100,6 +99,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
     final isSubmitting = ref.watch(ratingControllerProvider).isLoading;
+    final l10n = context.l10n;
     final name = widget.partnerName;
 
     return Padding(
@@ -118,9 +118,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              name != null
-                  ? 'How was your meal with $name?'
-                  : 'How was your meal?',
+              name != null ? l10n.ratingTitleNamed(name) : l10n.ratingTitle,
               style: textTheme.titleMedium?.copyWith(
                 color: colors.onSurface,
                 fontWeight: WarmPlayfulType.h2Weight,
@@ -133,7 +131,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
                 for (var i = 1; i <= 5; i++)
                   IconButton(
                     key: Key('rating_star_$i'),
-                    tooltip: '$i star${i == 1 ? '' : 's'}',
+                    tooltip: l10n.ratingStarTooltip(i),
                     isSelected: i <= _stars,
                     onPressed: isSubmitting
                         ? null
@@ -154,7 +152,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
             SwitchListTile(
               key: const Key('rating_showed_up_switch'),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Did they show up?'),
+              title: Text(l10n.ratingShowedUp),
               value: _showedUp,
               onChanged: isSubmitting
                   ? null
@@ -169,7 +167,7 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
               maxLength: 200,
               textInputAction: TextInputAction.done,
               decoration: InputDecoration(
-                hintText: 'Add a comment (optional)',
+                hintText: l10n.ratingCommentHint,
                 // The sheet and the field share a fill: draw the edge.
                 enabledBorder: sheetFieldBorder(context),
                 disabledBorder: sheetFieldBorder(context),
@@ -177,8 +175,8 @@ class _RatingSheetState extends ConsumerState<_RatingSheet> {
             ),
             const SizedBox(height: WarmPlayfulSpacing.s2),
             AppButton(
-              label: 'Submit',
-              loadingLabel: 'Submitting…',
+              label: l10n.commonSubmit,
+              loadingLabel: l10n.commonSubmitting,
               isLoading: isSubmitting,
               key: const Key('rating_submit_button'),
               onPressed: (_stars <= 0 || isSubmitting) ? null : _submit,

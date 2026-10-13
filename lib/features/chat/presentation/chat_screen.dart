@@ -43,6 +43,7 @@ import 'package:not_eat_alone/features/safety/presentation/safety_tips_sheet.dar
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_actions.dart';
 import 'package:not_eat_alone/features/safety/presentation/widgets/safety_tips_banner.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 String? _otherUidFor(List<ChatListItem> items, String matchId) {
   for (final item in items) {
@@ -145,7 +146,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: AppBar(
         title: otherUid != null
             ? _ChatAppBarTitle(otherUid: otherUid)
-            : const Text('Chat'),
+            : Text(context.l10n.chatTitleFallback),
         actions: otherUid == null
             ? null
             : [
@@ -191,8 +192,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'This chat is no longer available — the meal was '
-                                'cancelled.',
+                                context.l10n.chatUnavailable,
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
@@ -200,7 +200,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               FilledButton(
                                 key: const Key('chat_unavailable_back_button'),
                                 onPressed: () => context.go('/chats'),
-                                child: const Text('Back to chats'),
+                                child: Text(context.l10n.chatBackToChats),
                               ),
                             ],
                           ),
@@ -234,8 +234,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             ),
                             child: postMealCard,
                           ),
-                        const Expanded(
-                          child: EmptyState(title: 'Say hi \u{1F44B}'),
+                        Expanded(
+                          child: EmptyState(title: context.l10n.chatSayHi),
                         ),
                       ],
                     );
@@ -247,6 +247,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   final ordered = groupMessages(
                     messages,
                     now: DateTime.now(),
+                    locale: Localizations.localeOf(context),
                   ).reversed.toList(growable: false);
                   return LayoutBuilder(
                     builder: (context, constraints) {
@@ -358,7 +359,7 @@ class _ChatAppBarTitle extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                user?.displayName ?? 'Chat',
+                user?.displayName ?? context.l10n.chatTitleFallback,
                 overflow: TextOverflow.ellipsis,
               ),
               RatingBadge(uid: otherUid),

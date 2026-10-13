@@ -8,13 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
-
-const _tips = [
-  'Meet in a public place',
-  "Tell a friend where you're going",
-  'Trust your instincts',
-  'You can block or report anytime',
-];
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// Opens the safety tips sheet.
 Future<void> showSafetyTipsSheet(BuildContext context) =>
@@ -40,12 +34,12 @@ class _SafetyTipsSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Meeting up? Stay safe', style: textTheme.titleLarge),
+            Text(context.l10n.safetyTipsHeading, style: textTheme.titleLarge),
             const SizedBox(height: WarmPlayfulSpacing.s4),
             const SafetyTipsList(),
             const SizedBox(height: WarmPlayfulSpacing.s2),
             AppButton(
-              label: 'Got it',
+              label: context.l10n.safetyTipsGotIt,
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -60,16 +54,24 @@ class SafetyTipsList extends StatelessWidget {
   const SafetyTipsList({super.key});
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      for (final tip in _tips)
-        Padding(
-          padding: const EdgeInsets.only(bottom: WarmPlayfulSpacing.s3),
-          child: _TipBullet(text: tip),
-        ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final tip in [
+          l10n.safetyTipPublicPlace,
+          l10n.safetyTipTellFriend,
+          l10n.safetyTipInstincts,
+          l10n.safetyTipBlockReport,
+        ])
+          Padding(
+            padding: const EdgeInsets.only(bottom: WarmPlayfulSpacing.s3),
+            child: _TipBullet(text: tip),
+          ),
+      ],
+    );
+  }
 }
 
 class _TipBullet extends StatelessWidget {

@@ -22,6 +22,7 @@ import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/user/application/profile_controller.dart';
 import 'package:not_eat_alone/features/user/presentation/widgets/profile_form.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -79,7 +80,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final isSubmitting = state.isLoading;
     final isValid = _formData?.isValid ?? false;
     // Before the form's first report nothing is known: show no hint.
-    final missing = _formData?.missingFields ?? const <String>[];
+    final missing = _formData?.missingFields ?? const <ProfileMissingField>[];
 
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -95,7 +96,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Set up your profile',
+                  context.l10n.setupTitle,
                   style: textTheme.headlineSmall?.copyWith(
                     color: colors.onSurface,
                     fontWeight: WarmPlayfulType.h1Weight,
@@ -103,7 +104,7 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: WarmPlayfulSpacing.s2),
                 Text(
-                  "Name, photo and gender. That's it.",
+                  context.l10n.setupSubtitle,
                   style: textTheme.bodyMedium?.copyWith(
                     color: context.wp.muted,
                   ),
@@ -113,8 +114,8 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 const SizedBox(height: WarmPlayfulSpacing.s5),
                 AppButton(
                   key: _continueKey,
-                  label: 'Continue',
-                  loadingLabel: 'Saving…',
+                  label: context.l10n.commonContinue,
+                  loadingLabel: context.l10n.commonSaving,
                   isLoading: isSubmitting,
                   onPressed: (isValid && !isSubmitting) ? _continue : null,
                 ),
@@ -128,7 +129,12 @@ class ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             top: WarmPlayfulSpacing.s2,
                           ),
                           child: Text(
-                            'Still needed: ${_formData!.missingSummary}.',
+                            context.l10n.profileStillNeeded(
+                              localizeMissingFields(
+                                context.l10n,
+                                _formData!.missingFields,
+                              ),
+                            ),
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(
                               color: context.wp.muted,

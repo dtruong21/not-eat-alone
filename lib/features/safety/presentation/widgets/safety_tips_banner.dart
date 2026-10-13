@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class SafetyTipsBanner extends StatelessWidget {
   const SafetyTipsBanner({
@@ -49,7 +50,7 @@ class SafetyTipsBanner extends StatelessWidget {
                       const SizedBox(width: WarmPlayfulSpacing.s3),
                       Expanded(
                         child: Text(
-                          'Meeting up? Safety tips',
+                          context.l10n.safetyTipsBanner,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium,
@@ -62,7 +63,7 @@ class SafetyTipsBanner extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Dismiss safety tips',
+            tooltip: context.l10n.safetyTipsBannerDismiss,
             constraints: const BoxConstraints(
               minWidth: WarmPlayfulSize.minTap,
               minHeight: WarmPlayfulSize.minTap,

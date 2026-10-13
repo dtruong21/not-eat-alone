@@ -40,9 +40,7 @@ import 'package:not_eat_alone/features/meal/presentation/widgets/paris_notice.da
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/domain/entities/gender.dart';
-
-String _formatDistance(double distanceMeters) =>
-    '${(distanceMeters / 1000).toStringAsFixed(1)} km';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class DiscoveryScreen extends ConsumerStatefulWidget {
   const DiscoveryScreen({super.key});
@@ -78,6 +76,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final state = ref.watch(discoveryControllerProvider);
     final viewerGender = ref.watch(currentUserDocProvider).value?.gender;
 
@@ -112,11 +111,11 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
           return stateBody(
             EmptyState(
               icon: Icons.restaurant_rounded,
-              title: 'No meals nearby yet',
-              message: 'Be the first: host a meal and someone will join.',
+              title: l10n.discoverEmptyTitle,
+              message: l10n.discoverEmptyMessage,
               action: AppButton(
                 key: const Key('discovery_empty_create_button'),
-                label: 'Create a meal',
+                label: l10n.discoverCreateMeal,
                 onPressed: _createMeal,
               ),
             ),
@@ -179,7 +178,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
               key: const Key('discovery_create_meal_button'),
               onPressed: _createMeal,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Create a meal'),
+              label: Text(l10n.discoverCreateMeal),
             ),
     );
   }
@@ -203,6 +202,7 @@ class _MealCard extends StatelessWidget {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
     final meal = item.meal;
+    final locale = Localizations.localeOf(context);
 
     return Material(
       color: colors.surface,
@@ -239,8 +239,8 @@ class _MealCard extends StatelessWidget {
               ),
               const SizedBox(height: WarmPlayfulSpacing.s1),
               Text(
-                '${formatMealDateTime(meal.dateTime)} · '
-                '${_formatDistance(item.distanceMeters)}',
+                '${formatMealDateTime(meal.dateTime, locale: locale)} · '
+                '${context.l10n.discoverDistanceKm(item.distanceMeters / 1000)}',
                 // Two lines: at large text the distance wraps instead of
                 // being cut off.
                 maxLines: 2,
@@ -276,7 +276,7 @@ class _WomenOnlyBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(WarmPlayfulRadius.pill),
       ),
       child: Text(
-        'Women only',
+        context.l10n.mealWomenOnly,
         style: textTheme.bodySmall?.copyWith(
           color: context.wp.onAccent,
           fontWeight: WarmPlayfulType.captionWeight,
@@ -317,10 +317,15 @@ class _HostInfo extends ConsumerWidget {
               radius: WarmPlayfulSpacing.s4,
               backgroundColor: colors.surfaceContainerHighest,
               backgroundImage: photoUrl != null
-                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s4)
+                  ? avatarImage(
+                      context,
+                      photoUrl,
+                      radius: WarmPlayfulSpacing.s4,
+                    )
                   : null,
-              onBackgroundImageError:
-                  photoUrl != null ? ignoreAvatarImageError : null,
+              onBackgroundImageError: photoUrl != null
+                  ? ignoreAvatarImageError
+                  : null,
               child: photoUrl == null
                   ? Icon(
                       Icons.person_rounded,
@@ -332,7 +337,7 @@ class _HostInfo extends ConsumerWidget {
             const SizedBox(width: WarmPlayfulSpacing.s2),
             Flexible(
               child: Text(
-                host?.displayName ?? 'Host',
+                host?.displayName ?? context.l10n.mealHostFallbackName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.bodyMedium?.copyWith(color: colors.onSurface),

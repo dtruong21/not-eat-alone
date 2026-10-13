@@ -7,6 +7,7 @@
 #   tool/ux_matrix.sh                  # all 8 cells (about 5 min each)
 #   tool/ux_matrix.sh --only se3-dark  # only cells whose name contains this
 #   tool/ux_matrix.sh --verify         # only check ux_audit/out (no capture)
+#   tool/ux_matrix.sh --only se3-light-xxl --locale fr   # French app, cell <name>-fr
 #
 # Output: ux_audit/out/<device>-<theme>-<size>/NN_*.png, logs in
 # ux_audit/out/logs/<cell>.log. Devices:
@@ -33,12 +34,14 @@ LARGE_TEXT="accessibility-extra-large"
 MIN_PNG_BYTES=15000
 
 ONLY=""
+LOCALE_OPT=""
 VERIFY_ONLY=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --only) ONLY="${2:?--only needs a value}"; shift 2 ;;
+    --locale) LOCALE_OPT="${2:?--locale needs a value}"; shift 2 ;;
     --verify) VERIFY_ONLY=1; shift ;;
-    *) echo "usage: $0 [--only <substring>] [--verify]" >&2; exit 2 ;;
+    *) echo "usage: $0 [--only <substring>] [--locale fr] [--verify]" >&2; exit 2 ;;
   esac
 done
 
@@ -50,7 +53,7 @@ done
 # a problem.
 verify() {
   local bad=0 dirs=() d cell n small f m base
-  for d in "$OUT"/*-{light,dark}-{default,xxl}; do
+  for d in "$OUT"/*-{light,dark}-{default,xxl}{,-fr}; do
     [[ -d "$d" ]] || continue
     # Leftover of an interrupted run.
     if [[ -z "$(ls -A "$d" 2>/dev/null)" ]]; then rmdir "$d"; continue; fi
@@ -173,7 +176,7 @@ for dev in iphone17 se3; do
   if [[ "$dev" == iphone17 ]]; then NAME="$E2E_NAME"; UDID="$E2E_UDID"; else NAME="$SMALL_NAME"; UDID="$SMALL_UDID"; fi
   for theme in light dark; do
     for size in default xxl; do
-      cell="$dev-$theme-$size"
+      cell="$dev-$theme-$size${LOCALE_OPT:+-$LOCALE_OPT}"
       [[ -n "$ONLY" && "$cell" != *"$ONLY"* ]] && continue
       cells=$((cells + 1))
       # iOS' own default text size is "large".
@@ -182,7 +185,7 @@ for dev in iphone17 se3; do
       xcrun simctl ui "$UDID" content_size "$text"
       rm -rf "$OUT/$cell"
       echo "[ux-matrix] === $cell ($NAME, $theme, text=$text) $(date +%H:%M:%S)"
-      if make ux-capture DEVICE="$NAME" OUT="$cell" >"$LOGS/$cell.log" 2>&1; then
+      if make ux-capture DEVICE="$NAME" OUT="$cell" UX_LOCALE="$LOCALE_OPT" >"$LOGS/$cell.log" 2>&1; then
         echo "[ux-matrix] $cell ok: $(find "$OUT/$cell" -name '*.png' | wc -l | tr -d ' ') png"
       elif grep -q '^flutter: UXSUMMARY' "$LOGS/$cell.log"; then
         # The run reached its end; only steps failed (listed in findings).

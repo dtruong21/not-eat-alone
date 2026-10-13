@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:not_eat_alone/core/notifications/push_listener.dart';
 import 'package:not_eat_alone/features/matching/application/host_inbox_provider.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// Bottom-navigation shell hosting the four primary destinations. Each tab is
 /// a branch of a StatefulShellRoute, so switching tabs preserves each stack.
@@ -26,15 +27,15 @@ class AppShell extends ConsumerWidget {
           initialLocation: i == navigationShell.currentIndex,
         ),
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Discover',
+          NavigationDestination(
+            icon: const Icon(Icons.explore_outlined),
+            selectedIcon: const Icon(Icons.explore),
+            label: context.l10n.navDiscover,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Chats',
+          NavigationDestination(
+            icon: const Icon(Icons.chat_bubble_outline),
+            selectedIcon: const Icon(Icons.chat_bubble),
+            label: context.l10n.navChats,
           ),
           NavigationDestination(
             icon: Badge(
@@ -47,12 +48,12 @@ class AppShell extends ConsumerWidget {
               label: Text('$pending'),
               child: const Icon(Icons.inbox),
             ),
-            label: 'Requests',
+            label: context.l10n.navRequests,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: context.l10n.navProfile,
           ),
         ],
       ),

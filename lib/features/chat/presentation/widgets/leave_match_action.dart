@@ -14,9 +14,14 @@ import 'package:not_eat_alone/features/matching/application/leave_match_controll
 import 'package:not_eat_alone/features/meal/domain/entities/meal_status.dart';
 import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 class LeaveMatchAction extends ConsumerWidget {
-  const LeaveMatchAction({required this.matchId, required this.otherUid, super.key});
+  const LeaveMatchAction({
+    required this.matchId,
+    required this.otherUid,
+    super.key,
+  });
 
   /// Equals the meal id (matches are 1:1 with meals).
   final String matchId;
@@ -30,7 +35,8 @@ class LeaveMatchAction extends ConsumerWidget {
 
     final isHost = meal.hostId == myUid;
     final isGuest = meal.guestId == myUid;
-    final canLeave = (isHost || isGuest) &&
+    final canLeave =
+        (isHost || isGuest) &&
         meal.status == MealStatus.matched &&
         meal.dateTime.isAfter(DateTime.now());
     if (!canLeave) return const SizedBox.shrink();
@@ -41,9 +47,10 @@ class LeaveMatchAction extends ConsumerWidget {
     return IconButton(
       key: const Key('leave_match_button'),
       icon: const Icon(Icons.event_busy_outlined),
-      tooltip: "Can't make it",
+      tooltip: context.l10n.leaveMatchTooltip,
       onPressed: () async {
         final messenger = ScaffoldMessenger.of(context);
+        final l10n = context.l10n;
         final router = GoRouter.of(context);
         final done = await showDialog<bool>(
           context: context,
@@ -51,7 +58,7 @@ class LeaveMatchAction extends ConsumerWidget {
           builder: (_) => _LeaveDialog(
             mealId: matchId,
             role: role,
-            otherName: otherName ?? 'Your match',
+            otherName: otherName ?? l10n.leaveMatchOtherFallback,
           ),
         );
         if (done == null) return; // "Keep meal"
@@ -59,8 +66,10 @@ class LeaveMatchAction extends ConsumerWidget {
           SnackBar(
             content: Text(
               done
-                  ? (role == CancelRole.host ? 'Meal cancelled.' : "You've withdrawn.")
-                  : "Couldn't cancel. Check your connection and try again.",
+                  ? (role == CancelRole.host
+                        ? l10n.leaveMatchHostDone
+                        : l10n.leaveMatchGuestDone)
+                  : l10n.leaveMatchFailed,
             ),
           ),
         );
@@ -84,22 +93,25 @@ class _LeaveDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final isHost = role == CancelRole.host;
     final loading = ref.watch(leaveMatchControllerProvider).isLoading;
     final errorColor = Theme.of(context).colorScheme.error;
 
     return AlertDialog(
-      title: Text(isHost ? 'Cancel this meal?' : 'Withdraw from this meal?'),
+      title: Text(
+        isHost ? l10n.leaveMatchHostTitle : l10n.leaveMatchGuestTitle,
+      ),
       content: Text(
         isHost
-            ? '$otherName will be told and the meal will be removed.'
-            : '$otherName will be told and the meal will open up again for others.',
+            ? l10n.leaveMatchHostBody(otherName)
+            : l10n.leaveMatchGuestBody(otherName),
       ),
       actions: [
         TextButton(
           key: const Key('leave_match_keep'),
           onPressed: loading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Keep meal'),
+          child: Text(l10n.leaveMatchKeep),
         ),
         TextButton(
           key: const Key('leave_match_confirm'),
@@ -117,9 +129,16 @@ class _LeaveDialog extends ConsumerWidget {
               ? SizedBox(
                   height: WarmPlayfulSpacing.s4,
                   width: WarmPlayfulSpacing.s4,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: errorColor),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: errorColor,
+                  ),
                 )
-              : Text(isHost ? 'Cancel meal' : 'Withdraw'),
+              : Text(
+                  isHost
+                      ? l10n.leaveMatchHostConfirm
+                      : l10n.leaveMatchGuestConfirm,
+                ),
         ),
       ],
     );

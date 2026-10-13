@@ -20,12 +20,15 @@ import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/config/legal_urls.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/core/locale/locale_controller.dart';
 import 'package:not_eat_alone/core/util/phone.dart';
 import 'package:not_eat_alone/features/auth/application/auth_providers.dart';
 import 'package:not_eat_alone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:not_eat_alone/features/notifications/application/push_providers.dart';
 import 'package:not_eat_alone/features/notifications/domain/repositories/push_repository.dart';
 import 'package:not_eat_alone/features/safety/application/account_deletion_controller.dart';
+import 'package:not_eat_alone/features/settings/presentation/language_picker.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// The app's display version + build number, e.g. "v1.1.0 (build 2)".
 ///
@@ -63,9 +66,7 @@ class SettingsScreen extends ConsumerWidget {
     }
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't open your mail app. Write to $supportEmail"),
-        ),
+        SnackBar(content: Text(context.l10n.settingsMailFailed(supportEmail))),
       );
     }
   }
@@ -83,17 +84,17 @@ class SettingsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign out?'),
+        title: Text(dialogContext.l10n.settingsSignOutTitle),
         actions: [
           TextButton(
             key: const Key('settings_sign_out_cancel'),
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           FilledButton(
             key: const Key('settings_sign_out_confirm'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Sign out'),
+            child: Text(dialogContext.l10n.settingsSignOut),
           ),
         ],
       ),
@@ -105,16 +106,13 @@ class SettingsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          "This permanently deletes your account and all your data. "
-          "This can't be undone.",
-        ),
+        title: Text(dialogContext.l10n.settingsDeleteTitle),
+        content: Text(dialogContext.l10n.settingsDeleteBody),
         actions: [
           TextButton(
             key: const Key('settings_delete_account_cancel'),
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           TextButton(
             key: const Key('settings_delete_account_confirm'),
@@ -122,7 +120,7 @@ class SettingsScreen extends ConsumerWidget {
               foregroundColor: Theme.of(dialogContext).colorScheme.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete account'),
+            child: Text(dialogContext.l10n.settingsDeleteAccount),
           ),
         ],
       ),
@@ -141,7 +139,7 @@ class SettingsScreen extends ConsumerWidget {
     final error = ref.read(accountDeletionControllerProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't delete account. Try again.")),
+        SnackBar(content: Text(context.l10n.settingsDeleteFailed)),
       );
     }
     // On success, signOut flips authState and the router redirect sends the
@@ -168,6 +166,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final isDeleting = ref.watch(
       accountDeletionControllerProvider.select((s) => s.isLoading),
     );
@@ -177,16 +176,16 @@ class SettingsScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: WarmPlayfulSpacing.s3),
           children: [
-            const _SectionHeader('Account'),
+            _SectionHeader(l10n.settingsSectionAccount),
             ListTile(
               key: const Key('settings_edit_profile'),
               leading: const Icon(Icons.person_outline_rounded),
-              title: const Text('Edit profile'),
+              title: Text(l10n.settingsEditProfile),
               trailing: const Icon(Icons.chevron_right_rounded),
               // `/profile` is a shell tab: go, not push.
               onTap: () => context.go('/profile'),
@@ -195,35 +194,35 @@ class SettingsScreen extends ConsumerWidget {
               ListTile(
                 key: const Key('settings_phone_number'),
                 leading: const Icon(Icons.phone_outlined),
-                title: const Text('Phone number'),
+                title: Text(l10n.settingsPhoneNumber),
                 subtitle: Text(formatPhoneDisplay(phone)),
               ),
             ListTile(
               key: const Key('settings_sign_out'),
               leading: const Icon(Icons.logout_rounded),
-              title: const Text('Sign out'),
+              title: Text(l10n.settingsSignOut),
               onTap: () => unawaited(_confirmSignOut(context, ref)),
             ),
             const Divider(),
-            const _SectionHeader('Safety'),
+            _SectionHeader(l10n.settingsSectionSafety),
             ListTile(
               key: const Key('settings_blocked_people'),
               leading: const Icon(Icons.block_rounded),
-              title: const Text('Blocked people'),
+              title: Text(l10n.blockedTitle),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => unawaited(context.push('/settings/blocked')),
             ),
             ListTile(
               key: const Key('settings_safety_tips'),
               leading: const Icon(Icons.health_and_safety_outlined),
-              title: const Text('Safety tips'),
+              title: Text(l10n.safetyTipsTitle),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => unawaited(context.push('/settings/safety')),
             ),
             ListTile(
               key: const Key('settings_contact_support'),
               leading: const Icon(Icons.mail_outline_rounded),
-              title: const Text('Contact support'),
+              title: Text(l10n.settingsContactSupport),
               subtitle: const Text(supportEmail),
               onTap: () => unawaited(_contactSupport(context)),
             ),
@@ -231,34 +230,34 @@ class SettingsScreen extends ConsumerWidget {
             // ponytail: iOS only; Android has no equivalent `app-settings:`
             // URL without a new package, add the Android row with it.
             if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              const _SectionHeader('Notifications'),
+              _SectionHeader(l10n.settingsSectionNotifications),
               ListTile(
                 key: const Key('settings_notifications'),
                 leading: const Icon(Icons.notifications_none_rounded),
-                title: const Text('Notification settings'),
-                subtitle: const Text('Manage notifications in iOS Settings'),
+                title: Text(l10n.settingsNotificationSettings),
+                subtitle: Text(l10n.settingsNotificationSubtitle),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => unawaited(ref.read(openAppSettingsProvider)()),
               ),
               const Divider(),
             ],
-            const _SectionHeader('Legal'),
+            _SectionHeader(l10n.settingsSectionLegal),
             ListTile(
               key: const Key('settings_privacy_policy'),
               leading: const Icon(Icons.privacy_tip_outlined),
-              title: const Text('Privacy Policy'),
+              title: Text(l10n.settingsPrivacyPolicy),
               onTap: () => unawaited(_openUrl(privacyPolicyUrl)),
             ),
             ListTile(
               key: const Key('settings_terms_of_service'),
               leading: const Icon(Icons.description_outlined),
-              title: const Text('Terms of Service'),
+              title: Text(l10n.settingsTermsOfService),
               onTap: () => unawaited(_openUrl(termsOfServiceUrl)),
             ),
             ListTile(
               key: const Key('settings_licenses'),
               leading: const Icon(Icons.article_outlined),
-              title: const Text('Open-source licences'),
+              title: Text(l10n.settingsLicenses),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => showLicensePage(
                 context: context,
@@ -267,14 +266,25 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const Divider(),
-            const _SectionHeader('About'),
+            _SectionHeader(l10n.settingsSectionAbout),
+            ListTile(
+              key: const Key('settings_language'),
+              leading: const Icon(Icons.language_rounded),
+              title: Text(l10n.settingsLanguage),
+              subtitle: Text(
+                languageLabel(context, ref.watch(localeControllerProvider)),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => unawaited(showLanguagePicker(context)),
+            ),
             ListTile(
               key: const Key('settings_app_version'),
               leading: const Icon(Icons.info_outline_rounded),
-              title: const Text('Version'),
+              title: Text(l10n.settingsVersion),
               subtitle: versionAsync.when(
-                loading: () => const Text('Loading…'),
-                error: (error, stackTrace) => const Text('Unavailable'),
+                loading: () => Text(l10n.settingsVersionLoading),
+                error: (error, stackTrace) =>
+                    Text(l10n.settingsVersionUnavailable),
                 data: Text.new,
               ),
             ),
@@ -287,7 +297,7 @@ class SettingsScreen extends ConsumerWidget {
                 color: context.wp.dangerText,
               ),
               title: Text(
-                'Delete account',
+                l10n.settingsDeleteAccount,
                 style: TextStyle(color: context.wp.dangerText),
               ),
               trailing: isDeleting

@@ -21,6 +21,7 @@ import 'package:not_eat_alone/features/user/application/profile_controller.dart'
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
 import 'package:not_eat_alone/features/user/domain/entities/app_user.dart';
 import 'package:not_eat_alone/features/user/presentation/widgets/profile_form.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// The Profile tab screen.
 class ProfileEditScreen extends ConsumerStatefulWidget {
@@ -84,7 +85,7 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       setState(() => _saved = _normalized(data));
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Profile saved')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.profileSaved)));
     }
   }
 
@@ -102,15 +103,18 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         data.isValid &&
         _normalized(data) != baseline;
     // Only an invalid form explains itself; merely-unchanged stays silent.
-    final missing = data != null && !data.isValid ? data.missingSummary : null;
+    final l10n = context.l10n;
+    final missing = data != null && !data.isValid
+        ? localizeMissingFields(l10n, data.missingFields)
+        : null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(l10n.navProfile),
         actions: [
           IconButton(
             key: const Key('profile_settings_button'),
-            tooltip: 'Settings',
+            tooltip: l10n.settingsTitle,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings'),
           ),
@@ -129,8 +133,8 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               ProfileForm(onChanged: _onFormChanged),
               const SizedBox(height: WarmPlayfulSpacing.s5),
               AppButton(
-                label: 'Save',
-                loadingLabel: 'Saving…',
+                label: l10n.commonSave,
+                loadingLabel: l10n.commonSaving,
                 isLoading: isSubmitting,
                 onPressed: isSubmitting || !canSave ? null : _save,
               ),
@@ -145,7 +149,7 @@ class ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           top: WarmPlayfulSpacing.s2,
                         ),
                         child: Text(
-                          'Still needed: $missing.',
+                          l10n.profileStillNeeded(missing),
                           key: const Key('profile_save_hint'),
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium
@@ -171,6 +175,7 @@ class _YourRating extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final textTheme = Theme.of(context).textTheme;
     return Wrap(
       key: const Key('profile_your_rating'),
@@ -179,7 +184,7 @@ class _YourRating extends StatelessWidget {
       runSpacing: WarmPlayfulSpacing.s1,
       children: [
         Text(
-          'Your rating',
+          l10n.profileYourRating,
           style: textTheme.bodyMedium?.copyWith(
             fontWeight: WarmPlayfulType.h2Weight,
           ),
@@ -188,7 +193,7 @@ class _YourRating extends StatelessWidget {
           RatingBadge(uid: uid)
         else
           Text(
-            'No ratings yet',
+            l10n.profileNoRatings,
             style: textTheme.bodySmall?.copyWith(color: context.wp.muted),
           ),
       ],

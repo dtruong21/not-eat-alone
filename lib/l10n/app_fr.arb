@@ -1,0 +1,1050 @@
+{
+  "@@locale": "fr",
+  "commonTryAgain": "Réessayer",
+  "@commonTryAgain": {
+    "description": "Button label that retries a failed load or action."
+  },
+  "commonCancel": "Annuler",
+  "@commonCancel": {
+    "description": "Button label that dismisses a dialog or sheet without acting."
+  },
+  "commonDismiss": "Fermer",
+  "@commonDismiss": {
+    "description": "Tooltip / accessibility label of a close button on a dismissible notice."
+  },
+  "commonLoading": "Chargement",
+  "@commonLoading": {
+    "description": "Screen-reader label of a loading placeholder."
+  },
+  "commonContinue": "Continuer",
+  "@commonContinue": {
+    "description": "Primary button that moves to the next step."
+  },
+  "commonSaving": "Enregistrement…",
+  "@commonSaving": {
+    "description": "Label shown on a button while a save is in flight."
+  },
+  "commonSomethingWentWrong": "Oups, un problème est survenu. Réessaie.",
+  "@commonSomethingWentWrong": {
+    "description": "Generic inline error shown when a step fails for an unknown reason."
+  },
+  "errorStateTitle": "Chargement impossible",
+  "@errorStateTitle": {
+    "description": "Default headline of the error block shown when a screen fails to load."
+  },
+  "errorStateMessage": "Vérifie ta connexion et réessaie.",
+  "@errorStateMessage": {
+    "description": "Default supporting text of the error block."
+  },
+  "navDiscover": "Découvrir",
+  "@navDiscover": {
+    "description": "Bottom navigation tab: browse meals."
+  },
+  "navChats": "Messages",
+  "@navChats": {
+    "description": "Bottom navigation tab: conversations."
+  },
+  "navRequests": "Demandes",
+  "@navRequests": {
+    "description": "Bottom navigation tab: join requests inbox."
+  },
+  "navProfile": "Profil",
+  "@navProfile": {
+    "description": "Bottom navigation tab: the user's own profile."
+  },
+  "authSendingCode": "Envoi du code…",
+  "@authSendingCode": {
+    "description": "Button label while an SMS code is being sent."
+  },
+  "signinTitle": "Bienvenue sur Convyve",
+  "@signinTitle": {
+    "description": "Headline of the sign-in screen."
+  },
+  "signinSubtitle": "Rencontre quelqu’un autour d’un repas à Paris.",
+  "@signinSubtitle": {
+    "description": "Sub-headline of the sign-in screen."
+  },
+  "signinContinueGoogle": "Continuer avec Google",
+  "@signinContinueGoogle": {
+    "description": "Button that signs in with a Google account."
+  },
+  "signinContinueApple": "Continuer avec Apple",
+  "@signinContinueApple": {
+    "description": "Label of the Sign in with Apple button."
+  },
+  "signinSigningIn": "Connexion…",
+  "@signinSigningIn": {
+    "description": "Button / screen-reader label while a sign-in is in flight."
+  },
+  "signinOr": "ou",
+  "@signinOr": {
+    "description": "Divider word between social sign-in and phone sign-in."
+  },
+  "signinPhoneLabel": "Numéro de téléphone",
+  "@signinPhoneLabel": {
+    "description": "Label of the phone number field."
+  },
+  "signinPhoneError": "Saisis un numéro avec l’indicatif du pays, par ex. +33 6 12 34 56 78",
+  "@signinPhoneError": {
+    "description": "Error under the phone field when the number is not valid."
+  },
+  "signinSendCode": "Envoyer le code",
+  "@signinSendCode": {
+    "description": "Button that sends the SMS code."
+  },
+  "commonUnderageNotice": "Tu dois avoir 18 ans ou plus pour utiliser Convyve.",
+  "@commonUnderageNotice": {
+    "description": "Notice shown on sign-in (and on the blocked age-gate screen) after an under-18 attempt."
+  },
+  "phoneTitle": "Saisis le code",
+  "@phoneTitle": {
+    "description": "Headline of the SMS code screen."
+  },
+  "phoneSentTo": "Code envoyé au {phone}",
+  "@phoneSentTo": {
+    "description": "Line under the headline naming the number the code was sent to.",
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneChange": "Modifier",
+  "@phoneChange": {
+    "description": "Button that goes back to change the phone number."
+  },
+  "phoneChangeSemantics": "Modifier le numéro de téléphone",
+  "@phoneChangeSemantics": {
+    "description": "Screen-reader label of the Change button."
+  },
+  "phoneCodeLabel": "Code à 6 chiffres",
+  "@phoneCodeLabel": {
+    "description": "Label of the SMS code field."
+  },
+  "phoneWrongCode": "Ce code n’a pas fonctionné. Vérifie-le ou demande un nouveau code.",
+  "@phoneWrongCode": {
+    "description": "Error under the code field when the code was rejected."
+  },
+  "phoneVerify": "Valider",
+  "@phoneVerify": {
+    "description": "Button that submits the SMS code."
+  },
+  "phoneVerifying": "Vérification…",
+  "@phoneVerifying": {
+    "description": "Button label while the code is being checked."
+  },
+  "phoneResend": "Renvoyer le code",
+  "@phoneResend": {
+    "description": "Button that requests a new SMS code."
+  },
+  "phoneResendIn": "Renvoyer le code dans {seconds} s",
+  "@phoneResendIn": {
+    "description": "Disabled resend button showing the cooldown; \"s\" is the seconds symbol.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneResent": "Code renvoyé",
+  "@phoneResent": {
+    "description": "Confirmation shown after a new SMS code was sent."
+  },
+  "agegateTitle": "Confirme ta date de naissance",
+  "@agegateTitle": {
+    "description": "Headline of the age-gate screen."
+  },
+  "agegateSelect": "Choisis ta date de naissance",
+  "@agegateSelect": {
+    "description": "Button that opens the date picker before a date is chosen."
+  },
+  "agegateHelp": "Ta date de naissance",
+  "@agegateHelp": {
+    "description": "Help text at the top of the date picker."
+  },
+  "agegateFieldLabel": "Date de naissance",
+  "@agegateFieldLabel": {
+    "description": "Field label of the date picker text-entry mode."
+  },
+  "setupTitle": "Configure ton profil",
+  "@setupTitle": {
+    "description": "Headline of the profile setup screen."
+  },
+  "setupSubtitle": "Nom, photo et genre. C’est tout.",
+  "@setupSubtitle": {
+    "description": "Sub-headline of the profile setup screen."
+  },
+  "profileStillNeeded": "Il manque encore : {summary}.",
+  "@profileStillNeeded": {
+    "description": "Hint under the Continue button listing the required fields still empty; summary is a pre-built list such as \"name and photo\".",
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "mealWomenOnly": "Entre femmes",
+  "@mealWomenOnly": {
+    "description": "Badge / disabled-button label for a meal only women can join."
+  },
+  "mealHostFallbackName": "Hôte",
+  "@mealHostFallbackName": {
+    "description": "Name shown for a host whose profile has no display name."
+  },
+  "discoverEmptyTitle": "Pas encore de repas près de toi",
+  "@discoverEmptyTitle": {
+    "description": "Headline of the Discover empty state."
+  },
+  "discoverEmptyMessage": "Lance-toi : propose un repas et quelqu’un te rejoindra.",
+  "@discoverEmptyMessage": {
+    "description": "Supporting text of the Discover empty state."
+  },
+  "discoverCreateMeal": "Créer un repas",
+  "@discoverCreateMeal": {
+    "description": "Discover button / floating button that starts meal creation."
+  },
+  "discoverDistanceKm": "{distance} km",
+  "@discoverDistanceKm": {
+    "description": "Distance from the viewer to a meal, in kilometres with one decimal.",
+    "placeholders": {
+      "distance": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {
+          "decimalDigits": 1
+        }
+      }
+    }
+  },
+  "parisNotice": "Convyve n’est qu’à Paris pour l’instant — on démarre tout juste.",
+  "@parisNotice": {
+    "description": "Dismissible banner on Discover explaining the Paris-only launch."
+  },
+  "mealDetailTitle": "Détails du repas",
+  "@mealDetailTitle": {
+    "description": "App bar title of the meal detail screen."
+  },
+  "mealDetailHostHeading": "Hôte",
+  "@mealDetailHostHeading": {
+    "description": "Section heading above the host's profile block."
+  },
+  "mealDetailHostUnavailable": "Hôte indisponible",
+  "@mealDetailHostUnavailable": {
+    "description": "Shown instead of the host block when the host profile no longer exists."
+  },
+  "mealDetailHostNameAge": "{name}, {age} ans",
+  "@mealDetailHostNameAge": {
+    "description": "Host name followed by age.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "mealDetailReportMeal": "Signaler ce repas",
+  "@mealDetailReportMeal": {
+    "description": "Safety menu item that reports the meal."
+  },
+  "mealDetailReportHost": "Signaler l’hôte",
+  "@mealDetailReportHost": {
+    "description": "Safety menu item that reports the host."
+  },
+  "mealDetailBlockHost": "Bloquer l’hôte",
+  "@mealDetailBlockHost": {
+    "description": "Safety menu item that blocks the host."
+  },
+  "mealDetailOpenInMaps": "Ouvrir dans Maps",
+  "@mealDetailOpenInMaps": {
+    "description": "Button that opens the restaurant in the maps app."
+  },
+  "mealDetailOpenInMapsSemantics": "Ouvrir {restaurant} dans Maps",
+  "@mealDetailOpenInMapsSemantics": {
+    "description": "Screen-reader label of the Open in Maps button.",
+    "placeholders": {
+      "restaurant": {
+        "type": "String"
+      }
+    }
+  },
+  "mealDetailMapsFailed": "Impossible d’ouvrir Maps",
+  "@mealDetailMapsFailed": {
+    "description": "Snackbar shown when the maps app could not be launched."
+  },
+  "mealActionRequestToJoin": "Demander à rejoindre",
+  "@mealActionRequestToJoin": {
+    "description": "Meal action bar: button that sends a join request."
+  },
+  "mealActionSendingRequest": "Envoi de la demande…",
+  "@mealActionSendingRequest": {
+    "description": "Meal action bar: button label while the join request is being sent."
+  },
+  "mealActionRequested": "Demande envoyée",
+  "@mealActionRequested": {
+    "description": "Meal action bar: disabled button once the request is pending."
+  },
+  "mealActionOpenChat": "Ouvrir la discussion",
+  "@mealActionOpenChat": {
+    "description": "Meal action bar: button that opens the chat after a match."
+  },
+  "mealActionNotSelected": "Pas cette fois",
+  "@mealActionNotSelected": {
+    "description": "Meal action bar: disabled button when the host chose someone else."
+  },
+  "mealActionYourMeal": "C’est ton repas",
+  "@mealActionYourMeal": {
+    "description": "Meal action bar: disabled button on the viewer's own meal."
+  },
+  "mealActionCancelled": "Repas annulé",
+  "@mealActionCancelled": {
+    "description": "Meal action bar: disabled button on a cancelled meal."
+  },
+  "mealActionStatusYourMeal": "Tes demandes : onglet Demandes.",
+  "@mealActionStatusYourMeal": {
+    "description": "Meal action bar status line (one line only) on the viewer's own meal."
+  },
+  "mealActionStatusCancelled": "L’hôte a annulé ce repas.",
+  "@mealActionStatusCancelled": {
+    "description": "Meal action bar status line on a cancelled meal."
+  },
+  "mealActionStatusWomenOnly": "Réservé aux femmes.",
+  "@mealActionStatusWomenOnly": {
+    "description": "Meal action bar status line for a women-only meal the viewer cannot join."
+  },
+  "mealActionStatusLoadError": "Impossible de charger ta demande.",
+  "@mealActionStatusLoadError": {
+    "description": "Meal action bar status line when the viewer's request failed to load."
+  },
+  "mealActionStatusPending": "L’hôte n’a pas encore répondu.",
+  "@mealActionStatusPending": {
+    "description": "Meal action bar status line while the request is pending."
+  },
+  "mealActionStatusApproved": "C’est un match ! Dis bonjour !",
+  "@mealActionStatusApproved": {
+    "description": "Meal action bar status line after the host approved the request."
+  },
+  "mealActionStatusDenied": "L’hôte a choisi quelqu’un d’autre.",
+  "@mealActionStatusDenied": {
+    "description": "Meal action bar status line after the host declined the request."
+  },
+  "mealActionNoLongerOpen": "Ce repas n’est plus ouvert.",
+  "@mealActionNoLongerOpen": {
+    "description": "Snackbar when the server rejects a request because the meal closed."
+  },
+  "mealActionRequestFailed": "Impossible d’envoyer ta demande. Réessaie.",
+  "@mealActionRequestFailed": {
+    "description": "Snackbar when sending a join request failed."
+  },
+  "createMealTitle": "Créer un repas",
+  "@createMealTitle": {
+    "description": "App bar title of the create-meal screen."
+  },
+  "createMealPickDateTime": "Choisir la date et l’heure",
+  "@createMealPickDateTime": {
+    "description": "Button that opens the date and time pickers."
+  },
+  "createMealNoteLabel": "Note (facultative)",
+  "@createMealNoteLabel": {
+    "description": "Label of the optional note field."
+  },
+  "createMealSubmit": "Publier le repas",
+  "@createMealSubmit": {
+    "description": "Button that posts the meal."
+  },
+  "createMealCreating": "Publication…",
+  "@createMealCreating": {
+    "description": "Button label while the meal is being posted."
+  },
+  "createMealTooSoon": "Choisis une heure à au moins {minutes} minutes d’ici.",
+  "@createMealTooSoon": {
+    "description": "Snackbar when the picked time is too close to now.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "createMealPosted": "Repas publié. Tu recevras les demandes dans l’onglet Demandes.",
+  "@createMealPosted": {
+    "description": "Snackbar after a meal was posted."
+  },
+  "restaurantSearchTitle": "Trouver un restaurant",
+  "@restaurantSearchTitle": {
+    "description": "App bar title of the restaurant search screen."
+  },
+  "restaurantSearchHint": "Chercher un restaurant",
+  "@restaurantSearchHint": {
+    "description": "Hint of the restaurant search field."
+  },
+  "restaurantSearchEmpty": "Aucun restaurant à afficher pour l’instant.",
+  "@restaurantSearchEmpty": {
+    "description": "Shown when the search has no query and no results."
+  },
+  "restaurantSearchNoMatch": "Aucun restaurant ne s’appelle « {query} ». Essaie un autre nom.",
+  "@restaurantSearchNoMatch": {
+    "description": "Shown when a typed search has no results; query is what the user typed.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxTitle": "Demandes",
+  "@inboxTitle": {
+    "description": "App bar title of the host request inbox."
+  },
+  "inboxEmptyTitle": "Aucune demande en attente",
+  "@inboxEmptyTitle": {
+    "description": "Empty state of the host request inbox."
+  },
+  "inboxGuestFallback": "Convive",
+  "@inboxGuestFallback": {
+    "description": "Name shown for a requesting guest whose profile is not loaded."
+  },
+  "inboxGuestNameAge": "{name}, {age} ans",
+  "@inboxGuestNameAge": {
+    "description": "Guest name and age on a request row.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "inboxPastMeal": "L’heure du repas est passée",
+  "@inboxPastMeal": {
+    "description": "Chip, tooltip and hint on a request whose meal time is in the past."
+  },
+  "inboxApprove": "Accepter",
+  "@inboxApprove": {
+    "description": "Button that approves a join request."
+  },
+  "inboxApproving": "Acceptation…",
+  "@inboxApproving": {
+    "description": "Approve button label while the action is in flight."
+  },
+  "inboxDeny": "Refuser",
+  "@inboxDeny": {
+    "description": "Button that denies a join request."
+  },
+  "inboxDenying": "Refus…",
+  "@inboxDenying": {
+    "description": "Deny button label while the action is in flight."
+  },
+  "inboxActionChat": "Discuter",
+  "@inboxActionChat": {
+    "description": "Snackbar action that opens the chat after a successful approve."
+  },
+  "inboxOutcomeApproved": "Demande acceptée. Tu peux discuter maintenant.",
+  "@inboxOutcomeApproved": {
+    "description": "Snackbar after a request was approved."
+  },
+  "inboxOutcomeApproveFailed": "Impossible d’accepter cette demande. Elle a peut-être déjà été traitée.",
+  "@inboxOutcomeApproveFailed": {
+    "description": "Snackbar when approving failed for any reason other than the meal being closed."
+  },
+  "inboxOutcomeDenied": "Demande refusée.",
+  "@inboxOutcomeDenied": {
+    "description": "Snackbar after a request was denied."
+  },
+  "inboxOutcomeDenyFailed": "Impossible de refuser cette demande. Elle a peut-être déjà été traitée.",
+  "@inboxOutcomeDenyFailed": {
+    "description": "Snackbar when denying failed."
+  },
+  "chatListTitle": "Messages",
+  "@chatListTitle": {
+    "description": "App bar title of the chat list."
+  },
+  "chatListEmptyTitle": "Pas encore de discussion",
+  "@chatListEmptyTitle": {
+    "description": "Empty state title of the chat list."
+  },
+  "chatListEmptyMessage": "Fais un match sur un repas pour lancer la discussion.",
+  "@chatListEmptyMessage": {
+    "description": "Empty state message of the chat list."
+  },
+  "chatListFindMeal": "Trouver un repas",
+  "@chatListFindMeal": {
+    "description": "Empty chat list button that opens Discover."
+  },
+  "chatSayHi": "Dis bonjour 👋",
+  "@chatSayHi": {
+    "description": "Preview of a chat with no message yet, and empty thread title."
+  },
+  "chatTitleFallback": "Discussion",
+  "@chatTitleFallback": {
+    "description": "Chat title while the other person’s name is not loaded."
+  },
+  "chatTimeNow": "à l’instant",
+  "@chatTimeNow": {
+    "description": "Relative time for under a minute ago, on the chat list."
+  },
+  "chatTimeMinutes": "{minutes} min",
+  "@chatTimeMinutes": {
+    "description": "Relative time in minutes on the chat list.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeHours": "{hours} h",
+  "@chatTimeHours": {
+    "description": "Relative time in hours on the chat list.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeDays": "{days} j",
+  "@chatTimeDays": {
+    "description": "Relative time in days on the chat list.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "chatUnreadSemantics": "Non lu",
+  "@chatUnreadSemantics": {
+    "description": "Accessibility label of the unread dot on a chat row."
+  },
+  "chatSeen": "Vu",
+  "@chatSeen": {
+    "description": "Marker under the sender’s latest message once the other person read it."
+  },
+  "chatComposerHint": "Message",
+  "@chatComposerHint": {
+    "description": "Hint of the message field."
+  },
+  "chatSendTooltip": "Envoyer le message",
+  "@chatSendTooltip": {
+    "description": "Tooltip and accessibility label of the send button."
+  },
+  "chatSendFailed": "Impossible d’envoyer ton message. Réessaie.",
+  "@chatSendFailed": {
+    "description": "Snackbar when sending a message failed."
+  },
+  "chatUnavailable": "Cette discussion n’est plus disponible — le repas a été annulé.",
+  "@chatUnavailable": {
+    "description": "Shown instead of the thread when the match is gone."
+  },
+  "chatBackToChats": "Retour aux messages",
+  "@chatBackToChats": {
+    "description": "Button on the unavailable-chat state."
+  },
+  "leaveMatchTooltip": "Je ne peux pas venir",
+  "@leaveMatchTooltip": {
+    "description": "Tooltip of the app bar action that cancels or withdraws from a matched meal."
+  },
+  "leaveMatchOtherFallback": "l’autre personne",
+  "@leaveMatchOtherFallback": {
+    "description": "Stands in for the other person’s name in the leave dialog when it is not loaded."
+  },
+  "leaveMatchHostTitle": "Annuler ce repas ?",
+  "@leaveMatchHostTitle": {
+    "description": "Leave dialog title for the host."
+  },
+  "leaveMatchGuestTitle": "Te retirer de ce repas ?",
+  "@leaveMatchGuestTitle": {
+    "description": "Leave dialog title for the guest."
+  },
+  "leaveMatchHostBody": "On préviendra {name} et le repas sera supprimé.",
+  "@leaveMatchHostBody": {
+    "description": "Leave dialog body for the host; name is the guest.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchGuestBody": "On préviendra {name} et le repas sera de nouveau ouvert aux autres.",
+  "@leaveMatchGuestBody": {
+    "description": "Leave dialog body for the guest; name is the host.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchKeep": "Garder le repas",
+  "@leaveMatchKeep": {
+    "description": "Dialog button that keeps the meal."
+  },
+  "leaveMatchHostConfirm": "Annuler le repas",
+  "@leaveMatchHostConfirm": {
+    "description": "Dialog button that cancels the meal (host)."
+  },
+  "leaveMatchGuestConfirm": "Me retirer",
+  "@leaveMatchGuestConfirm": {
+    "description": "Dialog button that withdraws the guest."
+  },
+  "leaveMatchHostDone": "Repas annulé.",
+  "@leaveMatchHostDone": {
+    "description": "Snackbar after the host cancelled the meal."
+  },
+  "leaveMatchGuestDone": "Tu as annulé ta participation.",
+  "@leaveMatchGuestDone": {
+    "description": "Snackbar after the guest withdrew."
+  },
+  "leaveMatchFailed": "Annulation impossible. Vérifie ta connexion et réessaie.",
+  "@leaveMatchFailed": {
+    "description": "Snackbar when cancelling or withdrawing failed."
+  },
+  "safetyTipsBanner": "Bientôt à table ? Conseils de sécurité",
+  "@safetyTipsBanner": {
+    "description": "One-line banner above the chat thread."
+  },
+  "safetyTipsBannerDismiss": "Fermer les conseils de sécurité",
+  "@safetyTipsBannerDismiss": {
+    "description": "Tooltip of the banner close button."
+  },
+  "safetyTipsHeading": "Bientôt à table ? Reste en sécurité",
+  "@safetyTipsHeading": {
+    "description": "Heading of the safety tips sheet and screen."
+  },
+  "safetyTipPublicPlace": "Donne rendez-vous dans un lieu public",
+  "@safetyTipPublicPlace": {
+    "description": "Safety tip 1."
+  },
+  "safetyTipTellFriend": "Préviens un proche de l’endroit où tu vas",
+  "@safetyTipTellFriend": {
+    "description": "Safety tip 2."
+  },
+  "safetyTipInstincts": "Fie-toi à ton instinct",
+  "@safetyTipInstincts": {
+    "description": "Safety tip 3."
+  },
+  "safetyTipBlockReport": "Tu peux bloquer ou signaler à tout moment",
+  "@safetyTipBlockReport": {
+    "description": "Safety tip 4."
+  },
+  "safetyTipsGotIt": "Compris",
+  "@safetyTipsGotIt": {
+    "description": "Button that closes the safety tips sheet."
+  },
+  "commonSubmit": "Envoyer",
+  "@commonSubmit": {
+    "description": "Primary button that sends a short form (report, rating)."
+  },
+  "commonSubmitting": "Envoi…",
+  "@commonSubmitting": {
+    "description": "Label shown on a submit button while it is in flight."
+  },
+  "commonSave": "Enregistrer",
+  "@commonSave": {
+    "description": "Primary button that saves edits."
+  },
+  "safetyReportAction": "Signaler",
+  "@safetyReportAction": {
+    "description": "Safety menu item and report sheet title when the target is unnamed."
+  },
+  "safetyBlockAction": "Bloquer",
+  "@safetyBlockAction": {
+    "description": "Safety menu item and confirm button that blocks a person."
+  },
+  "safetyBlockTitleNamed": "Bloquer {name} ?",
+  "@safetyBlockTitleNamed": {
+    "description": "Title of the block confirmation dialog when the person is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyBlockTitleGeneric": "Bloquer cette personne ?",
+  "@safetyBlockTitleGeneric": {
+    "description": "Title of the block confirmation dialog when the name is unknown."
+  },
+  "safetyBlockBody": "Tu ne verras plus cette personne sur Convyve, et elle ne te verra plus.",
+  "@safetyBlockBody": {
+    "description": "Body of the block confirmation dialog."
+  },
+  "safetyBlockFailed": "Impossible de bloquer. Réessaie.",
+  "@safetyBlockFailed": {
+    "description": "Snackbar when blocking failed."
+  },
+  "safetyBlockDone": "Tu as bloqué cette personne.",
+  "@safetyBlockDone": {
+    "description": "Snackbar after a successful block."
+  },
+  "safetyTipsTitle": "Conseils de sécurité",
+  "@safetyTipsTitle": {
+    "description": "App bar title of the Safety tips screen and Settings row label."
+  },
+  "reportTitleNamed": "Signaler {name}",
+  "@reportTitleNamed": {
+    "description": "Report sheet title when the person is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTitleMeal": "Signaler ce repas",
+  "@reportTitleMeal": {
+    "description": "Report sheet title when the target is a meal."
+  },
+  "reportReasonInappropriate": "Contenu inapproprié",
+  "@reportReasonInappropriate": {
+    "description": "Report reason chip."
+  },
+  "reportReasonSpam": "Spam",
+  "@reportReasonSpam": {
+    "description": "Report reason chip."
+  },
+  "reportReasonHarassment": "Harcèlement",
+  "@reportReasonHarassment": {
+    "description": "Report reason chip."
+  },
+  "reportReasonFake": "Faux profil",
+  "@reportReasonFake": {
+    "description": "Report reason chip."
+  },
+  "reportReasonOther": "Autre",
+  "@reportReasonOther": {
+    "description": "Report reason chip."
+  },
+  "reportNoteHint": "Ajoute un commentaire (facultatif)",
+  "@reportNoteHint": {
+    "description": "Hint of the optional note field in the report sheet."
+  },
+  "reportFailed": "Impossible d’envoyer ton signalement. Réessaie.",
+  "@reportFailed": {
+    "description": "Snackbar when sending a report failed."
+  },
+  "reportThanks": "Merci. Nous allons examiner ton signalement.",
+  "@reportThanks": {
+    "description": "Snackbar after a report was sent."
+  },
+  "blockedTitle": "Personnes bloquées",
+  "@blockedTitle": {
+    "description": "Title of the blocked people screen and Settings row."
+  },
+  "blockedEmptyTitle": "Tu n’as bloqué personne",
+  "@blockedEmptyTitle": {
+    "description": "Empty-state title of the blocked people screen."
+  },
+  "blockedEmptyMessage": "Les personnes que tu bloques sont masquées de tes repas et de tes discussions.",
+  "@blockedEmptyMessage": {
+    "description": "Empty-state message of the blocked people screen."
+  },
+  "blockedUnknownUser": "Profil inconnu",
+  "@blockedUnknownUser": {
+    "description": "Name shown for a blocked person whose profile cannot be loaded."
+  },
+  "blockedUnblock": "Débloquer",
+  "@blockedUnblock": {
+    "description": "Button that unblocks a person."
+  },
+  "blockedUnblockSemantics": "Débloquer {name}",
+  "@blockedUnblockSemantics": {
+    "description": "Screen-reader label of the Unblock button, naming the person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblocking": "Déblocage…",
+  "@blockedUnblocking": {
+    "description": "Label of the Unblock button while it is in flight."
+  },
+  "blockedUnblocked": "Tu as débloqué {name}.",
+  "@blockedUnblocked": {
+    "description": "Snackbar after unblocking a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblockFailed": "Impossible de débloquer. Réessaie.",
+  "@blockedUnblockFailed": {
+    "description": "Snackbar when unblocking failed."
+  },
+  "ratingTitleNamed": "Comment s’est passé ton repas avec {name} ?",
+  "@ratingTitleNamed": {
+    "description": "Rating sheet title when the partner is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingTitle": "Comment s’est passé ton repas ?",
+  "@ratingTitle": {
+    "description": "Rating sheet title and post-meal card headline."
+  },
+  "ratingStarTooltip": "{count, plural, one{{count} étoile} other{{count} étoiles}}",
+  "@ratingStarTooltip": {
+    "description": "Tooltip and screen-reader label of one star button in the rating sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ratingShowedUp": "La personne est-elle venue ?",
+  "@ratingShowedUp": {
+    "description": "Label of the show-up switch in the rating sheet."
+  },
+  "ratingCommentHint": "Ajoute un commentaire (facultatif)",
+  "@ratingCommentHint": {
+    "description": "Hint of the optional comment field in the rating sheet."
+  },
+  "ratingFailed": "Impossible d’envoyer ta note. Réessaie.",
+  "@ratingFailed": {
+    "description": "Snackbar when sending a rating failed."
+  },
+  "ratingThanks": "Merci pour ton retour !",
+  "@ratingThanks": {
+    "description": "Snackbar after a rating was sent."
+  },
+  "ratingCardSubtitle": "Ça ne prend qu’un instant.",
+  "@ratingCardSubtitle": {
+    "description": "Subtitle of the post-meal card."
+  },
+  "ratingRate": "Noter",
+  "@ratingRate": {
+    "description": "Post-meal card button when the partner is unnamed."
+  },
+  "ratingRateNamed": "Noter {name}",
+  "@ratingRateNamed": {
+    "description": "Post-meal card button naming the partner.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingBadgeNew": "Nouveau",
+  "@ratingBadgeNew": {
+    "description": "Badge shown instead of a score when a person has no ratings yet."
+  },
+  "ratingBadgeScore": "{average} ({count})",
+  "@ratingBadgeScore": {
+    "description": "Rating badge: average (one decimal) and number of ratings.",
+    "placeholders": {
+      "average": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {
+          "decimalDigits": 1
+        }
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTitle": "Réglages",
+  "@settingsTitle": {
+    "description": "Settings screen title and the Profile app bar tooltip."
+  },
+  "settingsSectionAccount": "Compte",
+  "@settingsSectionAccount": {
+    "description": "Settings section header."
+  },
+  "settingsEditProfile": "Modifier le profil",
+  "@settingsEditProfile": {
+    "description": "Settings row that opens the Profile tab."
+  },
+  "settingsPhoneNumber": "Numéro de téléphone",
+  "@settingsPhoneNumber": {
+    "description": "Settings row showing the signed-in phone number."
+  },
+  "settingsSignOut": "Se déconnecter",
+  "@settingsSignOut": {
+    "description": "Settings row and confirm button that signs the user out."
+  },
+  "settingsSignOutTitle": "Te déconnecter ?",
+  "@settingsSignOutTitle": {
+    "description": "Title of the sign-out confirmation dialog."
+  },
+  "settingsSectionSafety": "Sécurité",
+  "@settingsSectionSafety": {
+    "description": "Settings section header."
+  },
+  "settingsContactSupport": "Contacter l’assistance",
+  "@settingsContactSupport": {
+    "description": "Settings row that opens a mail to support."
+  },
+  "settingsMailFailed": "Impossible d’ouvrir ta messagerie. Écris à {email}",
+  "@settingsMailFailed": {
+    "description": "Snackbar when the mail app could not be opened; email is the support address.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSectionNotifications": "Notifications",
+  "@settingsSectionNotifications": {
+    "description": "Settings section header (iOS)."
+  },
+  "settingsNotificationSettings": "Réglages des notifications",
+  "@settingsNotificationSettings": {
+    "description": "Settings row that opens the iOS Settings page of the app."
+  },
+  "settingsNotificationSubtitle": "Gère les notifications dans les Réglages iOS",
+  "@settingsNotificationSubtitle": {
+    "description": "Subtitle of the notification settings row."
+  },
+  "settingsSectionLegal": "Informations légales",
+  "@settingsSectionLegal": {
+    "description": "Settings section header."
+  },
+  "settingsPrivacyPolicy": "Politique de confidentialité",
+  "@settingsPrivacyPolicy": {
+    "description": "Settings row that opens the privacy policy."
+  },
+  "settingsTermsOfService": "Conditions d’utilisation",
+  "@settingsTermsOfService": {
+    "description": "Settings row that opens the terms of service."
+  },
+  "settingsLicenses": "Licences open source",
+  "@settingsLicenses": {
+    "description": "Settings row that opens the open-source licences page."
+  },
+  "settingsSectionAbout": "À propos",
+  "@settingsSectionAbout": {
+    "description": "Settings section header."
+  },
+  "settingsLanguage": "Langue",
+  "@settingsLanguage": {
+    "description": "Settings row that opens the language picker."
+  },
+  "settingsLanguageSystem": "Langue du système",
+  "@settingsLanguageSystem": {
+    "description": "Language picker option and row subtitle: follow the device language."
+  },
+  "settingsLanguageTitle": "Langue",
+  "@settingsLanguageTitle": {
+    "description": "Title of the language picker dialog."
+  },
+  "settingsVersion": "Version",
+  "@settingsVersion": {
+    "description": "Settings row showing the app version."
+  },
+  "settingsVersionLoading": "Chargement…",
+  "@settingsVersionLoading": {
+    "description": "Subtitle of the version row while it loads."
+  },
+  "settingsVersionUnavailable": "Indisponible",
+  "@settingsVersionUnavailable": {
+    "description": "Subtitle of the version row when it could not be read."
+  },
+  "settingsDeleteAccount": "Supprimer le compte",
+  "@settingsDeleteAccount": {
+    "description": "Settings row and confirm button that deletes the account."
+  },
+  "settingsDeleteTitle": "Supprimer ton compte ?",
+  "@settingsDeleteTitle": {
+    "description": "Title of the delete-account confirmation dialog."
+  },
+  "settingsDeleteBody": "Cela supprime définitivement ton compte et toutes tes données. Cette action est irréversible.",
+  "@settingsDeleteBody": {
+    "description": "Body of the delete-account confirmation dialog."
+  },
+  "settingsDeleteFailed": "Impossible de supprimer le compte. Réessaie.",
+  "@settingsDeleteFailed": {
+    "description": "Snackbar when deleting the account failed."
+  },
+  "profileSaved": "Profil enregistré",
+  "@profileSaved": {
+    "description": "Snackbar after saving the profile."
+  },
+  "profileYourRating": "Ta note",
+  "@profileYourRating": {
+    "description": "Label before the rating badge on the Profile tab."
+  },
+  "profileNoRatings": "Aucune note pour le moment",
+  "@profileNoRatings": {
+    "description": "Shown on the Profile tab when the user has no ratings."
+  },
+  "profileFormPhotos": "Photos",
+  "@profileFormPhotos": {
+    "description": "Heading of the photo grid in the profile form."
+  },
+  "profileFormRemovePhoto": "Supprimer la photo",
+  "@profileFormRemovePhoto": {
+    "description": "Tooltip and screen-reader label of the remove button on a photo."
+  },
+  "profileFormAddPhoto": "Ajouter une photo",
+  "@profileFormAddPhoto": {
+    "description": "Label of the add-photo tile."
+  },
+  "profileFormUploadingPhoto": "Envoi de la photo en cours",
+  "@profileFormUploadingPhoto": {
+    "description": "Screen-reader label of the add-photo tile while a photo uploads."
+  },
+  "profileFormName": "Nom",
+  "@profileFormName": {
+    "description": "Label of the name field."
+  },
+  "profileFormGenderHeading": "Je suis",
+  "@profileFormGenderHeading": {
+    "description": "Heading above the gender choices; the choice completes the phrase."
+  },
+  "profileFormBio": "Bio",
+  "@profileFormBio": {
+    "description": "Label of the bio field."
+  },
+  "genderWoman": "Femme",
+  "@genderWoman": {
+    "description": "Gender choice."
+  },
+  "genderMan": "Homme",
+  "@genderMan": {
+    "description": "Gender choice."
+  },
+  "genderNonBinary": "Non-binaire",
+  "@genderNonBinary": {
+    "description": "Gender choice."
+  },
+  "profileMissingPhoto": "une photo",
+  "@profileMissingPhoto": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingName": "ton nom",
+  "@profileMissingName": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingGender": "ton genre",
+  "@profileMissingGender": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingTwo": "{first} et {second}",
+  "@profileMissingTwo": {
+    "description": "Joins two missing profile fields.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "profileMissingThree": "{first}, {second} et {third}",
+  "@profileMissingThree": {
+    "description": "Joins three missing profile fields.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "third": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -22,6 +22,7 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/features/safety/application/block_controller.dart';
 import 'package:not_eat_alone/features/safety/presentation/report_sheet.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 enum _SafetyAction { report, reportSecondary, block }
 
@@ -29,12 +30,12 @@ class SafetyActions extends ConsumerWidget {
   const SafetyActions({
     required this.reportTargetType,
     required this.reportTargetId,
-    this.reportLabel = 'Report',
+    this.reportLabel,
     this.secondaryReportTargetType,
     this.secondaryReportTargetId,
     this.secondaryReportLabel,
     this.blockUid,
-    this.blockLabel = 'Block',
+    this.blockLabel,
     this.onBlocked,
     super.key,
   });
@@ -44,8 +45,9 @@ class SafetyActions extends ConsumerWidget {
   final String reportTargetId;
 
   /// Menu label for the primary report item — meal detail overrides this to
-  /// "Report this meal" so it reads clearly alongside "Report host".
-  final String reportLabel;
+  /// "Report this meal" so it reads clearly alongside "Report host". `null`
+  /// reads "Report".
+  final String? reportLabel;
 
   /// A second, optional report target (meal detail uses this to also report
   /// the host: `targetType: 'user', targetId: meal.hostId`). Both
@@ -60,8 +62,8 @@ class SafetyActions extends ConsumerWidget {
   final String? blockUid;
 
   /// Menu label for the block item — meal detail overrides this to
-  /// "Block host".
-  final String blockLabel;
+  /// "Block host". `null` reads "Block".
+  final String? blockLabel;
 
   /// Fires after a successful block — `null` if the caller has nothing to
   /// do.
@@ -76,13 +78,19 @@ class SafetyActions extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(name != null ? 'Block $name?' : 'Block this person?'),
-        content: const Text("You won't see each other in Convyve anymore."),
+        // A long name at large text must scroll, not overflow.
+        scrollable: true,
+        title: Text(
+          name != null
+              ? dialogContext.l10n.safetyBlockTitleNamed(name)
+              : dialogContext.l10n.safetyBlockTitleGeneric,
+        ),
+        content: Text(dialogContext.l10n.safetyBlockBody),
         actions: [
           TextButton(
             key: const Key('safety_actions_block_cancel'),
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           TextButton(
             key: const Key('safety_actions_block_confirm'),
@@ -90,7 +98,7 @@ class SafetyActions extends ConsumerWidget {
               foregroundColor: dialogContext.wp.dangerText,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Block'),
+            child: Text(dialogContext.l10n.safetyBlockAction),
           ),
         ],
       ),
@@ -111,15 +119,15 @@ class SafetyActions extends ConsumerWidget {
     if (!context.mounted) return;
     final error = ref.read(blockControllerProvider).error;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't block. Try again.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.safetyBlockFailed)));
       return;
     }
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Blocked.')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.safetyBlockDone)));
     onBlocked?.call();
   }
 
@@ -172,20 +180,22 @@ class SafetyActions extends ConsumerWidget {
         PopupMenuItem(
           key: const Key('safety_actions_report_item'),
           value: _SafetyAction.report,
-          child: Text(reportLabel),
+          child: Text(reportLabel ?? context.l10n.safetyReportAction),
         ),
         if (secondaryReportTargetType != null &&
             secondaryReportTargetId != null)
           PopupMenuItem(
             key: const Key('safety_actions_report_secondary_item'),
             value: _SafetyAction.reportSecondary,
-            child: Text(secondaryReportLabel ?? 'Report'),
+            child: Text(
+              secondaryReportLabel ?? context.l10n.safetyReportAction,
+            ),
           ),
         if (blockUid != null)
           PopupMenuItem(
             key: const Key('safety_actions_block_item'),
             value: _SafetyAction.block,
-            child: Text(blockLabel),
+            child: Text(blockLabel ?? context.l10n.safetyBlockAction),
           ),
       ],
     );

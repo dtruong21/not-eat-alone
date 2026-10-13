@@ -23,6 +23,8 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Added
 
+- Convyve now speaks French as well as English: every screen, button, message and accessibility label. It follows your phone's language the first time you open the app, and Settings has a new Language row (System default / English / Français) that switches at once and is remembered.
+
 - A chat now says which meal it is about (restaurant and time, tap to open the meal), the safety tips are a one-line banner you can dismiss that opens the full tips, and messages are grouped under Today / Yesterday / date labels with a time only on the last message of a burst.
 - "Can't make it": in a chat for an upcoming meal, the host can cancel the meal or the guest can withdraw. The other person is told, a cancelled meal is removed, and a withdrawn meal opens up again for others.
 - Reminders for your matched meals: a notification the day before and about 2 hours before, with the restaurant and time (tap to open the chat with your match).
@@ -35,6 +37,7 @@ All notable changes to Convyve that affect users. Format follows [Keep a Changel
 
 ### Changed
 
+- Dates, times and distances follow the app language (for example "sam. 10 oct., 20:00" and "1,2 km" in French).
 - Request inbox: Approve is now a clear coral button and Deny a quiet red one (they stack at large text sizes instead of overflowing), only the request you tapped shows a spinner while the others stay usable, the guest's rating is shown under their name, and the Requests tab has an inbox icon.
 - The report, rating and block screens now say who they are about ("Report Sam", "How was your meal with Sam?", "Block Sam?"), the text box has a visible edge, selected reasons and stars are easier to read, and "Block" is red.
 - Profile: the tab is titled "Profile" and shows "Your rating" (or "No ratings yet"). Save is only available when you changed your name, bio or gender, and confirms with "Profile saved"; with a blank name it says what is still needed. Photos are saved as soon as you add or remove them.

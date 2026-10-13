@@ -10,12 +10,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:not_eat_alone/core/analytics/analytics_listener.dart';
 import 'package:not_eat_alone/core/config/emulator_config.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/design/font_license.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
+import 'package:not_eat_alone/core/locale/locale_controller.dart';
 import 'package:not_eat_alone/core/routing/router.dart';
+import 'package:not_eat_alone/l10n/generated/app_localizations.dart';
 
 Future<void> bootstrap({
   required FlavorConfig config,
@@ -45,16 +48,17 @@ Future<void> bootstrap({
     await FirebaseStorage.instance.useStorageEmulator(e.host, e.storagePort);
   } else {
     await FirebaseAppCheck.instance.activate(
-      androidProvider:
-          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-      appleProvider:
-          kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+      androidProvider: kDebugMode
+          ? AndroidProvider.debug
+          : AndroidProvider.playIntegrity,
+      appleProvider: kDebugMode
+          ? AppleProvider.debug
+          : AppleProvider.deviceCheck,
     );
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
       !kDebugMode,
     );
-    FlutterError.onError =
-        FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
@@ -67,7 +71,15 @@ Future<void> bootstrap({
     // Google provider not yet configured in Firebase; sign-in surfaces the
     // error later.
   }
-  runApp(const ProviderScope(child: NotEatAloneApp()));
+  await initializeDateFormatting('en');
+  await initializeDateFormatting('fr');
+  final savedLocale = await readSavedLocale();
+  runApp(
+    ProviderScope(
+      overrides: [localeSeedProvider.overrideWithValue(savedLocale)],
+      child: const NotEatAloneApp(),
+    ),
+  );
 }
 
 class NotEatAloneApp extends ConsumerWidget {
@@ -81,6 +93,9 @@ class NotEatAloneApp extends ConsumerWidget {
         theme: buildTheme(Brightness.light),
         darkTheme: buildTheme(Brightness.dark),
         routerConfig: router,
+        locale: ref.watch(localeControllerProvider),
+        supportedLocales: supportedAppLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
       ),
     );
   }

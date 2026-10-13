@@ -7,6 +7,8 @@
 /// absent. Only those bubbles show a timestamp (CHAT-05).
 library;
 
+import 'dart:ui' show Locale;
+
 import 'package:not_eat_alone/core/util/date_format.dart';
 import 'package:not_eat_alone/features/chat/domain/entities/chat_message.dart';
 
@@ -38,7 +40,11 @@ bool _sameDay(DateTime a, DateTime b) =>
 
 /// Groups [messages] (ascending) for display. A message whose server
 /// timestamp has not arrived yet counts as sent at [now].
-List<ChatListEntry> groupMessages(List<ChatMessage> messages, {DateTime? now}) {
+List<ChatListEntry> groupMessages(
+  List<ChatMessage> messages, {
+  DateTime? now,
+  Locale locale = const Locale('en'),
+}) {
   final reference = (now ?? DateTime.now()).toLocal();
   DateTime timeOf(ChatMessage m) => (m.createdAt ?? reference).toLocal();
 
@@ -48,7 +54,9 @@ List<ChatListEntry> groupMessages(List<ChatMessage> messages, {DateTime? now}) {
     final at = timeOf(message);
     // Calendar fields, not a Duration: a DST day is 23 or 25 hours long.
     if (i == 0 || !_sameDay(timeOf(messages[i - 1]), at)) {
-      entries.add(DaySeparatorEntry(formatDayLabel(at, now: reference)));
+      entries.add(
+        DaySeparatorEntry(formatDayLabel(at, now: reference, locale: locale)),
+      );
     }
     final next = i + 1 < messages.length ? messages[i + 1] : null;
     final nextAt = next == null ? null : timeOf(next);

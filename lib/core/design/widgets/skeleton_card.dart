@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// The sweep colour: lighter than the `wp.border` blocks in both modes
 /// (`wp.divider` is lighter in light mode but darker in dark mode).
@@ -117,7 +118,7 @@ class SkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Loading',
+    label: context.l10n.commonLoading,
     liveRegion: true,
     child: ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
@@ -140,7 +141,7 @@ class SkeletonMessages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Loading',
+    label: context.l10n.commonLoading,
     liveRegion: true,
     child: ExcludeSemantics(
       child: ListView.separated(

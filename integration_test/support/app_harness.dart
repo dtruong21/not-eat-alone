@@ -9,7 +9,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:not_eat_alone/core/config/emulator_config.dart';
 import 'package:not_eat_alone/core/config/flavor.dart';
 import 'package:not_eat_alone/core/firebase/options/firebase_options_prod.dart';
+import 'package:not_eat_alone/core/locale/locale_controller.dart';
 import 'package:not_eat_alone/main_common.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// The flavor E2E tests boot under. Must be [Flavor.prod] — its
 /// `firestoreDatabaseId` is `'(default)'`, the only database id the
@@ -23,6 +25,9 @@ FlavorConfig testFlavor() => FlavorConfig(flavor: Flavor.prod);
 /// valid `FirebaseOptions` to call `Firebase.initializeApp`), then settles
 /// the first frame.
 Future<void> pumpApp(WidgetTester tester) async {
+  // E2E finders are English: pin the language so a French simulator, or a
+  // Français tapped in an earlier run, cannot change what the app shows.
+  await (await SharedPreferences.getInstance()).setString(localePrefsKey, 'en');
   await bootstrap(
     config: testFlavor(),
     options: DefaultFirebaseOptions.currentPlatform,

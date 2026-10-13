@@ -15,17 +15,27 @@ import 'package:not_eat_alone/core/design/theme.dart';
 import 'package:not_eat_alone/core/design/tokens.dart';
 import 'package:not_eat_alone/core/design/widgets/app_button.dart';
 import 'package:not_eat_alone/features/safety/application/report_controller.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// The 5 valid report reasons — key is the literal sent to
-/// `ReportController.submit`, value is the chip label. Kept in this order
-/// (least to most severe reads oddly, but this mirrors the spec's list
-/// verbatim) so the UI and the accepted literals never drift apart.
-const _reportReasons = <String, String>{
-  'inappropriate': 'Inappropriate content',
-  'spam': 'Spam',
-  'harassment': 'Harassment',
-  'fake': 'Fake profile',
-  'other': 'Other',
+/// `ReportController.submit` (always English: admins triage on it), the chip
+/// label is localised. Kept in this order (least to most severe reads oddly,
+/// but this mirrors the spec's list verbatim) so the UI and the accepted
+/// literals never drift apart.
+const _reportReasonKeys = [
+  'inappropriate',
+  'spam',
+  'harassment',
+  'fake',
+  'other',
+];
+
+String _reasonLabel(AppLocalizations l10n, String key) => switch (key) {
+  'inappropriate' => l10n.reportReasonInappropriate,
+  'spam' => l10n.reportReasonSpam,
+  'harassment' => l10n.reportReasonHarassment,
+  'fake' => l10n.reportReasonFake,
+  _ => l10n.reportReasonOther,
 };
 
 /// Opens the report sheet for [targetType]/[targetId] (`'user'`, `'meal'`, or
@@ -96,18 +106,16 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     if (!mounted) return;
     final error = ref.read(reportControllerProvider).error;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't submit your report. Try again."),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.reportFailed)));
       return;
     }
 
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Thanks — we'll review this.")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.reportThanks)));
   }
 
   @override
@@ -116,12 +124,13 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
     final isSubmitting = ref.watch(reportControllerProvider).isLoading;
+    final l10n = context.l10n;
     final name = widget.targetName;
     final title = name != null
-        ? 'Report $name'
+        ? l10n.reportTitleNamed(name)
         : widget.targetType == 'meal'
-        ? 'Report this meal'
-        : 'Report';
+        ? l10n.reportTitleMeal
+        : l10n.safetyReportAction;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -150,14 +159,14 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               spacing: WarmPlayfulSpacing.s2,
               runSpacing: WarmPlayfulSpacing.s2,
               children: [
-                for (final entry in _reportReasons.entries)
+                for (final key in _reportReasonKeys)
                   ChoiceChip(
-                    key: Key('report_reason_chip_${entry.key}'),
-                    label: Text(entry.value),
-                    selected: _reason == entry.key,
+                    key: Key('report_reason_chip_$key'),
+                    label: Text(_reasonLabel(l10n, key)),
+                    selected: _reason == key,
                     onSelected: isSubmitting
                         ? null
-                        : (_) => setState(() => _reason = entry.key),
+                        : (_) => setState(() => _reason = key),
                   ),
               ],
             ),
@@ -169,7 +178,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               maxLines: 3,
               textInputAction: TextInputAction.done,
               decoration: InputDecoration(
-                hintText: 'Add a note (optional)',
+                hintText: l10n.reportNoteHint,
                 // The sheet and the field share a fill: draw the edge.
                 enabledBorder: sheetFieldBorder(context),
                 disabledBorder: sheetFieldBorder(context),
@@ -177,8 +186,8 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
             ),
             const SizedBox(height: WarmPlayfulSpacing.s4),
             AppButton(
-              label: 'Submit',
-              loadingLabel: 'Submitting…',
+              label: l10n.commonSubmit,
+              loadingLabel: l10n.commonSubmitting,
               isLoading: isSubmitting,
               key: const Key('report_submit_button'),
               onPressed: (_reason == null || isSubmitting) ? null : _submit,

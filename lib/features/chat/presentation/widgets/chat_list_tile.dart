@@ -15,18 +15,24 @@ import 'package:not_eat_alone/features/chat/application/chat_list_provider.dart'
 import 'package:not_eat_alone/features/chat/application/chat_messages_provider.dart';
 import 'package:not_eat_alone/features/rating/application/match_meal_provider.dart';
 import 'package:not_eat_alone/features/user/application/user_providers.dart';
+import 'package:not_eat_alone/l10n/l10n.dart';
 
 /// "1m" / "2h" / "3d" / falls back to a short date beyond a week — kept as a
 /// small private helper rather than a shared util, since this is the only
 /// place that needs it.
-String _relativeTime(DateTime dateTime, {DateTime? now}) {
+String _relativeTime(
+  DateTime dateTime,
+  AppLocalizations l10n, {
+  DateTime? now,
+  Locale locale = const Locale('en'),
+}) {
   final reference = now ?? DateTime.now();
   final diff = reference.difference(dateTime);
-  if (diff.inMinutes < 1) return 'now';
-  if (diff.inHours < 1) return '${diff.inMinutes}m';
-  if (diff.inDays < 1) return '${diff.inHours}h';
-  if (diff.inDays < 7) return '${diff.inDays}d';
-  return formatMonthDay(dateTime);
+  if (diff.inMinutes < 1) return l10n.chatTimeNow;
+  if (diff.inHours < 1) return l10n.chatTimeMinutes(diff.inMinutes);
+  if (diff.inDays < 1) return l10n.chatTimeHours(diff.inHours);
+  if (diff.inDays < 7) return l10n.chatTimeDays(diff.inDays);
+  return formatMonthDay(dateTime, locale: locale);
 }
 
 /// A single chat row. Watches [userDocProvider] for the other participant's
@@ -54,14 +60,16 @@ class ChatListTile extends ConsumerWidget {
     final meal = ref.watch(matchMealProvider(item.match.id)).value;
     final myUid = ref.watch(authStateProvider).value?.uid;
 
-    final preview = lastMessage?.text ?? 'Say hi \u{1F44B}';
-    final unread = lastMessage != null &&
-        myUid != null &&
-        lastMessage.senderId != myUid;
+    final l10n = context.l10n;
+    final preview = lastMessage?.text ?? l10n.chatSayHi;
+    final unread =
+        lastMessage != null && myUid != null && lastMessage.senderId != myUid;
 
-    final photoUrl =
-        (user?.photoUrls.isNotEmpty ?? false) ? user!.photoUrls.first : null;
-    final name = user?.displayName ?? 'Chat';
+    final locale = Localizations.localeOf(context);
+    final photoUrl = (user?.photoUrls.isNotEmpty ?? false)
+        ? user!.photoUrls.first
+        : null;
+    final name = user?.displayName ?? l10n.chatTitleFallback;
 
     return Material(
       color: colors.surface,
@@ -84,10 +92,15 @@ class ChatListTile extends ConsumerWidget {
                 radius: WarmPlayfulSpacing.s5,
                 backgroundColor: colors.surfaceContainerHighest,
                 backgroundImage: photoUrl != null
-                  ? avatarImage(context, photoUrl, radius: WarmPlayfulSpacing.s5)
-                  : null,
-              onBackgroundImageError:
-                  photoUrl != null ? ignoreAvatarImageError : null,
+                    ? avatarImage(
+                        context,
+                        photoUrl,
+                        radius: WarmPlayfulSpacing.s5,
+                      )
+                    : null,
+                onBackgroundImageError: photoUrl != null
+                    ? ignoreAvatarImageError
+                    : null,
                 child: photoUrl == null
                     ? Icon(Icons.person_rounded, color: context.wp.muted)
                     : null,
@@ -110,7 +123,7 @@ class ChatListTile extends ConsumerWidget {
                       const SizedBox(height: WarmPlayfulSpacing.s1),
                       Text(
                         '${meal.restaurant.name} · '
-                        '${formatMealDateTime(meal.dateTime)}',
+                        '${formatMealDateTime(meal.dateTime, locale: locale)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(
@@ -136,7 +149,11 @@ class ChatListTile extends ConsumerWidget {
                 children: [
                   if (lastMessage?.createdAt != null)
                     Text(
-                      _relativeTime(lastMessage!.createdAt!),
+                      _relativeTime(
+                        lastMessage!.createdAt!,
+                        l10n,
+                        locale: locale,
+                      ),
                       style: textTheme.bodySmall?.copyWith(
                         color: context.wp.muted,
                       ),
@@ -144,7 +161,7 @@ class ChatListTile extends ConsumerWidget {
                   if (unread) ...[
                     const SizedBox(height: WarmPlayfulSpacing.s1),
                     Semantics(
-                      label: 'Unread',
+                      label: l10n.chatUnreadSemantics,
                       child: Container(
                         key: Key('chat_list_tile_unread_${item.match.id}'),
                         width: WarmPlayfulSpacing.s2,

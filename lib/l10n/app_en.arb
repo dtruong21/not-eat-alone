@@ -1,0 +1,1050 @@
+{
+  "@@locale": "en",
+  "commonTryAgain": "Try again",
+  "@commonTryAgain": {
+    "description": "Button label that retries a failed load or action."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Button label that dismisses a dialog or sheet without acting."
+  },
+  "commonDismiss": "Dismiss",
+  "@commonDismiss": {
+    "description": "Tooltip / accessibility label of a close button on a dismissible notice."
+  },
+  "commonLoading": "Loading",
+  "@commonLoading": {
+    "description": "Screen-reader label of a loading placeholder."
+  },
+  "commonContinue": "Continue",
+  "@commonContinue": {
+    "description": "Primary button that moves to the next step."
+  },
+  "commonSaving": "Saving…",
+  "@commonSaving": {
+    "description": "Label shown on a button while a save is in flight."
+  },
+  "commonSomethingWentWrong": "Something went wrong — please try again.",
+  "@commonSomethingWentWrong": {
+    "description": "Generic inline error shown when a step fails for an unknown reason."
+  },
+  "errorStateTitle": "Couldn't load this",
+  "@errorStateTitle": {
+    "description": "Default headline of the error block shown when a screen fails to load."
+  },
+  "errorStateMessage": "Check your connection and try again.",
+  "@errorStateMessage": {
+    "description": "Default supporting text of the error block."
+  },
+  "navDiscover": "Discover",
+  "@navDiscover": {
+    "description": "Bottom navigation tab: browse meals."
+  },
+  "navChats": "Chats",
+  "@navChats": {
+    "description": "Bottom navigation tab: conversations."
+  },
+  "navRequests": "Requests",
+  "@navRequests": {
+    "description": "Bottom navigation tab: join requests inbox."
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Bottom navigation tab: the user's own profile."
+  },
+  "authSendingCode": "Sending code…",
+  "@authSendingCode": {
+    "description": "Button label while an SMS code is being sent."
+  },
+  "signinTitle": "Welcome to Convyve",
+  "@signinTitle": {
+    "description": "Headline of the sign-in screen."
+  },
+  "signinSubtitle": "Meet one person over a meal in Paris.",
+  "@signinSubtitle": {
+    "description": "Sub-headline of the sign-in screen."
+  },
+  "signinContinueGoogle": "Continue with Google",
+  "@signinContinueGoogle": {
+    "description": "Button that signs in with a Google account."
+  },
+  "signinContinueApple": "Continue with Apple",
+  "@signinContinueApple": {
+    "description": "Label of the Sign in with Apple button."
+  },
+  "signinSigningIn": "Signing in…",
+  "@signinSigningIn": {
+    "description": "Button / screen-reader label while a sign-in is in flight."
+  },
+  "signinOr": "or",
+  "@signinOr": {
+    "description": "Divider word between social sign-in and phone sign-in."
+  },
+  "signinPhoneLabel": "Phone number",
+  "@signinPhoneLabel": {
+    "description": "Label of the phone number field."
+  },
+  "signinPhoneError": "Enter a phone number with country code, e.g. +33 6 12 34 56 78",
+  "@signinPhoneError": {
+    "description": "Error under the phone field when the number is not valid."
+  },
+  "signinSendCode": "Send code",
+  "@signinSendCode": {
+    "description": "Button that sends the SMS code."
+  },
+  "commonUnderageNotice": "You must be 18 or older to use Convyve.",
+  "@commonUnderageNotice": {
+    "description": "Notice shown on sign-in (and on the blocked age-gate screen) after an under-18 attempt."
+  },
+  "phoneTitle": "Enter the code",
+  "@phoneTitle": {
+    "description": "Headline of the SMS code screen."
+  },
+  "phoneSentTo": "Sent to {phone}",
+  "@phoneSentTo": {
+    "description": "Line under the headline naming the number the code was sent to.",
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneChange": "Change",
+  "@phoneChange": {
+    "description": "Button that goes back to change the phone number."
+  },
+  "phoneChangeSemantics": "Change phone number",
+  "@phoneChangeSemantics": {
+    "description": "Screen-reader label of the Change button."
+  },
+  "phoneCodeLabel": "6-digit code",
+  "@phoneCodeLabel": {
+    "description": "Label of the SMS code field."
+  },
+  "phoneWrongCode": "That code didn't work. Check it or resend.",
+  "@phoneWrongCode": {
+    "description": "Error under the code field when the code was rejected."
+  },
+  "phoneVerify": "Verify",
+  "@phoneVerify": {
+    "description": "Button that submits the SMS code."
+  },
+  "phoneVerifying": "Verifying…",
+  "@phoneVerifying": {
+    "description": "Button label while the code is being checked."
+  },
+  "phoneResend": "Resend code",
+  "@phoneResend": {
+    "description": "Button that requests a new SMS code."
+  },
+  "phoneResendIn": "Resend code in {seconds} s",
+  "@phoneResendIn": {
+    "description": "Disabled resend button showing the cooldown; \"s\" is the seconds symbol.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneResent": "Code sent again",
+  "@phoneResent": {
+    "description": "Confirmation shown after a new SMS code was sent."
+  },
+  "agegateTitle": "Confirm your date of birth",
+  "@agegateTitle": {
+    "description": "Headline of the age-gate screen."
+  },
+  "agegateSelect": "Select date of birth",
+  "@agegateSelect": {
+    "description": "Button that opens the date picker before a date is chosen."
+  },
+  "agegateHelp": "Your date of birth",
+  "@agegateHelp": {
+    "description": "Help text at the top of the date picker."
+  },
+  "agegateFieldLabel": "Date of birth",
+  "@agegateFieldLabel": {
+    "description": "Field label of the date picker text-entry mode."
+  },
+  "setupTitle": "Set up your profile",
+  "@setupTitle": {
+    "description": "Headline of the profile setup screen."
+  },
+  "setupSubtitle": "Name, photo and gender. That's it.",
+  "@setupSubtitle": {
+    "description": "Sub-headline of the profile setup screen."
+  },
+  "profileStillNeeded": "Still needed: {summary}.",
+  "@profileStillNeeded": {
+    "description": "Hint under the Continue button listing the required fields still empty; summary is a pre-built list such as \"name and photo\".",
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "mealWomenOnly": "Women only",
+  "@mealWomenOnly": {
+    "description": "Badge / disabled-button label for a meal only women can join."
+  },
+  "mealHostFallbackName": "Host",
+  "@mealHostFallbackName": {
+    "description": "Name shown for a host whose profile has no display name."
+  },
+  "discoverEmptyTitle": "No meals nearby yet",
+  "@discoverEmptyTitle": {
+    "description": "Headline of the Discover empty state."
+  },
+  "discoverEmptyMessage": "Be the first: host a meal and someone will join.",
+  "@discoverEmptyMessage": {
+    "description": "Supporting text of the Discover empty state."
+  },
+  "discoverCreateMeal": "Create a meal",
+  "@discoverCreateMeal": {
+    "description": "Discover button / floating button that starts meal creation."
+  },
+  "discoverDistanceKm": "{distance} km",
+  "@discoverDistanceKm": {
+    "description": "Distance from the viewer to a meal, in kilometres with one decimal.",
+    "placeholders": {
+      "distance": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {
+          "decimalDigits": 1
+        }
+      }
+    }
+  },
+  "parisNotice": "Convyve is Paris-only for now — we're just getting started here.",
+  "@parisNotice": {
+    "description": "Dismissible banner on Discover explaining the Paris-only launch."
+  },
+  "mealDetailTitle": "Meal details",
+  "@mealDetailTitle": {
+    "description": "App bar title of the meal detail screen."
+  },
+  "mealDetailHostHeading": "Host",
+  "@mealDetailHostHeading": {
+    "description": "Section heading above the host's profile block."
+  },
+  "mealDetailHostUnavailable": "Host unavailable",
+  "@mealDetailHostUnavailable": {
+    "description": "Shown instead of the host block when the host profile no longer exists."
+  },
+  "mealDetailHostNameAge": "{name}, {age}",
+  "@mealDetailHostNameAge": {
+    "description": "Host name followed by age.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "mealDetailReportMeal": "Report this meal",
+  "@mealDetailReportMeal": {
+    "description": "Safety menu item that reports the meal."
+  },
+  "mealDetailReportHost": "Report host",
+  "@mealDetailReportHost": {
+    "description": "Safety menu item that reports the host."
+  },
+  "mealDetailBlockHost": "Block host",
+  "@mealDetailBlockHost": {
+    "description": "Safety menu item that blocks the host."
+  },
+  "mealDetailOpenInMaps": "Open in Maps",
+  "@mealDetailOpenInMaps": {
+    "description": "Button that opens the restaurant in the maps app."
+  },
+  "mealDetailOpenInMapsSemantics": "Open {restaurant} in Maps",
+  "@mealDetailOpenInMapsSemantics": {
+    "description": "Screen-reader label of the Open in Maps button.",
+    "placeholders": {
+      "restaurant": {
+        "type": "String"
+      }
+    }
+  },
+  "mealDetailMapsFailed": "Couldn't open Maps",
+  "@mealDetailMapsFailed": {
+    "description": "Snackbar shown when the maps app could not be launched."
+  },
+  "mealActionRequestToJoin": "Request to join",
+  "@mealActionRequestToJoin": {
+    "description": "Meal action bar: button that sends a join request."
+  },
+  "mealActionSendingRequest": "Sending request…",
+  "@mealActionSendingRequest": {
+    "description": "Meal action bar: button label while the join request is being sent."
+  },
+  "mealActionRequested": "Requested",
+  "@mealActionRequested": {
+    "description": "Meal action bar: disabled button once the request is pending."
+  },
+  "mealActionOpenChat": "Open chat",
+  "@mealActionOpenChat": {
+    "description": "Meal action bar: button that opens the chat after a match."
+  },
+  "mealActionNotSelected": "Not selected",
+  "@mealActionNotSelected": {
+    "description": "Meal action bar: disabled button when the host chose someone else."
+  },
+  "mealActionYourMeal": "This is your meal",
+  "@mealActionYourMeal": {
+    "description": "Meal action bar: disabled button on the viewer's own meal."
+  },
+  "mealActionCancelled": "Meal cancelled",
+  "@mealActionCancelled": {
+    "description": "Meal action bar: disabled button on a cancelled meal."
+  },
+  "mealActionStatusYourMeal": "See requests in the Requests tab.",
+  "@mealActionStatusYourMeal": {
+    "description": "Meal action bar status line (one line only) on the viewer's own meal."
+  },
+  "mealActionStatusCancelled": "The host cancelled this meal.",
+  "@mealActionStatusCancelled": {
+    "description": "Meal action bar status line on a cancelled meal."
+  },
+  "mealActionStatusWomenOnly": "Only women can join this meal.",
+  "@mealActionStatusWomenOnly": {
+    "description": "Meal action bar status line for a women-only meal the viewer cannot join."
+  },
+  "mealActionStatusLoadError": "Couldn't load your request.",
+  "@mealActionStatusLoadError": {
+    "description": "Meal action bar status line when the viewer's request failed to load."
+  },
+  "mealActionStatusPending": "Waiting for the host to reply.",
+  "@mealActionStatusPending": {
+    "description": "Meal action bar status line while the request is pending."
+  },
+  "mealActionStatusApproved": "You're matched. Say hi!",
+  "@mealActionStatusApproved": {
+    "description": "Meal action bar status line after the host approved the request."
+  },
+  "mealActionStatusDenied": "The host chose someone else.",
+  "@mealActionStatusDenied": {
+    "description": "Meal action bar status line after the host declined the request."
+  },
+  "mealActionNoLongerOpen": "This meal is no longer open.",
+  "@mealActionNoLongerOpen": {
+    "description": "Snackbar when the server rejects a request because the meal closed."
+  },
+  "mealActionRequestFailed": "Couldn't send your request. Try again.",
+  "@mealActionRequestFailed": {
+    "description": "Snackbar when sending a join request failed."
+  },
+  "createMealTitle": "Create a meal",
+  "@createMealTitle": {
+    "description": "App bar title of the create-meal screen."
+  },
+  "createMealPickDateTime": "Pick date & time",
+  "@createMealPickDateTime": {
+    "description": "Button that opens the date and time pickers."
+  },
+  "createMealNoteLabel": "Note (optional)",
+  "@createMealNoteLabel": {
+    "description": "Label of the optional note field."
+  },
+  "createMealSubmit": "Create meal",
+  "@createMealSubmit": {
+    "description": "Button that posts the meal."
+  },
+  "createMealCreating": "Creating…",
+  "@createMealCreating": {
+    "description": "Button label while the meal is being posted."
+  },
+  "createMealTooSoon": "Pick a time at least {minutes} minutes from now.",
+  "@createMealTooSoon": {
+    "description": "Snackbar when the picked time is too close to now.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "createMealPosted": "Meal posted. You'll get requests in the Requests tab.",
+  "@createMealPosted": {
+    "description": "Snackbar after a meal was posted."
+  },
+  "restaurantSearchTitle": "Find a restaurant",
+  "@restaurantSearchTitle": {
+    "description": "App bar title of the restaurant search screen."
+  },
+  "restaurantSearchHint": "Search restaurants",
+  "@restaurantSearchHint": {
+    "description": "Hint of the restaurant search field."
+  },
+  "restaurantSearchEmpty": "No restaurants to show yet.",
+  "@restaurantSearchEmpty": {
+    "description": "Shown when the search has no query and no results."
+  },
+  "restaurantSearchNoMatch": "No restaurant called “{query}”. Try another name.",
+  "@restaurantSearchNoMatch": {
+    "description": "Shown when a typed search has no results; query is what the user typed.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxTitle": "Requests",
+  "@inboxTitle": {
+    "description": "App bar title of the host request inbox."
+  },
+  "inboxEmptyTitle": "No pending requests",
+  "@inboxEmptyTitle": {
+    "description": "Empty state of the host request inbox."
+  },
+  "inboxGuestFallback": "Guest",
+  "@inboxGuestFallback": {
+    "description": "Name shown for a requesting guest whose profile is not loaded."
+  },
+  "inboxGuestNameAge": "{name}, {age}",
+  "@inboxGuestNameAge": {
+    "description": "Guest name and age on a request row.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "inboxPastMeal": "Meal time has passed",
+  "@inboxPastMeal": {
+    "description": "Chip, tooltip and hint on a request whose meal time is in the past."
+  },
+  "inboxApprove": "Approve",
+  "@inboxApprove": {
+    "description": "Button that approves a join request."
+  },
+  "inboxApproving": "Approving…",
+  "@inboxApproving": {
+    "description": "Approve button label while the action is in flight."
+  },
+  "inboxDeny": "Deny",
+  "@inboxDeny": {
+    "description": "Button that denies a join request."
+  },
+  "inboxDenying": "Denying…",
+  "@inboxDenying": {
+    "description": "Deny button label while the action is in flight."
+  },
+  "inboxActionChat": "Chat",
+  "@inboxActionChat": {
+    "description": "Snackbar action that opens the chat after a successful approve."
+  },
+  "inboxOutcomeApproved": "Approved. You can chat now.",
+  "@inboxOutcomeApproved": {
+    "description": "Snackbar after a request was approved."
+  },
+  "inboxOutcomeApproveFailed": "Couldn't approve this request. It may already have been handled.",
+  "@inboxOutcomeApproveFailed": {
+    "description": "Snackbar when approving failed for any reason other than the meal being closed."
+  },
+  "inboxOutcomeDenied": "Request denied.",
+  "@inboxOutcomeDenied": {
+    "description": "Snackbar after a request was denied."
+  },
+  "inboxOutcomeDenyFailed": "Couldn't deny this request. It may already have been handled.",
+  "@inboxOutcomeDenyFailed": {
+    "description": "Snackbar when denying failed."
+  },
+  "chatListTitle": "Chats",
+  "@chatListTitle": {
+    "description": "App bar title of the chat list."
+  },
+  "chatListEmptyTitle": "No chats yet",
+  "@chatListEmptyTitle": {
+    "description": "Empty state title of the chat list."
+  },
+  "chatListEmptyMessage": "Match on a meal to start talking.",
+  "@chatListEmptyMessage": {
+    "description": "Empty state message of the chat list."
+  },
+  "chatListFindMeal": "Find a meal",
+  "@chatListFindMeal": {
+    "description": "Empty chat list button that opens Discover."
+  },
+  "chatSayHi": "Say hi 👋",
+  "@chatSayHi": {
+    "description": "Preview of a chat with no message yet, and empty thread title."
+  },
+  "chatTitleFallback": "Chat",
+  "@chatTitleFallback": {
+    "description": "Chat title while the other person’s name is not loaded."
+  },
+  "chatTimeNow": "now",
+  "@chatTimeNow": {
+    "description": "Relative time for under a minute ago, on the chat list."
+  },
+  "chatTimeMinutes": "{minutes}m",
+  "@chatTimeMinutes": {
+    "description": "Relative time in minutes on the chat list.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeHours": "{hours}h",
+  "@chatTimeHours": {
+    "description": "Relative time in hours on the chat list.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "chatTimeDays": "{days}d",
+  "@chatTimeDays": {
+    "description": "Relative time in days on the chat list.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "chatUnreadSemantics": "Unread",
+  "@chatUnreadSemantics": {
+    "description": "Accessibility label of the unread dot on a chat row."
+  },
+  "chatSeen": "Seen",
+  "@chatSeen": {
+    "description": "Marker under the sender’s latest message once the other person read it."
+  },
+  "chatComposerHint": "Message",
+  "@chatComposerHint": {
+    "description": "Hint of the message field."
+  },
+  "chatSendTooltip": "Send message",
+  "@chatSendTooltip": {
+    "description": "Tooltip and accessibility label of the send button."
+  },
+  "chatSendFailed": "Couldn't send your message. Try again.",
+  "@chatSendFailed": {
+    "description": "Snackbar when sending a message failed."
+  },
+  "chatUnavailable": "This chat is no longer available — the meal was cancelled.",
+  "@chatUnavailable": {
+    "description": "Shown instead of the thread when the match is gone."
+  },
+  "chatBackToChats": "Back to chats",
+  "@chatBackToChats": {
+    "description": "Button on the unavailable-chat state."
+  },
+  "leaveMatchTooltip": "Can't make it",
+  "@leaveMatchTooltip": {
+    "description": "Tooltip of the app bar action that cancels or withdraws from a matched meal."
+  },
+  "leaveMatchOtherFallback": "Your match",
+  "@leaveMatchOtherFallback": {
+    "description": "Stands in for the other person’s name in the leave dialog when it is not loaded."
+  },
+  "leaveMatchHostTitle": "Cancel this meal?",
+  "@leaveMatchHostTitle": {
+    "description": "Leave dialog title for the host."
+  },
+  "leaveMatchGuestTitle": "Withdraw from this meal?",
+  "@leaveMatchGuestTitle": {
+    "description": "Leave dialog title for the guest."
+  },
+  "leaveMatchHostBody": "{name} will be told and the meal will be removed.",
+  "@leaveMatchHostBody": {
+    "description": "Leave dialog body for the host; name is the guest.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchGuestBody": "{name} will be told and the meal will open up again for others.",
+  "@leaveMatchGuestBody": {
+    "description": "Leave dialog body for the guest; name is the host.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveMatchKeep": "Keep meal",
+  "@leaveMatchKeep": {
+    "description": "Dialog button that keeps the meal."
+  },
+  "leaveMatchHostConfirm": "Cancel meal",
+  "@leaveMatchHostConfirm": {
+    "description": "Dialog button that cancels the meal (host)."
+  },
+  "leaveMatchGuestConfirm": "Withdraw",
+  "@leaveMatchGuestConfirm": {
+    "description": "Dialog button that withdraws the guest."
+  },
+  "leaveMatchHostDone": "Meal cancelled.",
+  "@leaveMatchHostDone": {
+    "description": "Snackbar after the host cancelled the meal."
+  },
+  "leaveMatchGuestDone": "You've withdrawn.",
+  "@leaveMatchGuestDone": {
+    "description": "Snackbar after the guest withdrew."
+  },
+  "leaveMatchFailed": "Couldn't cancel. Check your connection and try again.",
+  "@leaveMatchFailed": {
+    "description": "Snackbar when cancelling or withdrawing failed."
+  },
+  "safetyTipsBanner": "Meeting up? Safety tips",
+  "@safetyTipsBanner": {
+    "description": "One-line banner above the chat thread."
+  },
+  "safetyTipsBannerDismiss": "Dismiss safety tips",
+  "@safetyTipsBannerDismiss": {
+    "description": "Tooltip of the banner close button."
+  },
+  "safetyTipsHeading": "Meeting up? Stay safe",
+  "@safetyTipsHeading": {
+    "description": "Heading of the safety tips sheet and screen."
+  },
+  "safetyTipPublicPlace": "Meet in a public place",
+  "@safetyTipPublicPlace": {
+    "description": "Safety tip 1."
+  },
+  "safetyTipTellFriend": "Tell a friend where you're going",
+  "@safetyTipTellFriend": {
+    "description": "Safety tip 2."
+  },
+  "safetyTipInstincts": "Trust your instincts",
+  "@safetyTipInstincts": {
+    "description": "Safety tip 3."
+  },
+  "safetyTipBlockReport": "You can block or report anytime",
+  "@safetyTipBlockReport": {
+    "description": "Safety tip 4."
+  },
+  "safetyTipsGotIt": "Got it",
+  "@safetyTipsGotIt": {
+    "description": "Button that closes the safety tips sheet."
+  },
+  "commonSubmit": "Submit",
+  "@commonSubmit": {
+    "description": "Primary button that sends a short form (report, rating)."
+  },
+  "commonSubmitting": "Submitting…",
+  "@commonSubmitting": {
+    "description": "Label shown on a submit button while it is in flight."
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Primary button that saves edits."
+  },
+  "safetyReportAction": "Report",
+  "@safetyReportAction": {
+    "description": "Safety menu item and report sheet title when the target is unnamed."
+  },
+  "safetyBlockAction": "Block",
+  "@safetyBlockAction": {
+    "description": "Safety menu item and confirm button that blocks a person."
+  },
+  "safetyBlockTitleNamed": "Block {name}?",
+  "@safetyBlockTitleNamed": {
+    "description": "Title of the block confirmation dialog when the person is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyBlockTitleGeneric": "Block this person?",
+  "@safetyBlockTitleGeneric": {
+    "description": "Title of the block confirmation dialog when the name is unknown."
+  },
+  "safetyBlockBody": "You won't see each other in Convyve anymore.",
+  "@safetyBlockBody": {
+    "description": "Body of the block confirmation dialog."
+  },
+  "safetyBlockFailed": "Couldn't block. Try again.",
+  "@safetyBlockFailed": {
+    "description": "Snackbar when blocking failed."
+  },
+  "safetyBlockDone": "Blocked.",
+  "@safetyBlockDone": {
+    "description": "Snackbar after a successful block."
+  },
+  "safetyTipsTitle": "Safety tips",
+  "@safetyTipsTitle": {
+    "description": "App bar title of the Safety tips screen and Settings row label."
+  },
+  "reportTitleNamed": "Report {name}",
+  "@reportTitleNamed": {
+    "description": "Report sheet title when the person is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTitleMeal": "Report this meal",
+  "@reportTitleMeal": {
+    "description": "Report sheet title when the target is a meal."
+  },
+  "reportReasonInappropriate": "Inappropriate content",
+  "@reportReasonInappropriate": {
+    "description": "Report reason chip."
+  },
+  "reportReasonSpam": "Spam",
+  "@reportReasonSpam": {
+    "description": "Report reason chip."
+  },
+  "reportReasonHarassment": "Harassment",
+  "@reportReasonHarassment": {
+    "description": "Report reason chip."
+  },
+  "reportReasonFake": "Fake profile",
+  "@reportReasonFake": {
+    "description": "Report reason chip."
+  },
+  "reportReasonOther": "Other",
+  "@reportReasonOther": {
+    "description": "Report reason chip."
+  },
+  "reportNoteHint": "Add a note (optional)",
+  "@reportNoteHint": {
+    "description": "Hint of the optional note field in the report sheet."
+  },
+  "reportFailed": "Couldn't submit your report. Try again.",
+  "@reportFailed": {
+    "description": "Snackbar when sending a report failed."
+  },
+  "reportThanks": "Thanks — we'll review this.",
+  "@reportThanks": {
+    "description": "Snackbar after a report was sent."
+  },
+  "blockedTitle": "Blocked people",
+  "@blockedTitle": {
+    "description": "Title of the blocked people screen and Settings row."
+  },
+  "blockedEmptyTitle": "You haven't blocked anyone",
+  "@blockedEmptyTitle": {
+    "description": "Empty-state title of the blocked people screen."
+  },
+  "blockedEmptyMessage": "People you block are hidden from your meals and chats.",
+  "@blockedEmptyMessage": {
+    "description": "Empty-state message of the blocked people screen."
+  },
+  "blockedUnknownUser": "Unknown user",
+  "@blockedUnknownUser": {
+    "description": "Name shown for a blocked person whose profile cannot be loaded."
+  },
+  "blockedUnblock": "Unblock",
+  "@blockedUnblock": {
+    "description": "Button that unblocks a person."
+  },
+  "blockedUnblockSemantics": "Unblock {name}",
+  "@blockedUnblockSemantics": {
+    "description": "Screen-reader label of the Unblock button, naming the person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblocking": "Unblocking…",
+  "@blockedUnblocking": {
+    "description": "Label of the Unblock button while it is in flight."
+  },
+  "blockedUnblocked": "Unblocked {name}.",
+  "@blockedUnblocked": {
+    "description": "Snackbar after unblocking a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblockFailed": "Couldn't unblock. Try again.",
+  "@blockedUnblockFailed": {
+    "description": "Snackbar when unblocking failed."
+  },
+  "ratingTitleNamed": "How was your meal with {name}?",
+  "@ratingTitleNamed": {
+    "description": "Rating sheet title when the partner is named.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingTitle": "How was your meal?",
+  "@ratingTitle": {
+    "description": "Rating sheet title and post-meal card headline."
+  },
+  "ratingStarTooltip": "{count, plural, =1{1 star} other{{count} stars}}",
+  "@ratingStarTooltip": {
+    "description": "Tooltip and screen-reader label of one star button in the rating sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ratingShowedUp": "Did they show up?",
+  "@ratingShowedUp": {
+    "description": "Label of the show-up switch in the rating sheet."
+  },
+  "ratingCommentHint": "Add a comment (optional)",
+  "@ratingCommentHint": {
+    "description": "Hint of the optional comment field in the rating sheet."
+  },
+  "ratingFailed": "Couldn't submit your rating. Try again.",
+  "@ratingFailed": {
+    "description": "Snackbar when sending a rating failed."
+  },
+  "ratingThanks": "Thanks for the feedback!",
+  "@ratingThanks": {
+    "description": "Snackbar after a rating was sent."
+  },
+  "ratingCardSubtitle": "It only takes a moment.",
+  "@ratingCardSubtitle": {
+    "description": "Subtitle of the post-meal card."
+  },
+  "ratingRate": "Rate",
+  "@ratingRate": {
+    "description": "Post-meal card button when the partner is unnamed."
+  },
+  "ratingRateNamed": "Rate {name}",
+  "@ratingRateNamed": {
+    "description": "Post-meal card button naming the partner.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingBadgeNew": "New",
+  "@ratingBadgeNew": {
+    "description": "Badge shown instead of a score when a person has no ratings yet."
+  },
+  "ratingBadgeScore": "{average} ({count})",
+  "@ratingBadgeScore": {
+    "description": "Rating badge: average (one decimal) and number of ratings.",
+    "placeholders": {
+      "average": {
+        "type": "double",
+        "format": "decimalPatternDigits",
+        "optionalParameters": {
+          "decimalDigits": 1
+        }
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings screen title and the Profile app bar tooltip."
+  },
+  "settingsSectionAccount": "Account",
+  "@settingsSectionAccount": {
+    "description": "Settings section header."
+  },
+  "settingsEditProfile": "Edit profile",
+  "@settingsEditProfile": {
+    "description": "Settings row that opens the Profile tab."
+  },
+  "settingsPhoneNumber": "Phone number",
+  "@settingsPhoneNumber": {
+    "description": "Settings row showing the signed-in phone number."
+  },
+  "settingsSignOut": "Sign out",
+  "@settingsSignOut": {
+    "description": "Settings row and confirm button that signs the user out."
+  },
+  "settingsSignOutTitle": "Sign out?",
+  "@settingsSignOutTitle": {
+    "description": "Title of the sign-out confirmation dialog."
+  },
+  "settingsSectionSafety": "Safety",
+  "@settingsSectionSafety": {
+    "description": "Settings section header."
+  },
+  "settingsContactSupport": "Contact support",
+  "@settingsContactSupport": {
+    "description": "Settings row that opens a mail to support."
+  },
+  "settingsMailFailed": "Couldn't open your mail app. Write to {email}",
+  "@settingsMailFailed": {
+    "description": "Snackbar when the mail app could not be opened; email is the support address.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSectionNotifications": "Notifications",
+  "@settingsSectionNotifications": {
+    "description": "Settings section header (iOS)."
+  },
+  "settingsNotificationSettings": "Notification settings",
+  "@settingsNotificationSettings": {
+    "description": "Settings row that opens the iOS Settings page of the app."
+  },
+  "settingsNotificationSubtitle": "Manage notifications in iOS Settings",
+  "@settingsNotificationSubtitle": {
+    "description": "Subtitle of the notification settings row."
+  },
+  "settingsSectionLegal": "Legal",
+  "@settingsSectionLegal": {
+    "description": "Settings section header."
+  },
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "@settingsPrivacyPolicy": {
+    "description": "Settings row that opens the privacy policy."
+  },
+  "settingsTermsOfService": "Terms of Service",
+  "@settingsTermsOfService": {
+    "description": "Settings row that opens the terms of service."
+  },
+  "settingsLicenses": "Open-source licences",
+  "@settingsLicenses": {
+    "description": "Settings row that opens the open-source licences page."
+  },
+  "settingsSectionAbout": "About",
+  "@settingsSectionAbout": {
+    "description": "Settings section header."
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Settings row that opens the language picker."
+  },
+  "settingsLanguageSystem": "System default",
+  "@settingsLanguageSystem": {
+    "description": "Language picker option and row subtitle: follow the device language."
+  },
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "Title of the language picker dialog."
+  },
+  "settingsVersion": "Version",
+  "@settingsVersion": {
+    "description": "Settings row showing the app version."
+  },
+  "settingsVersionLoading": "Loading…",
+  "@settingsVersionLoading": {
+    "description": "Subtitle of the version row while it loads."
+  },
+  "settingsVersionUnavailable": "Unavailable",
+  "@settingsVersionUnavailable": {
+    "description": "Subtitle of the version row when it could not be read."
+  },
+  "settingsDeleteAccount": "Delete account",
+  "@settingsDeleteAccount": {
+    "description": "Settings row and confirm button that deletes the account."
+  },
+  "settingsDeleteTitle": "Delete account?",
+  "@settingsDeleteTitle": {
+    "description": "Title of the delete-account confirmation dialog."
+  },
+  "settingsDeleteBody": "This permanently deletes your account and all your data. This can't be undone.",
+  "@settingsDeleteBody": {
+    "description": "Body of the delete-account confirmation dialog."
+  },
+  "settingsDeleteFailed": "Couldn't delete account. Try again.",
+  "@settingsDeleteFailed": {
+    "description": "Snackbar when deleting the account failed."
+  },
+  "profileSaved": "Profile saved",
+  "@profileSaved": {
+    "description": "Snackbar after saving the profile."
+  },
+  "profileYourRating": "Your rating",
+  "@profileYourRating": {
+    "description": "Label before the rating badge on the Profile tab."
+  },
+  "profileNoRatings": "No ratings yet",
+  "@profileNoRatings": {
+    "description": "Shown on the Profile tab when the user has no ratings."
+  },
+  "profileFormPhotos": "Photos",
+  "@profileFormPhotos": {
+    "description": "Heading of the photo grid in the profile form."
+  },
+  "profileFormRemovePhoto": "Remove photo",
+  "@profileFormRemovePhoto": {
+    "description": "Tooltip and screen-reader label of the remove button on a photo."
+  },
+  "profileFormAddPhoto": "Add photo",
+  "@profileFormAddPhoto": {
+    "description": "Label of the add-photo tile."
+  },
+  "profileFormUploadingPhoto": "Uploading photo",
+  "@profileFormUploadingPhoto": {
+    "description": "Screen-reader label of the add-photo tile while a photo uploads."
+  },
+  "profileFormName": "Name",
+  "@profileFormName": {
+    "description": "Label of the name field."
+  },
+  "profileFormGenderHeading": "I am a",
+  "@profileFormGenderHeading": {
+    "description": "Heading above the gender choices; the choice completes the phrase."
+  },
+  "profileFormBio": "Bio",
+  "@profileFormBio": {
+    "description": "Label of the bio field."
+  },
+  "genderWoman": "Woman",
+  "@genderWoman": {
+    "description": "Gender choice."
+  },
+  "genderMan": "Man",
+  "@genderMan": {
+    "description": "Gender choice."
+  },
+  "genderNonBinary": "Non-binary",
+  "@genderNonBinary": {
+    "description": "Gender choice."
+  },
+  "profileMissingPhoto": "a photo",
+  "@profileMissingPhoto": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingName": "your name",
+  "@profileMissingName": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingGender": "how you identify",
+  "@profileMissingGender": {
+    "description": "Missing profile field, as part of the still-needed list."
+  },
+  "profileMissingTwo": "{first} and {second}",
+  "@profileMissingTwo": {
+    "description": "Joins two missing profile fields.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "profileMissingThree": "{first}, {second} and {third}",
+  "@profileMissingThree": {
+    "description": "Joins three missing profile fields.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "third": {
+        "type": "String"
+      }
+    }
+  }
+}
