@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,6 +94,44 @@ void main() {
     _report(c, QueuedWriteKind.meal);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('signing out clears a snackbar left from the session', (
+    tester,
+  ) async {
+    final auth = StreamController<AuthUser?>();
+    addTearDown(auth.close);
+    late ProviderContainer c;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authStateProvider.overrideWith((ref) => auth.stream)],
+        child: Consumer(
+          builder: (context, ref, _) {
+            c = ProviderScope.containerOf(context);
+            return MaterialApp(
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              builder: (context, child) =>
+                  QueuedWriteFailureListener(child: child!),
+              home: const Scaffold(body: Text('home')),
+            );
+          },
+        ),
+      ),
+    );
+    auth.add(user);
+    await tester.pump();
+    _report(c, QueuedWriteKind.meal);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(SnackBar), findsOneWidget);
+
+    auth.add(null);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
     expect(find.byType(SnackBar), findsNothing);
   });
 }

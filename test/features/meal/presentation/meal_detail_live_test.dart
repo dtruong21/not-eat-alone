@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:not_eat_alone/core/design/theme.dart';
@@ -67,12 +68,27 @@ void main() {
   });
   tearDown(() => meals.controller.close());
 
+  List<Override> overridesFor(String viewer) => [
+    mealRepositoryProvider.overrideWithValue(meals),
+    userRepositoryProvider.overrideWithValue(users),
+    authStateProvider.overrideWith(
+      (ref) => Stream.value(AuthUser(uid: viewer)),
+    ),
+    currentUserDocProvider.overrideWith(
+      (ref) => Stream.value(AppUser(uid: viewer, dob: DateTime(1995, 6))),
+    ),
+    mealRequestStateProvider(
+      'm1',
+    ).overrideWith((ref) => Stream<JoinRequest?>.value(null)),
+  ];
+
   Future<void> pump(
     WidgetTester tester, {
     Locale locale = const Locale('en'),
     Size? size,
     double textScale = 1,
     String viewer = 'guest1',
+    ProviderContainer? container,
   }) async {
     if (size != null) {
       tester.view
@@ -80,35 +96,23 @@ void main() {
         ..devicePixelRatio = 1;
       addTearDown(tester.view.reset);
     }
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          mealRepositoryProvider.overrideWithValue(meals),
-          userRepositoryProvider.overrideWithValue(users),
-          authStateProvider.overrideWith(
-            (ref) => Stream.value(AuthUser(uid: viewer)),
-          ),
-          currentUserDocProvider.overrideWith(
-            (ref) => Stream.value(AppUser(uid: viewer, dob: DateTime(1995, 6))),
-          ),
-          mealRequestStateProvider(
-            'm1',
-          ).overrideWith((ref) => Stream<JoinRequest?>.value(null)),
-        ],
-        child: MaterialApp(
-          theme: buildTheme(Brightness.light),
-          locale: locale,
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(textScale)),
-            child: child!,
-          ),
-          home: MealDetailScreen(meal: _open),
-        ),
+    final app = MaterialApp(
+      theme: buildTheme(Brightness.light),
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
       ),
+      home: MealDetailScreen(meal: _open),
+    );
+    await tester.pumpWidget(
+      container != null
+          ? UncontrolledProviderScope(container: container, child: app)
+          : ProviderScope(overrides: overridesFor(viewer), child: app),
     );
     await tester.pump();
     await tester.pump();
@@ -174,6 +178,36 @@ void main() {
     });
   }
 
+  testWidgets('a live change does not put the host row back to loading', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    await emit(tester, _open.copyWith(status: MealStatus.cancelled));
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    verify(() => users.watch('host1')).called(1);
+  });
+
+  testWidgets('a meal provider already alive with a cancelled meal shows it '
+      'at once', (tester) async {
+    final container = ProviderContainer(overrides: overridesFor('guest1'));
+    addTearDown(container.dispose);
+    meals.controller.add(_open.copyWith(status: MealStatus.cancelled));
+    final sub = container.listen(mealStreamProvider('m1'), (_, _) {});
+    addTearDown(sub.close);
+    await container.read(mealStreamProvider('m1').future);
+
+    await pump(tester, container: container);
+
+    expect(join, findsNothing);
+    expect(
+      find.byKey(const Key('meal_detail_cancelled_button')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('an equal snapshot does not rebuild the screen', (tester) async {
     await pump(tester);
     final scaffold = tester.element(find.byType(Scaffold).first);
@@ -212,6 +246,20 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('This meal is no longer open.'), findsOneWidget);
+  });
+
+  testWidgets('a deleted/hidden meal reads in French (unavailable)', (
+    tester,
+  ) async {
+    await pump(tester, locale: const Locale('fr'));
+
+    await emit(tester, null);
+
+    expect(
+      find.byKey(const Key('meal_detail_unavailable_button')),
+      findsOneWidget,
+    );
+    expect(find.text('Ce repas n’est plus ouvert.'), findsOneWidget);
   });
 
   testWidgets('the host keeps their own-meal state when it ends', (

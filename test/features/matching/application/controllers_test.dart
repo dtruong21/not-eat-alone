@@ -101,6 +101,23 @@ void main() {
         expect(state.hasError, isFalse);
       },
     );
+
+    test('request() ends AsyncError(MealNoLongerOpenException) when the meal '
+        'closed', () async {
+      when(() => requestRepository.createRequest(
+            mealId: any(named: 'mealId'),
+            guestId: any(named: 'guestId'),
+            hostId: any(named: 'hostId'),
+          )).thenThrow(MealNoLongerOpenException('meal_1'));
+
+      await container
+          .read(createRequestControllerProvider.notifier)
+          .request(_meal);
+
+      final state = container.read(createRequestControllerProvider);
+      expect(state, isA<AsyncError<void>>());
+      expect(state.error, isA<MealNoLongerOpenException>());
+    });
   });
 
   group('InboxActionController', () {

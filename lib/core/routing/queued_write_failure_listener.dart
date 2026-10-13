@@ -30,7 +30,6 @@ class _QueuedWriteFailureListenerState
   /// Failures arriving while this runs are folded into the snackbar shown.
   static const _quietPeriod = Duration(seconds: 2);
   Timer? _quiet;
-  String? _uid;
 
   @override
   void dispose() {
@@ -40,7 +39,7 @@ class _QueuedWriteFailureListenerState
 
   void _onFailure(QueuedWriteFailure? previous, QueuedWriteFailure? next) {
     if (next == null || (_quiet?.isActive ?? false)) return;
-    if (_uid == null) return;
+    if (ref.read(authStateProvider).value?.uid == null) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) return;
     final l10n = context.l10n;
@@ -56,7 +55,10 @@ class _QueuedWriteFailureListenerState
 
   @override
   Widget build(BuildContext context) {
-    _uid = ref.watch(authStateProvider.select((u) => u.value?.uid));
+    // Sign-out: drop a snackbar from the previous session.
+    ref.listen(authStateProvider.select((u) => u.value?.uid), (_, uid) {
+      if (uid == null) ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
+    });
     ref.listen<QueuedWriteFailure?>(queuedWriteFailuresProvider, _onFailure);
     return widget.child;
   }

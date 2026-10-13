@@ -31,7 +31,7 @@ final _past = Meal(
 
 /// UX plan 18, task 3 / follow-ups plan 21, task 2: the post-meal card's call
 /// to action is a short, constant primary button; the person is named in the
-/// title and in the button's screen-reader label.
+/// subtitle and in the button's screen-reader label.
 void main() {
   setUpAll(loadAppFonts);
 

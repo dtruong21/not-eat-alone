@@ -80,7 +80,7 @@ Not defects: apostrophes are curly everywhere, a non-breaking space keeps "?", "
 | Native French review items beyond the table: `ratingBadgeNew` ("Nouveau"), "Ouvrir dans Maps" vs "Plans", "Nous"/"On" register, "Réglages", `createMealNoteLabel` ("Note (facultative)") | P2 | Native reviewer |
 | Seeded demo content (restaurant names, bios, messages) stays English because it is data; user-written content is never translated | Info | none |
 | The harness `_fr` map must follow `app_fr.arb` by hand (a changed French string shows up as a failed step, not silently) | P3 (tooling) | Harness |
-| Carried over from plan 18 and not touched by this plan: Google "G" asset, Android phone auto-verification, `AppButton` loading colour, `RatingBadge` semantics, `93_discover_error` not producible | P2-P3 | See `docs/ux/18-verification.md` |
+| Carried over from plan 18 and not touched by this plan: Google "G" asset, Android phone auto-verification, `AppButton` loading colour, `RatingBadge` semantics, snackbar (notice) persistence (approved/denied/unblocked notices are lost when the screen is left), `93_discover_error` not producible | P2-P3 | See `docs/ux/18-verification.md` |
 | ~~Post-meal rating card: the Rate button read "Rate Giulia Pe…"~~ | P3 | Fixed (follow-ups plan 21): short "Rate" / "Noter" button, the person is named in the card subtitle and the button's screen-reader label |
 | ~~Joining a meal that just closed showed a generic failure~~ | P3 | Fixed (follow-ups plan 21): "This meal is no longer open." |
 | ~~A write refused after the 3 s offline grace was only logged, so the user believed it went through~~ | P2 | Fixed (follow-ups plan 21): the user is told |
