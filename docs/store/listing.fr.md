@@ -25,19 +25,19 @@
 ### Sous-titre (iOS App Store, max 30 caractères)
 <!--field:subtitle:30-->
 ```
-Partage un vrai repas à deux
+Partage un vrai repas
 ```
 
 ### Texte promotionnel (iOS, max 170 caractères)
 <!--field:promo:170-->
 ```
-Une table, une place de libre : trouve quelqu’un avec qui partager un vrai repas, en tête à tête, dans un lieu public. Convyve, c’est à Paris pour l’instant.
+Une table, une place de libre : trouve quelqu’un avec qui partager un vrai repas, dans un lieu public. Convyve, c’est à Paris pour l’instant.
 ```
 
 ### Description courte (Google Play, max 80 caractères)
 <!--field:short:80-->
 ```
-Poste un repas à Paris, choisis qui te rejoint, dîne à deux. Sans swipe.
+Poste un repas à Paris, choisis qui te rejoint, dîne ensemble. Sans swipe.
 ```
 
 ### Mots-clés (iOS, max 100 caractères, séparés par des virgules, sans espace)
@@ -46,7 +46,7 @@ Poste un repas à Paris, choisis qui te rejoint, dîne à deux. Sans swipe.
 dîner,déjeuner,restaurant,sortie,convive,amis,manger,seul,solo,resto,inconnus,paris,gourmand
 ```
 
-**Choices:** the app name and subtitle words (`partage`, `repas`, `deux`, `convyve`) are not repeated, because Apple already indexes them. `rencontre`, `date` and `swipe`-type words are left out on purpose (meal-first, not dating). `paris` is kept because the launch is Paris-only. No spaces after commas, no duplicates (13 terms, 13 unique). Apple ignores accents when matching, so `dîner` also matches `diner`.
+**Choices:** the app name and subtitle words (`partage`, `repas`, `convyve`) are not repeated, because Apple already indexes them. `rencontre`, `date` and `swipe`-type words are left out on purpose (meal-first, not dating). `paris` is kept because the launch is Paris-only. No spaces after commas, no duplicates (13 terms, 13 unique). Apple ignores accents when matching, so `dîner` also matches `diner`.
 
 ---
 
@@ -56,22 +56,22 @@ Mirrors the structure of the English long description (intro, how it works, safe
 
 <!--field:full:4000-->
 ```
-Ne mange plus jamais seul au restaurant.
+Fini les repas en solo au restaurant.
 
 Convyve est une appli sociale centrée sur le repas. Poste un repas dans un restaurant de Paris, choisis une seule personne parmi celles qui demandent à te rejoindre, discute pour faire connaissance, puis retrouve cette personne autour d’une vraie table. Pas de swipe, pas de groupe : un repas, deux personnes.
 
 COMMENT ÇA MARCHE
 
 • Poste : tu as repéré un bon restaurant ? Crée un repas : choisis le restaurant, la date et l’heure, et ajoute une note si tu veux.
-• Demande : les personnes près de toi voient ton repas dans Découvrir et demandent à te rejoindre, avec un petit message si elles veulent. Tu en acceptes une seule.
+• Demande : les personnes près de toi voient ton repas dans Découvrir et demandent à te rejoindre. Tu en acceptes une seule.
 • Discute : dès que tu acceptes, un chat s’ouvre pour organiser le repas et faire connaissance. Des rappels t’arrivent la veille et environ 2 heures avant.
 • Dîne et note : après le repas, dis si la personne était bien là et donne-lui une note pour aider les autres convives.
 
 LA SÉCURITÉ D’ABORD
 
-• C’est toi qui choisis : l’hôte accepte ou refuse chaque demande. Aucune rencontre automatique.
-• Entre femmes : l’hôte peut réserver un repas aux femmes (genre indiqué dans le profil).
-• Bloquer et signaler : à tout moment, pour une personne, un repas ou un message.
+• C’est toi qui choisis : l’hôte accepte ou refuse chaque demande. Aucun match automatique.
+• Entre femmes : l’hôte peut réserver un repas aux femmes (genre déclaré).
+• Bloquer et signaler : à tout moment, pour une personne ou un repas.
 • Des conseils de sécurité dans l’appli : lieu public, un proche prévenu, ton instinct.
 • Ta vie privée : les autres voient seulement ton nom, tes photos, ta bio, ton âge et ta note. Ta date de naissance et ton genre restent privés.
 
@@ -91,7 +91,7 @@ PENSÉ POUR TOI
 • Connexion avec Apple, Google ou ton numéro de téléphone
 • Tes données t’appartiennent : supprime ton compte quand tu veux, directement dans l’appli
 
-Télécharge Convyve et trouve ton prochain repas à deux.
+Télécharge Convyve et trouve ton prochain repas en bonne compagnie.
 ```
 
 ---
@@ -107,15 +107,15 @@ Category names are picked in the console and shown in the store's own language; 
 
 ## 4. Classification d'âge
 
-- **18+ uniquement.** L'app est réservée aux personnes de 18 ans et plus, avec une date de naissance déclarée à l'inscription (non vérifiée par une pièce d'identité). Answer the age-rating questionnaires exactly as in `listing.md` section 5 and the checklist; the rating is set in the console, not in the French text.
+- **18+ uniquement.** L'app est réservée aux personnes de 18 ans et plus, avec une date de naissance déclarée à l'inscription (non vérifiée par une pièce d'identité). Answer the age-rating questionnaires per "Verify before submission" #5 in `listing.md` (expect 18+); the rating is set in the console, not in the French text.
 
 ---
 
 ## 5. Nouveautés (première version, valable pour toute version initiale)
 
-Version-agnostic on purpose (no version number). Fits Google Play's 500-character limit as well as Apple's 4 000.
+Version-agnostic on purpose (no version number). Written to fit Google Play's 500-character limit (Apple allows 4 000).
 
-<!--field:whatsnew:4000-->
+<!--field:whatsnew:500-->
 ```
 🍽️ Bienvenue sur Convyve !
 
@@ -127,7 +127,7 @@ Voici ce que tu peux faire dès maintenant :
 • Recevoir un rappel avant le repas
 • Noter la personne après le repas
 • Proposer un repas entre femmes
-• Bloquer et signaler pour rester serein
+• Bloquer et signaler, en toute tranquillité
 • Supprimer ton compte quand tu veux
 
 À Paris pour l’instant. On démarre tout juste.
@@ -155,12 +155,12 @@ Re-check the stores' current screenshot size and count requirements at submissio
 
 | Champ | Valeur | État |
 |---|---|---|
-| URL d'assistance | `https://convyve.com/support` (placeholder) | **needs French page** |
+| URL d'assistance (Apple « Support URL ») | `https://convyve.com/support` (placeholder) | **needs a hosted web page**: App Store Connect requires a URL, not an email; ideally a French page |
 | Politique de confidentialité | `https://convyve.com/fr/privacy` (placeholder) | **needs French page**; the English draft is `docs/legal/privacy.md`, DRAFT, legal review pending |
 | Conditions d'utilisation | `https://convyve.com/fr/terms` (placeholder) | **needs French page**; English draft is `docs/legal/terms.md`, DRAFT, legal review pending |
-| E-mail d'assistance | `placeholder@convyve.com` | to be replaced with a monitored address |
+| E-mail d'assistance | `support@convyve.com` (the address the app ships in Settings, `lib/core/config/legal_urls.dart:12`) | must be a monitored mailbox; use it as Google Play's contact email |
 
-These URLs do not exist yet. French law (RGPD, Paris launch) makes a French privacy policy the owner's homework before submitting the `fr-FR` localization.
+These URLs do not exist yet. The in-app legal links (`lib/core/config/legal_urls.dart:7-8`) point to the English URLs `https://convyve.com/privacy` and `/terms`; the `/fr/` URLs above are placeholders and the app does not link to them yet. French law (RGPD, Paris launch) makes a French privacy policy the owner's homework before submitting the `fr-FR` localization.
 
 ---
 
@@ -181,21 +181,21 @@ PY
 Output at the time of writing:
 
 ```
-subtitle      28 / 30    OK
-promo        157 / 170   OK
-short         72 / 80    OK
+subtitle      21 / 30    OK
+promo        141 / 170   OK
+short         74 / 80    OK
 keywords      92 / 100   OK
-full        2088 / 4000  OK
-whatsnew     494 / 4000  OK
+full        2025 / 4000  OK
+whatsnew     498 / 500   OK
 ```
 
-Google Play What's New is limited to 500 characters (the text above is within it); Apple allows 4 000.
+The What's New field is checked against 500 characters (Google Play's limit; Apple allows 4 000).
 
 ---
 
 ## 9. Points à relire par une personne francophone
 
-- Subtitle "Partage un vrai repas à deux": is "vrai repas" natural, or "Un repas à deux, un vrai"?
+- Subtitle "Partage un vrai repas": is "vrai repas" natural? ("à deux" was dropped from the subtitle, short description and closing line because it can read as a couple/dating connotation; the body still says "un repas, deux personnes" and "en bonne compagnie" closes the description.)
 - Promo text "Une table, une place de libre : ..." (a wordplay on a free seat at a table).
 - "Sans swipe" in the short description (anglicism; the app avoids dating-app codes, but "sans swipe" may not mean much to everyone).
 - "choisis qui te rejoint" (grammar is correct but "te rejoint" is slightly ambiguous: "who joins you").
@@ -203,4 +203,8 @@ Google Play What's New is limited to 500 characters (the text above is within it
 - "Demander à te rejoindre" (the in-app button is "Demander à rejoindre").
 - "ton nom, tes photos, ta bio" ("bio" as in the app).
 - "Bon appétit !" closing line and the 🍽️ emoji in the What's New.
+- Description opener "Fini les repas en solo au restaurant." (replaced a masculine "seul"; check it works as a hook).
+- What's New line "Bloquer et signaler, en toute tranquillité".
+- "Aucun match automatique" (anglicism "match", chosen over "rencontre") and "genre déclaré" (self-declared gender).
+- Screenshot captions 2 ("Le repas en détail, puis rejoins la table") and 4 ("Discute d’abord, dîne ensuite").
 - Overall "tu" register for a store page (decision 1 above).
