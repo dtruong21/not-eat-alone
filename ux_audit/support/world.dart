@@ -330,15 +330,14 @@ const _mainChatEn = <UxChatMessage>[
     minutesAgo: 1500,
     mine: true,
     text:
-        'By the way, I might bring a friend along for the aperitif only. '
-        'She lives around the corner and wants to say hi before dinner. '
-        'Would that be okay with you, or would you rather keep it just '
-        'the two of us? Totally fine either way!',
+        'By the way, I read the fish dish is the house specialty. Want to '
+        'share one, or would you rather order your own? Totally fine '
+        'either way!',
   ),
   (
     minutesAgo: 1440,
     mine: false,
-    text: 'Of course, the more the merrier for a drink.',
+    text: "Let's share it, I'd love that. We can pick a dessert on the spot.",
   ),
   (
     minutesAgo: 190,
@@ -374,11 +373,10 @@ const _mainChatFr = <String>[
   'Petit programme :\n- 20 h devant la porte\n- on partage une '
       'entrée\n- pas de téléphone à table 😄',
   'Deal !',
-  'Au fait, je viendrai peut-être avec une amie, juste pour l’apéro. Elle '
-      'habite à côté et voudrait passer dire bonjour avant le dîner. Ça te '
-      'va, ou tu préfères qu’on reste à deux ? Aucun souci dans les '
-      'deux cas !',
-  'Bien sûr, plus on est de fous, plus on rit, surtout pour un verre.',
+  'Au fait, il paraît que le plat de poisson est la spécialité de la '
+      'maison. On en partage un, ou tu préfères prendre le tien ? Aucun '
+      'souci dans les deux cas !',
+  'Partageons-le, avec plaisir. On choisira le dessert sur place.',
   'Rappel : demain 20 h, Le Comptoir du Relais. J’ai hâte !',
   'On se retrouve là-bas ! 🍷',
   'Par quelle porte, au fait ? Il y en a deux, on dirait.',
